@@ -81,6 +81,59 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .header h1{color:var(--accent-blue);font-size:1.3em;font-weight:700;letter-spacing:1px;transition:color .3s}
 .header-right{display:flex;align-items:center;gap:12px}
 .user-info{color:var(--text-secondary);font-size:.85em;font-weight:500}
+
+/* 🕐 RELOJ DIGITAL */
+.reloj-digital {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  border: 2px solid #3b82f6;
+  border-radius: 10px;
+  padding: 8px 14px;
+  margin-right: 12px;
+  box-shadow: 0 0 15px rgba(59,130,246,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  font-family: 'Courier New', monospace;
+  min-width: 180px;
+  justify-content: center;
+}
+.reloj-fecha {
+  color: #f59e0b;
+  font-size: 0.7em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.reloj-hora {
+  color: #3b82f6;
+  font-size: 1.4em;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(59,130,246,0.5);
+}
+.reloj-segundos {
+  color: #10b981;
+  font-size: 0.9em;
+  font-weight: 700;
+  min-width: 25px;
+}
+[data-theme="light"] .reloj-digital {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+[data-theme="light"] .reloj-hora { color: #1d4ed8; }
+[data-theme="light"] .reloj-fecha { color: #ea580c; }
+[data-theme="light"] .reloj-segundos { color: #059669; }
+[data-theme="feminino"] .reloj-digital {
+  background: linear-gradient(135deg, #fdf4ff 0%, #f5d0fe 100%);
+  border-color: #c026d3;
+  box-shadow: 0 2px 8px rgba(192,38,211,0.2);
+}
+[data-theme="feminino"] .reloj-hora { color: #a21caf; }
+[data-theme="feminino"] .reloj-fecha { color: #d97706; }
+[data-theme="feminino"] .reloj-segundos { color: #059669; }
+
 .theme-selector{display:flex;gap:6px;align-items:center;margin-right:12px}
 .theme-btn{position:relative;width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;padding:0!important;font-size:0!important;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);overflow:hidden;background:transparent!important}
 .theme-btn::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:9px;background:inherit;filter:brightness(1.2);opacity:0.7}
@@ -412,6 +465,13 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
   <div class="header">
     <div class="header-left"><h1>DESPACHO RETAIL v1.0</h1></div>
     <div class="header-right">
+      <!-- 🕐 RELOJ DIGITAL -->
+      <div class="reloj-digital">
+        <div class="reloj-fecha" id="relojFecha">--</div>
+        <div class="reloj-hora" id="relojHora">--:--</div>
+        <div class="reloj-segundos" id="relojSeg">--</div>
+      </div>
+      
       <div class="theme-selector">
         <button class="theme-btn" data-theme="dark" onclick="cambiarTema('dark')" title="Oscuro"></button>
         <button class="theme-btn" data-theme="light" onclick="cambiarTema('light')" title="Claro"></button>
