@@ -38,7 +38,6 @@ let seccionInicial = mSec ? mSec[1] : '';
 let cache = {};
 let pendientes = [];
 let pendientesAMPM = [];
-let pendientesAmpmAdmQdm = [];
 let pendientesB2C = [];
 let modoImportActual = '';
 let seccionActiva = 'ampm';
@@ -51,16 +50,14 @@ let datosModalTotales = 0;
 let paginaModalActual = 1;
 let paginaBDAmpm = 1;
 let paginaBDB2c = 1;
-let paginaBDAmpmAdmQdm = 1;
 let paginaDesc = 1;
 let tipoBorrarMes = 'AMPM';
-let filtroDiaBD = { AMPM: '', B2C: '', AMPMADM: '' };
-let filtroMesBD = { AMPM: '', B2C: '', AMPMADM: '' };
-let filtroAnioBD = { AMPM: '', B2C: '', AMPMADM: '' };
+let filtroDiaBD = { AMPM: '', B2C: '' };
+let filtroMesBD = { AMPM: '', B2C: '' };
+let filtroAnioBD = { AMPM: '', B2C: '' };
 let filtroDescBD = {
   AMPM:  { unidad:'', comuna:'', transporte:'', rango:'' },
-  B2C:   { unidad:'', comuna:'', transporte:'', rango:'' },
-  AMPMADM:{ unidad:'', comuna:'', transporte:'', rango:'' }
+  B2C:   { unidad:'', comuna:'', transporte:'', rango:'' }
 };
 let seleccionadosDesc = new Set();
 let keysVisiblesDesc = [];
@@ -180,27 +177,9 @@ const REGLAS_MOVIL_POR_DIA = {
   5: { 'MOVIL 1': ['casa','dominicos','los dominicos','las condes','la reina','penalolen'], 'MOVIL 2': ['maipu','norte','pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','mut','providencia','nunoa','santiago','san miguel'], 'MOVIL 4': ['dehesa','la dehesa','pie andino','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['egana','tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','la cisternas','lo espejo','san ramon','pedro aguirre cerda'], 'MOVIL 6': ['alc','alto las condes','pa','parque arauco'] }
 };
 
-const REGLAS_MOVIL_POR_DIA_ADM = {
-  1: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago centro','stgo'], 'MOVIL 2': ['providencia','nunoa','las condes','la reina'], 'MOVIL 3': ['maipu','pudahuel','cerro navia','lo prado','quinta normal'], 'MOVIL 4': ['la florida','puente alto','la cisterna','san bernardo'], 'MOVIL 5': ['renca','conchali','independencia','recoleta','huechuraba'], 'MOVIL 6': ['vitacura','lo barnechea','la dehesa'] },
-  2: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago'], 'MOVIL 2': ['providencia','nunoa','macul','penalolen'], 'MOVIL 3': ['maipu','pudahuel','cerro navia','lo prado'], 'MOVIL 4': ['la florida','puente alto','san jose de maipo','pirque'], 'MOVIL 5': ['quilicura','renca','conchali','independencia'], 'MOVIL 6': ['vitacura','lo barnechea','las condes'] },
-  3: { 'MOVIL 1': ['adm','qdm','retiro','casa central','stgo centro'], 'MOVIL 2': ['providencia','nunoa','la reina','penalolen'], 'MOVIL 3': ['maipu','pudahuel','lo prado','cerro navia','quinta normal'], 'MOVIL 4': ['la florida','puente alto','la cisterna','el bosque'], 'MOVIL 5': ['renca','conchali','recoleta','independencia','huechuraba'], 'MOVIL 6': ['vitacura','lo barnechea','las condes'] },
-  4: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago'], 'MOVIL 2': ['providencia','nunoa','macul','la florida'], 'MOVIL 3': ['maipu','pudahuel','cerro navia','lo prado'], 'MOVIL 4': ['puente alto','la cisterna','san bernardo','la pintana'], 'MOVIL 5': ['quilicura','renca','conchali','independencia'], 'MOVIL 6': ['vitacura','lo barnechea','las condes','la reina'] },
-  5: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago centro'], 'MOVIL 2': ['providencia','nunoa','la reina','penalolen','macul'], 'MOVIL 3': ['maipu','pudahuel','lo prado','cerro navia'], 'MOVIL 4': ['la florida','puente alto','la cisterna','san bernardo'], 'MOVIL 5': ['renca','conchali','independencia','recoleta','huechuraba','quilicura'], 'MOVIL 6': ['vitacura','lo barnechea','las condes'] }
-};
-
 function candidatosMovil(reg) {
   const dia = diaSemanaNumero(reg.fecha);
   const reglas = REGLAS_MOVIL_POR_DIA[dia];
-  if (!reglas) return [];
-  const texto = normSinTildes([reg.comuna, reg.unidad, reg.observacion, reg.direccion].join(' '));
-  const c = [];
-  Object.keys(reglas).forEach(mov => { if (reglas[mov].some(k => coincideClave(texto, k))) c.push(mov); });
-  return c;
-}
-
-function candidatosMovilAdm(reg) {
-  const dia = diaSemanaNumero(reg.fecha);
-  const reglas = REGLAS_MOVIL_POR_DIA_ADM[dia];
   if (!reglas) return [];
   const texto = normSinTildes([reg.comuna, reg.unidad, reg.observacion, reg.direccion].join(' '));
   const c = [];
@@ -216,14 +195,6 @@ function autocompletarTransporteNuevo(reg) {
   return reg;
 }
 
-function autocompletarTransporteNuevoAdm(reg) {
-  const c = candidatosMovilAdm(reg);
-  reg._candidatos = c;
-  if (c.length === 1) { reg.transporte = c[0]; }
-  else if (!reg.transporte) { reg.transporte = ''; }
-  return reg;
-}
-
 function pedirClave(onOk) {
   pwCallback = onOk;
   const inp = document.getElementById('pwInput');
@@ -231,9 +202,7 @@ function pedirClave(onOk) {
   document.getElementById('passwordOverlay').classList.add('show');
   setTimeout(() => { if (inp) inp.focus(); }, 60);
 }
-
 window.cerrarPassword = function() { pwCallback = null; document.getElementById('passwordOverlay').classList.remove('show'); };
-
 window.confirmarPassword = function() {
   const inp = document.getElementById('pwInput');
   const v = inp ? inp.value : '';
@@ -319,7 +288,7 @@ function obtenerFechaActualRegistro(key) {
   if (cambiosFechaLocales[key]) {
     return cambiosFechaLocales[key].nuevaFecha;
   }
-  let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
+  let p = pendientesAMPM.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
   if (p) return p.reg.fecha;
   for (const a of Object.keys(cache)) {
     for (const m of Object.keys(cache[a]||{})) {
@@ -376,7 +345,7 @@ window.seleccionarFechaFila = function(key, nuevaFecha, event) {
     render();
     return;
   }
-  let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
+  let p = pendientesAMPM.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
   if (p) {
     cambiosFechaLocales[key] = {
       esPendiente: true,
@@ -413,7 +382,7 @@ window.cambiarFechaFila = function(key, nuevaFecha, esPend) {
   const [nA, nM] = nuevaFecha.split('-');
   const fechaAnterior = obtenerFechaActualRegistro(key);
   if (fechaAnterior === nuevaFecha) return;
-  let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
+  let p = pendientesAMPM.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
   if (p) {
     cambiosFechaLocales[key] = {
       esPendiente: true,
@@ -467,8 +436,9 @@ async function cargarBitacoras() {
   } catch(e) { console.error('Error cargando bitácoras:', e); }
 }
 
+// 🚫 ELIMINADO: Referencias a ampmadmqdm
 function renderizarTodasBitacoras() {
-  ['ampm','b2c','ampmadmqdm'].forEach(tipo => {
+  ['ampm','b2c'].forEach(tipo => {
     for (let i = 1; i <= 6; i++) renderizarBitacora(tipo, i);
   });
 }
@@ -684,23 +654,18 @@ const base = window.location.href.split('#')[0];
 window.open(base + '#sec=' + sec, '_blank');
 };
 
+// 🚫 SIMPLIFICADO: Solo AMPM y B2C
 function tipoDeSeccion() {
-if (seccionActiva === 'ampm') return 'AMPM';
 if (seccionActiva === 'b2c') return 'B2C';
-if (seccionActiva === 'ampmadmqdm') return 'AMPMADM';
 return 'AMPM';
 }
 function getBitacoraTipo() {
-if (seccionActiva === 'ampm') return 'ampm';
 if (seccionActiva === 'b2c') return 'b2c';
-if (seccionActiva === 'ampmadmqdm') return 'ampmadmqdm';
 return 'ampm';
 }
 function pendientesDeSeccion() {
-if (seccionActiva === 'ampm') return pendientesAMPM;
-if (seccionActiva === 'ampmadmqdm') return pendientesAmpmAdmQdm;
 if (seccionActiva === 'b2c')  return pendientesB2C;
-return [];
+return pendientesAMPM;
 }
 
 window.cambiarSeccion = function(sec) {
@@ -723,21 +688,23 @@ actualizarBotonGuardar();
 window.toggleSeccion = s => { document.getElementById(`contenido${s.charAt(0).toUpperCase()+s.slice(1)}`).classList.toggle('show'); document.getElementById(`flecha${s.charAt(0).toUpperCase()+s.slice(1)}`).classList.toggle('rotada'); };
 window.toggleSubmenu = s => { document.getElementById(`submenu${s.charAt(0).toUpperCase()+s.slice(1)}`).classList.toggle('show'); document.getElementById(`flecha${s.charAt(0).toUpperCase()+s.slice(1)}`).classList.toggle('rotada'); };
 
+//  SIMPLIFICADO: Solo AMPM y B2C
 window.cambiarTabBD = function(tab) { if (rolActual !== 'admin') return; tabBdActiva = tab;
 document.querySelectorAll('.basedatos-tab[data-tab]').forEach(t => t.classList.remove('active'));
 document.querySelector(`.basedatos-tab[data-tab="${tab}"]`).classList.add('active');
 document.querySelectorAll('#seccionBasedatos .basedatos-tab-content').forEach(c => c.classList.remove('show'));
-document.getElementById(tab === 'ampm' ? 'tabContentAmpm' : (tab === 'b2c' ? 'tabContentB2c' : 'tabContentAmpmAdmQdm')).classList.add('show'); };
+document.getElementById(tab === 'ampm' ? 'tabContentAmpm' : 'tabContentB2c').classList.add('show'); };
 
 window.cambiarTabBit = function(tab) {
 document.querySelectorAll('.basedatos-tab[data-btab]').forEach(t => t.classList.remove('active'));
 const b = document.querySelector(`.basedatos-tab[data-btab="${tab}"]`); if (b) b.classList.add('active');
 document.querySelectorAll('#seccionBitacoras .basedatos-tab-content').forEach(c => c.classList.remove('show'));
-document.getElementById(tab === 'ampm' ? 'bitContentAmpm' : (tab === 'b2c' ? 'bitContentB2c' : 'bitContentAmpmAdmQdm')).classList.add('show');
+document.getElementById(tab === 'ampm' ? 'bitContentAmpm' : 'bitContentB2c').classList.add('show');
 };
 
+// 🚫 SIMPLIFICADO: Solo AMPM y B2C
 window.cambiarMovilBit = function(tipo, movil) {
-const cont = document.getElementById(tipo === 'ampm' ? 'bitContentAmpm' : (tipo === 'b2c' ? 'bitContentB2c' : 'bitContentAmpmAdmQdm'));
+const cont = document.getElementById(tipo === 'ampm' ? 'bitContentAmpm' : 'bitContentB2c');
 if (!cont) return;
 cont.querySelectorAll('.bitacora-movil-tab').forEach(t => t.classList.remove('active'));
 cont.querySelector(`.bitacora-movil-tab[data-movil="${movil}"]`).classList.add('active');
@@ -750,7 +717,7 @@ window.cambiarTema = function(t) { document.documentElement.setAttribute('data-t
 window.toggleSeleccionDesc = function(key, checked) { checked ? seleccionadosDesc.add(key) : seleccionadosDesc.delete(key); sincronizarSelTodos(); actualizarContadorEnviar(); };
 window.toggleSeleccionarTodo = function(checked) { checked ? keysVisiblesDesc.forEach(k => seleccionadosDesc.add(k)) : keysVisiblesDesc.forEach(k => seleccionadosDesc.delete(k)); render(); };
 function sincronizarSelTodos() { const el = document.getElementById('selTodosDesc'); if (el) el.checked = keysVisiblesDesc.length > 0 && keysVisiblesDesc.every(k => seleccionadosDesc.has(k)); }
-function actualizarContadorEnviar() { const b = document.getElementById('btnEnviar'); if (b) b.textContent = seleccionadosDesc.size > 0 ? `📤 ENVIAR A BITACORA (${seleccionadosDesc.size})` : '📤 ENVIAR A BITACORA'; }
+function actualizarContadorEnviar() { const b = document.getElementById('btnEnviar'); if (b) b.textContent = seleccionadosDesc.size > 0 ? ` ENVIAR A BITACORA (${seleccionadosDesc.size})` : '📤 ENVIAR A BITACORA'; }
 
 function leerFiltrosDesc() {
 const g = id => { const el = document.getElementById(id); return el ? normSinTildes(el.value.trim()) : ''; };
@@ -880,7 +847,7 @@ actualizarTransporteRegistro(key, val);
 };
 
 function actualizarTransporteRegistro(key, nuevoTransporte) {
-let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
+let p = pendientesAMPM.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
 if (p) {
 if (p.reg.transporte !== nuevoTransporte) {
 p.reg.transporte = nuevoTransporte;
@@ -954,7 +921,7 @@ actualizarObservacionRegistro(key, val);
 };
 
 function actualizarObservacionRegistro(key, nuevaObs) {
-let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
+let p = pendientesAMPM.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
 if (p) {
 p.reg.observacion = nuevaObs.toUpperCase();
 if (cache[p.anio] && cache[p.anio][p.mes] && cache[p.anio][p.mes][key]) {
@@ -1060,7 +1027,8 @@ if (list) { list.style.display='block'; comboModalAbierto=col; }
 aplicarFiltrosModal();
 };
 
-function sufBD(tipo){ return tipo==='AMPM'?'Ampm':(tipo==='B2C'?'B2c':'AmpmAdmQdm'); }
+// 🚫 SIMPLIFICADO: Solo AMPM y B2C
+function sufBD(tipo){ return tipo==='AMPM'?'Ampm':'B2c'; }
 function getBDBaseRows(tipo){ let r = obtenerRegsTipo(tipo); const f = filtroDiaBD[tipo]; if (f.d) r = r.filter(x => (x.fecha||'').split('-')[2] === f.d); if (f.m) r = r.filter(x => x.mes === f.m); if (f.a) r = r.filter(x => x.anio === f.a); return r; }
 function getDistinctBD(tipo, campo){ const set = new Set(); getBDBaseRows(tipo).forEach(r => { let v=''; if(campo==='unidad')v=r.unidad||''; else if(campo==='comuna')v=canonComuna(r.comuna)||''; else if(campo==='transporte')v=r.transporte||''; else if(campo==='rango')v=r.rango||''; if(v)set.add(v); }); return [...set].sort(); }
 function poblarComboBD(tipo, campo, filtro){
@@ -1084,14 +1052,14 @@ const input = document.getElementById('fBD'+sufBD(tipo)+'_'+campo);
 if (input) input.value = val;
 filtroDescBD[tipo][campo] = normSinTildes(val);
 cerrarCombosBD();
-renderTabBD(tipo, document.getElementById(tipo==='AMPM'?'filtroIdAmpm':(tipo==='B2C'?'filtroIdB2c':'filtroIdAmpmAdmQdm')).value, tipo==='AMPM'?paginaBDAmpm:(tipo==='B2C'?paginaBDB2c:paginaBDAmpmAdmQdm));
+renderTabBD(tipo, document.getElementById(tipo==='AMPM'?'filtroIdAmpm':'filtroIdB2c').value, tipo==='AMPM'?paginaBDAmpm:paginaBDB2c);
 };
 window.filtrarBDCombo = function(tipo, campo, val){
 filtroDescBD[tipo][campo] = normSinTildes(val);
 poblarComboBD(tipo, campo, val);
 const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
 if (list) { list.style.display='block'; comboBDAbierto=tipo+'_'+campo; }
-renderTabBD(tipo, document.getElementById(tipo==='AMPM'?'filtroIdAmpm':(tipo==='B2C'?'filtroIdB2c':'filtroIdAmpmAdmQdm')).value, tipo==='AMPM'?paginaBDAmpm:(tipo==='B2C'?paginaBDB2c:paginaBDAmpmAdmQdm));
+renderTabBD(tipo, document.getElementById(tipo==='AMPM'?'filtroIdAmpm':'filtroIdB2c').value, tipo==='AMPM'?paginaBDAmpm:paginaBDB2c);
 };
 
 function renderDescThead() {
@@ -1259,10 +1227,10 @@ if (input) input.value = val;
 const list = document.getElementById('combo_edicion_transporte');
 if (list) list.style.display = 'none';
 };
-window.editarObsPendiente = (k,v) => { const p = pendientesAMPM.find(p=>p.key===k) || pendientesAmpmAdmQdm.find(p=>p.key===k) || pendientesB2C.find(p=>p.key===k); if (p) p.reg.observacion = v.toUpperCase(); };
-window.editarRangoPendiente = (k,v) => { const p = pendientesAMPM.find(p=>p.key===k) || pendientesAmpmAdmQdm.find(p=>p.key===k) || pendientesB2C.find(p=>p.key===k); if (p) p.reg.rango = v; };
+window.editarObsPendiente = (k,v) => { const p = pendientesAMPM.find(p=>p.key===k) || pendientesB2C.find(p=>p.key===k); if (p) p.reg.observacion = v.toUpperCase(); };
+window.editarRangoPendiente = (k,v) => { const p = pendientesAMPM.find(p=>p.key===k) || pendientesB2C.find(p=>p.key===k); if (p) p.reg.rango = v; };
 window.toggleOtroPalet = function(key, esPend, checked) {
-if (esPend) { const p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key); if (p){ p.reg.otroPalet = checked; render(); } }
+if (esPend) { const p = pendientesAMPM.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key); if (p){ p.reg.otroPalet = checked; render(); } }
 else { outer: for (const a of Object.keys(cache)) for (const m of Object.keys(cache[a]||{})) if (cache[a][m] && cache[a][m][key]) { cache[a][m][key].otroPalet = checked; update(ref(db, `${RUTA_BASE}/${a}/${m}/${key}`), { otroPalet: checked }); break outer; }
 render(); }
 };
@@ -1273,10 +1241,10 @@ if (!b) return;
 b.style.display = 'inline-block';
 const numCambios = Object.keys(cambiosFechaLocales).length;
 if (numCambios > 0) {
-b.textContent = `💾 GUARDAR (${numCambios} cambios pendientes)`;
+b.textContent = ` GUARDAR (${numCambios} cambios pendientes)`;
 b.style.background = 'var(--accent-orange)';
 } else {
-b.textContent = '💾 GUARDAR';
+b.textContent = ' GUARDAR';
 b.style.background = 'var(--accent-blue)';
 }
 }
@@ -1293,18 +1261,18 @@ if (sR || sT) {
 let m = '❌ NO SE PUEDE GUARDAR.\nFaltan campos OBLIGATORIOS:\n\n';
 if (sR) m += `• ${sR} fila(s) sin RANGO.\n`;
 if (sT) m += `• ${sT} fila(s) sin TRANSPORTE.\n`;
-m += '\nCompleta y vuelve a presionar 💾 GUARDAR.';
-toast('❌ Faltan RANGO y/o TRANSPORTE','err');
+m += '\nCompleta y vuelve a presionar  GUARDAR.';
+toast(' Faltan RANGO y/o TRANSPORTE','err');
 alert(m);
 return;
 }
 if (!confirm(`💾 Se guardarán ${formatoEntero(lista.length)} registros${numCambiosFecha > 0 ? ` y ${numCambiosFecha} cambio(s) de fecha` : ''}.\n¿Continuar?`)) return;
-toast('💾 Guardando...','info');
+toast(' Guardando...','info');
 const promesasFecha = [];
 Object.keys(cambiosFechaLocales).forEach(key => {
 const cambio = cambiosFechaLocales[key];
 if (cambio.esPendiente) {
-const p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
+const p = pendientesAMPM.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
 if (p) {
 p.reg.fecha = cambio.nuevaFecha;
 p.anio = cambio.nuevaAnio;
@@ -1340,9 +1308,8 @@ if (!cache[p.anio]) cache[p.anio] = {};
 if (!cache[p.anio][p.mes]) cache[p.anio][p.mes] = {};
 cache[p.anio][p.mes]['local_' + p.key] = l;
 });
-if (seccionActiva==='ampm') pendientesAMPM=[];
-else if (seccionActiva==='ampmadmqdm') pendientesAmpmAdmQdm=[];
-else if (seccionActiva==='b2c') pendientesB2C=[];
+if (seccionActiva==='b2c') pendientesB2C=[];
+else pendientesAMPM=[];
 Promise.all(promesasFecha)
 .then(() => {
 actualizarBotonGuardar();
@@ -1373,7 +1340,7 @@ if (!confirm('⚠️ El registro se eliminará de la DESCRIPCION, de la BASE DE 
 if (esPend) {
 let i = pendientesAMPM.findIndex(p=>p.key===key);
 if (i>=0) pendientesAMPM.splice(i,1);
-else { i = pendientesAmpmAdmQdm.findIndex(p=>p.key===key); if (i>=0) pendientesAmpmAdmQdm.splice(i,1); else { i = pendientesB2C.findIndex(p=>p.key===key); if (i>=0) pendientesB2C.splice(i,1); } }
+else { i = pendientesB2C.findIndex(p=>p.key===key); if (i>=0) pendientesB2C.splice(i,1); }
 if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) delete cache[anio][mes][key];
 delete cambiosFechaLocales[key];
 toast('🗑️ Eliminado de la plataforma (pendiente)','ok');
@@ -1406,7 +1373,7 @@ if (cache[a][m] && cache[a][m][key]) { reg = { ...cache[a][m][key] }; anio = a; 
 }
 }
 if (!reg) {
-const p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
+const p = pendientesAMPM.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
 if (p) { reg = { ...p.reg }; anio = p.anio; mes = p.mes; }
 }
 if (!reg) { errores.push(`Registro ${key} no encontrado`); return; }
@@ -1482,13 +1449,9 @@ return;
 }
 const tipoReg = (rango==='B2C') ? 'B2C' : tipoSec;
 let reg = { fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value, rango, tipo: tipoReg, otroPalet:false, creado: new Date().toISOString(), usuario: auth.currentUser ? auth.currentUser.email : '' };
-if (tipoSec === 'AMPMADM') {
-if (!reg.transporte) reg = autocompletarTransporteNuevoAdm(reg);
-} else {
+// 🚫 ELIMINADO: Referencia a AMPMADM
 if (!reg.transporte) reg = autocompletarTransporteNuevo(reg);
-}
-const dest = (tipoSec==='AMPMADM') ? pendientesAmpmAdmQdm : pendientesAMPM;
-dest.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg });
+pendientesAMPM.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg });
 toast('📝 Agregado. Presiona 💾 GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar();
 });
 
@@ -1502,7 +1465,6 @@ document.getElementById('exportarModal').classList.add('show'); };
 window.actualizarExpInfo = function() { const tipo = tipoDeSeccion(); const hoy = new Date().toISOString().split('T')[0]; document.getElementById('expInfo').textContent = `Registros del día ${fmtFechaConDia(hoy)}: ${formatoEntero(contarRegsDelDia(tipo).length)}`; };
 function contarRegsDelDia(tipo) { const hoy = new Date().toISOString().split('T')[0]; let r = obtenerRegsTipo(tipo).filter(r => r.fecha === hoy);
 if (tipo==='AMPM') r = r.concat(pendientesAMPM.map(p=>({...p.reg,key:p.key})));
-if (tipo==='AMPMADM') r = r.concat(pendientesAmpmAdmQdm.map(p=>({...p.reg,key:p.key})));
 if (tipo==='B2C') r = r.concat(pendientesB2C.map(p=>({...p.reg,key:p.key})));
 return r; }
 window.cerrarModalExportar = function() { document.getElementById('exportarModal').classList.remove('show'); };
@@ -1533,19 +1495,19 @@ const comuna = canonComuna(gv(col.COMUNA));
 regs.push({ anio:aT, mes:mT, reg: { fecha: ft, unidad: gv(col.EMPRESA).trim(), idPedido: tr, nombre: gv(col.NOMBRE).trim(), celular: gv(col.CELULAR).trim(), email: gv(col.EMAIL).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna: comuna, valor: parsearValor(gv(col.VALOR)), observacion: '', transporte: 'SERVICIO B2C', rango: 'B2C', otroPalet: false, tipo: 'B2C', creado: new Date().toISOString(), importado: true } });
 }
 if (!regs.length) { toast('❌ Sin filas con N° de tracking','err'); return; }
-if (lista) { lista.push(...regs); paginaDesc = 1; toast(`📥 ${formatoEntero(regs.length)} filas B2C cargadas. Presiona  GUARDAR.`,'info'); render(); }
+if (lista) { lista.push(...regs); paginaDesc = 1; toast(`📥 ${formatoEntero(regs.length)} filas B2C cargadas. Presiona 💾 GUARDAR.`,'info'); render(); }
 else cargarPendientes(regs, `B2C (${file.name})`);
 } catch(e){ toast('❌ '+e.message,'err'); } });
 }
 
-window.importarExcelSegunSeccion = function() { modoImportActual = (seccionActiva === 'ampm') ? 'AMPM_DESC' : (seccionActiva === 'ampmadmqdm') ? 'AMPMADM_DESC' : 'B2C_DESC'; document.getElementById('importFile').click(); };
+// 🚫 SIMPLIFICADO: Solo AMPM y B2C
+window.importarExcelSegunSeccion = function() { modoImportActual = (seccionActiva === 'b2c') ? 'B2C_DESC' : 'AMPM_DESC'; document.getElementById('importFile').click(); };
 window.importarDesdeBD = function(tipo) { if (rolActual !== 'admin') { toast('❌ Sin permiso','err'); return; } tipoImportacionActual = tipo; modoImportActual = tipo + '_BD'; document.getElementById('importFile').click(); };
 document.getElementById('importFile').addEventListener('change', function(ev) {
 const file = ev.target.files[0]; if (!file) return; const n = file.name.toLowerCase();
-if (esJSON(n)) { if (modoImportActual==='AMPM_DESC') procesarJSONAMPM(file); else if (modoImportActual==='AMPMADM_DESC') procesarJSONAdm(file); else procesarJSON(file); }
+if (esJSON(n)) { if (modoImportActual==='AMPM_DESC') procesarJSONAMPM(file); else procesarJSON(file); }
 else if (esExcel(n) || esCSV(n)) {
 if (modoImportActual==='AMPM_DESC') procesarArchivoAMPM(file);
-else if (modoImportActual==='AMPMADM_DESC') procesarArchivoAdm(file);
 else if (modoImportActual==='B2C_DESC') procesarArchivoB2C(file, pendientesB2C);
 else procesarArchivoGenerico(file, modoImportActual.replace('_BD',''));
 }
@@ -1553,7 +1515,7 @@ else toast('❌ Formato no soportado','err');
 ev.target.value = '';
 });
 function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pendientesAMPM); }
-function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'AMPMADM', pendientesAmpmAdmQdm); }
+
 function procesarArchivoTipoSeccion(file, tipo, lista) {
 const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
 toast(`📖 Leyendo ${file.name}...`,'info');
@@ -1566,33 +1528,37 @@ for (let i=1;i<filas.length;i++){ const row = filas[i]; if (!row || !row.length)
 const gv = idx => (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]);
 const tr = gv(col.TRACKING).trim(); if (!tr) continue; const comuna = canonComuna(gv(col.COMUNA));
 let reg = { fecha: ft, unidad: gv(col.EMPRESA).trim(), idPedido: tr, nombre: gv(col.NOMBRE).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna, valor: parsearValor(gv(col.VALOR)), observacion: gv(col.OBS).trim().toUpperCase(), transporte:'', rango:'', otroPalet:false, tipo };
-if (tipo === 'AMPMADM') { reg = autocompletarTransporteNuevoAdm(reg); } else { reg = autocompletarTransporteNuevo(reg); }
+// 🚫 ELIMINADO: Referencia a AMPMADM
+reg = autocompletarTransporteNuevo(reg);
 nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg }); }
-if (!nuevos.length) { toast('❌ Sin filas con tracking','err'); return; }
+if (!nuevos.length) { toast(' Sin filas con tracking','err'); return; }
 lista.push(...nuevos); paginaDesc = 1; toast(`📥 ${formatoEntero(nuevos.length)} filas. Revisa TRANSPORTE/RANGO y presiona 💾 GUARDAR.`,'info'); render();
 } catch(e){ toast('❌ '+e.message,'err'); } });
 }
+
 function procesarJSONAMPM(file) { procesarJSONTipoSeccion(file, 'AMPM', pendientesAMPM); }
-function procesarJSONAdm(file) { procesarJSONTipoSeccion(file, 'AMPMADM', pendientesAmpmAdmQdm); }
+
 function procesarJSONTipoSeccion(file, tipo, lista) {
 const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
 const reader = new FileReader();
 reader.onload = e => { try {
 const obj = JSON.parse(e.target.result);
 let arr = Array.isArray(obj) ? obj : (Array.isArray(obj.registros) ? obj.registros : (Array.isArray(obj.datos) ? obj.datos : null));
-if (!arr) { toast(' JSON debe ser lista','err'); return; }
+if (!arr) { toast('❌ JSON debe ser lista','err'); return; }
 const [aT,mT] = ft.split('-'); const nuevos = [];
 arr.forEach((o,i) => { const m = {}; Object.keys(o).forEach(k => m[normEnc(k)] = o[k]);
 const gi = (...subs) => { for (const k of Object.keys(m)) for (const s of subs) if (k.includes(s)) { const v = m[k]; if (v!=null && String(v).trim()!=='') return String(v); } return ''; };
 const tr = gi('TRACKING','ID PEDIDO','IDPEDIDO'); if (!tr) return; const comuna = canonComuna(gi('COMUNA'));
 let reg = { fecha: ft, unidad: gi('EMPRESA','UNIDAD'), idPedido: tr, nombre: gi('NOMBRE'), direccion: limpiarDireccion(gi('DIRECCION'), comuna), comuna, valor: parsearValor(gi('VALOR')), observacion: gi('OBSERVACION').toUpperCase(), transporte: gi('TRANSPORTE'), rango: (gi('RANGO')||'').toUpperCase(), otroPalet:false, tipo };
-if (tipo === 'AMPMADM') { reg = autocompletarTransporteNuevoAdm(reg); } else { reg = autocompletarTransporteNuevo(reg); }
+// 🚫 ELIMINADO: Referencia a AMPMADM
+reg = autocompletarTransporteNuevo(reg);
 nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg }); });
-if (!nuevos.length) { toast(' JSON sin registros válidos','err'); return; }
+if (!nuevos.length) { toast('❌ JSON sin registros válidos','err'); return; }
 lista.push(...nuevos); paginaDesc = 1; toast(`📥 ${formatoEntero(nuevos.length)} registros JSON. Presiona 💾 GUARDAR.`,'info'); render();
 } catch(e){ toast('❌ JSON inválido','err'); } };
 reader.readAsText(file);
 }
+
 function procesarArchivoGenerico(file, tipo) {
 tipoImportacionActual = tipo; const { mes: mA, anio: aA } = detectarMesAnioDesdeNombre(file.name);
 toast(`📖 Leyendo ${file.name}...`,'info');
@@ -1616,7 +1582,7 @@ if (sinF) toast(`⚠️ ${formatoEntero(sinF)} filas sin fecha válida`,'err');
 cargarPendientes(regs, `${tipo==='B2C'?'B2C':'AM/PM'} (${file.name})`);
 } catch(e){ toast('❌ '+e.message,'err'); } });
 }
-function procesarJSON(file) { toast(`📖 Leyendo JSON: ${file.name}...`,'info'); const r = new FileReader(); r.onload = e => { try { const obj = JSON.parse(e.target.result); cargarPendientes(extraerRegsDesdeJSON(obj), 'JSON'); } catch(e){ toast(' JSON inválido','err'); } }; r.readAsText(file); }
+function procesarJSON(file) { toast(`📖 Leyendo JSON: ${file.name}...`,'info'); const r = new FileReader(); r.onload = e => { try { const obj = JSON.parse(e.target.result); cargarPendientes(extraerRegsDesdeJSON(obj), 'JSON'); } catch(e){ toast('❌ JSON inválido','err'); } }; r.readAsText(file); }
 function extraerRegsDesdeJSON(obj) {
 const out = []; const esA = k => /^20\d{2}$/.test(k); const esM = k => /^(0[1-9]|1[0-2])$/.test(k);
 const proc = n => { Object.keys(n).forEach(a => { if (!esA(a)) return; const ms = n[a]; if (typeof ms !== 'object') return; Object.keys(ms).forEach(m => { if (!esM(m)) return; const rs = ms[m]; if (typeof rs !== 'object') return; Object.keys(rs).forEach(k => { const r = rs[k]; if (r && r.fecha) out.push({ anio:a, mes:m, reg:{...r} }); }); }); }); };
@@ -1632,11 +1598,11 @@ if (!cache[anio]) cache[anio] = {}; if (!cache[anio][mes]) cache[anio][mes] = {}
 actualizarPendientesInfo(); render(); renderizarBaseDatos(); toast(`📥 ${formatoEntero(regs.length)} registros (${origen}). Guardando...`,'info'); guardarPendientesEnFirebase();
 }
 function actualizarPendientesInfo() {
-const nA = pendientes.filter(p=>p.reg.tipo==='AMPM').length, nB = pendientes.filter(p=>p.reg.tipo==='B2C').length, nAdm = pendientes.filter(p=>p.reg.tipo==='AMPMADM').length;
-const a = document.getElementById('pendientesAmpm'), b = document.getElementById('pendientesB2c'), ad = document.getElementById('pendientesAmpmAdmQdm');
+// 🚫 SIMPLIFICADO: Solo AMPM y B2C
+const nA = pendientes.filter(p=>p.reg.tipo==='AMPM').length, nB = pendientes.filter(p=>p.reg.tipo==='B2C').length;
+const a = document.getElementById('pendientesAmpm'), b = document.getElementById('pendientesB2c');
 if (a) a.textContent = nA>0 ? `⏳ Guardando: ${formatoEntero(nA)}` : '';
 if (b) b.textContent = nB>0 ? `⏳ Guardando: ${formatoEntero(nB)}` : '';
-if (ad) ad.textContent = nAdm>0 ? `⏳ Guardando: ${formatoEntero(nAdm)}` : '';
 }
 function guardarPendientesEnFirebase() {
 if (!pendientes.length) return; const total = pendientes.length; const por = pendientes.slice(); let g = 0, f = 0; let li = 0; const lotes = []; for (let i=0;i<por.length;i+=50) lotes.push(por.slice(i,i+50));
@@ -1650,14 +1616,14 @@ window.guardarEnFirebase = function() { if (rolActual !== 'admin') { toast('❌ 
 
 function obtenerRegsTipo(tipo) { const r = []; Object.keys(cache).forEach(a => Object.keys(cache[a]||{}).forEach(m => Object.keys(cache[a][m]).forEach(k => { const r2 = { key:k, anio:a, mes:m, ...cache[a][m][k] }; if (getTipoRegistro(r2) === tipo) r.push(r2); }))); return ordenarPorFechaYId(r); }
 function obtenerRegsFiltradosBD(tipo) { let r = obtenerRegsTipo(tipo); if (filtroDiaBD[tipo].d) r = r.filter(x => (x.fecha||'').split('-')[2] === filtroDiaBD[tipo].d); if (filtroMesBD[tipo].m) r = r.filter(x => x.mes === filtroMesBD[tipo].m); if (filtroAnioBD[tipo].a) r = r.filter(x => x.anio === filtroAnioBD[tipo].a); return r; }
-window.abrirModalVerFecha = function(tipo) { if (rolActual !== 'admin') { toast(' Sin permiso','err'); return; } tipoVerFechaActual = tipo; document.getElementById('vfTipo').value = tipo; document.getElementById('vfDia').value = filtroDiaBD[tipo].d; document.getElementById('vfMes').value = filtroDiaBD[tipo].m; document.getElementById('vfAnio').value = filtroDiaBD[tipo].a; document.getElementById('verFechaOverlay').classList.add('show'); };
+window.abrirModalVerFecha = function(tipo) { if (rolActual !== 'admin') { toast('❌ Sin permiso','err'); return; } tipoVerFechaActual = tipo; document.getElementById('vfTipo').value = tipo; document.getElementById('vfDia').value = filtroDiaBD[tipo].d; document.getElementById('vfMes').value = filtroDiaBD[tipo].m; document.getElementById('vfAnio').value = filtroDiaBD[tipo].a; document.getElementById('verFechaOverlay').classList.add('show'); };
 window.cerrarModalVerFecha = function() { document.getElementById('verFechaOverlay').classList.remove('show'); };
 window.confirmarVerFecha = function() {
 const t = tipoVerFechaActual;
 const d = document.getElementById('vfDia').value, m = document.getElementById('vfMes').value, a = document.getElementById('vfAnio').value;
-if (d && !m) { toast(' Si eliges Día, también Mes','err'); return; }
+if (d && !m) { toast('❌ Si eliges Día, también Mes','err'); return; }
 filtroDiaBD[t] = {d,m,a};
-if (t==='AMPM') paginaBDAmpm = 1; else if (t==='B2C') paginaBDB2c = 1; else paginaBDAmpmAdmQdm = 1;
+if (t==='AMPM') paginaBDAmpm = 1; else paginaBDB2c = 1;
 const fd = document.getElementById('fFecha');
 if (m && a) fd.value = `${a}-${m}-${d || '01'}`;
 cerrarModalVerFecha(); renderizarBaseDatos(); render();
@@ -1665,10 +1631,10 @@ toast(`📅 Mostrando: ${textoPeriodo(t)}`,'info');
 };
 function textoPeriodo(t) { const f = filtroDiaBD[t]; if (f.d && f.m) return `Día ${parseInt(f.d)} de ${MESES_NOM[parseInt(f.m)-1]}${f.a?' '+f.a:''}`; if (f.m) return `${MESES_NOM[parseInt(f.m)-1]}${f.a?' '+f.a:''}`; if (f.a) return `Año ${f.a}`; return 'Todos'; }
 
+// 🚫 SIMPLIFICADO: Solo AMPM y B2C
 function renderizarBaseDatos() { if (rolActual !== 'admin') return;
 renderTabBD('AMPM', document.getElementById('filtroIdAmpm').value, paginaBDAmpm);
-renderTabBD('B2C', document.getElementById('filtroIdB2c').value, paginaBDB2c);
-renderTabBD('AMPMADM', document.getElementById('filtroIdAmpmAdmQdm').value, paginaBDAmpmAdmQdm); }
+renderTabBD('B2C', document.getElementById('filtroIdB2c').value, paginaBDB2c); }
 
 function claseYIndicadorSimple(r, cf, cg) { const id = (r.idPedido||'').toString().trim().toUpperCase(); const k = `${r.fecha||''}|${id}`; const misma = id && cf[k] > 1; const otra = !misma && id && cg[id] > 1; let c = '', i = ''; if (misma){ c='id-repetido'; i=`<span style="color:#fff;background:#e74c3c;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x${cf[k]}</span>`; } else if (otra){ c='id-repetido-otro'; i=`<span style="color:#fff;background:#ff8c00;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x${cg[id]}</span>`; } return { clase:c, ind:i }; }
 
@@ -1690,14 +1656,14 @@ if (fd.comuna) regs = regs.filter(r => normSinTildes(canonComuna(r.comuna)||'').
 if (fd.transporte) regs = regs.filter(r => normSinTildes(r.transporte||'').includes(fd.transporte));
 if (fd.rango) regs = regs.filter(r => normSinTildes(r.rango||'').includes(fd.rango));
 const rd = document.getElementById('bdResumen'+suf);
-if (rd) { const suma = sumaValores(regs), n1 = conteoUnPeso(regs); rd.innerHTML = `<span class="res-periodo"> Viendo: <strong>${textoPeriodo(tipo)}</strong></span><span>💰 Valor total: <strong>${formatoMoneda(suma)}</strong>${n1?`<small>(sin ${formatoEntero(n1)} de $1)</small>`:''}</span><span>📦 Pedidos: <strong>${formatoEntero(regs.length)}</strong></span><span class="res-am">🌅 AM: <strong>${formatoEntero(regs.filter(r=>r.rango==='AM').length)}</strong></span><span class="res-pm">🌙 PM: <strong>${formatoEntero(regs.filter(r=>r.rango==='PM').length)}</strong></span>`; }
+if (rd) { const suma = sumaValores(regs), n1 = conteoUnPeso(regs); rd.innerHTML = `<span class="res-periodo">📅 Viendo: <strong>${textoPeriodo(tipo)}</strong></span><span>💰 Valor total: <strong>${formatoMoneda(suma)}</strong>${n1?`<small>(sin ${formatoEntero(n1)} de $1)</small>`:''}</span><span>📦 Pedidos: <strong>${formatoEntero(regs.length)}</strong></span><span class="res-am">🌅 AM: <strong>${formatoEntero(regs.filter(r=>r.rango==='AM').length)}</strong></span><span class="res-pm">🌙 PM: <strong>${formatoEntero(regs.filter(r=>r.rango==='PM').length)}</strong></span>`; }
 const tbody = document.getElementById('bdTbody'+suf); const pagDiv = document.getElementById('bdPaginacion'+suf);
 if (!regs.length) { tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted)">No hay registros</td></tr>`; pagDiv.innerHTML = ''; return; }
 const tp = Math.max(1, Math.ceil(regs.length / REGISTROS_POR_PAGINA_BD)); if (pagina > tp) pagina = tp; if (pagina < 1) pagina = 1;
-if (tipo==='AMPM') paginaBDAmpm = pagina; else if (tipo==='B2C') paginaBDB2c = pagina; else paginaBDAmpmAdmQdm = pagina;
+if (tipo==='AMPM') paginaBDAmpm = pagina; else paginaBDB2c = pagina;
 const ini = (pagina-1)*REGISTROS_POR_PAGINA_BD; const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_BD);
 const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
-tbody.innerHTML = pag.map(r => { const { clase, ind } = claseYIndicadorSimple(r, cf, cg); return `<tr class="${clase}"><td>${fmtFecha(r.fecha)}</td><td><span class="badge badge-unidad">${r.unidad||''}</span></td><td><strong>${r.idPedido||''}</strong>${ind}</td><td>${r.nombre||''}</td><td>${dirDe(r)}</td><td>${canonComuna(r.comuna)}</td><td>${formatoMonedaAlineado(r.valor)}</td><td>${r.observacion||''}</td><td>${r.transporte||''}</td><td><span class="badge badge-${(r.rango||'').toLowerCase()}">${r.rango||''}</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD('${r.key}','${r.anio}','${r.mes}')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD('${r.key}','${r.anio}','${r.mes}')">🗑️</button></td></tr>`; }).join('');
+tbody.innerHTML = pag.map(r => { const { clase, ind } = claseYIndicadorSimple(r, cf, cg); return `<tr class="${clase}"><td>${fmtFecha(r.fecha)}</td><td><span class="badge badge-unidad">${r.unidad||''}</span></td><td><strong>${r.idPedido||''}</strong>${ind}</td><td>${r.nombre||''}</td><td>${dirDe(r)}</td><td>${canonComuna(r.comuna)}</td><td>${formatoMonedaAlineado(r.valor)}</td><td>${r.observacion||''}</td><td>${r.transporte||''}</td><td><span class="badge badge-${(r.rango||'').toLowerCase()}">${r.rango||''}</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD('${r.key}','${r.anio}','${r.mes}')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD('${r.key}','${r.anio}','${r.mes}')">️</button></td></tr>`; }).join('');
 if (tp <= 1) { pagDiv.innerHTML = `<div class="bd-paginacion-info">Mostrando ${formatoEntero(regs.length)} de ${formatoEntero(regs.length)}</div>`; return; }
 let h = `<div class="bd-paginacion-info">Página ${pagina} de ${tp} | ${formatoEntero(ini+1)}-${formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_BD, regs.length))} de ${formatoEntero(regs.length)}</div>`;
 h += pagina>1 ? `<button class="btn-bd-pag-nav" onclick="irPaginaBD('${tipo}',${pagina-1})">‹ Anterior</button>` : `<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>`;
@@ -1709,8 +1675,8 @@ h += pagina<tp ? `<button class="btn-bd-pag-nav" onclick="irPaginaBD('${tipo}',$
 pagDiv.innerHTML = h;
 }
 
-window.irPaginaBD = function(t,p) { if (rolActual !== 'admin') return; if (t==='AMPM') paginaBDAmpm = p; else if (t==='B2C') paginaBDB2c = p; else paginaBDAmpmAdmQdm = p; renderizarBaseDatos(); };
-window.filtrarBD = function(t) { if (rolActual !== 'admin') return; if (t==='AMPM') paginaBDAmpm = 1; else if (t==='B2C') paginaBDB2c = 1; else paginaBDAmpmAdmQdm = 1; renderizarBaseDatos(); };
+window.irPaginaBD = function(t,p) { if (rolActual !== 'admin') return; if (t==='AMPM') paginaBDAmpm = p; else paginaBDB2c = p; renderizarBaseDatos(); };
+window.filtrarBD = function(t) { if (rolActual !== 'admin') return; if (t==='AMPM') paginaBDAmpm = 1; else paginaBDB2c = 1; renderizarBaseDatos(); };
 
 window.pedirEditarRegistroBD = function(key, anio, mes) {
 pedirClave(() => { editandoKey = key; render(); renderizarBaseDatos(); });
@@ -1747,7 +1713,7 @@ renderizarBaseDatos();
 window.cancelarEdicionInline = function() { editandoKey = null; render(); renderizarBaseDatos(); };
 window.pedirBorrarRegistroBD = function(key, anio, mes) {
 pedirClave(() => {
-if (!confirm('️ El registro se eliminará permanentemente.\n¿Confirmas?')) return;
+if (!confirm('⚠️ El registro se eliminará permanentemente.\n¿Confirmas?')) return;
 if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
 delete cache[anio][mes][key];
 }
@@ -1755,12 +1721,12 @@ remove(ref(db, `${RUTA_BASE}/${anio}/${mes}/${key}`)).then(()=>{
 toast('🗑️ Eliminado de plataforma y Firebase','ok');
 render();
 renderizarBaseDatos();
-}).catch(e => toast('❌ Error: ' + e.message, 'err'));
+}).catch(e => toast(' Error: ' + e.message, 'err'));
 });
 };
 window.abrirBorrarMes = function(t) { if (rolActual !== 'admin') { toast('❌ Sin permiso','err'); return; } tipoBorrarMes = t; document.getElementById('bmTipo').value = t; document.getElementById('bmMes').value = ''; document.getElementById('bmPassword').value = ''; document.getElementById('bmInfoRegistros').textContent = 'Selecciona mes y año para ver cantidad'; document.getElementById('borrarMesOverlay').classList.add('show'); };
 window.cerrarBorrarMes = function() { document.getElementById('borrarMesOverlay').classList.remove('show'); };
-function actualizarInfoBorrarMes() { const m = document.getElementById('bmMes').value, a = document.getElementById('bmAnio').value, d = document.getElementById('bmInfoRegistros'); if (!m) { d.textContent = 'Selecciona mes y año para ver cantidad'; return; } const c = Object.keys(cache[a]?.[m]||{}).filter(k => getTipoRegistro(cache[a][m][k]) === tipoBorrarMes).length; d.textContent = c === 0 ? `ℹ️ Sin registros ${tipoBorrarMes} en ${MESES_NOM[parseInt(m)-1]} ${a}` : `📊 ${formatoEntero(c)} registros ${tipoBorrarMes} en ${MESES_NOM[parseInt(m)-1]} ${a}`; }
+function actualizarInfoBorrarMes() { const m = document.getElementById('bmMes').value, a = document.getElementById('bmAnio').value, d = document.getElementById('bmInfoRegistros'); if (!m) { d.textContent = 'Selecciona mes y año para ver cantidad'; return; } const c = Object.keys(cache[a]?.[m]||{}).filter(k => getTipoRegistro(cache[a][m][k]) === tipoBorrarMes).length; d.textContent = c === 0 ? `️ Sin registros ${tipoBorrarMes} en ${MESES_NOM[parseInt(m)-1]} ${a}` : `📊 ${formatoEntero(c)} registros ${tipoBorrarMes} en ${MESES_NOM[parseInt(m)-1]} ${a}`; }
 window.confirmarBorrarMes = function() {
 if (rolActual !== 'admin') { toast('❌ Sin permiso','err'); return; }
 const m = document.getElementById('bmMes').value, a = document.getElementById('bmAnio').value, p = document.getElementById('bmPassword').value;
@@ -1777,15 +1743,16 @@ cerrarBorrarMes(); renderizarBaseDatos(); render(); })
 .catch(e => toast('❌ '+e.message,'err'));
 };
 
+// 🚫 ELIMINADO: buscarFiltrosAmpmAdmQdm
 window.buscarFiltrosAMPM = function() { buscarFiltros('AMPM'); };
 window.buscarFiltrosB2C = function() { buscarFiltros('B2C'); };
-window.buscarFiltrosAmpmAdmQdm = function() { buscarFiltros('AMPMADM'); };
 
-function idsFecha(tipo) { if (tipo === 'AMPM') return { dia:'filtroDiaAmpm', mes:'filtroMesAmpm', anio:'filtroAnioAmpm' }; if (tipo === 'B2C') return { dia:'filtroDiaB2c', mes:'filtroMesB2c', anio:'filtroAnioB2c' }; return { dia:'filtroDiaAmpmAdmQdm', mes:'filtroMesAmpmAdmQdm', anio:'filtroAnioAmpmAdmQdm' }; }
+// 🚫 SIMPLIFICADO: Solo AMPM y B2C
+function idsFecha(tipo) { if (tipo === 'AMPM') return { dia:'filtroDiaAmpm', mes:'filtroMesAmpm', anio:'filtroAnioAmpm' }; return { dia:'filtroDiaB2c', mes:'filtroMesB2c', anio:'filtroAnioB2c' }; }
 function leerFiltrosBusqueda(t) { const i = idsFecha(t); const d = document.getElementById(i.dia), m = document.getElementById(i.mes), a = document.getElementById(i.anio); if (!d || !m || !a) return null; return { dia: d.value, mes: m.value, anio: a.value }; }
 function textoPeriodoBusqueda(t) { const f = leerFiltrosBusqueda(t); if (!f) return 'Todos'; if (f.dia && f.mes) return `Día ${parseInt(f.dia)} de ${MESES_NOM[parseInt(f.mes)-1]}${f.anio?' '+f.anio:''}`; if (f.mes) return `${MESES_NOM[parseInt(f.mes)-1]}${f.anio?' '+f.anio:''}`; if (f.anio) return `Año ${f.anio}`; return 'Todos'; }
 
-function buscarFiltros(tipo) { try { tipoBusquedaActual = tipo; const f = leerFiltrosBusqueda(tipo); if (!f) { toast('❌ Recarga con Ctrl+Shift+R','err'); return; } if (!f.mes && !f.anio) { toast('❌ Selecciona al menos Mes o Año','err'); return; } if (f.anio && !f.mes) { toast('❌ Si eliges Año, también Mes','err'); return; } if (f.dia && !f.mes) { toast('❌ Si eliges Día, también Mes','err'); return; }
+function buscarFiltros(tipo) { try { tipoBusquedaActual = tipo; const f = leerFiltrosBusqueda(tipo); if (!f) { toast(' Recarga con Ctrl+Shift+R','err'); return; } if (!f.mes && !f.anio) { toast('❌ Selecciona al menos Mes o Año','err'); return; } if (f.anio && !f.mes) { toast(' Si eliges Año, también Mes','err'); return; } if (f.dia && !f.mes) { toast('❌ Si eliges Día, también Mes','err'); return; }
 let res = []; Object.keys(cache).forEach(a => { if (f.anio && a !== f.anio) return; Object.keys(cache[a]||{}).forEach(m => { if (f.mes && m !== f.mes) return; Object.keys(cache[a][m]).forEach(k => { const r = { key:k, anio:a, mes:m, ...cache[a][m][k] }; if (getTipoRegistro(r) !== tipo) return; if (f.dia && (r.fecha||'').split('-')[2] !== f.dia) return; res.push(r); }); }); });
 ordenarPorFechaYId(res); if (!res.length) { toast('ℹ️ No se encontraron registros','info'); return; }
 datosModal = res; datosModalTotales = res.length; paginaModalActual = 1;
@@ -1794,7 +1761,7 @@ poblarCombosModal();
 document.getElementById('modalTitleText').textContent = `${textoPeriodoBusqueda(tipo)} (${tipo}) - ${formatoEntero(res.length)} pedidos`;
 document.getElementById('modalInfo').innerHTML = `<strong>Total:</strong> ${formatoEntero(res.length)} | <strong>Valor:</strong> ${formatoMoneda(sumaValores(res))} | <strong>AM:</strong> ${formatoEntero(res.filter(r=>r.rango==='AM').length)} | <strong>PM:</strong> ${formatoEntero(res.filter(r=>r.rango==='PM').length)} | <strong>B2C:</strong> ${formatoEntero(res.filter(r=>r.rango==='B2C').length)}`;
 document.getElementById('filtroIdModal').value = ''; renderizarModal(); document.getElementById('modalOverlay').classList.add('show');
-} catch(e){ toast('❌ Error al buscar: '+e.message,'err'); } }
+} catch(e){ toast(' Error al buscar: '+e.message,'err'); } }
 
 function leerFiltrosModal() { const g = id => { const el = document.getElementById(id); return el ? normSinTildes(el.value.trim()) : ''; }; return { fecha:g('fModFecha'), unidad:g('fModUnidad'), comuna:g('fModComuna'), transporte:g('fModTransporte'), observacion:g('fModObservacion'), rango:g('fModRango') }; }
 function aplicarFiltrosCampoModal(regs, fm) { if (fm.fecha) regs = regs.filter(r => normSinTildes(fmtFecha(r.fecha)).includes(fm.fecha) || normSinTildes(r.fecha||'').includes(fm.fecha)); if (fm.unidad) regs = regs.filter(r => normSinTildes(r.unidad||'').includes(fm.unidad)); if (fm.comuna) regs = regs.filter(r => normSinTildes(canonComuna(r.comuna)).includes(fm.comuna)); if (fm.transporte) regs = regs.filter(r => normSinTildes(r.transporte||'').includes(fm.transporte)); if (fm.observacion) regs = regs.filter(r => normSinTildes(r.observacion||'').includes(fm.observacion)); if (fm.rango) regs = regs.filter(r => normSinTildes(r.rango||'').includes(fm.rango)); return regs; }
@@ -1829,9 +1796,12 @@ doc.text(`Pedidos: ${formatoEntero(regs.length)} | AM: ${formatoEntero(nA)} | PM
 doc.text(`Generado: ${new Date().toLocaleString('es-CL')}`, 40, 60);
 doc.autoTable({ startY: 72, head: [['Fecha','Unidad','ID Pedido','Cliente','Direccion','Comuna','Valor','Observacion','Transporte','Rango']], body: regs.map(r => [fmtFecha(r.fecha), r.unidad||'', r.idPedido||'', r.nombre||'', dirDe(r), canonComuna(r.comuna), formatoMoneda(r.valor), r.observacion||'', r.transporte||'', r.rango||'']), styles: { fontSize:7, cellPadding:3, overflow:'linebreak' }, headStyles: { fillColor:[0,120,212], textColor:255 }, alternateRowStyles: { fillColor:[245,245,245] }, columnStyles: { 0:{cellWidth:55}, 2:{cellWidth:60}, 5:{cellWidth:60}, 6:{cellWidth:65,halign:'right'}, 9:{cellWidth:35} } });
 doc.save(`DespachoRetail_${titulo.replace(/\s+/g,'_')}.pdf`); toast(`✅ PDF exportado: ${formatoEntero(regs.length)} registros`,'ok'); }
-window.exportarPDFBD = function() { if (rolActual !== 'admin') { toast('❌ Sin permiso','err'); return; } const t = tabBdActiva==='b2c'?'B2C':(tabBdActiva==='ampmadmqdm'?'AMPMADM':'AMPM'); let r = obtenerRegsFiltradosBD(t); const f = document.getElementById(t==='AMPM'?'filtroIdAmpm':(t==='B2C'?'filtroIdB2c':'filtroIdAmpmAdmQdm')).value; if (f) { const ff = f.toUpperCase().trim(); r = r.filter(x => (x.idPedido||'').toString().toUpperCase().includes(ff)); } if (!r.length) { toast(' No hay registros','err'); return; } generarPDFRegistros(r, `${t} - ${textoPeriodo(t)}`); };
+
+// 🚫 SIMPLIFICADO: Solo AMPM y B2C
+window.exportarPDFBD = function() { if (rolActual !== 'admin') { toast(' Sin permiso','err'); return; } const t = tabBdActiva==='b2c'?'B2C':'AMPM'; let r = obtenerRegsFiltradosBD(t); const f = document.getElementById(t==='AMPM'?'filtroIdAmpm':'filtroIdB2c').value; if (f) { const ff = f.toUpperCase().trim(); r = r.filter(x => (x.idPedido||'').toString().toUpperCase().includes(ff)); } if (!r.length) { toast('❌ No hay registros','err'); return; } generarPDFRegistros(r, `${t} - ${textoPeriodo(t)}`); };
 window.exportarPDFModal = function() { const t = tipoBusquedaActual; const f = document.getElementById('filtroIdModal').value.toUpperCase().trim(); const fm = leerFiltrosModal(); let r = datosModal.slice(); if (f) r = r.filter(x => (x.idPedido||'').toString().toUpperCase().includes(f)); r = aplicarFiltrosCampoModal(r, fm); if (!r.length) { toast('❌ No hay registros','err'); return; } let t2 = `${t} - ${textoPeriodoBusqueda(t)}`; if (f) t2 += ` - ID ${f}`; generarPDFRegistros(r, t2); };
 
+// 🚫 SIMPLIFICADO: Solo AMPM y B2C
 window.setInfTipo = function(t) {
 infTipo = t;
 document.querySelectorAll('.basedatos-tab[data-inftipo]').forEach(b => b.classList.toggle('active', b.getAttribute('data-inftipo') === t));
@@ -1850,7 +1820,8 @@ const bp = document.getElementById('btnPegarSel'); if (bp) bp.remove();
 const be = document.querySelector('.btn-exportar');
 if (be) { be.style.background = '#a5d6a7'; be.style.color = '#1b5e20'; }
 const dl = document.getElementById('dlTransporteDesc'); if (dl) dl.innerHTML = OPCIONES_TRANSPORTE.map(o => `<option value="${o}"></option>`).join('');
-['filtroDiaAmpm','filtroDiaB2c','filtroDiaAmpmAdmQdm','vfDia','expDia'].forEach(id => { const s = document.getElementById(id); if (!s) return; for (let i=1;i<=31;i++){ const o = document.createElement('option'); o.value = String(i).padStart(2,'0'); o.textContent=i; s.appendChild(o); } });
+// 🚫 ELIMINADO: filtroDiaAmpmAdmQdm
+['filtroDiaAmpm','filtroDiaB2c','vfDia','expDia'].forEach(id => { const s = document.getElementById(id); if (!s) return; for (let i=1;i<=31;i++){ const o = document.createElement('option'); o.value = String(i).padStart(2,'0'); o.textContent=i; s.appendChild(o); } });
 document.getElementById('fFecha').valueAsDate = new Date();
 document.getElementById('fObs').addEventListener('input', e => { const p = e.target.selectionStart; e.target.value = e.target.value.toUpperCase(); e.target.setSelectionRange(p,p); });
 document.getElementById('buscar').addEventListener('input', () => { paginaDesc = 1; render(); });
