@@ -1,1781 +1,795 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getDatabase, ref, get, push, remove, update, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOjOVzk",
-  authDomain: "despacho-retail.firebaseapp.com",
-  databaseURL: "https://despacho-retail-default-rtdb.firebaseio.com",
-  projectId: "despacho-retail",
-  storageBucket: "despacho-retail.firebasestorage.app",
-  messagingSenderId: "1011000908999",
-  appId: "1:1011000908999:web:08c8630fab0c9537e0b2e2"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
-
-const RUTA_BASE = 'despachos';
-const RUTA_BITACORAS = 'bitacoras';
-const CLAVE_ACCIONES = '1234';
-
-// ✅ CORREGIDO: 2 ADMINS pueden ver BASE DE DATOS
-const ADMIN_EMAILS = ['administradordr@generico.cl', 'eduardo.donoso@ext.quintec.cl'];
-
-// ✅ NUEVO: CLAVES POR USUARIO para login funcional
-const CLAVES_USUARIO = {
-  'mvivallo@quintec.cl': '123456789',
-  'yvalenzuelas@quintec.cl': '123456789',
-  'fgutierrez@quintec.cl': '123456789',
-  'eduardo.donoso@ext.quintec.cl': '28111981',
-  'administradordr@generico.cl': '28111981'
-};
-
-const MESES_NOM = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-const DIAS_SEMANA_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-const REGISTROS_POR_PAGINA_MODAL = 100;
-const REGISTROS_POR_PAGINA_BD = 50;
-const REGISTROS_POR_PAGINA_DESC = 30;
-const COSTO_POR_PARADA = 3500;
-const OPCIONES_TRANSPORTE = ['MOVIL 1','MOVIL 2','MOVIL 3','MOVIL 4','MOVIL 5','MOVIL 6','DON RAUL','DON JOSE','SERVICIO AM/PM','SPOT','SPOT 1','SPOT 2','RETIRA CLIENTE','SERVICIO 3PL','TRANSGAMBOA'];
-const OPCIONES_OBS = ['CASA CENTRAL','RETIRO','RETIRO CLIENTE','RETIRO CASA CENTRAL'];
-
-function esAdmin(email) { return ADMIN_EMAILS.includes((email || '').toLowerCase().trim()); }
-let rolActual = 'operador';
-const mSec = (location.hash || '').match(/sec=([a-z]+)/);
-let seccionInicial = mSec ? mSec[1] : '';
-
-let cache = {};
-let pendientes = [];
-let pendientesAMPM = [];
-let pendientesAmpmAdmQdm = [];
-let pendientesB2C = [];
-let modoImportActual = '';
-let seccionActiva = 'ampm';
-let tabBdActiva = 'ampm';
-let tipoBusquedaActual = 'AMPM';
-let tipoImportacionActual = 'AMPM';
-let tipoVerFechaActual = 'AMPM';
-let datosModal = [];
-let datosModalTotales = 0;
-let paginaModalActual = 1;
-let paginaBDAmpm = 1;
-let paginaBDB2c = 1;
-let paginaBDAmpmAdmQdm = 1;
-let paginaDesc = 1;
-let tipoBorrarMes = 'AMPM';
-let filtroDiaBD = { AMPM: '', B2C: '', AMPMADM: '' };
-let filtroMesBD = { AMPM: '', B2C: '', AMPMADM: '' };
-let filtroAnioBD = { AMPM: '', B2C: '', AMPMADM: '' };
-let filtroDescBD = {
-  AMPM:  { unidad:'', comuna:'', transporte:'', rango:'' },
-  B2C:   { unidad:'', comuna:'', transporte:'', rango:'' },
-  AMPMADM:{ unidad:'', comuna:'', transporte:'', rango:'' }
-};
-let seleccionadosDesc = new Set();
-let keysVisiblesDesc = [];
-let theadSeccion = '';
-let theadBDConstruidos = {};
-let comboAbierto = null;
-let comboModalAbierto = null;
-let comboBDAbierto = null;
-let comboTransAbierto = null;
-let comboObsAbierto = null;
-let editandoKey = null;
-let pwCallback = null;
-let calendarioAbierto = false;
-let calendarioMes = new Date().getMonth();
-let calendarioAnio = new Date().getFullYear();
-let calFilaAbierto = null;
-let calFilaMes = null;
-let calFilaAnio = null;
-let cambiosFechaLocales = {};
-
-let bitacorasData = {};
-
-function toast(msg, tipo) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show ' + tipo; setTimeout(() => t.className = 'toast', 3000); }
-function fmtFecha(f) { if (!f) return ''; const [y,m,d] = f.split('-'); return `${d}/${m}/${y}`; }
-function nombreDiaSemana(f) { if (!f) return ''; const p = f.split('-'); if (p.length !== 3) return ''; return DIAS_SEMANA[new Date(+p[0], +p[1]-1, +p[2]).getDay()] || ''; }
-function fmtFechaConDia(f) { if (!f) return ''; const [y,m,d] = f.split('-'); const dS = nombreDiaSemana(f); return dS ? `${dS}, ${d}-${m}-${y}` : `${d}-${m}-${y}`; }
-function formatoMoneda(v) { return '$' + (Number(v)||0).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-function formatoMonedaAlineado(v) {
-  const num = Number(v) || 0;
-  const formateado = num.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const total = `$${formateado}`;
-  const ancho = 18;
-  const padding = ' '.repeat(Math.max(0, ancho - total.length));
-  return `<span class="valor-alineado">$${padding}${formateado}</span>`;
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DESPACHO RETAIL v1.0</title>
+<link rel="icon" href="data:,">
+<style>
+[data-theme="dark"]{
+  --bg-primary:#000000;--bg-secondary:#0a0a0a;--bg-tertiary:#141414;--bg-input:#0a0a0a;
+  --border-color:#2a2a2a;--border-hover:#3a3a3a;--text-primary:#f1f5f9;--text-secondary:#94a3b8;
+  --text-muted:#64748b;--accent-blue:#3b82f6;--accent-blue-hover:#2563eb;
+  --accent-blue-pastel:rgba(59,130,246,0.15);--accent-orange:#f59e0b;--accent-orange-hover:#d97706;
+  --accent-orange-pastel:rgba(245,158,11,0.15);--accent-purple:#a855f7;--accent-purple-hover:#9333ea;
+  --accent-purple-pastel:rgba(168,85,247,0.15);--accent-red:#ef4444;--accent-red-hover:#dc2626;
+  --accent-red-pastel:rgba(239,68,68,0.15);--accent-green:#10b981;--accent-green-hover:#059669;
+  --accent-green-pastel:rgba(16,185,129,0.15);--btn-text:#f1f5f9;--btn-bg:#141414;
+  --btn-border:#2a2a2a;--btn-hover-bg:#1e1e1e;--badge-unidad-bg:#1e1e1e;--badge-unidad-text:#f1f5f9;
+  --row-hover:#0f0f0f;--id-repetido-bg:rgba(239,68,68,0.15);--id-repetido-hover:rgba(239,68,68,0.25);
+  --id-otro-bg:rgba(245,158,11,0.15);--id-otro-hover:rgba(245,158,11,0.25);
+  --scrollbar-thumb:#2a2a2a;--scrollbar-v:#3b82f6;--scrollbar-h:#f59e0b;
+  --shadow:rgba(0,0,0,0.8);--shadow-modal:rgba(0,0,0,0.9);--modal-overlay:rgba(0,0,0,0.85);
+  --toast-ok:#10b981;--toast-err:#ef4444;--toast-info:#3b82f6;
 }
-function formatoEntero(v) { return Math.round(Number(v)||0).toLocaleString('es-CL'); }
-function formatoPorcentaje(v) { return (Number(v)||0).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %'; }
-function getTipoRegistro(reg) { return reg.tipo || (reg.rango === 'B2C' ? 'B2C' : 'AMPM'); }
-function sumaValores(regs) { return regs.reduce((s,r) => s + (((r.valor||0) === 1) ? 0 : (r.valor||0)), 0); }
-function conteoUnPeso(regs) { return regs.filter(r => (r.valor||0) === 1).length; }
-function sinTildes(s) { return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
-function normSinTildes(s) { return sinTildes(String(s||'').toLowerCase()); }
-function normEnc(h) { return sinTildes(h).toUpperCase(); }
-function normDir(d) { return sinTildes((d||'').toString().trim().toUpperCase()); }
-
-const CANON_COMUNAS = ['Arica','Camarones','Putre','General Lagos','Iquique','Alto Hospicio','Pozo Almonte','Camiña','Colchane','Huara','Pica','Antofagasta','Mejillones','Sierra Gorda','Taltal','Calama','Ollagüe','San Pedro de Atacama','María Elena','Tocopilla','Copiapó','Caldera','Tierra Amarilla','Chañaral','Diego de Almagro','Vallenar','Alto del Carmen','Freirina','Huasco','La Serena','Coquimbo','Andacollo','La Higuera','Paiguano','Vicuña','Illapel','Canela','Los Vilos','Salamanca','Ovalle','Combarbalá','Monte Patria','Punitaqui','Río Hurtado','Valparaíso','Casablanca','Concón','Juan Fernández','Puchuncaví','Quintero','Viña del Mar','Isla de Pascua','Los Andes','Calle Larga','Rinconada','San Esteban','La Ligua','Cabildo','Papudo','Petorca','Zapallar','Quillota','La Calera','Hijuelas','La Cruz','Nogales','San Antonio','Algarrobo','Cartagena','El Quisco','El Tabo','Santo Domingo','San Felipe','Catemu','Llaillay','Panquehue','Putaendo','Santa María','Limache','Olmué','Quilpué','Villa Alemana','Santiago','Cerrillos','Cerro Navia','Conchalí','El Bosque','Estación Central','Huechuraba','Independencia','La Cisterna','La Florida','La Granja','La Pintana','La Reina','Las Condes','Lo Barnechea','Lo Espejo','Lo Prado','Macul','Maipú','Ñuñoa','Pedro Aguirre Cerda','Pudahuel','Quilicura','Quinta Normal','Recoleta','Renca','San Joaquín','San Miguel','San Ramón','Vitacura','Puente Alto','Pirque','San José de Maipo','Colina','Lampa','Tiltil','Buin','Calera de Tango','Paine','San Bernardo','Alhué','Curacaví','María Pinto','Melipilla','Padre Hurtado','Peñaflor','Talagante','El Monte','Isla de Maipo','Rancagua','Codegua','Coinco','Coltauco','Doñihue','Graneros','Las Cabras','Machalí','Malloa','Mostazal','Olivar','Peumo','Pichidegua','Quinta de Tilcoco','Rengo','Requínoa','San Vicente','Pichilemu','La Estrella','Litueche','Marchihue','Navidad','Paredones','San Fernando','Chépica','Chimbarongo','Lolol','Nancagua','Palmilla','Peralillo','Placilla','Pumanque','Santa Cruz','Talca','Constitución','Curepto','Empedrado','Maule','Pelarco','Pencahue','Río Claro','San Clemente','San Rafael','Cauquenes','Chanco','Pelluhue','Curicó','Hualañé','Licantén','Molina','Rauco','Romeral','Sagrada Familia','Teno','Vichuquén','Linares','Colbún','Longaví','Parral','Retiro','San Javier','Villa Alegre','Yerbas Buenas','Chillán','Chillán Viejo','Bulnes','Cobquecura','Coelemu','Coihueco','El Carmen','Ninhue','Ñiquén','Pemuco','Pinto','Portezuelo','Quillón','Quirihue','Ránquil','San Carlos','San Fabián','San Ignacio','San Nicolás','Treguaco','Yungay','Concepción','Coronel','Chiguayante','Florida','Hualpén','Hualqui','Lota','Penco','San Pedro de la Paz','Santa Juana','Talcahuano','Tomé','Arauco','Cañete','Contulmo','Curanilahue','Lebu','Los Álamos','Tirúa','Los Ángeles','Antuco','Cabrero','Laja','Mulchén','Nacimiento','Negrete','Quilaco','Quilleco','San Rosendo','Santa Bárbara','Tucapel','Yumbel','Alto Biobío','Temuco','Carahue','Cholchol','Cunco','Curarrehue','Freire','Gorbea','Lautaro','Loncoche','Melipeuco','Nueva Imperial','Padre Las Casas','Perquenco','Pitrufquén','Pucón','Saavedra','Teodoro Schmidt','Toltén','Vilcún','Villarrica','Angol','Collipulli','Curacautín','Ercilla','Lonquimay','Los Sauces','Lumaco','Purén','Renaico','Traiguén','Victoria','Valdivia','Corral','Lanco','Los Lagos','Máfil','Mariquina','Paillaco','Panguipulli','La Unión','Futrono','Lago Ranco','Río Bueno','Puerto Montt','Calbuco','Cochamó','Fresia','Frutillar','Llanquihue','Los Muermos','Maullín','Puerto Varas','Ancud','Castro','Chonchi','Curaco de Vélez','Dalcahue','Puqueldón','Queilén','Quellón','Quemchi','Quinchao','Osorno','Puerto Octay','Purranque','Puyehue','Río Negro','San Juan de la Costa','San Pablo','Chaitén','Futaleufú','Hualaihué','Palena','Coyhaique','Lago Verde','Aysén','Cisnes','Guaitecas','Cochrane','O\'Higgins','Tortel','Chile Chico','Río Ibáñez','Punta Arenas','Laguna Blanca','Río Verde','San Gregorio','Cabo de Hornos','Antártica','Porvenir','Primavera','Timaukel','Natales','Torres del Paine'];
-const MAPA_COMUNAS = {};
-CANON_COMUNAS.forEach(c => { MAPA_COMUNAS[sinTildes(c).toLowerCase()] = c; });
-function canonComuna(t) { const t2 = String(t||'').trim(); if (!t2) return ''; const k = sinTildes(t2).toLowerCase(); return MAPA_COMUNAS[k] || t2.toLowerCase().replace(/(^|\s)\S/g, s => s.toUpperCase()); }
-
-const COMUNAS_RM = ['SANTIAGO','PROVIDENCIA','NUNOA','LAS CONDES','VITACURA','LO BARNECHEA','MACUL','PENALOLEN','LA FLORIDA','PUENTE ALTO','SAN MIGUEL','SAN JOAQUIN','LA CISTERNA','SAN BERNARDO','EL BOSQUE','LA PINTANA','SAN RAMON','PEDRO AGUIRRE CERDA','LO ESPEJO','CERRILLOS','MAIPU','PUDAHUEL','RENCA','QUILICURA','CONCHALI','HUECHURABA','INDEPENDENCIA','RECOLETA','LA REINA','LO PRADO','QUINTA NORMAL','CERRO NAVIA','SAN PABLO','COLINA','LAMPA','PADRE HURTADO','TALAGANTE','PENAFLOR','BUIN','PAINE','CALERA DE TANGO','ISLA DE MAIPO','MELIPILLA','SAN JOSE DE MAIPO','PIRQUE','EL MONTE','CURACAVI','MARIA PINTA','ALHUE','TILTIL'];
-function levenshtein(a, b) { if (a === b) return 0; if (!a.length) return b.length; if (!b.length) return a.length; let prev = Array.from({ length: b.length + 1 }, (_, i) => i); for (let i = 1; i <= a.length; i++) { const cur = [i]; for (let j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1)); } prev = cur; } return prev[b.length]; }
-function similar(a, b) { if (a === b) return true; if (Math.abs(a.length - b.length) > 1) return false; return levenshtein(a, b) <= 1; }
-function limpiarDireccion(dir, comuna) {
-  const partes = String(dir || '').split(',').map(s => s.trim()).filter(s => s !== '');
-  const nc = comuna ? sinTildes(String(comuna).trim().toUpperCase()) : '';
-  return partes.filter(p => { const np = sinTildes(String(p).trim().toUpperCase()); return np !== 'CHILE' && !(nc && np === nc) && !COMUNAS_RM.some(c => similar(np, c)); }).join(', ');
+[data-theme="light"]{
+  --bg-primary:#f8fafc;--bg-secondary:#ffffff;--bg-tertiary:#e2e8f0;--bg-input:#ffffff;
+  --border-color:#cbd5e1;--border-hover:#94a3b8;--text-primary:#0f172a;--text-secondary:#475569;
+  --text-muted:#94a3b8;--accent-blue:#2563eb;--accent-blue-hover:#1d4ed8;
+  --accent-blue-pastel:rgba(37,99,235,0.1);--accent-orange:#ea580c;--accent-orange-hover:#c2410c;
+  --accent-orange-pastel:rgba(234,88,12,0.1);--accent-purple:#7c3aed;--accent-purple-hover:#6d28d9;
+  --accent-purple-pastel:rgba(124,58,237,0.1);--accent-red:#dc2626;--accent-red-hover:#b91c1c;
+  --accent-red-pastel:rgba(220,38,38,0.1);--accent-green:#059669;--accent-green-hover:#047857;
+  --accent-green-pastel:rgba(5,150,105,0.1);--btn-text:#0f172a;--btn-bg:#ffffff;
+  --btn-border:#cbd5e1;--btn-hover-bg:#f1f5f9;--badge-unidad-bg:#e2e8f0;--badge-unidad-text:#0f172a;
+  --row-hover:#f1f5f9;--id-repetido-bg:rgba(220,38,38,0.08);--id-repetido-hover:rgba(220,38,38,0.15);
+  --id-otro-bg:rgba(234,88,12,0.08);--id-otro-hover:rgba(234,88,12,0.15);
+  --scrollbar-thumb:#cbd5e1;--scrollbar-v:#2563eb;--scrollbar-h:#ea580c;
+  --shadow:rgba(0,0,0,0.08);--shadow-modal:rgba(0,0,0,0.2);--modal-overlay:rgba(0,0,0,0.5);
+  --toast-ok:#059669;--toast-err:#dc2626;--toast-info:#2563eb;
 }
-function dirDe(r) { return limpiarDireccion(r.direccion, r.comuna); }
-function esExcel(n) { return /\.(xlsx|xls|xlsm|xlsb|ods)$/.test(n); }
-function esCSV(n) { return /\.csv$/.test(n); }
-function esJSON(n) { return /\.json$/.test(n); }
-
-function parseCSVText(text) {
-  const firstLine = text.split(/\r?\n/)[0] || '';
-  const cTab = (firstLine.match(/\t/g) || []).length;
-  const cPun = (firstLine.match(/;/g) || []).length;
-  const cCom = (firstLine.match(/,/g) || []).length;
-  let delim = ',';
-  if (cTab >= cPun && cTab >= cCom) delim = '\t';
-  else if (cPun > cCom) delim = ';';
-  const rows = []; let row = [], cur = '', inQ = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (inQ) { if (ch === '"') { if (text[i+1] === '"') { cur += '"'; i++; } else inQ = false; } else cur += ch; }
-    else { if (ch === '"') inQ = true; else if (ch === delim) { row.push(cur); cur = ''; } else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; } else if (ch !== '\r') cur += ch; }
-  }
-  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
-  return rows.filter(r => r.some(c => String(c).trim() !== ''));
+[data-theme="feminino"]{
+  --bg-primary:#fdf4ff;--bg-secondary:#ffffff;--bg-tertiary:#f5d0fe;--bg-input:#ffffff;
+  --border-color:#e879f9;--border-hover:#d946ef;--text-primary:#701a75;--text-secondary:#a21caf;
+  --text-muted:#c026d3;--accent-blue:#c026d3;--accent-blue-hover:#a21caf;
+  --accent-blue-pastel:rgba(192,38,211,0.12);--accent-orange:#d97706;--accent-orange-hover:#b45309;
+  --accent-orange-pastel:rgba(217,119,6,0.12);--accent-purple:#a855f7;--accent-purple-hover:#9333ea;
+  --accent-purple-pastel:rgba(168,85,247,0.12);--accent-red:#db2777;--accent-red-hover:#be185d;
+  --accent-red-pastel:rgba(219,39,119,0.12);--accent-green:#059669;--accent-green-hover:#047857;
+  --accent-green-pastel:rgba(5,150,105,0.12);--btn-text:#701a75;--btn-bg:#ffffff;
+  --btn-border:#e879f9;--btn-hover-bg:#f5d0fe;--badge-unidad-bg:#f5d0fe;--badge-unidad-text:#701a75;
+  --row-hover:#fdf4ff;--id-repetido-bg:rgba(219,39,119,0.1);--id-repetido-hover:rgba(219,39,119,0.2);
+  --id-otro-bg:rgba(217,119,6,0.1);--id-otro-hover:rgba(217,119,6,0.2);
+  --scrollbar-thumb:#e879f9;--scrollbar-v:#c026d3;--scrollbar-h:#d97706;
+  --shadow:rgba(168,85,247,0.12);--shadow-modal:rgba(168,85,247,0.25);--modal-overlay:rgba(112,26,117,0.5);
+  --toast-ok:#059669;--toast-err:#db2777;--toast-info:#c026d3;
 }
-function leerFilas(file, cb) {
-  const n = file.name.toLowerCase();
-  const reader = new FileReader();
-  if (esCSV(n)) { reader.onload = e => { try { cb(parseCSVText(e.target.result)); } catch (e2) { toast('CSV inválido: ' + e2.message, 'err'); } }; reader.readAsText(file); }
-  else { reader.onload = e => { try { const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true }); cb(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: true })); } catch (e2) { toast('Archivo inválido: ' + e2.message, 'err'); } }; reader.readAsArrayBuffer(file); }
-}
-function ordenarPorFechaDireccionId(regs) { regs.sort((a,b) => (a.fecha||'').localeCompare(b.fecha||'') || normDir(dirDe(a)).localeCompare(normDir(dirDe(b))) || (a.idPedido||'').toString().localeCompare((b.idPedido||'').toString())); return regs; }
-function ordenarPorFechaYId(regs) { regs.sort((a,b) => (a.fecha||'').localeCompare(b.fecha||'') || (a.idPedido||'').toString().localeCompare((b.idPedido||'').toString())); return regs; }
-function detectarDireccionesRepetidas(regs) { const c = {}; regs.forEach(r => { const d = normDir(dirDe(r)); if (d && r.fecha) { const k = `${r.fecha}|${d}`; c[k] = (c[k]||0)+1; } }); return c; }
-function detectarIdsRepetidosPorFecha(regs) { const c = {}; regs.forEach(r => { const id = (r.idPedido||'').toString().trim().toUpperCase(); if (id && r.fecha) { const k = `${r.fecha}|${id}`; c[k] = (c[k]||0)+1; } }); return c; }
-function detectarIdsRepetidosGlobal(regs) { const c = {}; regs.forEach(r => { const id = (r.idPedido||'').toString().trim().toUpperCase(); if (id) c[id] = (c[id]||0)+1; }); return c; }
-function detectarMesAnioDesdeNombre(nombre) { const up = sinTildes(nombre).toUpperCase(); let mes = null, anio = null; for (let i = 0; i < MESES_NOM.length; i++) if (up.includes(MESES_NOM[i])) { mes = String(i+1).padStart(2,'0'); break; } if (!mes) { const c = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC']; for (let i = 0; i < c.length; i++) if (up.includes(c[i])) { mes = String(i+1).padStart(2,'0'); break; } } const m = nombre.match(/(20\d{2})/); if (m) anio = m[1]; return { mes, anio }; }
-function diaSemanaNumero(f) { if (!f) return 0; const p = f.split('-'); if (p.length !== 3) return 0; return new Date(+p[0], +p[1]-1, +p[2]).getDay(); }
-function coincideClave(t, c) { const esc = c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return new RegExp('(^|[^a-z0-9])' + esc + '($|[^a-z0-9])').test(t); }
-function parsearValor(v) { if (v === null || v === undefined || v === '') return 0; if (typeof v === 'number') return v; let s = String(v).trim().replace(/\s/g,'').replace(/[$€]/g,''); if (!s) return 0; if (s.includes(',') && s.includes('.')) { if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g,'').replace(',', '.'); else s = s.replace(/,/g,''); } else if (s.includes(',')) s = s.replace(',', '.'); else if (s.includes('.')) { const p = s.split('.'); if (p.length > 2) s = s.replace(/\./g,''); else if (p[1].length === 3) s = s.replace(/\./g,''); } s = s.replace(/[^\d.\-]/g,''); const n = parseFloat(s); return isNaN(n) ? 0 : n; }
-function parsearFecha(raw) {
-  if (raw instanceof Date) { if (isNaN(raw.getTime())) return null; return `${raw.getFullYear()}-${String(raw.getMonth()+1).padStart(2,'0')}-${String(raw.getDate()).padStart(2,'0')}`; }
-  if (typeof raw === 'number') { const d = new Date(Math.round((raw - 25569) * 86400 * 1000)); if (isNaN(d.getTime())) return null; return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`; }
-  if (typeof raw === 'string') { let s = raw.trim().replace(/[T\s]+\d{1,2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/i, '').trim(); let m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/); if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`; m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/); if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2})$/); if (m) { const a = parseInt(m[3]) > 50 ? `19${m[3]}` : `20${m[3]}`; return `${a}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; } const d = new Date(s); if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-  return null;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:var(--bg-primary);color:var(--text-primary);min-height:100vh;display:flex;flex-direction:column;transition:background .3s,color .3s}
+body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oculta-principal .acciones-bar,body.oculta-principal .tabla-section{display:none!important}
 
-const REGLAS_MOVIL_POR_DIA = {
-  1: { 'MOVIL 1': ['la reina','casa','las condes','penalolen'], 'MOVIL 2': ['maipu','norte','pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','mut','nunoa','providencia'], 'MOVIL 4': ['alc','alto las condes','pa','parque arauco','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['nunoa','egana','santiago','san miguel'] },
-  2: { 'MOVIL 1': ['apmq','dom','dominicos','los dominicos','las condes','la reina','penalolen'], 'MOVIL 2': ['pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','santiago','nunoa','providencia','san miguel'], 'MOVIL 4': ['la dehesa','dehesa','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','lo espejo','san ramon','pedro aguirre cerda'], 'MOVIL 6': ['alc','alto las condes','pa','parque arauco'] },
-  3: { 'MOVIL 1': ['costanera','casa','las condes'], 'MOVIL 2': ['maipu','norte','pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['dominicos','los dominicos','egana','nunoa','la reina','penalolen'], 'MOVIL 4': ['alc','alto las condes','pa','parque arauco','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','lo espejo','san ramon','pedro aguirre cerda'] },
-  4: { 'MOVIL 1': ['nunoa','mut','santiago','san miguel'], 'MOVIL 2': ['pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','backcc','providencia','la reina','penalolen'], 'MOVIL 4': ['alc','alto las condes','pa','parque arauco','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','la cisternas','lo espejo','san ramon','pedro aguirre cerda'] },
-  5: { 'MOVIL 1': ['casa','dominicos','los dominicos','las condes','la reina','penalolen'], 'MOVIL 2': ['maipu','norte','pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','mut','providencia','nunoa','santiago','san miguel'], 'MOVIL 4': ['dehesa','la dehesa','pie andino','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['egana','tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','la cisternas','lo espejo','san ramon','pedro aguirre cerda'], 'MOVIL 6': ['alc','alto las condes','pa','parque arauco'] }
-};
+#loginSection{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#000000;position:relative;overflow:hidden}
+#loginSection::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%, rgba(59,130,246,0.15) 0%, transparent 50%),radial-gradient(circle at 70% 80%, rgba(168,85,247,0.1) 0%, transparent 50%);animation:rotate 30s linear infinite}
+@keyframes rotate{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.login-box{background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:50px 45px;border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.08),inset 0 1px 0 rgba(255,255,255,0.1);text-align:center;max-width:440px;width:90%;position:relative;z-index:1}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%);border-radius:24px 24px 0 0;pointer-events:none}
+.login-box h1{color:#3b82f6;margin-bottom:8px;font-size:2em;font-weight:800;letter-spacing:1px;text-shadow:0 2px 4px rgba(0,0,0,0.5);position:relative;z-index:1}
+.login-box .version{color:#f59e0b;font-size:.85em;font-weight:700;margin-bottom:20px;letter-spacing:3px;text-transform:uppercase;position:relative;z-index:1}
+.login-box p{color:#a1a1aa;margin-bottom:30px;font-size:.95em;position:relative;z-index:1}
+.login-box input{width:100%;padding:14px 16px;margin:10px 0;background:rgba(10,10,10,0.9);backdrop-filter:blur(10px);color:#e4e4e7;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:1em;font-weight:500;transition:all .3s ease;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);position:relative;z-index:1}
+.login-box input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,0.2),inset 0 2px 4px rgba(0,0,0,0.3)}
+.login-box input::placeholder{color:#71717a;font-weight:400}
+.login-box button{width:100%;padding:14px;margin-top:14px;background:transparent;color:#ffffff;border:2px solid #3b82f6;border-radius:12px;font-size:1em;font-weight:600;cursor:pointer;letter-spacing:.5px;transition:all .3s ease;box-shadow:0 4px 12px rgba(59,130,246,0.3),inset 0 1px 0 rgba(255,255,255,0.1);position:relative;z-index:1;overflow:hidden}
+.login-box button::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);transition:left .5s ease}
+.login-box button:hover::before{left:100%}
+.login-box button:hover{background:rgba(59,130,246,0.2);transform:translateY(-2px);box-shadow:0 6px 20px rgba(59,130,246,0.4),inset 0 1px 0 rgba(255,255,255,0.2)}
+.login-box button:active{transform:translateY(0) scale(0.98)}
 
-const REGLAS_MOVIL_POR_DIA_ADM = {
-  1: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago centro','stgo'], 'MOVIL 2': ['providencia','nunoa','las condes','la reina'], 'MOVIL 3': ['maipu','pudahuel','cerro navia','lo prado','quinta normal'], 'MOVIL 4': ['la florida','puente alto','la cisterna','san bernardo'], 'MOVIL 5': ['renca','conchali','independencia','recoleta','huechuraba'], 'MOVIL 6': ['vitacura','lo barnechea','la dehesa'] },
-  2: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago'], 'MOVIL 2': ['providencia','nunoa','macul','penalolen'], 'MOVIL 3': ['maipu','pudahuel','cerro navia','lo prado'], 'MOVIL 4': ['la florida','puente alto','san jose de maipo','pirque'], 'MOVIL 5': ['quilicura','renca','conchali','independencia'], 'MOVIL 6': ['vitacura','lo barnechea','las condes'] },
-  3: { 'MOVIL 1': ['adm','qdm','retiro','casa central','stgo centro'], 'MOVIL 2': ['providencia','nunoa','la reina','penalolen'], 'MOVIL 3': ['maipu','pudahuel','lo prado','cerro navia','quinta normal'], 'MOVIL 4': ['la florida','puente alto','la cisterna','el bosque'], 'MOVIL 5': ['renca','conchali','recoleta','independencia','huechuraba'], 'MOVIL 6': ['vitacura','lo barnechea','las condes'] },
-  4: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago'], 'MOVIL 2': ['providencia','nunoa','macul','la florida'], 'MOVIL 3': ['maipu','pudahuel','cerro navia','lo prado'], 'MOVIL 4': ['puente alto','la cisterna','san bernardo','la pintana'], 'MOVIL 5': ['quilicura','renca','conchali','independencia'], 'MOVIL 6': ['vitacura','lo barnechea','las condes','la reina'] },
-  5: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago centro'], 'MOVIL 2': ['providencia','nunoa','la reina','penalolen','macul'], 'MOVIL 3': ['maipu','pudahuel','lo prado','cerro navia'], 'MOVIL 4': ['la florida','puente alto','la cisterna','san bernardo'], 'MOVIL 5': ['renca','conchali','independencia','recoleta','huechuraba','quilicura'], 'MOVIL 6': ['vitacura','lo barnechea','las condes'] }
-};
+#appSection{display:none;flex-direction:column;min-height:100vh}
+.header{background:var(--bg-secondary);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);flex-shrink:0;transition:background .3s}
+.header-left{display:flex;align-items:center;gap:15px}
+.header h1{color:var(--accent-blue);font-size:1.3em;font-weight:700;letter-spacing:1px;transition:color .3s}
+.header-right{display:flex;align-items:center;gap:12px}
+.user-info{color:var(--text-secondary);font-size:.85em;font-weight:500}
+.theme-selector{display:flex;gap:6px;align-items:center;margin-right:12px}
+.theme-btn{position:relative;width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;padding:0!important;font-size:0!important;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);overflow:hidden;background:transparent!important}
+.theme-btn::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:9px;background:inherit;filter:brightness(1.2);opacity:0.7}
+.theme-btn::after{content:'';position:absolute;top:1px;left:2px;right:2px;height:40%;border-radius:7px 7px 50% 50%;background:linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%)}
+.theme-btn[data-theme="dark"]{background:linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #141414 100%);box-shadow:0 2px 6px rgba(0,0,0,0.8),inset 0 1px 1px rgba(59,130,246,0.3),0 0 0 1px rgba(59,130,246,0.2)}
+.theme-btn[data-theme="dark"]:hover{transform:translateY(-1px) scale(1.1);box-shadow:0 4px 10px rgba(59,130,246,0.4)}
+.theme-btn[data-theme="light"]{background:linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #ffffff 100%);box-shadow:0 2px 6px rgba(0,0,0,0.15),inset 0 1px 1px rgba(255,255,255,0.9),0 0 0 1px rgba(37,99,235,0.3)}
+.theme-btn[data-theme="light"]:hover{transform:translateY(-1px) scale(1.1);box-shadow:0 4px 10px rgba(37,99,235,0.3)}
+.theme-btn[data-theme="feminino"]{background:linear-gradient(135deg, #c026d3 0%, #e879f9 50%, #fdf4ff 100%);box-shadow:0 2px 6px rgba(192,38,211,0.4),inset 0 1px 1px rgba(255,255,255,0.5),0 0 0 1px rgba(192,38,211,0.3)}
+.theme-btn[data-theme="feminino"]:hover{transform:translateY(-1px) scale(1.1);box-shadow:0 4px 10px rgba(192,38,211,0.5)}
+.theme-btn.active{transform:translateY(-1px) scale(1.15);box-shadow:0 4px 12px rgba(0,0,0,0.4),inset 0 1px 2px rgba(255,255,255,0.6),0 0 0 2px rgba(255,255,255,0.4)}
+.theme-btn.active::after{background:linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%)}
+.btn-logout{background:var(--accent-red);color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85em;font-weight:600;transition:background .2s}
+.btn-logout:hover{background:var(--accent-red-hover)}
 
-function candidatosMovil(reg) {
-  const dia = diaSemanaNumero(reg.fecha);
-  const reglas = REGLAS_MOVIL_POR_DIA[dia];
-  if (!reglas) return [];
-  const texto = normSinTildes([reg.comuna, reg.unidad, reg.observacion, reg.direccion].join(' '));
-  const c = [];
-  Object.keys(reglas).forEach(mov => { if (reglas[mov].some(k => coincideClave(texto, k))) c.push(mov); });
-  return c;
-}
-function candidatosMovilAdm(reg) {
-  const dia = diaSemanaNumero(reg.fecha);
-  const reglas = REGLAS_MOVIL_POR_DIA_ADM[dia];
-  if (!reglas) return [];
-  const texto = normSinTildes([reg.comuna, reg.unidad, reg.observacion, reg.direccion].join(' '));
-  const c = [];
-  Object.keys(reglas).forEach(mov => { if (reglas[mov].some(k => coincideClave(texto, k))) c.push(mov); });
-  return c;
-}
-function autocompletarTransporteNuevo(reg) {
-  const c = candidatosMovil(reg);
-  reg._candidatos = c;
-  if (c.length === 1) { reg.transporte = c[0]; }
-  else if (!reg.transporte) { reg.transporte = ''; }
-  return reg;
-}
-function autocompletarTransporteNuevoAdm(reg) {
-  const c = candidatosMovilAdm(reg);
-  reg._candidatos = c;
-  if (c.length === 1) { reg.transporte = c[0]; }
-  else if (!reg.transporte) { reg.transporte = ''; }
-  return reg;
-}
+.secciones-bar{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;transition:background .3s}
+.secciones-header{display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border-color);flex-wrap:wrap}
+.seccion-tab{padding:12px 22px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;letter-spacing:.5px;text-transform:uppercase}
+.seccion-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
+.seccion-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue);background:var(--accent-blue-pastel)}
 
-function pedirClave(onOk) {
-  pwCallback = onOk;
-  const inp = document.getElementById('pwInput');
-  if (inp) inp.value = '';
-  document.getElementById('passwordOverlay').classList.add('show');
-  setTimeout(() => { if (inp) inp.focus(); }, 60);
-}
-window.cerrarPassword = function() { pwCallback = null; document.getElementById('passwordOverlay').classList.remove('show'); };
-window.confirmarPassword = function() {
-  const inp = document.getElementById('pwInput');
-  const v = inp ? inp.value : '';
-  if (v !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); if (inp){ inp.value=''; inp.focus(); } return; }
-  const cb = pwCallback;
-  cerrarPassword();
-  if (cb) cb();
-};
+.seccion-contenido{padding:16px 28px;display:none}
+.seccion-contenido.show{display:block}
+.submenu-header{display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer;border-bottom:1px solid var(--border-color);margin-bottom:10px}
+.submenu-header h3{color:var(--accent-blue);font-size:1em;font-weight:700;letter-spacing:.5px}
+.btn-flecha-submenu{background:none;border:none;color:var(--text-secondary);font-size:1em;cursor:pointer;transition:transform .3s}
+.btn-flecha-submenu.rotada{transform:rotate(180deg)}
+.submenu-contenido{display:none;padding-bottom:10px}
+.submenu-contenido.show{display:block}
 
-window.toggleCalendario = function() {
-  const popup = document.getElementById('calendarioPopup');
-  if (!popup) return;
-  calendarioAbierto = !calendarioAbierto;
-  if (calendarioAbierto) { renderizarCalendario(); popup.classList.add('show'); }
-  else { popup.classList.remove('show'); }
-};
-function renderizarCalendario() {
-  const popup = document.getElementById('calendarioPopup');
-  if (!popup) return;
-  const hoy = new Date();
-  const primerDia = new Date(calendarioAnio, calendarioMes, 1);
-  const ultimoDia = new Date(calendarioAnio, calendarioMes + 1, 0);
-  const diasEnMes = ultimoDia.getDate();
-  let primerDiaSemana = primerDia.getDay();
-  if (primerDiaSemana === 0) primerDiaSemana = 7;
-  const fechaInput = document.getElementById('fFecha');
-  const fechaSeleccionada = fechaInput ? fechaInput.value : '';
-  let html = `<div class="calendario-header"><button onclick="cambiarMesCalendario(-1)">◀</button><span>${MESES_NOM[calendarioMes].charAt(0) + MESES_NOM[calendarioMes].slice(1).toLowerCase()} ${calendarioAnio}</span><button onclick="cambiarMesCalendario(1)">▶</button></div><div class="calendario-grid">`;
-  DIAS_SEMANA_CORTO.forEach(d => { html += `<div class="dia-semana">${d}</div>`; });
-  for (let i = 1; i < primerDiaSemana; i++) { html += `<div class="dia vacio"></div>`; }
-  for (let d = 1; d <= diasEnMes; d++) {
-    const fechaStr = `${calendarioAnio}-${String(calendarioMes + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const esHoy = (d === hoy.getDate() && calendarioMes === hoy.getMonth() && calendarioAnio === hoy.getFullYear());
-    const esSeleccionado = (fechaStr === fechaSeleccionada);
-    let clases = 'dia';
-    if (esHoy) clases += ' hoy';
-    if (esSeleccionado) clases += ' seleccionado';
-    html += `<div class="${clases}" onclick="seleccionarFechaCalendario('${fechaStr}')">${d}</div>`;
-  }
-  html += `</div>`;
-  popup.innerHTML = html;
-}
-window.cambiarMesCalendario = function(delta) {
-  calendarioMes += delta;
-  if (calendarioMes > 11) { calendarioMes = 0; calendarioAnio++; }
-  if (calendarioMes < 0) { calendarioMes = 11; calendarioAnio--; }
-  renderizarCalendario();
-};
-window.seleccionarFechaCalendario = function(fecha) {
-  const input = document.getElementById('fFecha');
-  if (input) input.value = fecha;
-  calendarioAbierto = false;
-  const popup = document.getElementById('calendarioPopup');
-  if (popup) popup.classList.remove('show');
-  paginaDesc = 1;
-  render();
-};
+.busqueda-filtros{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.busqueda-filtros label{color:var(--text-secondary);font-weight:600;font-size:.85em}
+.select-filtro{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;font-weight:500;cursor:pointer;min-width:90px;height:34px;transition:border-color .2s}
+.select-filtro:focus{outline:none;border-color:var(--accent-blue)}
 
-window.toggleCalFila = function(key, event) {
-  if (event) event.stopPropagation();
-  document.querySelectorAll('.cal-popup-fila.show').forEach(p => p.classList.remove('show'));
-  const popup = document.getElementById('cal_popup_' + key);
-  if (!popup) return;
-  if (calFilaAbierto === key) { popup.classList.remove('show'); calFilaAbierto = null; return; }
-  let fechaActual = obtenerFechaActualRegistro(key);
-  if (fechaActual) {
-    const [y, mo, d] = fechaActual.split('-').map(Number);
-    calFilaMes = mo - 1; calFilaAnio = y;
-  } else { calFilaMes = new Date().getMonth(); calFilaAnio = new Date().getFullYear(); }
-  calFilaAbierto = key;
-  renderizarCalFila(key, fechaActual);
-  popup.classList.add('show');
-};
-function obtenerFechaActualRegistro(key) {
-  if (cambiosFechaLocales[key]) return cambiosFechaLocales[key].nuevaFecha;
-  let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
-  if (p) return p.reg.fecha;
-  for (const a of Object.keys(cache)) {
-    for (const m of Object.keys(cache[a]||{})) {
-      if (cache[a][m] && cache[a][m][key]) return cache[a][m][key].fecha;
-    }
-  }
-  return null;
-}
-function renderizarCalFila(key, fechaSeleccionada) {
-  const popup = document.getElementById('cal_popup_' + key);
-  if (!popup) return;
-  const hoy = new Date();
-  const primerDia = new Date(calFilaAnio, calFilaMes, 1);
-  const ultimoDia = new Date(calFilaAnio, calFilaMes + 1, 0);
-  const diasEnMes = ultimoDia.getDate();
-  let primerDiaSemana = primerDia.getDay();
-  if (primerDiaSemana === 0) primerDiaSemana = 7;
-  let html = `<div class="cal-header-fila"><button onclick="cambiarMesCalFila('${key}', -1, event)">◀</button><span>${MESES_NOM[calFilaMes].charAt(0) + MESES_NOM[calFilaMes].slice(1).toLowerCase()} ${calFilaAnio}</span><button onclick="cambiarMesCalFila('${key}', 1, event)">▶</button></div><div class="cal-grid-fila">`;
-  DIAS_SEMANA_CORTO.forEach(d => { html += `<div class="dia-semana">${d}</div>`; });
-  for (let i = 1; i < primerDiaSemana; i++) { html += `<div class="dia vacio"></div>`; }
-  for (let d = 1; d <= diasEnMes; d++) {
-    const fechaStr = `${calFilaAnio}-${String(calFilaMes + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const esHoy = (d === hoy.getDate() && calFilaMes === hoy.getMonth() && calFilaAnio === hoy.getFullYear());
-    const esSeleccionado = (fechaStr === fechaSeleccionada);
-    let clases = 'dia';
-    if (esHoy) clases += ' hoy';
-    if (esSeleccionado) clases += ' seleccionado';
-    html += `<div class="${clases}" onclick="seleccionarFechaFila('${key}', '${fechaStr}', event)">${d}</div>`;
-  }
-  html += `</div>`;
-  popup.innerHTML = html;
-}
-window.cambiarMesCalFila = function(key, delta, event) {
-  if (event) event.stopPropagation();
-  calFilaMes += delta;
-  if (calFilaMes > 11) { calFilaMes = 0; calFilaAnio++; }
-  if (calFilaMes < 0) { calFilaMes = 11; calFilaAnio--; }
-  const fechaActual = obtenerFechaActualRegistro(key);
-  renderizarCalFila(key, fechaActual);
-};
-window.seleccionarFechaFila = function(key, nuevaFecha, event) {
-  if (event) event.stopPropagation();
-  const popup = document.getElementById('cal_popup_' + key);
-  if (popup) popup.classList.remove('show');
-  calFilaAbierto = null;
-  const [nA, nM] = nuevaFecha.split('-');
-  const fechaAnterior = obtenerFechaActualRegistro(key);
-  if (fechaAnterior === nuevaFecha) { render(); return; }
-  let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
-  if (p) {
-    cambiosFechaLocales[key] = { esPendiente: true, nuevaFecha, nuevaAnio: nA, nuevaMes: nM };
-    toast(`Fecha cambiada a ${fmtFechaConDia(nuevaFecha)} (pendiente de guardar)`, 'info');
-    render();
-    return;
-  }
-  for (const a of Object.keys(cache)) {
-    for (const m of Object.keys(cache[a]||{})) {
-      if (cache[a][m] && cache[a][m][key]) {
-        cambiosFechaLocales[key] = { esPendiente: false, anioOriginal: a, mesOriginal: m, nuevaFecha, nuevaAnio: nA, nuevaMes: nM };
-        toast(`Fecha cambiada a ${fmtFechaConDia(nuevaFecha)} (pendiente de guardar)`, 'info');
-        render();
-        return;
-      }
-    }
-  }
-  toast('Registro no encontrado', 'err');
-};
-window.cambiarFechaFila = function(key, nuevaFecha, esPend) {
-  if (!nuevaFecha) return;
-  const [nA, nM] = nuevaFecha.split('-');
-  const fechaAnterior = obtenerFechaActualRegistro(key);
-  if (fechaAnterior === nuevaFecha) return;
-  let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
-  if (p) {
-    cambiosFechaLocales[key] = { esPendiente: true, nuevaFecha, nuevaAnio: nA, nuevaMes: nM };
-    toast(`Fecha cambiada a ${fmtFechaConDia(nuevaFecha)} (pendiente de guardar)`, 'info');
-    render();
-    return;
-  }
-  for (const a of Object.keys(cache)) {
-    for (const m of Object.keys(cache[a]||{})) {
-      if (cache[a][m] && cache[a][m][key]) {
-        cambiosFechaLocales[key] = { esPendiente: false, anioOriginal: a, mesOriginal: m, nuevaFecha, nuevaAnio: nA, nuevaMes: nM };
-        toast(`Fecha cambiada a ${fmtFechaConDia(nuevaFecha)} (pendiente de guardar)`, 'info');
-        render();
-        return;
-      }
-    }
-  }
-};
+.btn-bd-importar,.btn-importar-accion{background:#000000;color:#ffffff;border:2px solid var(--accent-green)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bd-importar:hover,.btn-importar-accion:hover{background:var(--accent-green);color:#fff}
+.btn-exportar{background:#000000;color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-exportar:hover{background:var(--accent-blue);color:#fff}
+.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul{background:var(--accent-blue);color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bd-guardar:hover,.btn-guardar:hover,.btn-bitacora-guardar:hover,.btn-registrar:hover,.btn-mc-azul:hover{background:var(--accent-blue-hover)}
+.btn-bd-pdf,.btn-bitacora-jpeg{background:var(--accent-purple);color:#ffffff;border:2px solid var(--accent-purple)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bd-pdf:hover,.btn-bitacora-jpeg:hover{background:var(--accent-purple-hover)}
+.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo{background:#000000;color:#ffffff;border:2px solid var(--accent-red)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bd-borrar-mes:hover,.btn-acc.btn-borrar:hover,.btn-mc-rojo:hover{background:var(--accent-red);color:#fff}
+.btn-enviar{background:#000000;color:#ffffff;border:2px solid var(--accent-orange)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-enviar:hover{background:var(--accent-orange);color:#fff}
+.btn-buscar{background:var(--accent-blue);color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-buscar:hover{background:var(--accent-blue-hover)}
+.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar{background:var(--bg-tertiary);color:var(--text-primary);border:2px solid var(--border-color)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:500;font-size:.85em;transition:all .2s}
+.btn-limpiar:hover,.btn-mc-cancelar:hover,.btn-exportar-cancelar:hover{background:var(--border-color)}
+.btn-bitacora-excel{background:#000000;color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bitacora-excel:hover{background:var(--accent-blue);color:#fff}
+.btn-bd-pag,.btn-pag-numero{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--border-color)!important;width:32px;height:32px;border-radius:4px;cursor:pointer;font-weight:500;font-size:.85em;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.btn-bd-pag:hover,.btn-pag-numero:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)!important;color:var(--accent-blue)}
+.btn-bd-pag.activa,.btn-pag-numero.activa{background:var(--accent-blue);color:#fff;border-color:var(--accent-blue)!important}
+.btn-bd-pag-nav,.btn-pag-nav{background:var(--bg-secondary);color:var(--accent-blue);border:2px solid var(--accent-blue)!important;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s}
+.btn-bd-pag-nav:hover,.btn-pag-nav:hover{background:var(--accent-blue);color:#fff}
+.btn-bd-pag-nav:disabled{opacity:.4;cursor:not-allowed}
+.btn-acc{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--border-color)!important;border-radius:4px;cursor:pointer;font-size:.8em;padding:3px 8px;margin-left:4px;transition:all .2s}
+.btn-acc:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)!important;color:var(--accent-blue)}
+.btn-calendario,.btn-cal-fila{background:var(--accent-blue);color:#fff;border:2px solid var(--accent-blue)!important;border-radius:4px;cursor:pointer;font-size:.85em;transition:all .2s}
+.btn-calendario:hover,.btn-cal-fila:hover{background:var(--accent-blue-hover)}
+.modal-btn{height:32px;border:2px solid rgba(255,255,255,0.3);border-radius:4px;cursor:pointer;font-size:1em;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;transition:all .2s;background:rgba(255,255,255,0.1)}
+.modal-btn.close:hover{background:var(--accent-red)}
+.modal-btn.pdf{padding:0 12px;font-size:.85em;width:auto}
+.modal-btn.pdf:hover{background:rgba(255,255,255,0.2)}
+.btn-exportar-confirmar{background:var(--accent-blue);color:#fff;border:2px solid var(--accent-blue)!important;padding:8px 20px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.9em;transition:all .2s}
+.btn-exportar-confirmar:hover{background:var(--accent-blue-hover)}
 
-async function cargarDatos() {
-  const inicio = performance.now(); toast('Cargando datos...', 'info');
-  cache = {};
-  const anios = [2026,2027,2028,2029,2030]; const tareas = [];
-  anios.forEach(anio => { for (let mes = 1; mes <= 12; mes++) { const ms = String(mes).padStart(2,'0');
-    tareas.push(get(ref(db, `${RUTA_BASE}/${anio}/${ms}`)).then(s => ({t:'b', anio, ms, datos: s.val()})).catch(() => ({t:'b', anio, ms, datos: null}))); } });
-  const res = await Promise.all(tareas); let total = 0;
-  res.forEach(({t, anio, ms, datos}) => { if (datos) { if (!cache[anio]) cache[anio] = {}; cache[anio][ms] = datos; total += Object.keys(datos).length; } });
-  document.getElementById('loading').style.display = 'none';
-  toast(`Carga completa: ${total} registros (${((performance.now()-inicio)/1000).toFixed(1)}s)`, 'ok');
-  render(); renderizarBaseDatos(); actualizarBotonGuardar();
-  await cargarBitacoras();
-}
-async function cargarBitacoras() {
-  try {
-    const snap = await get(ref(db, RUTA_BITACORAS));
-    bitacorasData = snap.val() || {};
-    renderizarTodasBitacoras();
-  } catch(e) { console.error('Error cargando bitácoras:', e); }
-}
+.basedatos-subtitulo{color:var(--accent-blue);font-size:1.1em;font-weight:700;margin:10px 0 15px 0;padding-bottom:8px;border-bottom:2px solid var(--border-color);text-transform:uppercase;letter-spacing:1px}
+.basedatos-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color)}
+.basedatos-tab{padding:10px 20px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.basedatos-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
+.basedatos-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
 
-function renderizarTodasBitacoras() {
-  ['ampm','b2c','ampmadmqdm'].forEach(tipo => {
-    for (let i = 1; i <= 6; i++) renderizarBitacora(tipo, i);
-  });
-}
+.bitacora-movil-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color);flex-wrap:wrap}
+.bitacora-movil-tab{padding:8px 16px;cursor:pointer;font-weight:600;font-size:.8em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.bitacora-movil-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
+.bitacora-movil-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
 
-function generarHTMLBitacora(tipo, movil) {
-  const key = `${tipo}_movil${movil}`;
-  const data = bitacorasData[key] || { filas: [], footer: { transporte: '3PL', fecha: '', ruta: 'AM', responsable: '', firma: '' } };
-  let html = `<div class="bitacora-print-container" style="background:#fff;padding:0;font-family:Arial,sans-serif;">`;
-  html += `<table style="width:100%;border-collapse:collapse;border:2px solid #1a5490;">`;
-  html += `<thead>`;
-  html += `<tr><th colspan="4" style="background:#1a5490;color:#fff;padding:14px;text-align:center;font-size:18px;font-weight:bold;border:2px solid #1a5490;">Bitácora Movil ${movil}</th>`;
-  html += `<th colspan="3" style="background:#1a5490;border:2px solid #1a5490;"></th></tr>`;
-  html += `<tr style="background:#1a5490;color:#fff;">`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;width:45px;font-size:12px;">N°</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Requirente</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Documentos</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Cliente</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Direccion</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Comuna</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;width:110px;font-size:12px;">OBS</th>`;
-  html += `</tr></thead><tbody>`;
-  for (let i = 0; i < 10; i++) {
-    const fila = data.filas[i] || { requirente: '', documentos: '', cliente: '', direccion: '', comuna: '', obs: '' };
-    html += `<tr>`;
-    html += `<td style="border:1px solid #999;padding:5px;text-align:center;font-weight:600;background:#f5f5f5;font-size:11px;">${i+1}</td>`;
-    html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_${i}_requirente" value="${(fila.requirente||'').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-    html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_${i}_documentos" value="${(fila.documentos||'').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-    html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_${i}_cliente" value="${(fila.cliente||'').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-    html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_${i}_direccion" value="${(fila.direccion||'').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-    html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_${i}_comuna" value="${(fila.comuna||'').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-    html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_${i}_obs" value="${(fila.obs||'').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-    html += `</tr>`;
-  }
-  html += `</tbody></table>`;
-  html += `<table style="width:100%;border-collapse:collapse;border:2px solid #1a5490;border-top:none;">`;
-  html += `<tr style="background:#1a5490;color:#fff;">`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Transporte</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Fecha</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Ruta</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Responsable</th>`;
-  html += `<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Firma</th>`;
-  html += `</tr><tr>`;
-  html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_footer_transporte" value="${(data.footer.transporte||'3PL').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;text-align:center;font-weight:600;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-  html += `<td style="border:1px solid #999;padding:0;"><input type="date" id="bit_${tipo}_${movil}_footer_fecha" value="${data.footer.fecha||''}" style="border:none;width:100%;padding:4px;text-align:center;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-  html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_footer_ruta" value="${(data.footer.ruta||'AM').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;text-align:center;font-weight:600;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-  html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_footer_responsable" value="${(data.footer.responsable||'').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;text-align:center;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-  html += `<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_${tipo}_${movil}_footer_firma" value="${(data.footer.firma||'').replace(/"/g,'&quot;')}" style="border:none;width:100%;padding:4px;text-align:center;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>`;
-  html += `</tr></table></div>`;
-  return html;
-}
+.basedatos-tab-content{display:none}
+.basedatos-tab-content.show{display:block}
+.bitacora-movil-content{display:block}
 
-function renderizarBitacora(tipo, movil) {
-  const cont = document.getElementById(`bitacora${tipo.charAt(0).toUpperCase()+tipo.slice(1)}Movil${movil}`);
-  if (!cont) return;
-  let html = `<div class="bitacora-actions"><button class="btn-bitacora btn-bitacora-guardar" onclick="guardarBitacora('${tipo}',${movil})">GUARDAR</button><button class="btn-bitacora btn-bitacora-excel" onclick="exportarBitacoraExcel('${tipo}',${movil})">EXPORTAR EXCEL</button><button class="btn-bitacora btn-bitacora-jpeg" onclick="exportarBitacoraJPEG('${tipo}',${movil})">EXPORTAR JPEG</button><button class="btn-bitacora" style="background:var(--accent-orange);color:#fff" onclick="imprimirBitacora('${tipo}',${movil})">IMPRIMIR</button></div><div id="bitacoraTable_${tipo}_${movil}" style="background:#fff;padding:0;border-radius:4px;overflow:visible;">`;
-  html += generarHTMLBitacora(tipo, movil);
-  html += `</div>`;
-  cont.innerHTML = html;
-}
+.bitacora-actions{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap}
+.bd-filtro-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.bd-filtro-row label{color:var(--text-secondary);font-weight:600;font-size:.85em;white-space:nowrap}
+.bd-filtro-input{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:200px;transition:border-color .2s}
+.bd-filtro-input:focus{outline:none;border-color:var(--accent-blue)}
+.pendientes-info{color:var(--accent-orange);font-size:.85em;font-weight:700}
+.bd-resumen{display:flex;gap:22px;flex-wrap:wrap;align-items:center;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;padding:10px 15px;margin-bottom:10px;font-size:.9em;color:var(--text-primary)}
+.bd-resumen span{display:flex;align-items:center;gap:6px}
+.bd-resumen strong{color:var(--accent-blue);font-size:1.05em}
+.bd-resumen .res-am strong{color:var(--accent-orange)}
+.bd-resumen .res-pm strong{color:var(--accent-purple)}
+.bd-resumen .res-periodo strong{color:var(--accent-green)}
+.bd-resumen small{color:var(--text-secondary)}
+.bd-descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;margin:4px 0 8px 0;letter-spacing:.5px;text-transform:uppercase}
 
-window.imprimirBitacora = function(tipo, movil) {
-  const element = document.getElementById(`bitacoraTable_${tipo}_${movil}`);
-  if (!element) { toast('Elemento no encontrado', 'err'); return; }
-  const printWindow = window.open('', '_blank', 'width=900,height=700');
-  if (!printWindow) { toast('Bloqueador de popups activo', 'err'); return; }
-  const clone = element.cloneNode(true);
-  const inputs = clone.querySelectorAll('input');
-  inputs.forEach(inp => {
-    const span = document.createElement('span');
-    span.textContent = inp.value || '';
-    span.style.cssText = 'display:block;width:100%;padding:4px;font-family:Arial,sans-serif;font-size:11px;';
-    inp.parentNode.replaceChild(span, inp);
-  });
-  const html = `<!DOCTYPE html><html><head><title>Bitácora Movil ${movil}</title>
-  <style>@page { size: letter portrait; margin: 10mm; }* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: Arial, sans-serif; padding: 5mm; background: #fff; }h2 { text-align: center; color: #1a5490; font-size: 16pt; margin-bottom: 8px; }table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }th, td { border: 1px solid #333; padding: 4px 6px; text-align: left; font-size: 10pt; }th { background: #1a5490; color: white; font-weight: bold; }.no-print { text-align: center; margin-top: 15px; }.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }</style></head><body><h2>Bitácora Movil ${movil} - ${tipo.toUpperCase()}</h2>${clone.innerHTML}<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div></body></html>`;
-  printWindow.document.write(html);
-  printWindow.document.close();
-  toast('Ventana de impresión abierta', 'ok');
-};
+.basedatos-tabla-wrap{overflow:auto;max-height:500px;border:1px solid var(--border-color);border-radius:4px;margin-bottom:10px;background:var(--bg-secondary)}
+.basedatos-tabla-wrap::-webkit-scrollbar{width:8px;height:8px}
+.basedatos-tabla-wrap::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
+.basedatos-tabla{width:100%;border-collapse:collapse;font-size:.85em}
+.basedatos-tabla thead{display:table-header-group}
+.basedatos-tabla th{background:var(--bg-tertiary);color:var(--text-primary);padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-color);position:sticky;top:0;z-index:10;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;font-size:.8em;vertical-align:top}
+.basedatos-tabla td{padding:8px;border-bottom:1px solid var(--border-color);color:var(--text-primary);white-space:nowrap}
+.basedatos-tabla tr:hover td{background:var(--row-hover)}
+.basedatos-tabla tr.id-repetido td{background:var(--id-repetido-bg)!important;color:var(--text-primary)!important;font-weight:600}
+.basedatos-tabla tr.id-repetido-otro td{background:var(--id-otro-bg)!important;color:var(--text-primary)!important;font-weight:600}
 
-window.guardarBitacora = function(tipo, movil) {
-  const key = `${tipo}_movil${movil}`;
-  const filas = [];
-  for (let i = 0; i < 10; i++) {
-    filas.push({
-      requirente: document.getElementById(`bit_${tipo}_${movil}_${i}_requirente`)?.value || '',
-      documentos: document.getElementById(`bit_${tipo}_${movil}_${i}_documentos`)?.value || '',
-      cliente: document.getElementById(`bit_${tipo}_${movil}_${i}_cliente`)?.value || '',
-      direccion: document.getElementById(`bit_${tipo}_${movil}_${i}_direccion`)?.value || '',
-      comuna: document.getElementById(`bit_${tipo}_${movil}_${i}_comuna`)?.value || '',
-      obs: document.getElementById(`bit_${tipo}_${movil}_${i}_obs`)?.value || ''
-    });
-  }
-  const footer = {
-    transporte: document.getElementById(`bit_${tipo}_${movil}_footer_transporte`)?.value || '',
-    fecha: document.getElementById(`bit_${tipo}_${movil}_footer_fecha`)?.value || '',
-    ruta: document.getElementById(`bit_${tipo}_${movil}_footer_ruta`)?.value || '',
-    responsable: document.getElementById(`bit_${tipo}_${movil}_footer_responsable`)?.value || '',
-    firma: document.getElementById(`bit_${tipo}_${movil}_footer_firma`)?.value || ''
-  };
-  bitacorasData[key] = { filas, footer };
-  update(ref(db, `${RUTA_BITACORAS}/${key}`), { filas, footer })
-    .then(() => toast('Bitácora guardada', 'ok'))
-    .catch(e => toast('Error al guardar: ' + e.message, 'err'));
-};
+.bd-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px;background:var(--bg-tertiary);border-radius:4px;flex-wrap:wrap;border:1px solid var(--border-color)}
+.bd-paginacion-info{color:var(--text-secondary);font-size:.85em;font-weight:600;margin-right:15px}
 
-window.exportarBitacoraExcel = function(tipo, movil) {
-  const key = `${tipo}_movil${movil}`;
-  const data = bitacorasData[key] || { filas: [], footer: {} };
-  const wb = XLSX.utils.book_new();
-  const wsData = [];
-  wsData.push([`Bitácora Movil ${movil}`, '', '', '', '', '', '']);
-  wsData.push(['', '', '', '', '', '', '']);
-  wsData.push(['N°', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
-  for (let i = 0; i < 10; i++) {
-    const fila = data.filas[i] || { requirente: '', documentos: '', cliente: '', direccion: '', comuna: '', obs: '' };
-    wsData.push([i+1, fila.requirente||'', fila.documentos||'', fila.cliente||'', fila.direccion||'', fila.comuna||'', fila.obs||'']);
-  }
-  wsData.push(['', '', '', '', '', '', '']);
-  wsData.push(['Transporte', 'Fecha', 'Ruta', 'Responsable', 'Firma', '', '']);
-  wsData.push([data.footer.transporte||'', data.footer.fecha||'', data.footer.ruta||'', data.footer.responsable||'', data.footer.firma||'', '', '']);
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, { s: { r: 14, c: 5 }, e: { r: 14, c: 6 } }, { s: { r: 15, c: 5 }, e: { r: 15, c: 6 } }];
-  ws['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 18 }, { wch: 20 }];
-  XLSX.utils.book_append_sheet(wb, ws, `Movil ${movil}`);
-  const fecha = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `Bitacora_${tipo}_Movil${movil}_${fecha}.xlsx`);
-  toast('Excel exportado', 'ok');
-};
+.stats-bar{display:flex;gap:12px;padding:8px 28px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;flex-wrap:wrap;align-items:center;transition:background .3s}
+.stat-item{background:var(--bg-tertiary);padding:6px 14px;border-radius:4px;border-left:3px solid var(--accent-blue)}
+.stat-item .val{color:var(--accent-blue);font-size:1.2em;font-weight:700}
+.stat-item .lbl{color:var(--text-secondary);font-size:.7em;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
 
-window.exportarBitacoraJPEG = function(tipo, movil) {
-  const element = document.getElementById(`bitacoraTable_${tipo}_${movil}`);
-  if (!element) { toast('Elemento no encontrado', 'err'); return; }
-  const clone = element.cloneNode(true);
-  const actionsDiv = clone.querySelector('.bitacora-actions');
-  if (actionsDiv) actionsDiv.remove();
-  const inputs = clone.querySelectorAll('input');
-  inputs.forEach(inp => {
-    const span = document.createElement('span');
-    span.textContent = inp.value || '';
-    span.style.cssText = 'display:block;width:100%;padding:4px 6px;font-family:Arial,sans-serif;font-size:11px;color:#000;';
-    inp.parentNode.replaceChild(span, inp);
-  });
-  clone.style.position = 'absolute';
-  clone.style.left = '-9999px';
-  clone.style.top = '0';
-  clone.style.width = '900px';
-  clone.style.background = '#fff';
-  clone.style.padding = '20px';
-  clone.style.overflow = 'visible';
-  document.body.appendChild(clone);
-  html2canvas(clone, {
-    backgroundColor: '#ffffff', scale: 3, useCORS: true, allowTaint: true, logging: false,
-    width: 900, windowWidth: 900, windowHeight: clone.scrollHeight
-  }).then(canvas => {
-    document.body.removeChild(clone);
-    const link = document.createElement('a');
-    const fecha = new Date().toISOString().split('T')[0];
-    link.download = `Bitacora_${tipo}_Movil${movil}_${fecha}.jpeg`;
-    link.href = canvas.toDataURL('image/jpeg', 0.95);
-    link.click();
-    toast('JPEG exportado', 'ok');
-  }).catch(e => {
-    document.body.removeChild(clone);
-    toast('Error al exportar JPEG: ' + e.message, 'err');
-  });
-};
+.seccion-registro{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;transition:background .3s}
+.seccion-registro-header{display:flex;align-items:center;justify-content:space-between;padding:10px 28px;cursor:pointer;transition:background .2s;border-bottom:1px solid var(--border-color)}
+.seccion-registro-header:hover{background:var(--bg-tertiary)}
+.seccion-registro-header h3{color:var(--text-primary);font-size:.9em;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.btn-flecha{background:none;border:none;color:var(--text-secondary);font-size:1em;cursor:pointer;transition:transform .3s}
+.btn-flecha.rotada{transform:rotate(180deg)}
+.seccion-registro .seccion-contenido{padding:12px 28px}
+.form-fila{display:flex;gap:6px;align-items:flex-end;overflow-x:auto;padding-bottom:4px}
+.campo{display:flex;flex-direction:column;flex-shrink:0}
+.campo label{color:var(--text-secondary);font-size:.65em;font-weight:700;margin-bottom:2px;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px}
+.campo input,.campo select{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;transition:border-color .2s}
+.campo input:focus,.campo select:focus{outline:none;border-color:var(--accent-blue)}
+.campo select{cursor:pointer}
+.campo input[type="date"]{background:var(--bg-input)!important;color:var(--text-primary)!important;cursor:pointer;font-weight:500}
+.c-fecha{width:140px}.c-unidad{width:170px}.c-id{width:100px}.c-nombre{width:180px}.c-direccion{width:200px}.c-comuna{width:120px}.c-valor{width:110px}.c-obs{width:160px}.c-transporte{width:140px}.c-rango{width:70px}
 
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    rolActual = esAdmin(user.email) ? 'admin' : 'operador';
-    document.getElementById('loginSection').style.display = 'none';
-    document.getElementById('appSection').style.display = 'flex';
-    document.getElementById('userEmail').textContent = user.email + (rolActual === 'admin' ? '  (ADMIN)' : '');
-    aplicarRol();
-    cargarDatos().then(() => {
-      if (seccionInicial === 'basedatos' || seccionInicial === 'informes' || seccionInicial === 'bitacoras') {
-        cambiarSeccion(seccionInicial);
-        seccionInicial = '';
-      }
-    });
-  } else {
-    rolActual = 'operador';
-    document.getElementById('loginSection').style.display = 'flex';
-    document.getElementById('appSection').style.display = 'none';
+.descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;padding:12px 28px 0 28px;letter-spacing:.5px;border-left:3px solid var(--accent-blue);padding-left:12px;text-transform:uppercase}
+.acciones-bar{display:flex;gap:8px;padding:8px 28px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);align-items:center;flex-shrink:0;flex-wrap:wrap;transition:background .3s}
+.buscar-input{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:250px;min-width:150px;transition:border-color .2s}
+.buscar-input:focus{outline:none;border-color:var(--accent-blue)}
+
+.tabla-section{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0}
+.tabla-scroll-vertical{flex:1;overflow-y:auto;padding:0 28px 20px}
+.tabla-scroll-vertical::-webkit-scrollbar{width:10px}
+.tabla-scroll-vertical::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:5px}
+.tabla-scroll-vertical::-webkit-scrollbar-thumb{background:var(--scrollbar-v);border-radius:5px;border:2px solid var(--bg-tertiary)}
+.tabla-scroll-horizontal-top{overflow-x:auto;border-bottom:2px solid var(--accent-orange);margin-bottom:0}
+.tabla-scroll-horizontal-top::-webkit-scrollbar{height:8px}
+.tabla-scroll-horizontal-top::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:4px}
+.tabla-scroll-horizontal-top::-webkit-scrollbar-thumb{background:var(--accent-orange);border-radius:4px}
+.tabla-scroll-horizontal{overflow-x:auto;border-top:2px solid var(--accent-orange)}
+.tabla-scroll-horizontal::-webkit-scrollbar{height:10px}
+.tabla-scroll-horizontal::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:5px}
+.tabla-scroll-horizontal::-webkit-scrollbar-thumb{background:var(--scrollbar-h);border-radius:5px;border:2px solid var(--bg-tertiary)}
+.tabla-scroll-horizontal table{width:100%;min-width:1100px}
+
+table{width:100%;border-collapse:collapse;font-size:.82em;margin-top:8px;background:var(--bg-secondary)}
+th{background:var(--bg-tertiary);color:var(--text-primary);padding:8px 6px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;border-bottom:2px solid var(--border-color);white-space:nowrap;font-size:.8em;text-transform:uppercase;letter-spacing:.5px;vertical-align:top}
+th.th-sel,td.td-sel{text-align:center;width:34px}
+td{padding:6px;border-bottom:1px solid var(--border-color);color:var(--text-primary);white-space:nowrap}
+tr:hover td{background:var(--row-hover)}
+
+.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:.75em;font-weight:600}
+.badge-am{background:var(--accent-orange);color:#fff}
+.badge-pm{background:var(--accent-purple);color:#fff}
+.badge-b2c{background:var(--accent-blue);color:#fff}
+.badge-unidad{background:var(--badge-unidad-bg);color:var(--badge-unidad-text);border:1px solid var(--border-color)}
+.badge-pendiente{background:var(--accent-orange);color:#fff;margin-left:4px}
+
+tr.id-repetido td{background:var(--id-repetido-bg)!important;color:var(--text-primary)!important;font-weight:600}
+tr.id-repetido:hover td{background:var(--id-repetido-hover)!important}
+tr.id-repetido .badge{background:#fff!important;color:var(--accent-red)!important}
+tr.id-repetido-otro td{background:var(--id-otro-bg)!important;color:var(--text-primary)!important;font-weight:600}
+tr.id-repetido-otro:hover td{background:var(--id-otro-hover)!important}
+tr.id-repetido-otro .badge{background:#fff!important;color:var(--accent-orange)!important}
+
+.celda-edit input,.celda-edit select{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:3px 5px;border-radius:4px;font-size:.9em;width:100%;min-width:70px;transition:border-color .2s}
+.celda-edit select{min-width:110px}
+.celda-edit input:focus,.celda-edit select:focus{outline:none;border-color:var(--accent-blue)}
+td.td-acciones{white-space:nowrap;text-align:center}
+td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:middle}
+
+.filtro-combo{position:relative;margin-top:8px}
+.filtro-combo input{width:100%;padding-right:22px}
+.combo-arrow{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8em;padding:0}
+.combo-list{display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;max-height:180px;overflow-y:auto;z-index:300;box-shadow:0 4px 12px var(--shadow);min-width:100%}
+.combo-item{padding:6px 10px;cursor:pointer;color:var(--text-primary);font-size:.9em;font-weight:400;text-transform:none;letter-spacing:0;white-space:nowrap;transition:background .15s;border-bottom:1px solid var(--border-color)}
+.combo-item:last-child{border-bottom:none}
+.combo-item:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
+
+.obs-combo-wrap{position:relative;display:inline-block;width:100%}
+.obs-combo-wrap input{width:100%;padding-right:22px}
+
+.valor-alineado{display:inline-block;min-width:140px;text-align:right;font-family:inherit;font-weight:700;font-size:1.05em;letter-spacing:0;color:var(--text-primary)}
+.direccion-truncada{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;cursor:help}
+.direccion-truncada:hover{white-space:normal;overflow:visible;max-width:none;background:var(--bg-tertiary);padding:4px;border-radius:4px;z-index:100;position:relative}
+.transporte-cell{min-width:140px;max-width:160px}
+.transporte-cell input{min-width:130px}
+.rango-cell{min-width:70px;max-width:90px}
+.rango-cell select{min-width:65px;max-width:85px}
+
+.empty-msg{text-align:center;padding:60px;color:var(--text-muted);font-style:italic;font-size:1.1em}
+.loading-msg{text-align:center;padding:60px;color:var(--text-secondary)}
+.spinner{border:3px solid var(--border-color);border-top:3px solid var(--accent-blue);border-radius:50%;width:28px;height:28px;animation:spin 1s linear infinite;margin:0 auto 10px}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+.toast{position:fixed;top:15px;right:15px;padding:10px 18px;border-radius:4px;color:#fff;font-weight:600;font-size:.85em;z-index:9999;transform:translateX(400px);transition:transform .3s;box-shadow:0 2px 8px var(--shadow);border-left:4px solid rgba(255,255,255,0.3)}
+.toast.show{transform:translateX(0)}
+.toast.ok{background:var(--toast-ok)}
+.toast.err{background:var(--toast-err)}
+.toast.info{background:var(--toast-info)}
+
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000}
+.modal-overlay.show{display:flex}
+.modal-window{width:100vw;height:100vh;background:var(--bg-primary);display:flex;flex-direction:column;overflow:hidden}
+.modal-titlebar{background:var(--accent-blue);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{color:#fff;font-weight:700;font-size:1.1em;display:flex;align-items:center;gap:8px}
+.modal-controls{display:flex;gap:6px}
+.modal-body{flex:1;overflow:auto;padding:0;background:var(--bg-primary)}
+.modal-body::-webkit-scrollbar{width:8px;height:8px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
+.modal-info{color:var(--text-primary);font-size:.9em;padding:12px 20px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);flex-shrink:0}
+.modal-filtro{display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;flex-wrap:wrap}
+.modal-filtro label{color:var(--text-secondary);font-weight:600;font-size:.85em;white-space:nowrap}
+.modal-filtro input{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:6px 12px;border-radius:4px;font-size:.9em;width:250px;max-width:100%;transition:border-color .2s}
+.modal-filtro input:focus{outline:none;border-color:var(--accent-blue)}
+.modal-filtro .filtro-info{color:var(--accent-orange);font-size:.85em;font-weight:600}
+.modal-body table{width:100%;border-collapse:collapse;font-size:.9em}
+.modal-body thead th{background:var(--bg-tertiary);color:var(--text-primary);padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-color);position:sticky;top:0;z-index:10;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;font-size:.85em;vertical-align:top}
+.modal-body thead th .th-filter{display:block;width:100%;margin-top:6px;background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);border-radius:4px;padding:4px 6px;font-size:.9em;font-weight:400;text-transform:none;letter-spacing:0;white-space:nowrap}
+.modal-body thead th .th-filter:focus{outline:none;border-color:var(--accent-blue)}
+.modal-body tbody td{padding:10px;border-bottom:1px solid var(--border-color);color:var(--text-primary);white-space:nowrap}
+.modal-body tbody tr:hover td{background:var(--row-hover)}
+.modal-body tbody tr.id-repetido td{background:var(--id-repetido-bg)!important;color:var(--text-primary)!important;font-weight:600}
+.modal-body tbody tr.id-repetido-otro td{background:var(--id-otro-bg)!important;color:var(--text-primary)!important;font-weight:600}
+.modal-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:12px 20px;background:var(--bg-tertiary);border-top:1px solid var(--border-color);flex-wrap:wrap}
+.modal-paginacion-info{color:var(--text-secondary);font-size:.85em;font-weight:600;margin-right:15px}
+
+.overlay-centro{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:3000;align-items:center;justify-content:center}
+.overlay-centro.show{display:flex}
+.modal-caja{background:var(--bg-secondary);border-radius:4px;padding:25px;max-width:400px;width:90%;box-shadow:0 8px 32px var(--shadow-modal);border:1px solid var(--border-color)}
+.modal-caja.roja{border-top:4px solid var(--accent-red)}
+.modal-caja.azul{border-top:4px solid var(--accent-blue)}
+.modal-caja h3{font-size:1.1em;margin-bottom:15px;text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.modal-caja.roja h3{color:var(--accent-red)}
+.modal-caja.azul h3{color:var(--accent-blue)}
+.modal-caja .form-group{margin-bottom:12px}
+.modal-caja .form-group label{display:block;color:var(--text-secondary);font-size:.85em;margin-bottom:5px;font-weight:600}
+.modal-caja .form-group select,.modal-caja .form-group input{width:100%;background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:8px;border-radius:4px;font-size:.9em;transition:border-color .2s}
+.modal-caja .form-group select:focus,.modal-caja .form-group input:focus{outline:none;border-color:var(--accent-blue)}
+.modal-caja .info-registros{color:var(--accent-orange);font-size:.85em;margin:10px 0;text-align:center;font-weight:600;padding:8px;background:var(--accent-orange-pastel);border-radius:4px}
+.modal-caja-buttons{display:flex;gap:10px;justify-content:center;margin-top:15px}
+
+.exportar-modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:2000;align-items:center;justify-content:center}
+.exportar-modal-overlay.show{display:flex}
+.exportar-modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:25px;max-width:560px;width:90%;box-shadow:0 8px 32px var(--shadow-modal)}
+.exportar-modal h3{color:var(--accent-blue);font-size:1.2em;margin-bottom:15px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:1px}
+.exp-fecha-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px;background:var(--bg-tertiary);border-radius:4px;border:1px solid var(--border-color)}
+.exp-fecha-row label{color:var(--text-secondary);font-weight:600;font-size:.85em;white-space:nowrap}
+.exp-info{color:var(--accent-orange);font-size:.85em;margin-bottom:12px;font-weight:600;text-align:center;padding:8px;background:var(--accent-orange-pastel);border-radius:4px}
+.exportar-modal .checkbox-group{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.exportar-modal .checkbox-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-tertiary);border-radius:4px;cursor:pointer;transition:background .2s;border:1px solid var(--border-color)}
+.exportar-modal .checkbox-item:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)}
+.exportar-modal .checkbox-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--accent-blue)}
+.exportar-modal .checkbox-item label{color:var(--text-primary);font-size:.9em;cursor:pointer;flex:1;font-weight:500}
+.exportar-modal-buttons{display:flex;gap:10px;justify-content:flex-end;padding-top:15px;border-top:1px solid var(--border-color)}
+
+.fecha-wrap{position:relative;display:flex;align-items:center;gap:6px}
+.fecha-wrap input[type="date"]{width:140px}
+.calendario-popup{display:none;position:absolute;top:100%;left:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:10px;z-index:1000;box-shadow:0 4px 12px var(--shadow);min-width:280px;margin-top:4px}
+.calendario-popup.show{display:block}
+.calendario-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.calendario-header button{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:.85em;transition:all .2s}
+.calendario-header button:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue);color:var(--accent-blue)}
+.calendario-header span{font-weight:700;color:var(--accent-blue);font-size:.9em}
+.calendario-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.calendario-grid .dia-semana{text-align:center;font-size:.75em;font-weight:700;color:var(--text-secondary);padding:4px;text-transform:uppercase}
+.calendario-grid .dia{text-align:center;padding:6px 4px;cursor:pointer;border-radius:4px;font-size:.85em;color:var(--text-primary);transition:all .2s;font-weight:500}
+.calendario-grid .dia:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
+.calendario-grid .dia.hoy{background:var(--accent-orange);color:#fff;font-weight:700}
+.calendario-grid .dia.seleccionado{background:var(--accent-blue);color:#fff;font-weight:700}
+.calendario-grid .dia.vacio{cursor:default}
+.calendario-grid .dia.vacio:hover{background:transparent;color:transparent}
+
+.fecha-cell-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
+.fecha-cell-wrap input[type="date"]{width:110px;background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:3px 5px;border-radius:4px;font-size:.85em}
+.fecha-cell-wrap input[type="date"]:focus{outline:none;border-color:var(--accent-blue)}
+
+.cal-popup-fila{display:none;position:absolute;top:100%;left:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:8px;z-index:500;box-shadow:0 4px 12px var(--shadow);min-width:240px;margin-top:2px}
+.cal-popup-fila.show{display:block}
+.cal-header-fila{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cal-header-fila button{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);padding:2px 6px;border-radius:4px;cursor:pointer;font-size:.8em;transition:all .2s}
+.cal-header-fila button:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)}
+.cal-header-fila span{font-weight:700;color:var(--accent-blue);font-size:.85em}
+.cal-grid-fila{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.cal-grid-fila .dia-semana{text-align:center;font-size:.7em;font-weight:700;color:var(--text-secondary);padding:3px;text-transform:uppercase}
+.cal-grid-fila .dia{text-align:center;padding:4px 2px;cursor:pointer;border-radius:4px;font-size:.8em;color:var(--text-primary);transition:all .2s}
+.cal-grid-fila .dia:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
+.cal-grid-fila .dia.hoy{background:var(--accent-orange);color:#fff;font-weight:700}
+.cal-grid-fila .dia.seleccionado{background:var(--accent-blue);color:#fff;font-weight:700}
+.cal-grid-fila .dia.vacio{cursor:default}
+.cal-grid-fila .dia.vacio:hover{background:transparent;color:transparent}
+
+/* ESTILOS DE BITÁCORA */
+.bitacora-wrapper{background:#fff;border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.bitacora-header-info{background:#1a5490;color:#fff;padding:12px 20px;border-radius:6px 6px 0 0;font-size:1.1em;font-weight:700;text-align:center;letter-spacing:1px}
+.bitacora-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;table-layout:auto}
+.bitacora-table thead th{background:#1a5490;color:#fff;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e;text-align:center}
+.bitacora-table tbody td{border:1px solid #999;padding:6px 8px;font-size:11px;vertical-align:middle;background:#fff}
+.bitacora-table tbody tr:nth-child(even){background:#f9f9f9}
+.bitacora-table tbody tr:nth-child(odd){background:#ffffff}
+.bitacora-table tbody tr:hover{background:#1a5490!important;color:#fff!important}
+.bitacora-table tbody tr:hover td{color:#fff!important;background:#1a5490!important}
+.bitacora-table tbody tr:hover input{color:#fff!important;background:transparent!important}
+.bitacora-table .num-col{background:#f0f0f0;font-weight:600;text-align:center;width:40px}
+.bitacora-table input{border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000;white-space:normal;word-wrap:break-word}
+.bitacora-footer-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;margin-top:0;table-layout:auto}
+.bitacora-footer-table thead th{background:#1a5490;color:#fff;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e}
+.bitacora-footer-table tbody td{border:1px solid #999;padding:8px;font-size:11px;text-align:center;background:#fff}
+.bitacora-footer-table input{border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000;text-align:center}
+</style>
+</head>
+<body>
+
+<div id="loginSection">
+  <div class="login-box">
+    <h1>DESPACHO RETAIL</h1>
+    <div class="version">v1.0</div>
+    <p>Sistema de Control de Despachos<br>2026 - 2030</p>
+    <input type="email" id="loginEmail" placeholder="Correo electrónico" autocomplete="off">
+    <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="new-password">
+    <button onclick="login()">INGRESAR AL SISTEMA</button>
+  </div>
+</div>
+
+<div id="appSection">
+  <div class="header">
+    <div class="header-left">
+      <h1>DESPACHO RETAIL v1.0</h1>
+    </div>
+    <div class="header-right">
+      <div class="theme-selector">
+        <button class="theme-btn" data-theme="dark" onclick="cambiarTema('dark')" title="Oscuro"></button>
+        <button class="theme-btn" data-theme="light" onclick="cambiarTema('light')" title="Claro"></button>
+        <button class="theme-btn" data-theme="feminino" onclick="cambiarTema('feminino')" title="Femenino"></button>
+      </div>
+      <span class="user-info"><span id="userEmail"></span></span>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="secciones-bar">
+    <div class="secciones-header">
+      <div class="seccion-tab active" data-seccion="ampm" onclick="cambiarSeccion('ampm')">AM/PM</div>
+      <div class="seccion-tab" data-seccion="b2c" onclick="cambiarSeccion('b2c')">B2C</div>
+      <div class="seccion-tab" data-seccion="ampmadmqdm" onclick="cambiarSeccion('ampmadmqdm')">AM/PM-ADM-QDM</div>
+      <div class="seccion-tab" data-seccion="bitacoras" onclick="cambiarSeccion('bitacoras')">BITACORAS</div>
+      <div class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')" style="display:none">BASE DE DATOS</div>
+      <div class="seccion-tab" data-seccion="informes" onclick="cambiarSeccion('informes')">INFORMES</div>
+    </div>
+
+    <div class="seccion-contenido show" id="seccionAmpm">
+      <div class="submenu-header" onclick="toggleSubmenu('busquedaAmpm')">
+        <h3>Búsqueda AM/PM</h3><button class="btn-flecha-submenu" id="flechaBusquedaAmpm">▼</button>
+      </div>
+      <div class="submenu-contenido show" id="submenuBusquedaAmpm">
+        <div class="busqueda-filtros">
+          <label>Día:</label><select class="select-filtro" id="filtroDiaAmpm"><option value="">-- Día --</option></select>
+          <label>Mes:</label><select class="select-filtro" id="filtroMesAmpm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
+          <label>Año:</label><select class="select-filtro" id="filtroAnioAmpm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
+          <button class="btn-buscar" onclick="buscarFiltrosAMPM()">BUSCAR</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion-contenido" id="seccionB2c">
+      <div class="submenu-header" onclick="toggleSubmenu('busquedaB2c')">
+        <h3>Búsqueda B2C</h3><button class="btn-flecha-submenu" id="flechaBusquedaB2c">▼</button>
+      </div>
+      <div class="submenu-contenido show" id="submenuBusquedaB2c">
+        <div class="busqueda-filtros">
+          <label>Día:</label><select class="select-filtro" id="filtroDiaB2c"><option value="">-- Día --</option></select>
+          <label>Mes:</label><select class="select-filtro" id="filtroMesB2c"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
+          <label>Año:</label><select class="select-filtro" id="filtroAnioB2c"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
+          <button class="btn-buscar" onclick="buscarFiltrosB2C()">BUSCAR</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion-contenido" id="seccionAmpmadmqdm">
+      <div class="submenu-header" onclick="toggleSubmenu('busquedaAmpmAdmQdm')">
+        <h3>Búsqueda AM/PM-ADM-QDM</h3><button class="btn-flecha-submenu" id="flechaBusquedaAmpmAdmQdm">▼</button>
+      </div>
+      <div class="submenu-contenido show" id="submenuBusquedaAmpmAdmQdm">
+        <div class="busqueda-filtros">
+          <label>Día:</label><select class="select-filtro" id="filtroDiaAmpmAdmQdm"><option value="">-- Día --</option></select>
+          <label>Mes:</label><select class="select-filtro" id="filtroMesAmpmAdmQdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
+          <label>Año:</label><select class="select-filtro" id="filtroAnioAmpmAdmQdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
+          <button class="btn-buscar" onclick="buscarFiltrosAmpmAdmQdm()">BUSCAR</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion-contenido" id="seccionBitacoras">
+      <h3 class="basedatos-subtitulo">BITACORAS</h3>
+      <div class="basedatos-tabs">
+        <div class="basedatos-tab active" data-btab="ampm" onclick="cambiarTabBit('ampm')">AM/PM</div>
+        <div class="basedatos-tab" data-btab="b2c" onclick="cambiarTabBit('b2c')">B2C</div>
+        <div class="basedatos-tab" data-btab="ampmadmqdm" onclick="cambiarTabBit('ampmadmqdm')">AM/PM-ADM-QDM</div>
+      </div>
+      <div class="basedatos-tab-content show" id="bitContentAmpm">
+        <div class="bitacora-movil-tabs">
+          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('ampm',1)">MOVIL 1</div>
+          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('ampm',2)">MOVIL 2</div>
+          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('ampm',3)">MOVIL 3</div>
+          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('ampm',4)">MOVIL 4</div>
+          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('ampm',5)">MOVIL 5</div>
+          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('ampm',6)">MOVIL 6</div>
+        </div>
+        <div id="bitacoraAmpmMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil6" class="bitacora-movil-content"></div>
+      </div>
+      <div class="basedatos-tab-content" id="bitContentB2c">
+        <div class="bitacora-movil-tabs">
+          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('b2c',1)">MOVIL 1</div>
+          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('b2c',2)">MOVIL 2</div>
+          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('b2c',3)">MOVIL 3</div>
+          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('b2c',4)">MOVIL 4</div>
+          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('b2c',5)">MOVIL 5</div>
+          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('b2c',6)">MOVIL 6</div>
+        </div>
+        <div id="bitacoraB2cMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
+      </div>
+      <div class="basedatos-tab-content" id="bitContentAmpmAdmQdm">
+        <div class="bitacora-movil-tabs">
+          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('ampmadmqdm',1)">MOVIL 1</div>
+          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('ampmadmqdm',2)">MOVIL 2</div>
+          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('ampmadmqdm',3)">MOVIL 3</div>
+          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('ampmadmqdm',4)">MOVIL 4</div>
+          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('ampmadmqdm',5)">MOVIL 5</div>
+          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('ampmadmqdm',6)">MOVIL 6</div>
+        </div>
+        <div id="bitacoraAmpmadmqdmMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil6" class="bitacora-movil-content"></div>
+      </div>
+    </div>
+
+    <div class="seccion-contenido" id="seccionBasedatos">
+      <h3 class="basedatos-subtitulo">BASE DE DATOS</h3>
+      <div class="basedatos-tabs">
+        <div class="basedatos-tab active" data-tab="ampm" onclick="cambiarTabBD('ampm')">AM/PM</div>
+        <div class="basedatos-tab" data-tab="b2c" onclick="cambiarTabBD('b2c')">B2C</div>
+        <div class="basedatos-tab" data-tab="ampmadmqdm" onclick="cambiarTabBD('ampmadmqdm')">AM/PM-ADM-QDM</div>
+      </div>
+      <div class="basedatos-tab-content show" id="tabContentAmpm">
+        <div class="bd-filtro-row">
+          <button class="btn-buscar" onclick="abrirModalVerFecha('AMPM')">VER MES</button>
+          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdAmpm" placeholder="Escribe ID..." oninput="filtrarBD('AMPM')">
+          <span class="pendientes-info" id="pendientesAmpm"></span>
+          <button class="btn-bd-importar" onclick="importarDesdeBD('AMPM')">IMPORTAR</button>
+          <button class="btn-bd-guardar" onclick="guardarEnFirebase()">GUARDAR</button>
+          <button class="btn-bd-pdf" onclick="exportarPDFBD()">EXPORTAR PDF</button>
+          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('AMPM')">BORRAR MES</button>
+        </div>
+        <div class="bd-resumen" id="bdResumenAmpm"></div>
+        <div class="bd-descripcion-subtitulo">Descripción</div>
+        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAmpm"></thead><tbody id="bdTbodyAmpm"></tbody></table></div>
+        <div class="bd-paginacion" id="bdPaginacionAmpm"></div>
+      </div>
+      <div class="basedatos-tab-content" id="tabContentB2c">
+        <div class="bd-filtro-row">
+          <button class="btn-buscar" onclick="abrirModalVerFecha('B2C')">VER MES</button>
+          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdB2c" placeholder="Escribe ID..." oninput="filtrarBD('B2C')">
+          <span class="pendientes-info" id="pendientesB2c"></span>
+          <button class="btn-bd-importar" onclick="importarDesdeBD('B2C')">IMPORTAR</button>
+          <button class="btn-bd-guardar" onclick="guardarEnFirebase()">GUARDAR</button>
+          <button class="btn-bd-pdf" onclick="exportarPDFBD()">EXPORTAR PDF</button>
+          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('B2C')">BORRAR MES</button>
+        </div>
+        <div class="bd-resumen" id="bdResumenB2c"></div>
+        <div class="bd-descripcion-subtitulo">Descripción</div>
+        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadB2c"></thead><tbody id="bdTbodyB2c"></tbody></table></div>
+        <div class="bd-paginacion" id="bdPaginacionB2c"></div>
+      </div>
+      <div class="basedatos-tab-content" id="tabContentAmpmAdmQdm">
+        <div class="bd-filtro-row">
+          <button class="btn-buscar" onclick="abrirModalVerFecha('AMPMADM')">VER MES</button>
+          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdAmpmAdmQdm" placeholder="Escribe ID..." oninput="filtrarBD('AMPMADM')">
+          <span class="pendientes-info" id="pendientesAmpmAdmQdm"></span>
+          <button class="btn-bd-importar" onclick="importarDesdeBD('AMPMADM')">IMPORTAR</button>
+          <button class="btn-bd-guardar" onclick="guardarEnFirebase()">GUARDAR</button>
+          <button class="btn-bd-pdf" onclick="exportarPDFBD()">EXPORTAR PDF</button>
+          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('AMPMADM')">BORRAR MES</button>
+        </div>
+        <div class="bd-resumen" id="bdResumenAmpmAdmQdm"></div>
+        <div class="bd-descripcion-subtitulo">Descripción</div>
+        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAmpmAdmQdm"></thead><tbody id="bdTbodyAmpmAdmQdm"></tbody></table></div>
+        <div class="bd-paginacion" id="bdPaginacionAmpmAdmQdm"></div>
+      </div>
+    </div>
+
+    <!-- ✅ PESTAÑA INFORMES - COMPLETAMENTE VACÍA -->
+    <div class="seccion-contenido" id="seccionInformes">
+      <!-- Sin contenido - Solo la pestaña existe -->
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item"><div class="val" id="sTotal">0</div><div class="lbl">Despachos</div></div>
+    <div class="stat-item"><div class="val" id="sValor">$0</div><div class="lbl">Valor Total</div></div>
+    <div class="stat-item"><div class="val" id="sAM">0</div><div class="lbl">Turno AM</div></div>
+    <div class="stat-item"><div class="val" id="sPM">0</div><div class="lbl">Turno PM</div></div>
+  </div>
+
+  <div class="seccion-registro">
+    <div class="seccion-registro-header" onclick="toggleSeccion('registro')">
+      <h3>NUEVO REGISTRO</h3><button class="btn-flecha" id="flechaRegistro">▼</button>
+    </div>
+    <div class="seccion-contenido" id="contenidoRegistro">
+      <form id="formReg" class="form-fila">
+        <div class="campo c-fecha">
+          <label>Fecha</label>
+          <div class="fecha-wrap">
+            <input type="date" id="fFecha" required>
+            <button type="button" class="btn-calendario" onclick="toggleCalendario()" title="Abrir calendario">📅</button>
+            <div class="calendario-popup" id="calendarioPopup"></div>
+          </div>
+        </div>
+        <div class="campo c-unidad"><label>Unidad Negocio</label><select id="fUnidad" required><option value="">-- Elegir --</option><option>MacOnline Distribucion</option><option>MacOnline Empresas</option><option>MacOnline Tienda Web</option><option>MacOnline Administracion</option><option>MacOnline Tiendas</option><option>Vertical Tiendas</option><option>Vertical Web</option><option>QD-Web</option><option>QD Matorista</option><option>CD Quintec</option><option>QD-Retail</option><option>SSTT Quintec</option></select></div>
+        <div class="campo c-id"><label>ID Pedido</label><input type="text" id="fId" required autocomplete="off"></div>
+        <div class="campo c-nombre"><label>Nombre Cliente</label><input type="text" id="fNombre" required autocomplete="off"></div>
+        <div class="campo c-direccion"><label>Dirección</label><input type="text" id="fDireccion" required autocomplete="off"></div>
+        <div class="campo c-comuna"><label>Comuna</label><input type="text" id="fComuna" required autocomplete="off"></div>
+        <div class="campo c-valor"><label>Valor</label><input type="number" id="fValor" step="0.01" min="0" required></div>
+        <div class="campo c-obs"><label>Observación</label><input type="text" id="fObs" placeholder="Elegir o escribir" autocomplete="off"></div>
+        <div class="campo c-transporte"><label>Transporte</label><select id="fTransporte" required><option value="">-- Elegir --</option><option>MOVIL 1</option><option>MOVIL 2</option><option>MOVIL 3</option><option>MOVIL 4</option><option>MOVIL 5</option><option>MOVIL 6</option><option>DON JOSE</option><option>DON RAUL</option><option>SERVICIO AM/PM</option><option>SERVICIO B2C</option><option>SPOT</option><option>SPOT 1</option><option>SPOT 2</option><option>RETIRA CLIENTE</option><option>SERVICIO 3PL</option><option>TRANSGAMBOA</option></select></div>
+        <div class="campo c-rango"><label>Rango</label><select id="fRango" required><option value="">--</option><option>AM</option><option>PM</option><option>B2C</option></select></div>
+        <button type="submit" class="btn-registrar">REGISTRAR</button>
+        <button type="button" class="btn-limpiar" onclick="limpiar()">LIMPIAR</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="tabla-section">
+    <div class="descripcion-subtitulo">Descripción</div>
+    <div class="acciones-bar">
+      <input type="text" class="buscar-input" id="buscar" placeholder="Buscar...">
+      <button class="btn-accion btn-importar-accion" onclick="importarExcelSegunSeccion()">IMPORTAR EXCEL</button>
+      <button class="btn-accion btn-exportar" onclick="abrirModalExportar()">EXPORTAR EXCEL</button>
+      <button class="btn-accion btn-guardar" id="btnGuardarAmpm" onclick="guardarPendientesSeccion()">GUARDAR</button>
+      <button class="btn-accion btn-enviar" id="btnEnviar" onclick="enviarSeleccion()">ENVIAR A BITACORA</button>
+    </div>
+    <div class="tabla-scroll-vertical">
+      <div class="tabla-scroll-horizontal-top" id="scrollTop">
+        <div style="min-width:1100px;height:8px;"></div>
+      </div>
+      <div class="tabla-scroll-horizontal" id="scrollBottom">
+        <table>
+          <thead id="theadDesc"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="loading-msg" id="loading"><div class="spinner"></div>Cargando datos...</div>
+      <div class="empty-msg" id="empty" style="display:none">No hay registros para hoy</div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="importFile" accept=".xlsx,.xls,.xlsm,.xlsb,.ods,.csv,.json" style="display:none">
+<datalist id="dlTransporteDesc"></datalist>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-window">
+    <div class="modal-titlebar">
+      <div class="modal-title"><span id="modalTitleText">Detalle de Pedidos</span></div>
+      <div class="modal-controls">
+        <button class="modal-btn pdf" onclick="exportarPDFModal()" title="Exportar PDF">PDF</button>
+        <button class="modal-btn close" onclick="cerrarModal()" title="Cerrar">X</button>
+      </div>
+    </div>
+    <div class="modal-info" id="modalInfo"></div>
+    <div class="modal-filtro">
+      <label>Filtrar ID Pedido:</label>
+      <input type="text" id="filtroIdModal" placeholder="Escribe ID..." oninput="aplicarFiltroIdModal()">
+      <span class="filtro-info" id="filtroInfo"></span>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <table>
+        <thead><tr>
+          <th>Fecha<div class="filtro-combo"><input type="text" class="th-filter" id="fModFecha" placeholder="Filtrar…" oninput="filtrarComboModal('fecha', this.value)" onfocus="abrirComboModal('fecha')"><button class="combo-arrow" onclick="toggleComboModal('fecha')">▼</button><div class="combo-list" id="comboModal_fecha"></div></div></th>
+          <th>Unidad<div class="filtro-combo"><input type="text" class="th-filter" id="fModUnidad" placeholder="Filtrar…" oninput="filtrarComboModal('unidad', this.value)" onfocus="abrirComboModal('unidad')"><button class="combo-arrow" onclick="toggleComboModal('unidad')">▼</button><div class="combo-list" id="comboModal_unidad"></div></div></th>
+          <th>ID Pedido</th><th>Cliente</th><th>Dirección</th>
+          <th>Comuna<div class="filtro-combo"><input type="text" class="th-filter" id="fModComuna" placeholder="Filtrar…" oninput="filtrarComboModal('comuna', this.value)" onfocus="abrirComboModal('comuna')"><button class="combo-arrow" onclick="toggleComboModal('comuna')">▼</button><div class="combo-list" id="comboModal_comuna"></div></div></th>
+          <th>Valor</th>
+          <th>Observación<div class="filtro-combo"><input type="text" class="th-filter" id="fModObservacion" placeholder="Filtrar…" oninput="filtrarComboModal('observacion', this.value)" onfocus="abrirComboModal('observacion')"><button class="combo-arrow" onclick="toggleComboModal('observacion')">▼</button><div class="combo-list" id="comboModal_observacion"></div></div></th>
+          <th>Transporte<div class="filtro-combo"><input type="text" class="th-filter" id="fModTransporte" placeholder="Filtrar…" oninput="filtrarComboModal('transporte', this.value)" onfocus="abrirComboModal('transporte')"><button class="combo-arrow" onclick="toggleComboModal('transporte')">▼</button><div class="combo-list" id="comboModal_transporte"></div></div></th>
+          <th>Rango<div class="filtro-combo"><input type="text" class="th-filter" id="fModRango" placeholder="Filtrar…" oninput="filtrarComboModal('rango', this.value)" onfocus="abrirComboModal('rango')"><button class="combo-arrow" onclick="toggleComboModal('rango')">▼</button><div class="combo-list" id="comboModal_rango"></div></div></th>
+        </tr></thead>
+        <tbody id="modalTbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-paginacion" id="modalPaginacion"></div>
+  </div>
+</div>
+
+<div class="overlay-centro" id="verFechaOverlay">
+  <div class="modal-caja azul">
+    <h3>BUSCAR POR FECHA</h3>
+    <div class="form-group"><label>Tipo:</label><input type="text" id="vfTipo" readonly style="background:var(--bg-tertiary);cursor:not-allowed"></div>
+    <div class="form-group"><label>Día (opcional):</label><select id="vfDia"><option value="">-- Todos --</option></select></div>
+    <div class="form-group"><label>Mes:</label><select id="vfMes"><option value="">-- Todos --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div>
+    <div class="form-group"><label>Año:</label><select id="vfAnio"><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select></div>
+    <div class="modal-caja-buttons">
+      <button class="btn-mc-cancelar" onclick="cerrarModalVerFecha()">Cancelar</button>
+      <button class="btn-mc-azul" onclick="confirmarVerFecha()">VER</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay-centro" id="borrarMesOverlay">
+  <div class="modal-caja roja">
+    <h3>BORRAR MES</h3>
+    <div class="form-group"><label>Tipo:</label><input type="text" id="bmTipo" readonly style="background:var(--bg-tertiary);cursor:not-allowed"></div>
+    <div class="form-group"><label>1. Elige el mes a borrar:</label><select id="bmMes"><option value="">-- Seleccionar Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div>
+    <div class="form-group"><label>2. Elige el año:</label><select id="bmAnio"><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select></div>
+    <div class="info-registros" id="bmInfoRegistros">Selecciona mes y año para ver cantidad</div>
+    <div class="form-group"><label>3. Contraseña:</label><input type="password" id="bmPassword" placeholder="••••" maxlength="10"></div>
+    <div class="modal-caja-buttons">
+      <button class="btn-mc-cancelar" onclick="cerrarBorrarMes()">Cancelar</button>
+      <button class="btn-mc-rojo" onclick="confirmarBorrarMes()">ELIMINAR</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay-centro" id="passwordOverlay">
+  <div class="modal-caja roja" style="max-width:360px;">
+    <h3>CONTRASEÑA</h3>
+    <div class="form-group"><label>Ingresa la clave:</label><input type="password" id="pwInput" placeholder="••••" maxlength="10"></div>
+    <div class="modal-caja-buttons">
+      <button class="btn-mc-cancelar" onclick="cerrarPassword()">Cancelar</button>
+      <button class="btn-mc-rojo" onclick="confirmarPassword()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="exportar-modal-overlay" id="exportarModal">
+  <div class="exportar-modal">
+    <h3 id="expTitulo">Exportar a Excel</h3>
+    <div class="exp-fecha-row" id="expFilaFecha" style="display:none">
+      <label>Día:</label><select class="select-filtro" id="expDia" onchange="actualizarExpInfo()"><option value="">-- Todos --</option></select>
+      <label>Mes:</label><select class="select-filtro" id="expMes" onchange="actualizarExpInfo()"><option value="">-- Todos --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
+      <label>Año:</label><select class="select-filtro" id="expAnio" onchange="actualizarExpInfo()"><option value="">-- Todos --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
+    </div>
+    <div class="exp-info" id="expInfo"></div>
+    <div class="checkbox-group">
+      <div class="checkbox-item"><input type="checkbox" id="expFecha" checked><label for="expFecha">Fecha</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expUnidad" checked><label for="expUnidad">Unidad Negocio</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expIdPedido" checked><label for="expIdPedido">ID Pedido</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expNombre" checked><label for="expNombre">Nombre Cliente</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expCelular" checked><label for="expCelular">Celular</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expEmail" checked><label for="expEmail">E-Mail</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expDireccion" checked><label for="expDireccion">Dirección</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expComuna" checked><label for="expComuna">Comuna</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expValor" checked><label for="expValor">Valor</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expObservacion" checked><label for="expObservacion">Observación</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expTransporte" checked><label for="expTransporte">Transporte</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="expRango" checked><label for="expRango">Rango</label></div>
+    </div>
+    <div class="exportar-modal-buttons">
+      <button class="btn-exportar-cancelar" onclick="cerrarModalExportar()">Cancelar</button>
+      <button class="btn-exportar-confirmar" onclick="confirmarExportar()">Exportar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script type="module" src="app.js"></script>
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  const emailInput = document.getElementById('loginEmail');
+  const passInput = document.getElementById('loginPass');
+  if (emailInput) emailInput.value = '';
+  if (passInput) passInput.value = '';
+  if (passInput) passInput.setAttribute('autocomplete', 'new-password');
+  const params = new URLSearchParams(window.location.search);
+  const emailParam = params.get('email');
+  if (emailParam && emailInput) {
+    emailInput.value = emailParam;
+    setTimeout(() => { if (passInput) passInput.focus(); }, 100);
   }
 });
-
-function aplicarRol() {
-  const t = document.querySelector('.seccion-tab[data-seccion="basedatos"]');
-  const t2 = document.querySelector('.seccion-tab[data-seccion="informes"]');
-  if (!t) return;
-  if (rolActual === 'admin') {
-    t.style.display = '';
-    if (t2) t2.style.display = '';
-  } else {
-    t.style.display = 'none';
-    if (t2) t2.style.display = 'none';
-    if (seccionActiva === 'basedatos' || seccionActiva === 'informes') cambiarSeccion('ampm');
-  }
-}
-
-// ✅ CORREGIDO: Login con validación de claves
-window.login = function() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass = document.getElementById('loginPass').value;
-
-  if (!email || !pass) { toast('Completa email y clave', 'err'); return; }
-
-  const emailLower = email.toLowerCase();
-  const claveEsperada = CLAVES_USUARIO[emailLower];
-
-  if (!claveEsperada) { toast('Usuario no autorizado', 'err'); return; }
-  if (pass !== claveEsperada) { toast('Clave incorrecta', 'err'); return; }
-
-  setPersistence(auth, browserLocalPersistence).then(() =>
-    signInWithEmailAndPassword(auth, email, pass)
-  ).catch(e => toast('' + e.message, 'err'));
-};
-
-window.logout = function() { signOut(auth); };
-
-window.abrirEnNuevaPestana = function(sec) {
-  if (seccionActiva === sec) return;
-  const base = window.location.href.split('#')[0];
-  window.open(base + '#sec=' + sec, '_blank');
-};
-
-function tipoDeSeccion() {
-  if (seccionActiva === 'ampm') return 'AMPM';
-  if (seccionActiva === 'b2c') return 'B2C';
-  if (seccionActiva === 'ampmadmqdm') return 'AMPMADM';
-  return 'AMPM';
-}
-function getBitacoraTipo() {
-  if (seccionActiva === 'ampm') return 'ampm';
-  if (seccionActiva === 'b2c') return 'b2c';
-  if (seccionActiva === 'ampmadmqdm') return 'ampmadmqdm';
-  return 'ampm';
-}
-function pendientesDeSeccion() {
-  if (seccionActiva === 'ampm') return pendientesAMPM;
-  if (seccionActiva === 'ampmadmqdm') return pendientesAmpmAdmQdm;
-  if (seccionActiva === 'b2c') return pendientesB2C;
-  return [];
-}
-
-window.cambiarSeccion = function(sec) {
-  if (sec === 'basedatos' && rolActual !== 'admin') { toast('Sin permiso para BASE DE DATOS', 'err'); return; }
-  if (sec === 'informes' && rolActual !== 'admin') { toast('Sin permiso para INFORMES', 'err'); return; }
-  seccionActiva = sec;
-  editandoKey = null;
-  seleccionadosDesc.clear();
-  document.querySelectorAll('.seccion-tab').forEach(t => t.classList.remove('active'));
-  const tabBtn = document.querySelector(`.seccion-tab[data-seccion="${sec}"]`); if (tabBtn) tabBtn.classList.add('active');
-  document.querySelectorAll('.secciones-bar > .seccion-contenido').forEach(c => c.classList.remove('show'));
-  const cont = document.getElementById(`seccion${sec.charAt(0).toUpperCase()+sec.slice(1)}`); if (cont) cont.classList.add('show');
-  document.body.classList.toggle('oculta-principal', (sec === 'basedatos' || sec === 'bitacoras' || sec === 'informes'));
-  paginaDesc = 1; render();
-  if (sec === 'basedatos') renderizarBaseDatos();
-  if (sec === 'informes') renderInformes();
-  if (sec === 'bitacoras') renderizarTodasBitacoras();
-  actualizarBotonGuardar();
-};
-
-window.toggleSeccion = s => { document.getElementById(`contenido${s.charAt(0).toUpperCase()+s.slice(1)}`).classList.toggle('show'); document.getElementById(`flecha${s.charAt(0).toUpperCase()+s.slice(1)}`).classList.toggle('rotada'); };
-window.toggleSubmenu = s => { document.getElementById(`submenu${s.charAt(0).toUpperCase()+s.slice(1)}`).classList.toggle('show'); document.getElementById(`flecha${s.charAt(0).toUpperCase()+s.slice(1)}`).classList.toggle('rotada'); };
-
-window.cambiarTabBD = function(tab) { if (rolActual !== 'admin') return; tabBdActiva = tab;
-  document.querySelectorAll('.basedatos-tab[data-tab]').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.basedatos-tab[data-tab="${tab}"]`).classList.add('active');
-  document.querySelectorAll('#seccionBasedatos .basedatos-tab-content').forEach(c => c.classList.remove('show'));
-  document.getElementById(tab === 'ampm' ? 'tabContentAmpm' : (tab === 'b2c' ? 'tabContentB2c' : 'tabContentAmpmAdmQdm')).classList.add('show'); };
-
-window.cambiarTabBit = function(tab) {
-  document.querySelectorAll('.basedatos-tab[data-btab]').forEach(t => t.classList.remove('active'));
-  const b = document.querySelector(`.basedatos-tab[data-btab="${tab}"]`); if (b) b.classList.add('active');
-  document.querySelectorAll('#seccionBitacoras .basedatos-tab-content').forEach(c => c.classList.remove('show'));
-  document.getElementById(tab === 'ampm' ? 'bitContentAmpm' : (tab === 'b2c' ? 'bitContentB2c' : 'bitContentAmpmAdmQdm')).classList.add('show');
-};
-
-window.cambiarMovilBit = function(tipo, movil) {
-  const cont = document.getElementById(tipo === 'ampm' ? 'bitContentAmpm' : (tipo === 'b2c' ? 'bitContentB2c' : 'bitContentAmpmAdmQdm'));
-  if (!cont) return;
-  cont.querySelectorAll('.bitacora-movil-tab').forEach(t => t.classList.remove('active'));
-  cont.querySelector(`.bitacora-movil-tab[data-movil="${movil}"]`).classList.add('active');
-  cont.querySelectorAll('.bitacora-movil-content').forEach(c => c.classList.remove('show'));
-  document.getElementById(`bitacora${tipo.charAt(0).toUpperCase()+tipo.slice(1)}Movil${movil}`).classList.add('show');
-};
-
-window.cambiarTema = function(t) { document.documentElement.setAttribute('data-theme', t); document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-theme') === t)); localStorage.setItem('temaDespachoRetail', t); };
-
-window.toggleSeleccionDesc = function(key, checked) { checked ? seleccionadosDesc.add(key) : seleccionadosDesc.delete(key); sincronizarSelTodos(); actualizarContadorEnviar(); };
-window.toggleSeleccionarTodo = function(checked) { checked ? keysVisiblesDesc.forEach(k => seleccionadosDesc.add(k)) : keysVisiblesDesc.forEach(k => seleccionadosDesc.delete(k)); render(); };
-function sincronizarSelTodos() { const el = document.getElementById('selTodosDesc'); if (el) el.checked = keysVisiblesDesc.length > 0 && keysVisiblesDesc.every(k => seleccionadosDesc.has(k)); }
-function actualizarContadorEnviar() { const b = document.getElementById('btnEnviar'); if (b) b.textContent = seleccionadosDesc.size > 0 ? `ENVIAR A BITACORA (${seleccionadosDesc.size})` : 'ENVIAR A BITACORA'; }
-
-function leerFiltrosDesc() {
-  const g = id => { const el = document.getElementById(id); return el ? normSinTildes(el.value.trim()) : ''; };
-  return { unidad: g('fDescUnidad'), comuna: g('fDescComuna'), transporte: g('fDescTransporte'), rango: g('fDescRango') };
-}
-
-function getDescBaseRows() {
-  const f = document.getElementById('fFecha');
-  const fechaTrabajo = (f && f.value) ? f.value : new Date().toISOString().split('T')[0];
-  const tipoSec = tipoDeSeccion();
-  let regs = [];
-  Object.keys(cache).forEach(a => Object.keys(cache[a]||{}).forEach(m => Object.keys(cache[a][m]).forEach(k => {
-    const r = { key:k, anio:a, mes:m, ...cache[a][m][k] };
-    if (getTipoRegistro(r) !== tipoSec) return;
-    regs.push(r);
-  })));
-  const keysConCambios = Object.keys(cambiosFechaLocales);
-  regs = regs.filter(r => {
-    if (keysConCambios.includes(r.key)) return true;
-    return r.fecha === fechaTrabajo;
-  });
-  pendientesDeSeccion().forEach(p => regs.push({ ...p.reg, key: p.key, anio: p.anio, mes: p.mes, pendiente: true }));
-  return regs;
-}
-
-function getDistinctValues(col) {
-  const rows = getDescBaseRows();
-  const set = new Set();
-  rows.forEach(r => {
-    let v = '';
-    if (col === 'unidad') v = r.unidad || '';
-    else if (col === 'comuna') v = canonComuna(r.comuna) || '';
-    else if (col === 'transporte') v = r.transporte || '';
-    else if (col === 'rango') v = r.rango || '';
-    if (v) set.add(v);
-  });
-  return [...set].sort();
-}
-
-function poblarCombo(col, filtro) {
-  const list = document.getElementById('combo_' + col);
-  if (!list) return;
-  let vals = getDistinctValues(col);
-  if (filtro) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(filtro)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionCombo('${col}', \`${String(v).replace(/`/g,'\\`').replace(/'/g,"\\'")}\`)">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-}
-function poblarCombos() { ['unidad','comuna','transporte','rango'].forEach(col => { const inp = document.getElementById('fDesc' + col.charAt(0).toUpperCase() + col.slice(1)); poblarCombo(col, inp ? inp.value : ''); }); }
-
-function cerrarTodosCombos() {
-  document.querySelectorAll('.combo-list').forEach(l => {
-    if (!l.id.startsWith('comboModal_') && !l.id.startsWith('comboBD_') && !l.id.startsWith('combo_trans_') && !l.id.startsWith('combo_obs_'))
-      l.style.display = 'none';
-  });
-  comboAbierto = null;
-  comboTransAbierto = null;
-  comboObsAbierto = null;
-  if (calendarioAbierto) { calendarioAbierto = false; const p = document.getElementById('calendarioPopup'); if (p) p.classList.remove('show'); }
-  if (calFilaAbierto) { const p = document.getElementById('cal_popup_' + calFilaAbierto); if (p) p.classList.remove('show'); calFilaAbierto = null; }
-}
-
-window.toggleCombo = function(col) {
-  const list = document.getElementById('combo_' + col);
-  if (!list) return;
-  if (comboAbierto === col) { list.style.display = 'none'; comboAbierto = null; }
-  else { cerrarTodosCombos(); poblarCombo(col, ''); list.style.display = 'block'; comboAbierto = col; }
-};
-function abrirCombo(col) { cerrarTodosCombos(); poblarCombo(col, ''); const list = document.getElementById('combo_' + col); if (list) { list.style.display = 'block'; comboAbierto = col; } }
-window.elegirOpcionCombo = function(col, val) {
-  const input = document.getElementById('fDesc' + col.charAt(0).toUpperCase() + col.slice(1));
-  if (input) input.value = val;
-  cerrarTodosCombos();
-  render();
-};
-window.filtrarComboDesc = function(col, val) {
-  poblarCombo(col, val);
-  const list = document.getElementById('combo_' + col);
-  if (list) { list.style.display = 'block'; comboAbierto = col; }
-  render();
-};
-
-window.abrirComboTransporte = function(key) {
-  const list = document.getElementById('combo_trans_' + key);
-  if (!list) return;
-  const input = document.getElementById('trans_input_' + key);
-  const val = input ? input.value : '';
-  let vals = OPCIONES_TRANSPORTE;
-  if (val) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(val)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionTransporte('${key}', '${v}')">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-  list.style.display = 'block';
-  comboTransAbierto = key;
-};
-window.toggleComboTransporte = function(key) {
-  const list = document.getElementById('combo_trans_' + key);
-  if (!list) return;
-  if (comboTransAbierto === key) { list.style.display = 'none'; comboTransAbierto = null; }
-  else { cerrarTodosCombos(); abrirComboTransporte(key); }
-};
-window.filtrarComboTransporte = function(key, val) {
-  const list = document.getElementById('combo_trans_' + key);
-  if (!list) return;
-  let vals = OPCIONES_TRANSPORTE;
-  if (val) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(val)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionTransporte('${key}', '${v}')">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-  list.style.display = 'block';
-  comboTransAbierto = key;
-};
-window.elegirOpcionTransporte = function(key, val) {
-  const input = document.getElementById('trans_input_' + key);
-  if (input) input.value = val;
-  const list = document.getElementById('combo_trans_' + key);
-  if (list) list.style.display = 'none';
-  comboTransAbierto = null;
-  actualizarTransporteRegistro(key, val);
-};
-function actualizarTransporteRegistro(key, nuevoTransporte) {
-  let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
-  if (p) {
-    if (p.reg.transporte !== nuevoTransporte) {
-      p.reg.transporte = nuevoTransporte;
-      delete p.reg._candidatos;
-      if (cache[p.anio] && cache[p.anio][p.mes] && cache[p.anio][p.mes][key]) {
-        update(ref(db, `${RUTA_BASE}/${p.anio}/${p.mes}/${key}`), { transporte: nuevoTransporte })
-          .then(() => toast('Transporte actualizado', 'ok'))
-          .catch(e => toast('Error: ' + e.message, 'err'));
-      }
-      render();
-    }
-    return;
-  }
-  outer: for (const a of Object.keys(cache)) {
-    for (const m of Object.keys(cache[a]||{})) {
-      if (cache[a][m] && cache[a][m][key]) {
-        if (cache[a][m][key].transporte !== nuevoTransporte) {
-          cache[a][m][key].transporte = nuevoTransporte;
-          delete cache[a][m][key]._candidatos;
-          update(ref(db, `${RUTA_BASE}/${a}/${m}/${key}`), { transporte: nuevoTransporte })
-            .then(() => toast('Transporte actualizado', 'ok'))
-            .catch(e => toast('Error: ' + e.message, 'err'));
-        }
-        break outer;
-      }
-    }
-  }
-  render();
-}
-
-window.abrirComboObs = function(key) {
-  const list = document.getElementById('combo_obs_' + key);
-  if (!list) return;
-  const input = document.getElementById('obs_input_' + key);
-  const val = input ? input.value : '';
-  let vals = OPCIONES_OBS;
-  if (val) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(val)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionObs('${key}', '${v}')">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-  list.style.display = 'block';
-  comboObsAbierto = key;
-};
-window.toggleComboObs = function(key) {
-  const list = document.getElementById('combo_obs_' + key);
-  if (!list) return;
-  if (comboObsAbierto === key) { list.style.display = 'none'; comboObsAbierto = null; }
-  else { cerrarTodosCombos(); abrirComboObs(key); }
-};
-window.filtrarComboObs = function(key, val) {
-  const list = document.getElementById('combo_obs_' + key);
-  if (!list) return;
-  let vals = OPCIONES_OBS;
-  if (val) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(val)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionObs('${key}', '${v}')">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-  list.style.display = 'block';
-  comboObsAbierto = key;
-};
-window.elegirOpcionObs = function(key, val) {
-  const input = document.getElementById('obs_input_' + key);
-  if (input) input.value = val;
-  const list = document.getElementById('combo_obs_' + key);
-  if (list) list.style.display = 'none';
-  comboObsAbierto = null;
-  actualizarObservacionRegistro(key, val);
-};
-function actualizarObservacionRegistro(key, nuevaObs) {
-  let p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
-  if (p) {
-    p.reg.observacion = nuevaObs.toUpperCase();
-    if (cache[p.anio] && cache[p.anio][p.mes] && cache[p.anio][p.mes][key]) {
-      update(ref(db, `${RUTA_BASE}/${p.anio}/${p.mes}/${key}`), { observacion: nuevaObs.toUpperCase() });
-    }
-    render();
-    return;
-  }
-  outer: for (const a of Object.keys(cache)) {
-    for (const m of Object.keys(cache[a]||{})) {
-      if (cache[a][m] && cache[a][m][key]) {
-        cache[a][m][key].observacion = nuevaObs.toUpperCase();
-        update(ref(db, `${RUTA_BASE}/${a}/${m}/${key}`), { observacion: nuevaObs.toUpperCase() });
-        break outer;
-      }
-    }
-  }
-  render();
-}
-
-window.abrirComboObsEdicion = function() {
-  const list = document.getElementById('combo_edicion_obs');
-  if (!list) return;
-  const input = document.getElementById('edi_obs');
-  const val = input ? input.value : '';
-  let vals = OPCIONES_OBS;
-  if (val) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(val)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionObsEdicion('${v}')">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-  list.style.display = 'block';
-};
-window.toggleComboObsEdicion = function() {
-  const list = document.getElementById('combo_edicion_obs');
-  if (!list) return;
-  if (list.style.display === 'block') { list.style.display = 'none'; }
-  else { abrirComboObsEdicion(); }
-};
-window.filtrarComboObsEdicion = function(val) {
-  const list = document.getElementById('combo_edicion_obs');
-  if (!list) return;
-  let vals = OPCIONES_OBS;
-  if (val) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(val)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionObsEdicion('${v}')">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-  list.style.display = 'block';
-};
-window.elegirOpcionObsEdicion = function(val) {
-  const input = document.getElementById('edi_obs');
-  if (input) input.value = val;
-  const list = document.getElementById('combo_edicion_obs');
-  if (list) list.style.display = 'none';
-};
-
-function getDistinctModal(col) {
-  const set = new Set();
-  datosModal.forEach(r => {
-    let v = '';
-    if (col==='fecha') v = fmtFecha(r.fecha);
-    else if (col==='unidad') v = r.unidad||'';
-    else if (col==='comuna') v = canonComuna(r.comuna)||'';
-    else if (col==='transporte') v = r.transporte||'';
-    else if (col==='observacion') v = r.observacion||'';
-    else if (col==='rango') v = r.rango||'';
-    if (v) set.add(v);
-  });
-  return [...set].sort();
-}
-function poblarComboModal(col, filtro) {
-  const list = document.getElementById('comboModal_'+col);
-  if (!list) return;
-  let vals = getDistinctModal(col);
-  if (filtro) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(filtro)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionModal('${col}', \`${String(v).replace(/`/g,'\\`').replace(/'/g,"\\'")}\`)">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-}
-function poblarCombosModal() { ['fecha','unidad','comuna','transporte','observacion','rango'].forEach(col => { const inp = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1)); poblarComboModal(col, inp ? inp.value : ''); }); }
-function cerrarCombosModal() { document.querySelectorAll('.combo-list').forEach(l => { if (l.id.startsWith('comboModal_')) l.style.display='none'; }); comboModalAbierto = null; }
-window.toggleComboModal = function(col) {
-  const list = document.getElementById('comboModal_'+col);
-  if (!list) return;
-  if (comboModalAbierto === col) { list.style.display='none'; comboModalAbierto=null; }
-  else { cerrarCombosModal(); poblarComboModal(col,''); list.style.display='block'; comboModalAbierto=col; }
-};
-function abrirComboModal(col) { cerrarCombosModal(); poblarComboModal(col,''); const list=document.getElementById('comboModal_'+col); if(list){ list.style.display='block'; comboModalAbierto=col; } }
-window.elegirOpcionModal = function(col, val) {
-  const input = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1));
-  if (input) input.value = val;
-  cerrarCombosModal();
-  aplicarFiltrosModal();
-};
-window.filtrarComboModal = function(col, val) {
-  poblarComboModal(col, val);
-  const list = document.getElementById('comboModal_'+col);
-  if (list) { list.style.display='block'; comboModalAbierto=col; }
-  aplicarFiltrosModal();
-};
-
-function sufBD(tipo){ return tipo==='AMPM'?'Ampm':(tipo==='B2C'?'B2c':'AmpmAdmQdm'); }
-function getBDBaseRows(tipo){ let r = obtenerRegsTipo(tipo); const f = filtroDiaBD[tipo]; if (f.d) r = r.filter(x => (x.fecha||'').split('-')[2] === f.d); if (f.m) r = r.filter(x => x.mes === f.m); if (f.a) r = r.filter(x => x.anio === f.a); return r; }
-function getDistinctBD(tipo, campo){ const set = new Set(); getBDBaseRows(tipo).forEach(r => { let v=''; if(campo==='unidad')v=r.unidad||''; else if(campo==='comuna')v=canonComuna(r.comuna)||''; else if(campo==='transporte')v=r.transporte||''; else if(campo==='rango')v=r.rango||''; if(v)set.add(v); }); return [...set].sort(); }
-function poblarComboBD(tipo, campo, filtro){
-  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
-  if(!list) return;
-  let vals = getDistinctBD(tipo, campo);
-  if (filtro) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(filtro)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionBD('${tipo}','${campo}', \`${String(v).replace(/`/g,'\\`').replace(/'/g,"\\'")}\`)">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-}
-function cerrarCombosBD(){ document.querySelectorAll('.combo-list').forEach(l => { if (l.id.startsWith('comboBD_')) l.style.display='none'; }); comboBDAbierto = null; }
-window.toggleComboBD = function(tipo, campo){
-  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
-  if(!list) return;
-  const id = tipo+'_'+campo;
-  if (comboBDAbierto === id) { list.style.display='none'; comboBDAbierto=null; }
-  else { cerrarCombosBD(); poblarComboBD(tipo,campo,''); list.style.display='block'; comboBDAbierto=id; }
-};
-function abrirComboBD(tipo, campo){ cerrarCombosBD(); poblarComboBD(tipo,campo,''); const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); if(list){ list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } }
-window.elegirOpcionBD = function(tipo, campo, val){
-  const input = document.getElementById('fBD'+sufBD(tipo)+'_'+campo);
-  if (input) input.value = val;
-  filtroDescBD[tipo][campo] = normSinTildes(val);
-  cerrarCombosBD();
-  renderTabBD(tipo, document.getElementById(tipo==='AMPM'?'filtroIdAmpm':(tipo==='B2C'?'filtroIdB2c':'filtroIdAmpmAdmQdm')).value, tipo==='AMPM'?paginaBDAmpm:(tipo==='B2C'?paginaBDB2c:paginaBDAmpmAdmQdm));
-};
-window.filtrarBDCombo = function(tipo, campo, val){
-  filtroDescBD[tipo][campo] = normSinTildes(val);
-  poblarComboBD(tipo, campo, val);
-  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
-  if (list) { list.style.display='block'; comboBDAbierto=tipo+'_'+campo; }
-  renderTabBD(tipo, document.getElementById(tipo==='AMPM'?'filtroIdAmpm':(tipo==='B2C'?'filtroIdB2c':'filtroIdAmpmAdmQdm')).value, tipo==='AMPM'?paginaBDAmpm:(tipo==='B2C'?paginaBDB2c:paginaBDAmpmAdmQdm));
-};
-
-function renderDescThead() {
-  const thead = document.getElementById('theadDesc');
-  if (!thead) return;
-  const b2c = (seccionActiva === 'b2c');
-  const combo = (col, label) => `<th>${label}<div class="filtro-combo"><input type="text" class="th-filter" id="fDesc${col.charAt(0).toUpperCase()+col.slice(1)}" placeholder="Filtrar…" oninput="filtrarComboDesc('${col}', this.value)" onfocus="abrirCombo('${col}')"><button class="combo-arrow" onclick="toggleCombo('${col}')">▼</button><div class="combo-list" id="combo_${col}"></div></div></th>`;
-  const sel = `<th class="th-sel"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>`;
-  let h;
-  if (b2c) {
-    h = sel + `<th>Fecha</th>` + combo('unidad','Unidad Negocio') + `<th>ID Pedido</th><th>Nombre Cliente</th><th>Celular</th><th>E-Mail</th><th>Dirección</th>` + combo('comuna','Comuna') + `<th>Valor Producto</th><th>Observación</th>` + combo('transporte','Transporte') + combo('rango','Rango') + `<th>Acciones</th>`;
-  } else {
-    h = sel + `<th>Fecha</th>` + combo('unidad','Unidad Negocio') + `<th>ID Pedido</th><th>Nombre Cliente</th><th>Dirección</th>` + combo('comuna','Comuna') + `<th>Valor</th><th>Observación</th>` + combo('transporte','Transporte') + combo('rango','Rango') + `<th>Acciones</th>`;
-  }
-  thead.innerHTML = `<tr>${h}</tr>`;
-}
-
-function render() {
-  if (theadSeccion !== seccionActiva) { renderDescThead(); theadSeccion = seccionActiva; }
-  poblarCombos();
-  const busq = document.getElementById('buscar').value.toLowerCase();
-  const f = document.getElementById('fFecha');
-  const fechaTrabajo = (f && f.value) ? f.value : new Date().toISOString().split('T')[0];
-  const tipoSec = tipoDeSeccion();
-  let regs = [];
-  Object.keys(cache).forEach(a => Object.keys(cache[a]||{}).forEach(m => Object.keys(cache[a][m]).forEach(k => { const r = { key:k, anio:a, mes:m, ...cache[a][m][k] }; if (getTipoRegistro(r) !== tipoSec) return; regs.push(r); })));
-  const keysConCambios = Object.keys(cambiosFechaLocales);
-  if (!busq) {
-    regs = regs.filter(r => {
-      if (keysConCambios.includes(r.key)) return true;
-      return r.fecha === fechaTrabajo;
-    });
-  } else {
-    regs = regs.filter(r => ['nombre','idPedido','transporte','comuna','unidad','celular','email'].some(c => (r[c]||'').toLowerCase().includes(busq)));
-  }
-  pendientesDeSeccion().forEach(p => regs.push({ ...p.reg, key: p.key, anio: p.anio, mes: p.mes, pendiente: true }));
-  const fd = leerFiltrosDesc();
-  if (fd.unidad) regs = regs.filter(r => normSinTildes(r.unidad||'').includes(fd.unidad));
-  if (fd.comuna) regs = regs.filter(r => normSinTildes(canonComuna(r.comuna)||'').includes(fd.comuna));
-  if (fd.transporte) regs = regs.filter(r => normSinTildes(r.transporte||'').includes(fd.transporte));
-  if (fd.rango) regs = regs.filter(r => normSinTildes(r.rango||'').includes(fd.rango));
-  ordenarPorFechaDireccionId(regs);
-  document.getElementById('sTotal').textContent = formatoEntero(regs.length);
-  document.getElementById('sValor').textContent = formatoMoneda(sumaValores(regs));
-  document.getElementById('sAM').textContent = formatoEntero(regs.filter(r=>r.rango==='AM').length);
-  document.getElementById('sPM').textContent = formatoEntero(regs.filter(r=>r.rango==='PM').length);
-  const tbody = document.getElementById('tbody'), empty = document.getElementById('empty');
-  if (regs.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; empty.textContent = busq ? 'No se encontraron resultados' : `No hay registros para el día ${fmtFechaConDia(fechaTrabajo)}`; keysVisiblesDesc = []; renderPaginacionDesc(0,0,0); sincronizarSelTodos(); actualizarContadorEnviar(); return; }
-  empty.style.display = 'none';
-  const tp = Math.max(1, Math.ceil(regs.length / REGISTROS_POR_PAGINA_DESC));
-  if (paginaDesc > tp) paginaDesc = tp; if (paginaDesc < 1) paginaDesc = 1;
-  const ini = (paginaDesc-1)*REGISTROS_POR_PAGINA_DESC;
-  const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_DESC);
-  keysVisiblesDesc = pag.map(r => r.key);
-  const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs), dr = detectarDireccionesRepetidas(regs);
-  tbody.innerHTML = pag.map(r => filaHTMLTabla(r, cf, cg, dr)).join('');
-  renderPaginacionDesc(tp, regs.length, paginaDesc);
-  sincronizarSelTodos(); actualizarContadorEnviar(); actualizarBotonGuardar();
-  sincronizarScrollHorizontal();
-}
-
-function sincronizarScrollHorizontal() {
-  const top = document.getElementById('scrollTop');
-  const bottom = document.getElementById('scrollBottom');
-  if (!top || !bottom) return;
-  top.onscroll = null; bottom.onscroll = null;
-  top.onscroll = function() { bottom.scrollLeft = top.scrollLeft; };
-  bottom.onscroll = function() { top.scrollLeft = bottom.scrollLeft; };
-}
-
-function renderPaginacionDesc(tp, total, pag) {
-  let cont = document.getElementById('paginacionDesc');
-  if (!cont) { cont = document.createElement('div'); cont.id = 'paginacionDesc'; cont.className = 'bd-paginacion'; cont.style.margin = '10px 0 0 0'; const sv = document.querySelector('.tabla-scroll-vertical'); if (sv) sv.appendChild(cont); }
-  if (tp <= 1) { cont.innerHTML = total>0 ? `<div class="bd-paginacion-info">Mostrando ${formatoEntero(total)} de ${formatoEntero(total)} registros</div>` : ''; return; }
-  const ini = (pag-1)*REGISTROS_POR_PAGINA_DESC, fin = Math.min(ini+REGISTROS_POR_PAGINA_DESC, total);
-  let h = `<div class="bd-paginacion-info">Página ${pag} de ${tp} | ${formatoEntero(ini+1)}-${formatoEntero(fin)} de ${formatoEntero(total)} registros</div>`;
-  h += pag>1 ? `<button class="btn-bd-pag-nav" onclick="irAPaginaDesc(${pag-1})">‹ Anterior</button>` : `<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>`;
-  const pI = Math.max(1,pag-2), pF = Math.min(tp,pag+2);
-  if (pI>1){ h += `<button class="btn-bd-pag" onclick="irAPaginaDesc(1)">1</button>`; if(pI>2) h += `<span style="color:var(--text-muted);padding:0 4px">...</span>`; }
-  for (let i=pI;i<=pF;i++) h += i===pag ? `<button class="btn-bd-pag activa">${i}</button>` : `<button class="btn-bd-pag" onclick="irAPaginaDesc(${i})">${i}</button>`;
-  if (pF<tp){ if(pF<tp-1) h += `<span style="color:var(--text-muted);padding:0 4px">...</span>`; h += `<button class="btn-bd-pag" onclick="irAPaginaDesc(${tp})">${tp}</button>`; }
-  h += pag<tp ? `<button class="btn-bd-pag-nav" onclick="irAPaginaDesc(${pag+1})">Siguiente ›</button>` : `<button class="btn-bd-pag-nav" disabled>Siguiente ›</button>`;
-  cont.innerHTML = h;
-}
-
-window.irAPaginaDesc = p => { paginaDesc = p; render(); const sv = document.querySelector('.tabla-scroll-vertical'); if (sv) sv.scrollTop = 0; };
-
-function filaHTMLTabla(r, cf, cg, dr) {
-  const b2c = (seccionActiva === 'b2c');
-  const id = (r.idPedido||'').toString().trim().toUpperCase();
-  const clave = `${r.fecha||''}|${id}`;
-  const misma = id && cf[clave] > 1;
-  const otra = !misma && id && cg[id] > 1;
-  const dirShow = dirDe(r); const dirKey = `${r.fecha||''}|${normDir(dirShow)}`; const dirRep = dr[dirKey] > 1;
-  const sel = seleccionadosDesc.has(r.key) ? 'checked' : '';
-  let clase = '', ind = '';
-  if (misma){ clase += 'id-repetido '; ind = `<span style="color:#fff;background:#e74c3c;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x${cf[clave]}</span>`; }
-  else if (otra){ clase += 'id-repetido-otro '; ind = `<span style="color:#fff;background:#ff8c00;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x${cg[id]}</span>`; }
-  if (r.otroPalet) clase += 'fila-amarillo ';
-  const cands = (r._candidatos && r._candidatos.length) ? r._candidatos : null;
-  const debeElegir = cands && cands.length > 1 && !r.transporte;
-  if (debeElegir) clase += 'fila-elegir-movil ';
-  const tieneCambioFecha = cambiosFechaLocales[r.key] !== undefined;
-  if (tieneCambioFecha) clase += 'fila-fecha-modificada ';
-  const bp = r.pendiente ? `<span class="badge badge-pendiente">SIN GUARDAR</span>` : '';
-  const indicadorCambio = tieneCambioFecha ? `<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">✏️</span>` : '';
-  const fechaMostrar = tieneCambioFecha ? cambiosFechaLocales[r.key].nuevaFecha : r.fecha;
-  const celdaFecha = `<td><div class="fecha-cell-wrap"><input type="date" value="${fechaMostrar||''}" onchange="cambiarFechaFila('${r.key}', this.value, ${r.pendiente?true:false})"><button type="button" class="btn-cal-fila" onclick="toggleCalFila('${r.key}', event)"></button><div class="cal-popup-fila" id="cal_popup_${r.key}"></div></div> ${bp}${indicadorCambio}</td>`;
-  const celdaSel = `<td class="td-sel"><input type="checkbox" style="width:16px;height:16px;" ${sel} onchange="toggleSeleccionDesc('${r.key}', this.checked)"></td>`;
-
-  if (r.key === editandoKey) {
-    const fechaInput = `<td class="celda-edit"><input type="date" id="edi_fecha" value="${r.fecha||''}"></td>`;
-    const unidadInput = `<td class="celda-edit"><input type="text" id="edi_unidad" value="${(r.unidad||'').replace(/"/g,'&quot;')}"></td>`;
-    const idInput = `<td class="celda-edit"><input type="text" id="edi_id" value="${(r.idPedido||'').replace(/"/g,'&quot;')}"></td>`;
-    const nombreInput = `<td class="celda-edit"><input type="text" id="edi_nombre" value="${(r.nombre||'').replace(/"/g,'&quot;')}"></td>`;
-    const dirInput = `<td class="celda-edit"><input type="text" id="edi_direccion" value="${(r.direccion||'').replace(/"/g,'&quot;')}"></td>`;
-    const comunaInput = `<td class="celda-edit"><input type="text" id="edi_comuna" value="${(r.comuna||'').replace(/"/g,'&quot;')}"></td>`;
-    const valorInput = `<td class="celda-edit"><input type="number" id="edi_valor" step="0.01" value="${(r.valor||0)}"></td>`;
-    const obsInput = `<td class="celda-edit"><div class="obs-combo-wrap"><input type="text" id="edi_obs" value="${(r.observacion||'').replace(/"/g,'&quot;')}" oninput="filtrarComboObsEdicion(this.value)" onfocus="abrirComboObsEdicion()"><button class="combo-arrow" onclick="toggleComboObsEdicion()">▼</button><div class="combo-list" id="combo_edicion_obs"></div></div></td>`;
-    const transInput = `<td class="celda-edit"><div class="filtro-combo" style="margin:0"><input type="text" id="edi_transporte" value="${(r.transporte||'').replace(/"/g,'&quot;')}" oninput="filtrarComboEdicion(this.value)" onfocus="abrirComboEdicion()"><button class="combo-arrow" onclick="toggleComboEdicion()">▼</button><div class="combo-list" id="combo_edicion_transporte"></div></div></td>`;
-    const rangoInput = `<td class="celda-edit"><select id="edi_rango"><option value="">--</option><option value="AM" ${r.rango==='AM'?'selected':''}>AM</option><option value="PM" ${r.rango==='PM'?'selected':''}>PM</option><option value="B2C" ${r.rango==='B2C'?'selected':''}>B2C</option></select></td>`;
-    const acc = `<td class="td-acciones"><button class="btn-acc" onclick="guardarEdicionInline('${r.key}','${r.anio}','${r.mes}',${r.pendiente?true:false})">✔</button><button class="btn-acc" onclick="cancelarEdicionInline()">#</button></td>`;
-    if (b2c) return `<tr class="${clase}">${celdaSel}${fechaInput}${unidadInput}${idInput}${nombreInput}<td class="celda-edit"><input type="text" id="edi_celular" value="${(r.celular||'').replace(/"/g,'&quot;')}"></td><td class="celda-edit"><input type="text" id="edi_email" value="${(r.email||'').replace(/"/g,'&quot;')}"></td>${dirInput}${comunaInput}<td class="celda-edit">${formatoMonedaAlineado(r.valor)}</td>${obsInput}${transInput}${rangoInput}${acc}</tr>`;
-    return `<tr class="${clase}">${celdaSel}${fechaInput}${unidadInput}${idInput}${nombreInput}${dirInput}${comunaInput}<td class="celda-edit">${formatoMonedaAlineado(r.valor)}</td>${obsInput}${transInput}${rangoInput}${acc}</tr>`;
-  }
-
-  let obs, trans, rango;
-  if (r.pendiente) {
-    obs = `<td class="celda-edit"><div class="obs-combo-wrap"><input type="text" id="obs_input_${r.key}" value="${(r.observacion||'').replace(/"/g,'&quot;')}" oninput="filtrarComboObs('${r.key}', this.value)" onfocus="abrirComboObs('${r.key}')"><button class="combo-arrow" onclick="toggleComboObs('${r.key}')">▼</button><div class="combo-list" id="combo_obs_${r.key}"></div></div></td>`;
-    trans = `<td class="celda-edit"><div class="filtro-combo" style="margin:0"><input type="text" id="trans_input_${r.key}" value="${(r.transporte||'').replace(/"/g,'&quot;')}" oninput="filtrarComboTransporte('${r.key}', this.value)" onfocus="abrirComboTransporte('${r.key}')"><button class="combo-arrow" onclick="toggleComboTransporte('${r.key}')">▼</button><div class="combo-list" id="combo_trans_${r.key}"></div>${debeElegir ? `<div style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-top:2px">Elige: ${cands.join(' / ')}</div>` : ''}</div></td>`;
-    rango = `<td class="celda-edit"><select onchange="editarRangoPendiente('${r.key}', this.value)"><option value="">--</option><option value="AM" ${r.rango==='AM'?'selected':''}>AM</option><option value="PM" ${r.rango==='PM'?'selected':''}>PM</option><option value="B2C" ${r.rango==='B2C'?'selected':''}>B2C</option></select></td>`;
-  } else {
-    obs = `<td><div class="obs-combo-wrap" style="display:inline-block;vertical-align:middle;width:100%"><input type="text" id="obs_input_${r.key}" value="${(r.observacion||'').replace(/"/g,'&quot;')}" oninput="filtrarComboObs('${r.key}', this.value)" onfocus="abrirComboObs('${r.key}')"><button class="combo-arrow" onclick="toggleComboObs('${r.key}')">▼</button><div class="combo-list" id="combo_obs_${r.key}"></div></div></td>`;
-    trans = `<td><div class="filtro-combo" style="margin:0;display:inline-block;vertical-align:middle"><input type="text" id="trans_input_${r.key}" value="${(r.transporte||'').replace(/"/g,'&quot;')}" style="width:120px;padding-right:22px" oninput="filtrarComboTransporte('${r.key}', this.value)" onfocus="abrirComboTransporte('${r.key}')"><button class="combo-arrow" onclick="toggleComboTransporte('${r.key}')">▼</button><div class="combo-list" id="combo_trans_${r.key}"></div></div>${debeElegir ? `<div style="color:var(--accent-orange);font-size:.7em;font-weight:700">Elige: ${cands.join(' / ')}</div>` : ''}</td>`;
-    rango = `<td><span class="badge badge-${(r.rango||'').toLowerCase()}">${r.rango||''}</span></td>`;
-  }
-  const acc = `<td class="td-acciones"><input type="checkbox" ${r.otroPalet?'checked':''} onchange="toggleOtroPalet('${r.key}', ${r.pendiente?true:false}, this.checked)"><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistro('${r.key}','${r.anio}','${r.mes}',${r.pendiente?true:false})"></button></td>`;
-  const valorCelda = `<td>${formatoMonedaAlineado(r.valor)}</td>`;
-  if (b2c) {
-    return `<tr class="${clase}">${celdaSel}${celdaFecha}<td><span class="badge badge-unidad">${r.unidad||''}</span></td><td><strong>${r.idPedido||''}</strong>${ind}</td><td>${r.nombre||''}</td><td>${r.celular||''}</td><td>${r.email||''}</td><td>${dirShow}${dirRep?` <span style="color:var(--accent-orange);font-size:.7em;font-weight:700">[misma dir x${dr[dirKey]}]</span>`:''}</td><td>${canonComuna(r.comuna)}</td>${valorCelda}${obs}${trans}${rango}${acc}</tr>`;
-  }
-  return `<tr class="${clase}">${celdaSel}${celdaFecha}<td><span class="badge badge-unidad">${r.unidad||''}</span></td><td><strong>${r.idPedido||''}</strong>${ind}</td><td>${r.nombre||''}</td><td>${dirShow}${dirRep?` <span style="color:var(--accent-orange);font-size:.7em;font-weight:700">[misma dir x${dr[dirKey]}]</span>`:''}</td><td>${canonComuna(r.comuna)}</td>${valorCelda}${obs}${trans}${rango}${acc}</tr>`;
-}
-
-window.filtrarComboEdicion = function(val) {
-  const list = document.getElementById('combo_edicion_transporte');
-  if (!list) return;
-  let vals = OPCIONES_TRANSPORTE;
-  if (val) vals = vals.filter(v => normSinTildes(v).includes(normSinTildes(val)));
-  list.innerHTML = vals.length
-    ? vals.map(v => `<div class="combo-item" onmousedown="elegirOpcionEdicion('${v}')">${v}</div>`).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-  list.style.display = 'block';
-};
-window.abrirComboEdicion = function() { filtrarComboEdicion(''); };
-window.toggleComboEdicion = function() {
-  const list = document.getElementById('combo_edicion_transporte');
-  if (!list) return;
-  if (list.style.display === 'block') { list.style.display = 'none'; }
-  else { filtrarComboEdicion(document.getElementById('edi_transporte')?.value || ''); }
-};
-window.elegirOpcionEdicion = function(val) {
-  const input = document.getElementById('edi_transporte');
-  if (input) input.value = val;
-  const list = document.getElementById('combo_edicion_transporte');
-  if (list) list.style.display = 'none';
-};
-window.editarObsPendiente = (k,v) => { const p = pendientesAMPM.find(p=>p.key===k) || pendientesAmpmAdmQdm.find(p=>p.key===k) || pendientesB2C.find(p=>p.key===k); if (p) p.reg.observacion = v.toUpperCase(); };
-window.editarRangoPendiente = (k,v) => { const p = pendientesAMPM.find(p=>p.key===k) || pendientesAmpmAdmQdm.find(p=>p.key===k) || pendientesB2C.find(p=>p.key===k); if (p) p.reg.rango = v; };
-window.toggleOtroPalet = function(key, esPend, checked) {
-  if (esPend) { const p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key); if (p){ p.reg.otroPalet = checked; render(); } }
-  else { outer: for (const a of Object.keys(cache)) for (const m of Object.keys(cache[a]||{})) if (cache[a][m] && cache[a][m][key]) { cache[a][m][key].otroPalet = checked; update(ref(db, `${RUTA_BASE}/${a}/${m}/${key}`), { otroPalet: checked }); break outer; }
-    render(); }
-};
-
-function actualizarBotonGuardar() {
-  const b = document.getElementById('btnGuardarAmpm');
-  if (!b) return;
-  b.style.display = 'inline-block';
-  const numCambios = Object.keys(cambiosFechaLocales).length;
-  if (numCambios > 0) {
-    b.textContent = `GUARDAR (${numCambios} cambios pendientes)`;
-    b.style.background = 'var(--accent-orange)';
-  } else {
-    b.textContent = 'GUARDAR';
-    b.style.background = 'var(--accent-blue)';
-  }
-}
-
-window.guardarPendientesSeccion = function() {
-  const lista = pendientesDeSeccion();
-  const numCambiosFecha = Object.keys(cambiosFechaLocales).length;
-  if (!lista.length && numCambiosFecha === 0) { toast('No hay nada por guardar', 'info'); return; }
-  const sR = lista.filter(p=>!p.reg.rango).length, sT = lista.filter(p=>!p.reg.transporte).length;
-  if (sR || sT) {
-    let m = 'NO SE PUEDE GUARDAR.\nFaltan campos OBLIGATORIOS:\n\n';
-    if (sR) m += `• ${sR} fila(s) sin RANGO.\n`;
-    if (sT) m += `• ${sT} fila(s) sin TRANSPORTE.\n`;
-    m += '\nCompleta y vuelve a presionar GUARDAR.';
-    toast('Faltan RANGO y/o TRANSPORTE','err');
-    alert(m);
-    return;
-  }
-  if (!confirm(`Se guardarán ${formatoEntero(lista.length)} registros${numCambiosFecha > 0 ? ` y ${numCambiosFecha} cambio(s) de fecha` : ''}.\n¿Continuar?`)) return;
-  toast('Guardando...','info');
-  const promesasFecha = [];
-  Object.keys(cambiosFechaLocales).forEach(key => {
-    const cambio = cambiosFechaLocales[key];
-    if (cambio.esPendiente) {
-      const p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
-      if (p) { p.reg.fecha = cambio.nuevaFecha; p.anio = cambio.nuevaAnio; p.mes = cambio.nuevaMes; }
-    } else {
-      const { anioOriginal, mesOriginal, nuevaAnio, nuevaMes, nuevaFecha } = cambio;
-      if (cache[anioOriginal] && cache[anioOriginal][mesOriginal] && cache[anioOriginal][mesOriginal][key]) {
-        const regData = { ...cache[anioOriginal][mesOriginal][key] };
-        delete cache[anioOriginal][mesOriginal][key];
-        if (!cache[nuevaAnio]) cache[nuevaAnio] = {};
-        if (!cache[nuevaAnio][nuevaMes]) cache[nuevaAnio][nuevaMes] = {};
-        regData.fecha = nuevaFecha;
-        cache[nuevaAnio][nuevaMes][key] = regData;
-        promesasFecha.push(remove(ref(db, `${RUTA_BASE}/${anioOriginal}/${mesOriginal}/${key}`)).then(() => set(ref(db, `${RUTA_BASE}/${nuevaAnio}/${nuevaMes}/${key}`), regData)));
-      }
-    }
-  });
-  cambiosFechaLocales = {};
-  let g = 0; let li = 0;
-  const lotes = [];
-  for (let i=0;i<lista.length;i+=50) lotes.push(lista.slice(i,i+50));
-  const proc = () => {
-    if (li >= lotes.length) {
-      lotes.flat().forEach(p => {
-        const l = {...p.reg}; delete l.pendiente; delete l._candidatos;
-        if (!cache[p.anio]) cache[p.anio] = {};
-        if (!cache[p.anio][p.mes]) cache[p.anio][p.mes] = {};
-        cache[p.anio][p.mes]['local_' + p.key] = l;
-      });
-      if (seccionActiva==='ampm') pendientesAMPM=[];
-      else if (seccionActiva==='ampmadmqdm') pendientesAmpmAdmQdm=[];
-      else if (seccionActiva==='b2c') pendientesB2C=[];
-      Promise.all(promesasFecha).then(() => { actualizarBotonGuardar(); render(); cargarDatos(); }).catch(e => { toast('Error al guardar cambios de fecha: ' + e.message, 'err'); actualizarBotonGuardar(); render(); });
-      return;
-    }
-    Promise.all(lotes[li].map(p => { const l = {...p.reg}; delete l.pendiente; delete l._candidatos; return push(ref(db, `${RUTA_BASE}/${p.anio}/${p.mes}`), l).then(()=>g++); })).then(()=>{ li++; setTimeout(proc,100); });
-  };
-  proc();
-};
-
-window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
-  pedirClave(() => {
-    if (!confirm('El registro se eliminará de la DESCRIPCION, de la BASE DE DATOS y de FIREBASE.\nEsta acción no se puede deshacer.\n¿Confirmas?')) return;
-    if (esPend) {
-      let i = pendientesAMPM.findIndex(p=>p.key===key);
-      if (i>=0) pendientesAMPM.splice(i,1);
-      else { i = pendientesAmpmAdmQdm.findIndex(p=>p.key===key); if (i>=0) pendientesAmpmAdmQdm.splice(i,1); else { i = pendientesB2C.findIndex(p=>p.key===key); if (i>=0) pendientesB2C.splice(i,1); } }
-      if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) delete cache[anio][mes][key];
-      delete cambiosFechaLocales[key];
-      toast('Eliminado de la plataforma (pendiente)','ok');
-      render();
-      return;
-    }
-    const existeEnCache = cache[anio] && cache[anio][mes] && cache[anio][mes][key];
-    if (!existeEnCache) { toast('El registro ya no existe','err'); return; }
-    if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) delete cache[anio][mes][key];
-    delete cambiosFechaLocales[key];
-    remove(ref(db, `${RUTA_BASE}/${anio}/${mes}/${key}`)).then(() => { toast('Eliminado de plataforma y Firebase','ok'); render(); renderizarBaseDatos(); }).catch(e => { toast('Error al borrar: ' + e.message, 'err'); if (!cache[anio]) cache[anio] = {}; if (!cache[anio][mes]) cache[anio][mes] = {}; cache[anio][mes][key] = existeEnCache; render(); });
-  });
-};
-
-window.enviarSeleccion = function() {
-  if (seleccionadosDesc.size === 0) { toast('Selecciona al menos una fila', 'err'); return; }
-  const tipoSec = tipoDeSeccion();
-  const tipoBitacora = getBitacoraTipo();
-  let enviados = 0;
-  let errores = [];
-  const bitacorasModificadas = new Set();
-  seleccionadosDesc.forEach(key => {
-    let reg = null;
-    let anio = '', mes = '';
-    outer: for (const a of Object.keys(cache)) {
-      for (const m of Object.keys(cache[a]||{})) {
-        if (cache[a][m] && cache[a][m][key]) { reg = { ...cache[a][m][key] }; anio = a; mes = m; break outer; }
-      }
-    }
-    if (!reg) {
-      const p = pendientesAMPM.find(p=>p.key===key) || pendientesAmpmAdmQdm.find(p=>p.key===key) || pendientesB2C.find(p=>p.key===key);
-      if (p) { reg = { ...p.reg }; anio = p.anio; mes = p.mes; }
-    }
-    if (!reg) { errores.push(`Registro ${key} no encontrado`); return; }
-    if (cambiosFechaLocales[key]) { reg.fecha = cambiosFechaLocales[key].nuevaFecha; }
-    const transporte = (reg.transporte || '').toUpperCase();
-    const match = transporte.match(/MOVIL\s+(\d)/i);
-    let movilNum = null;
-    if (match) { movilNum = parseInt(match[1]); }
-    else if (tipoSec === 'B2C') { movilNum = 1; }
-    if (!movilNum || movilNum < 1 || movilNum > 6) { errores.push(`${reg.idPedido || key}: Transporte no válido`); return; }
-    const filaBitacora = { requirente: reg.unidad || '', documentos: reg.idPedido || '', cliente: reg.nombre || '', direccion: reg.direccion || '', comuna: reg.comuna || '', obs: reg.observacion || '' };
-    const bitKey = `${tipoBitacora}_movil${movilNum}`;
-    if (!bitacorasData[bitKey]) {
-      bitacorasData[bitKey] = { filas: [], footer: { transporte: `MOVIL ${movilNum}`, fecha: reg.fecha || '', ruta: reg.rango || 'AM', responsable: '', firma: '' } };
-    }
-    let filaIdx = -1;
-    for (let i = 0; i < 10; i++) {
-      if (!bitacorasData[bitKey].filas[i] || (!bitacorasData[bitKey].filas[i].requirente && !bitacorasData[bitKey].filas[i].documentos && !bitacorasData[bitKey].filas[i].cliente)) {
-        filaIdx = i; break;
-      }
-    }
-    if (filaIdx === -1) { errores.push(`${reg.idPedido || key}: Bitácora llena`); return; }
-    bitacorasData[bitKey].filas[filaIdx] = filaBitacora;
-    bitacorasModificadas.add(bitKey);
-    enviados++;
-  });
-  if (enviados > 0) {
-    const promesas = [];
-    bitacorasModificadas.forEach(key => { promesas.push(update(ref(db, `${RUTA_BITACORAS}/${key}`), { filas: bitacorasData[key].filas, footer: bitacorasData[key].footer })); });
-    Promise.all(promesas).then(() => {
-      toast(`${enviados} registro(s) enviado(s) a BITACORAS`, 'ok');
-      if (errores.length > 0) setTimeout(() => toast(`${errores.length} error(es): ${errores.slice(0,2).join(', ')}`, 'err'), 1000);
-      renderizarTodasBitacoras();
-      seleccionadosDesc.clear();
-      render();
-    }).catch(e => { toast('Error al guardar bitácoras: ' + e.message, 'err'); console.error('Error detallado:', e); });
-  } else {
-    toast('No se pudo enviar', 'err');
-    if (errores.length > 0) setTimeout(() => toast(`Errores: ${errores.slice(0,3).join('; ')}`, 'err'), 1000);
-  }
-};
-
-document.getElementById('formReg').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const fecha = document.getElementById('fFecha').value; if (!fecha) { toast('Seleccione fecha','err'); return; }
-  const [a,m] = fecha.split('-'); const rango = document.getElementById('fRango').value; if (!rango) { toast('Elija RANGO','err'); return; }
-  const tipoSec = tipoDeSeccion();
-  if (tipoSec === 'B2C') {
-    const reg = { fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), celular:'', email:'', direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte:'SERVICIO B2C', rango:'B2C', tipo:'B2C', otroPalet:false, creado: new Date().toISOString(), usuario: auth.currentUser ? auth.currentUser.email : '' };
-    pendientesB2C.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg });
-    toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar();
-    return;
-  }
-  const tipoReg = (rango==='B2C') ? 'B2C' : tipoSec;
-  let reg = { fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value, rango, tipo: tipoReg, otroPalet:false, creado: new Date().toISOString(), usuario: auth.currentUser ? auth.currentUser.email : '' };
-  if (tipoSec === 'AMPMADM') { if (!reg.transporte) reg = autocompletarTransporteNuevoAdm(reg); }
-  else { if (!reg.transporte) reg = autocompletarTransporteNuevo(reg); }
-  const dest = (tipoSec==='AMPMADM') ? pendientesAmpmAdmQdm : pendientesAMPM;
-  dest.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg });
-  toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar();
-});
-window.limpiar = function() { document.getElementById('formReg').reset(); document.getElementById('fFecha').valueAsDate = new Date(); };
-
-window.abrirModalExportar = function() { const tipo = tipoDeSeccion(); const hoy = new Date().toISOString().split('T')[0];
-  document.getElementById('expFilaFecha').style.display = 'none';
-  document.getElementById('expTitulo').textContent = `Exportar a Excel — ${fmtFechaConDia(hoy)} (${tipo})`;
-  document.getElementById('expInfo').textContent = `Registros del día: ${formatoEntero(contarRegsDelDia(tipo).length)}`;
-  document.getElementById('exportarModal').classList.add('show'); };
-window.actualizarExpInfo = function() { const tipo = tipoDeSeccion(); const hoy = new Date().toISOString().split('T')[0]; document.getElementById('expInfo').textContent = `Registros del día ${fmtFechaConDia(hoy)}: ${formatoEntero(contarRegsDelDia(tipo).length)}`; };
-function contarRegsDelDia(tipo) { const hoy = new Date().toISOString().split('T')[0]; let r = obtenerRegsTipo(tipo).filter(r => r.fecha === hoy);
-  if (tipo==='AMPM') r = r.concat(pendientesAMPM.map(p=>({...p.reg,key:p.key})));
-  if (tipo==='AMPMADM') r = r.concat(pendientesAmpmAdmQdm.map(p=>({...p.reg,key:p.key})));
-  if (tipo==='B2C') r = r.concat(pendientesB2C.map(p=>({...p.reg,key:p.key})));
-  return r; }
-window.cerrarModalExportar = function() { document.getElementById('exportarModal').classList.remove('show'); };
-window.confirmarExportar = function() {
-  const cols = [{id:'expFecha',key:'fecha',label:'Fecha'},{id:'expUnidad',key:'unidad',label:'Unidad Negocio'},{id:'expIdPedido',key:'idPedido',label:'ID Pedido'},{id:'expNombre',key:'nombre',label:'Nombre Cliente'},{id:'expCelular',key:'celular',label:'Celular'},{id:'expEmail',key:'email',label:'E-Mail'},{id:'expDireccion',key:'direccion',label:'Dirección'},{id:'expComuna',key:'comuna',label:'Comuna'},{id:'expValor',key:'valor',label:'Valor'},{id:'expObservacion',key:'observacion',label:'Observación'},{id:'expTransporte',key:'transporte',label:'Transporte'},{id:'expRango',key:'rango',label:'Rango'}].filter(c => document.getElementById(c.id).checked);
-  if (!cols.length) { toast('Elige al menos una columna','err'); return; }
-  const tipo = tipoDeSeccion(); let regs = contarRegsDelDia(tipo); ordenarPorFechaDireccionId(regs);
-  if (!regs.length) { toast('No hay registros del día','err'); return; }
-  const datos = regs.map(r => { const f = {}; cols.forEach(c => { if (c.key==='fecha') f[c.label]=fmtFechaConDia(r.fecha); else if (c.key==='direccion') f[c.label]=dirDe(r); else if (c.key==='comuna') f[c.label]=canonComuna(r.comuna); else if (c.key==='valor') f[c.label]=formatoMoneda(r.valor); else f[c.label]=r[c.key]??''; }); return f; });
-  const ws = XLSX.utils.json_to_sheet(datos); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Despachos');
-  XLSX.writeFile(wb, `DespachoRetail_${tipo}_${new Date().toISOString().split('T')[0]}.xlsx`);
-  toast(`Exportados ${formatoEntero(regs.length)} registros`,'ok'); cerrarModalExportar();
-};
-
-function procesarArchivoB2C(file, lista) {
-  const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
-  toast(`Leyendo ${file.name}...`, 'info');
-  leerFilas(file, (filas) => { try {
-    if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
-    const enc = filas[0].map(normEnc);
-    const col = { TRACKING: enc.findIndex(h => h.includes('TRACKING')), EMPRESA: enc.findIndex(h => h.includes('EMPRESA')), NOMBRE: enc.findIndex(h => h.includes('NOMBRE')), CELULAR: enc.findIndex(h => h.includes('CELULAR')), EMAIL: enc.findIndex(h => h.includes('EMAIL') || h.includes('MAIL')), DIRECCION: enc.findIndex(h => h.includes('DIRECCION')), COMUNA: enc.findIndex(h => h.includes('COMUNA')), VALOR: enc.findIndex(h => h.includes('VALOR')) };
-    const [aT, mT] = ft.split('-'); const regs = [];
-    for (let i = 1; i < filas.length; i++) {
-      const row = filas[i]; if (!row || !row.length) continue;
-      const gv = idx => (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]);
-      const tr = gv(col.TRACKING).trim(); if (!tr) continue;
-      const comuna = canonComuna(gv(col.COMUNA));
-      regs.push({ anio:aT, mes:mT, reg: { fecha: ft, unidad: gv(col.EMPRESA).trim(), idPedido: tr, nombre: gv(col.NOMBRE).trim(), celular: gv(col.CELULAR).trim(), email: gv(col.EMAIL).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna: comuna, valor: parsearValor(gv(col.VALOR)), observacion: '', transporte: 'SERVICIO B2C', rango: 'B2C', otroPalet: false, tipo: 'B2C', creado: new Date().toISOString(), importado: true } });
-    }
-    if (!regs.length) { toast('Sin filas con N° de tracking','err'); return; }
-    if (lista) { lista.push(...regs); paginaDesc = 1; toast(`${formatoEntero(regs.length)} filas B2C cargadas. Presiona GUARDAR.`,'info'); render(); }
-    else cargarPendientes(regs, `B2C (${file.name})`);
-  } catch(e){ toast(''+e.message,'err'); } });
-}
-
-window.importarExcelSegunSeccion = function() { modoImportActual = (seccionActiva === 'ampm') ? 'AMPM_DESC' : (seccionActiva === 'ampmadmqdm') ? 'AMPMADM_DESC' : 'B2C_DESC'; document.getElementById('importFile').click(); };
-window.importarDesdeBD = function(tipo) { if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } tipoImportacionActual = tipo; modoImportActual = tipo + '_BD'; document.getElementById('importFile').click(); };
-document.getElementById('importFile').addEventListener('change', function(ev) {
-  const file = ev.target.files[0]; if (!file) return; const n = file.name.toLowerCase();
-  if (esJSON(n)) { if (modoImportActual==='AMPM_DESC') procesarJSONAMPM(file); else if (modoImportActual==='AMPMADM_DESC') procesarJSONAdm(file); else procesarJSON(file); }
-  else if (esExcel(n) || esCSV(n)) {
-    if (modoImportActual==='AMPM_DESC') procesarArchivoAMPM(file);
-    else if (modoImportActual==='AMPMADM_DESC') procesarArchivoAdm(file);
-    else if (modoImportActual==='B2C_DESC') procesarArchivoB2C(file, pendientesB2C);
-    else procesarArchivoGenerico(file, modoImportActual.replace('_BD',''));
-  }
-  else toast('Formato no soportado','err');
-  ev.target.value = '';
-});
-function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pendientesAMPM); }
-function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'AMPMADM', pendientesAmpmAdmQdm); }
-function procesarArchivoTipoSeccion(file, tipo, lista) {
-  const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
-  toast(`Leyendo ${file.name}...`,'info');
-  leerFilas(file, (filas) => { try {
-    if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
-    const enc = filas[0].map(normEnc);
-    const col = { EMPRESA: enc.findIndex(h=>h.includes('EMPRESA')), TRACKING: enc.findIndex(h=>h.includes('TRACKING')), NOMBRE: enc.findIndex(h=>h.includes('NOMBRE')), DIRECCION: enc.findIndex(h=>h.includes('DIRECCION')), COMUNA: enc.findIndex(h=>h.includes('COMUNA')), VALOR: enc.findIndex(h=>h.includes('VALOR')), OBS: enc.findIndex(h=>h.includes('OBSERVACION')) };
-    const [aT,mT] = ft.split('-'); const nuevos = [];
-    for (let i=1;i<filas.length;i++){ const row = filas[i]; if (!row || !row.length) continue;
-      const gv = idx => (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]);
-      const tr = gv(col.TRACKING).trim(); if (!tr) continue; const comuna = canonComuna(gv(col.COMUNA));
-      let reg = { fecha: ft, unidad: gv(col.EMPRESA).trim(), idPedido: tr, nombre: gv(col.NOMBRE).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna, valor: parsearValor(gv(col.VALOR)), observacion: gv(col.OBS).trim().toUpperCase(), transporte:'', rango:'', otroPalet:false, tipo };
-      if (tipo === 'AMPMADM') { reg = autocompletarTransporteNuevoAdm(reg); } else { reg = autocompletarTransporteNuevo(reg); }
-      nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg }); }
-    if (!nuevos.length) { toast('Sin filas con tracking','err'); return; }
-    lista.push(...nuevos); paginaDesc = 1; toast(`${formatoEntero(nuevos.length)} filas. Revisa TRANSPORTE/RANGO y presiona GUARDAR.`,'info'); render();
-  } catch(e){ toast(''+e.message,'err'); } });
-}
-function procesarJSONAMPM(file) { procesarJSONTipoSeccion(file, 'AMPM', pendientesAMPM); }
-function procesarJSONAdm(file) { procesarJSONTipoSeccion(file, 'AMPMADM', pendientesAmpmAdmQdm); }
-function procesarJSONTipoSeccion(file, tipo, lista) {
-  const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
-  const reader = new FileReader();
-  reader.onload = e => { try {
-    const obj = JSON.parse(e.target.result);
-    let arr = Array.isArray(obj) ? obj : (Array.isArray(obj.registros) ? obj.registros : (Array.isArray(obj.datos) ? obj.datos : null));
-    if (!arr) { toast('JSON debe ser lista','err'); return; }
-    const [aT,mT] = ft.split('-'); const nuevos = [];
-    arr.forEach((o,i) => { const m = {}; Object.keys(o).forEach(k => m[normEnc(k)] = o[k]);
-      const gi = (...subs) => { for (const k of Object.keys(m)) for (const s of subs) if (k.includes(s)) { const v = m[k]; if (v!=null && String(v).trim()!=='') return String(v); } return ''; };
-      const tr = gi('TRACKING','ID PEDIDO','IDPEDIDO'); if (!tr) return; const comuna = canonComuna(gi('COMUNA'));
-      let reg = { fecha: ft, unidad: gi('EMPRESA','UNIDAD'), idPedido: tr, nombre: gi('NOMBRE'), direccion: limpiarDireccion(gi('DIRECCION'), comuna), comuna, valor: parsearValor(gi('VALOR')), observacion: gi('OBSERVACION').toUpperCase(), transporte: gi('TRANSPORTE'), rango: (gi('RANGO')||'').toUpperCase(), otroPalet:false, tipo };
-      if (tipo === 'AMPMADM') { reg = autocompletarTransporteNuevoAdm(reg); } else { reg = autocompletarTransporteNuevo(reg); }
-      nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg }); });
-    if (!nuevos.length) { toast('JSON sin registros válidos','err'); return; }
-    lista.push(...nuevos); paginaDesc = 1; toast(`${formatoEntero(nuevos.length)} registros JSON. Presiona GUARDAR.`,'info'); render();
-  } catch(e){ toast('JSON inválido','err'); } };
-  reader.readAsText(file);
-}
-function procesarArchivoGenerico(file, tipo) {
-  tipoImportacionActual = tipo; const { mes: mA, anio: aA } = detectarMesAnioDesdeNombre(file.name);
-  toast(`Leyendo ${file.name}...`,'info');
-  leerFilas(file, (filas) => { try {
-    if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
-    const enc = filas[0].map(normEnc);
-    let idxID = enc.findIndex(h => h.includes('PEDIDO') && h.includes('ID') && !h.includes('N°') && !h.includes('NRO') && !h.includes('NUM') && !h.includes('NUMBER'));
-    if (idxID < 0) idxID = enc.findIndex(h => h.includes('PEDIDO'));
-    const col = { FECHA: enc.findIndex(h=>h.includes('FECHA')), UNIDAD: enc.findIndex(h=>h.includes('UNIDAD')||h.includes('NEGOCIO')), ID: idxID, NOMBRE: enc.findIndex(h=>h.includes('NOMBRE')), DIRECCION: enc.findIndex(h=>h.includes('DIRECCION')), COMUNA: enc.findIndex(h=>h.includes('COMUNA')), VALOR: enc.findIndex(h=>h.includes('VALOR')), OBS: enc.findIndex(h=>h.includes('OBSERVACION')), TRANSPORTE: enc.findIndex(h=>h.includes('TRANSPORTE')||h.includes('MOVIL')), RANGO: enc.findIndex(h=>h.includes('RANGO')||h.includes('TURNO')) };
-    const regs = []; let sinF = 0;
-    for (let i=1;i<filas.length;i++){ const row = filas[i]; if (!row || !row.length) continue;
-      const gv = idx => (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]);
-      const fr = col.FECHA>=0 ? gv(col.FECHA) : gv(0); if (fr === '') continue;
-      let fecha = null;
-      if (typeof fr === 'number' && Number.isInteger(fr) && fr>=1 && fr<=31) { if (mA&&aA) fecha = `${aA}-${mA}-${String(fr).padStart(2,'0')}`; }
-      else { fecha = parsearFecha(fr); if (!fecha && mA&&aA){ const d = parseInt(String(fr).trim()); if (!isNaN(d)&&d>=1&&d<=31) fecha = `${aA}-${mA}-${String(d).padStart(2,'0')}`; } }
-      if (!fecha) { sinF++; continue; }
-      const [anio, mes] = fecha.split('-'); const rango = String(gv(col.RANGO)).trim().toUpperCase(); const comuna = canonComuna(gv(col.COMUNA));
-      regs.push({ anio, mes, reg: { fecha, unidad: String(gv(col.UNIDAD)).trim(), idPedido: String(gv(col.ID)).trim(), nombre: String(gv(col.NOMBRE)).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna, valor: parsearValor(gv(col.VALOR)), observacion: String(gv(col.OBS)).trim(), transporte: String(gv(col.TRANSPORTE)).trim(), rango: rango || (tipo==='B2C'?'B2C':'AM'), otroPalet:false, tipo, creado: new Date().toISOString(), importado:true } }); }
-    if (sinF) toast(`${formatoEntero(sinF)} filas sin fecha válida`,'err');
-    cargarPendientes(regs, `${tipo==='B2C'?'B2C':'AM/PM'} (${file.name})`);
-  } catch(e){ toast(''+e.message,'err'); } });
-}
-function procesarJSON(file) { toast(`Leyendo JSON: ${file.name}...`,'info'); const r = new FileReader(); r.onload = e => { try { const obj = JSON.parse(e.target.result); cargarPendientes(extraerRegsDesdeJSON(obj), 'JSON'); } catch(e){ toast('JSON inválido','err'); } }; r.readAsText(file); }
-function extraerRegsDesdeJSON(obj) {
-  const out = []; const esA = k => /^20\d{2}$/.test(k); const esM = k => /^(0[1-9]|1[0-2])$/.test(k);
-  const proc = n => { Object.keys(n).forEach(a => { if (!esA(a)) return; const ms = n[a]; if (typeof ms !== 'object') return; Object.keys(ms).forEach(m => { if (!esM(m)) return; const rs = ms[m]; if (typeof rs !== 'object') return; Object.keys(rs).forEach(k => { const r = rs[k]; if (r && r.fecha) out.push({ anio:a, mes:m, reg:{...r} }); }); }); }); };
-  if (Array.isArray(obj)) { obj.forEach(r => { if (r && r.fecha) { const [a,m] = String(r.fecha).split('-'); out.push({ anio:a, mes:m, reg:{...r} }); } }); return out; }
-  if (Object.keys(obj).some(esA)) { proc(obj); return out; }
-  Object.keys(obj).forEach(k => { const v = obj[k]; if (v && typeof v==='object' && !Array.isArray(v) && Object.keys(v).some(esA)) proc(v); });
-  return out;
-}
-function cargarPendientes(regs, origen) {
-  if (!regs.length) { toast('Sin registros válidos','err'); return; }
-  regs.forEach(({anio, mes, reg}) => { if (!reg.tipo) reg.tipo = tipoImportacionActual; if (!reg.rango) reg.rango = tipoImportacionActual==='B2C'?'B2C':'AM'; if (reg.comuna) reg.comuna = canonComuna(reg.comuna);
-    if (!cache[anio]) cache[anio] = {}; if (!cache[anio][mes]) cache[anio][mes] = {}; const tk = 'pend_'+Date.now()+'_'+Math.random().toString(36).substr(2,9); cache[anio][mes][tk] = reg; pendientes.push({ anio, mes, reg }); });
-  actualizarPendientesInfo(); render(); renderizarBaseDatos(); toast(`${formatoEntero(regs.length)} registros (${origen}). Guardando...`,'info'); guardarPendientesEnFirebase();
-}
-function actualizarPendientesInfo() {
-  const nA = pendientes.filter(p=>p.reg.tipo==='AMPM').length, nB = pendientes.filter(p=>p.reg.tipo==='B2C').length, nAdm = pendientes.filter(p=>p.reg.tipo==='AMPMADM').length;
-  const a = document.getElementById('pendientesAmpm'), b = document.getElementById('pendientesB2c'), ad = document.getElementById('pendientesAmpmAdmQdm');
-  if (a) a.textContent = nA>0 ? `Guardando: ${formatoEntero(nA)}` : '';
-  if (b) b.textContent = nB>0 ? `Guardando: ${formatoEntero(nB)}` : '';
-  if (ad) ad.textContent = nAdm>0 ? `Guardando: ${formatoEntero(nAdm)}` : '';
-}
-function guardarPendientesEnFirebase() {
-  if (!pendientes.length) return; const total = pendientes.length; const por = pendientes.slice(); let g = 0, f = 0; let li = 0; const lotes = []; for (let i=0;i<por.length;i+=50) lotes.push(por.slice(i,i+50));
-  const proc = () => { if (li >= lotes.length) { if (f) { toast(`Guardados ${g}, FALLIDOS ${f}`,'err'); return; } pendientes = []; actualizarPendientesInfo(); verificarGuardado(); return; }
-    Promise.all(lotes[li].map(p => push(ref(db, `${RUTA_BASE}/${p.anio}/${p.mes}`), p.reg).then(()=>g++).catch(e=>{f++;}))).then(()=>{ li++; setTimeout(proc,100); }); };
-  proc();
-}
-async function verificarGuardado() { const anios = [2026,2027,2028,2029,2030]; const t = []; anios.forEach(a => { for (let m=1;m<=12;m++){ const ms = String(m).padStart(2,'0'); t.push(get(ref(db, `${RUTA_BASE}/${a}/${ms}`)).then(s=>s.val()).catch(()=>null)); } });
-  const res = await Promise.all(t); let total = 0; res.forEach(v => { if (v) total += Object.keys(v).length; }); toast(`Verificado: ${formatoEntero(total)} registros en Firebase`,'ok'); cargarDatos(); }
-window.guardarEnFirebase = function() { if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } if (!pendientes.length) { toast('Todo guardado','info'); return; } toast('Guardando pendientes...','info'); guardarPendientesEnFirebase(); };
-
-function obtenerRegsTipo(tipo) { const r = []; Object.keys(cache).forEach(a => Object.keys(cache[a]||{}).forEach(m => Object.keys(cache[a][m]).forEach(k => { const r2 = { key:k, anio:a, mes:m, ...cache[a][m][k] }; if (getTipoRegistro(r2) === tipo) r.push(r2); }))); return ordenarPorFechaYId(r); }
-function obtenerRegsFiltradosBD(tipo) { let r = obtenerRegsTipo(tipo); if (filtroDiaBD[tipo].d) r = r.filter(x => (x.fecha||'').split('-')[2] === filtroDiaBD[tipo].d); if (filtroMesBD[tipo].m) r = r.filter(x => x.mes === filtroMesBD[tipo].m); if (filtroAnioBD[tipo].a) r = r.filter(x => x.anio === filtroAnioBD[tipo].a); return r; }
-window.abrirModalVerFecha = function(tipo) { if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } tipoVerFechaActual = tipo; document.getElementById('vfTipo').value = tipo; document.getElementById('vfDia').value = filtroDiaBD[tipo].d; document.getElementById('vfMes').value = filtroDiaBD[tipo].m; document.getElementById('vfAnio').value = filtroDiaBD[tipo].a; document.getElementById('verFechaOverlay').classList.add('show'); };
-window.cerrarModalVerFecha = function() { document.getElementById('verFechaOverlay').classList.remove('show'); };
-window.confirmarVerFecha = function() {
-  const t = tipoVerFechaActual;
-  const d = document.getElementById('vfDia').value, m = document.getElementById('vfMes').value, a = document.getElementById('vfAnio').value;
-  if (d && !m) { toast('Si eliges Día, también Mes','err'); return; }
-  filtroDiaBD[t] = {d,m,a};
-  if (t==='AMPM') paginaBDAmpm = 1; else if (t==='B2C') paginaBDB2c = 1; else paginaBDAmpmAdmQdm = 1;
-  const fd = document.getElementById('fFecha');
-  if (m && a) fd.value = `${a}-${m}-${d || '01'}`;
-  cerrarModalVerFecha(); renderizarBaseDatos(); render();
-  toast(`Mostrando: ${textoPeriodo(t)}`,'info');
-};
-function textoPeriodo(t) { const f = filtroDiaBD[t]; if (f.d && f.m) return `Día ${parseInt(f.d)} de ${MESES_NOM[parseInt(f.m)-1]}${f.a?' '+f.a:''}`; if (f.m) return `${MESES_NOM[parseInt(f.m)-1]}${f.a?' '+f.a:''}`; if (f.a) return `Año ${f.a}`; return 'Todos'; }
-
-function renderizarBaseDatos() { if (rolActual !== 'admin') return;
-  renderTabBD('AMPM', document.getElementById('filtroIdAmpm').value, paginaBDAmpm);
-  renderTabBD('B2C', document.getElementById('filtroIdB2c').value, paginaBDB2c);
-  renderTabBD('AMPMADM', document.getElementById('filtroIdAmpmAdmQdm').value, paginaBDAmpmAdmQdm); }
-
-function claseYIndicadorSimple(r, cf, cg) { const id = (r.idPedido||'').toString().trim().toUpperCase(); const k = `${r.fecha||''}|${id}`; const misma = id && cf[k] > 1; const otra = !misma && id && cg[id] > 1; let c = '', i = ''; if (misma){ c='id-repetido'; i=`<span style="color:#fff;background:#e74c3c;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x${cf[k]}</span>`; } else if (otra){ c='id-repetido-otro'; i=`<span style="color:#fff;background:#ff8c00;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x${cg[id]}</span>`; } return { clase:c, ind:i }; }
-
-function renderBDThead(tipo) {
-  const suf = sufBD(tipo);
-  const thead = document.getElementById('thead'+suf);
-  if (!thead) return;
-  const bdCombo = (campo, label) => `<th>${label}<div class="filtro-combo"><input type="text" class="th-filter" id="fBD${suf}_${campo}" placeholder="Filtrar…" oninput="filtrarBDCombo('${tipo}','${campo}', this.value)" onfocus="abrirComboBD('${tipo}','${campo}')"><button class="combo-arrow" onclick="toggleComboBD('${tipo}','${campo}')">▼</button><div class="combo-list" id="comboBD_${suf}_${campo}"></div></div></th>`;
-  thead.innerHTML = `<tr><th>Fecha</th>${bdCombo('unidad','Unidad Negocio')}<th>ID Pedido</th><th>Nombre Cliente</th><th>Dirección</th>${bdCombo('comuna','Comuna')}<th>Valor</th><th>Observación</th>${bdCombo('transporte','Transporte')}${bdCombo('rango','Rango')}<th>Acciones</th></tr>`;
-}
-
-function renderTabBD(tipo, filtroId, pagina) {
-  const suf = sufBD(tipo);
-  if (!theadBDConstruidos[suf]) { renderBDThead(tipo); theadBDConstruidos[suf] = true; }
-  let regs = obtenerRegsFiltradosBD(tipo); if (filtroId) { const f = filtroId.toUpperCase().trim(); regs = regs.filter(r => (r.idPedido||'').toString().toUpperCase().includes(f)); }
-  const fd = filtroDescBD[tipo];
-  if (fd.unidad) regs = regs.filter(r => normSinTildes(r.unidad||'').includes(fd.unidad));
-  if (fd.comuna) regs = regs.filter(r => normSinTildes(canonComuna(r.comuna)||'').includes(fd.comuna));
-  if (fd.transporte) regs = regs.filter(r => normSinTildes(r.transporte||'').includes(fd.transporte));
-  if (fd.rango) regs = regs.filter(r => normSinTildes(r.rango||'').includes(fd.rango));
-  const rd = document.getElementById('bdResumen'+suf);
-  if (rd) { const suma = sumaValores(regs), n1 = conteoUnPeso(regs); rd.innerHTML = `<span class="res-periodo">Viendo: <strong>${textoPeriodo(tipo)}</strong></span><span>Valor total: <strong>${formatoMoneda(suma)}</strong>${n1?`<small>(sin ${formatoEntero(n1)} de $1)</small>`:''}</span><span>Pedidos: <strong>${formatoEntero(regs.length)}</strong></span><span class="res-am">AM: <strong>${formatoEntero(regs.filter(r=>r.rango==='AM').length)}</strong></span><span class="res-pm">PM: <strong>${formatoEntero(regs.filter(r=>r.rango==='PM').length)}</strong></span>`; }
-  const tbody = document.getElementById('bdTbody'+suf); const pagDiv = document.getElementById('bdPaginacion'+suf);
-  if (!regs.length) { tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted)">No hay registros</td></tr>`; pagDiv.innerHTML = ''; return; }
-  const tp = Math.max(1, Math.ceil(regs.length / REGISTROS_POR_PAGINA_BD)); if (pagina > tp) pagina = tp; if (pagina < 1) pagina = 1;
-  if (tipo==='AMPM') paginaBDAmpm = pagina; else if (tipo==='B2C') paginaBDB2c = pagina; else paginaBDAmpmAdmQdm = pagina;
-  const ini = (pagina-1)*REGISTROS_POR_PAGINA_BD; const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_BD);
-  const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
-  tbody.innerHTML = pag.map(r => { const { clase, ind } = claseYIndicadorSimple(r, cf, cg); return `<tr class="${clase}"><td>${fmtFecha(r.fecha)}</td><td><span class="badge badge-unidad">${r.unidad||''}</span></td><td><strong>${r.idPedido||''}</strong>${ind}</td><td>${r.nombre||''}</td><td>${dirDe(r)}</td><td>${canonComuna(r.comuna)}</td><td>${formatoMonedaAlineado(r.valor)}</td><td>${r.observacion||''}</td><td>${r.transporte||''}</td><td><span class="badge badge-${(r.rango||'').toLowerCase()}">${r.rango||''}</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD('${r.key}','${r.anio}','${r.mes}')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD('${r.key}','${r.anio}','${r.mes}')"></button></td></tr>`; }).join('');
-  if (tp <= 1) { pagDiv.innerHTML = `<div class="bd-paginacion-info">Mostrando ${formatoEntero(regs.length)} de ${formatoEntero(regs.length)}</div>`; return; }
-  let h = `<div class="bd-paginacion-info">Página ${pagina} de ${tp} | ${formatoEntero(ini+1)}-${formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_BD, regs.length))} de ${formatoEntero(regs.length)}</div>`;
-  h += pagina>1 ? `<button class="btn-bd-pag-nav" onclick="irPaginaBD('${tipo}',${pagina-1})">‹ Anterior</button>` : `<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>`;
-  const pI = Math.max(1,pagina-2), pF = Math.min(tp,pagina+2);
-  if (pI>1){ h += `<button class="btn-bd-pag" onclick="irPaginaBD('${tipo}',1)">1</button>`; if(pI>2) h += `<span style="color:var(--text-muted)">...</span>`; }
-  for (let i=pI;i<=pF;i++) h += i===pagina ? `<button class="btn-bd-pag activa">${i}</button>` : `<button class="btn-bd-pag" onclick="irPaginaBD('${tipo}',${i})">${i}</button>`;
-  if (pF<tp){ if(pF<tp-1) h += `<span style="color:var(--text-muted)">...</span>`; h += `<button class="btn-bd-pag" onclick="irPaginaBD('${tipo}',${tp})">${tp}</button>`; }
-  h += pagina<tp ? `<button class="btn-bd-pag-nav" onclick="irPaginaBD('${tipo}',${pagina+1})">Siguiente ›</button>` : `<button class="btn-bd-pag-nav" disabled>Siguiente ›</button>`;
-  pagDiv.innerHTML = h;
-}
-window.irPaginaBD = function(t,p) { if (rolActual !== 'admin') return; if (t==='AMPM') paginaBDAmpm = p; else if (t==='B2C') paginaBDB2c = p; else paginaBDAmpmAdmQdm = p; renderizarBaseDatos(); };
-window.filtrarBD = function(t) { if (rolActual !== 'admin') return; if (t==='AMPM') paginaBDAmpm = 1; else if (t==='B2C') paginaBDB2c = 1; else paginaBDAmpmAdmQdm = 1; renderizarBaseDatos(); };
-
-window.pedirEditarRegistroBD = function(key, anio, mes) {
-  pedirClave(() => { editandoKey = key; render(); renderizarBaseDatos(); });
-};
-window.guardarEdicionInline = function(key, anio, mes, esPend) {
-  const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-  const nuevo = {
-    fecha: gv('edi_fecha'), unidad: gv('edi_unidad'), idPedido: gv('edi_id'), nombre: gv('edi_nombre'),
-    direccion: gv('edi_direccion'), comuna: canonComuna(gv('edi_comuna')), valor: parseFloat(gv('edi_valor'))||0,
-    observacion: gv('edi_obs'), transporte: gv('edi_transporte'), rango: gv('edi_rango')
-  };
-  nuevo.tipo = gv('edi_rango') === 'B2C' ? 'B2C' : 'AMPM';
-  if (document.getElementById('edi_celular')) nuevo.celular = gv('edi_celular');
-  if (document.getElementById('edi_email')) nuevo.email = gv('edi_email');
-  const [nA, nM] = (nuevo.fecha||'').split('-');
-  if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
-    cache[anio][mes][key] = { ...cache[anio][mes][key], ...nuevo };
-  }
-  if (nA && nM && (nA!==anio || nM!==mes)) {
-    if (cache[anio] && cache[anio][mes]) delete cache[anio][mes][key];
-    if (!cache[nA]) cache[nA] = {};
-    if (!cache[nA][nM]) cache[nA][nM] = {};
-    cache[nA][nM][key] = { ...nuevo };
-    remove(ref(db, `${RUTA_BASE}/${anio}/${mes}/${key}`));
-    set(ref(db, `${RUTA_BASE}/${nA}/${nM}/${key}`), nuevo);
-  } else {
-    update(ref(db, `${RUTA_BASE}/${anio}/${mes}/${key}`), nuevo);
-  }
-  editandoKey = null;
-  toast('Registro actualizado','ok');
-  render();
-  renderizarBaseDatos();
-};
-window.cancelarEdicionInline = function() { editandoKey = null; render(); renderizarBaseDatos(); };
-window.pedirBorrarRegistroBD = function(key, anio, mes) {
-  pedirClave(() => {
-    if (!confirm('El registro se eliminará permanentemente.\n¿Confirmas?')) return;
-    if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
-      delete cache[anio][mes][key];
-    }
-    remove(ref(db, `${RUTA_BASE}/${anio}/${mes}/${key}`)).then(()=>{
-      toast('Eliminado de plataforma y Firebase','ok');
-      render();
-      renderizarBaseDatos();
-    }).catch(e => toast('Error: ' + e.message, 'err'));
-  });
-};
-window.abrirBorrarMes = function(t) { if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } tipoBorrarMes = t; document.getElementById('bmTipo').value = t; document.getElementById('bmMes').value = ''; document.getElementById('bmPassword').value = ''; document.getElementById('bmInfoRegistros').textContent = 'Selecciona mes y año para ver cantidad'; document.getElementById('borrarMesOverlay').classList.add('show'); };
-window.cerrarBorrarMes = function() { document.getElementById('borrarMesOverlay').classList.remove('show'); };
-function actualizarInfoBorrarMes() { const m = document.getElementById('bmMes').value, a = document.getElementById('bmAnio').value, d = document.getElementById('bmInfoRegistros'); if (!m) { d.textContent = 'Selecciona mes y año para ver cantidad'; return; } const c = Object.keys(cache[a]?.[m]||{}).filter(k => getTipoRegistro(cache[a][m][k]) === tipoBorrarMes).length; d.textContent = c === 0 ? `Sin registros ${tipoBorrarMes} en ${MESES_NOM[parseInt(m)-1]} ${a}` : `${formatoEntero(c)} registros ${tipoBorrarMes} en ${MESES_NOM[parseInt(m)-1]} ${a}`; }
-window.confirmarBorrarMes = function() {
-  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; }
-  const m = document.getElementById('bmMes').value, a = document.getElementById('bmAnio').value, p = document.getElementById('bmPassword').value;
-  if (!m) { toast('Primero elige el mes','err'); return; }
-  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
-  const keys = Object.keys(cache[a]?.[m]||{}).filter(k => getTipoRegistro(cache[a][m][k]) === tipoBorrarMes);
-  if (!keys.length) { toast('No hay registros que borrar','info'); return; }
-  if (!confirm(`Se BORRARÁN PERMANENTEMENTE ${formatoEntero(keys.length)} registros ${tipoBorrarMes} de ${MESES_NOM[parseInt(m)-1]} ${a}.\nNo se puede deshacer.\n¿Confirmas?`)) return;
-  toast('Borrando permanentemente...','info');
-  Promise.all(keys.map(k => remove(ref(db, `${RUTA_BASE}/${a}/${m}/${k}`))))
-    .then(()=>{ keys.forEach(k => { if (cache[a] && cache[a][m]) delete cache[a][m][k]; });
-      toast('Mes borrado permanentemente','ok');
-      cerrarBorrarMes(); renderizarBaseDatos(); render(); })
-    .catch(e => toast(''+e.message,'err'));
-};
-
-window.buscarFiltrosAMPM = function() { buscarFiltros('AMPM'); };
-window.buscarFiltrosB2C = function() { buscarFiltros('B2C'); };
-window.buscarFiltrosAmpmAdmQdm = function() { buscarFiltros('AMPMADM'); };
-
-function idsFecha(tipo) { if (tipo === 'AMPM') return { dia:'filtroDiaAmpm', mes:'filtroMesAmpm', anio:'filtroAnioAmpm' }; if (tipo === 'B2C') return { dia:'filtroDiaB2c', mes:'filtroMesB2c', anio:'filtroAnioB2c' }; return { dia:'filtroDiaAmpmAdmQdm', mes:'filtroMesAmpmAdmQdm', anio:'filtroAnioAmpmAdmQdm' }; }
-function leerFiltrosBusqueda(t) { const i = idsFecha(t); const d = document.getElementById(i.dia), m = document.getElementById(i.mes), a = document.getElementById(i.anio); if (!d || !m || !a) return null; return { dia: d.value, mes: m.value, anio: a.value }; }
-function textoPeriodoBusqueda(t) { const f = leerFiltrosBusqueda(t); if (!f) return 'Todos'; if (f.dia && f.mes) return `Día ${parseInt(f.dia)} de ${MESES_NOM[parseInt(f.mes)-1]}${f.anio?' '+f.anio:''}`; if (f.mes) return `${MESES_NOM[parseInt(f.mes)-1]}${f.anio?' '+f.anio:''}`; if (f.anio) return `Año ${f.anio}`; return 'Todos'; }
-
-function buscarFiltros(tipo) { try { tipoBusquedaActual = tipo; const f = leerFiltrosBusqueda(tipo); if (!f) { toast('Recarga con Ctrl+Shift+R','err'); return; } if (!f.mes && !f.anio) { toast('Selecciona al menos Mes o Año','err'); return; } if (f.anio && !f.mes) { toast('Si eliges Año, también Mes','err'); return; } if (f.dia && !f.mes) { toast('Si eliges Día, también Mes','err'); return; }
-  let res = []; Object.keys(cache).forEach(a => { if (f.anio && a !== f.anio) return; Object.keys(cache[a]||{}).forEach(m => { if (f.mes && m !== f.mes) return; Object.keys(cache[a][m]).forEach(k => { const r = { key:k, anio:a, mes:m, ...cache[a][m][k] }; if (getTipoRegistro(r) !== tipo) return; if (f.dia && (r.fecha||'').split('-')[2] !== f.dia) return; res.push(r); }); }); });
-  ordenarPorFechaYId(res); if (!res.length) { toast('No se encontraron registros','info'); return; }
-  datosModal = res; datosModalTotales = res.length; paginaModalActual = 1;
-  ['fModFecha','fModUnidad','fModComuna','fModTransporte','fModObservacion','fModRango'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  poblarCombosModal();
-  document.getElementById('modalTitleText').textContent = `${textoPeriodoBusqueda(tipo)} (${tipo}) - ${formatoEntero(res.length)} pedidos`;
-  document.getElementById('modalInfo').innerHTML = `<strong>Total:</strong> ${formatoEntero(res.length)} | <strong>Valor:</strong> ${formatoMoneda(sumaValores(res))} | <strong>AM:</strong> ${formatoEntero(res.filter(r=>r.rango==='AM').length)} | <strong>PM:</strong> ${formatoEntero(res.filter(r=>r.rango==='PM').length)} | <strong>B2C:</strong> ${formatoEntero(res.filter(r=>r.rango==='B2C').length)}`;
-  document.getElementById('filtroIdModal').value = ''; renderizarModal(); document.getElementById('modalOverlay').classList.add('show');
-} catch(e){ toast('Error al buscar: '+e.message,'err'); } }
-
-function leerFiltrosModal() { const g = id => { const el = document.getElementById(id); return el ? normSinTildes(el.value.trim()) : ''; }; return { fecha:g('fModFecha'), unidad:g('fModUnidad'), comuna:g('fModComuna'), transporte:g('fModTransporte'), observacion:g('fModObservacion'), rango:g('fModRango') }; }
-function aplicarFiltrosCampoModal(regs, fm) { if (fm.fecha) regs = regs.filter(r => normSinTildes(fmtFecha(r.fecha)).includes(fm.fecha) || normSinTildes(r.fecha||'').includes(fm.fecha)); if (fm.unidad) regs = regs.filter(r => normSinTildes(r.unidad||'').includes(fm.unidad)); if (fm.comuna) regs = regs.filter(r => normSinTildes(canonComuna(r.comuna)).includes(fm.comuna)); if (fm.transporte) regs = regs.filter(r => normSinTildes(r.transporte||'').includes(fm.transporte)); if (fm.observacion) regs = regs.filter(r => normSinTildes(r.observacion||'').includes(fm.observacion)); if (fm.rango) regs = regs.filter(r => normSinTildes(r.rango||'').includes(fm.rango)); return regs; }
-window.aplicarFiltrosModal = function() { paginaModalActual = 1; renderizarModal(); };
-window.aplicarFiltroIdModal = function() { paginaModalActual = 1; renderizarModal(); };
-window.cerrarModal = function() { document.getElementById('modalOverlay').classList.remove('show'); datosModal = []; };
-window.irAPaginaModal = p => { paginaModalActual = p; renderizarModal(); document.getElementById('modalBody').scrollTop = 0; };
-
-function renderizarModal() {
-  const fid = document.getElementById('filtroIdModal').value.toUpperCase().trim(); const fm = leerFiltrosModal();
-  let regs = datosModal; if (fid) regs = regs.filter(r => (r.idPedido||'').toString().toUpperCase().includes(fid)); regs = aplicarFiltrosCampoModal(regs, fm); ordenarPorFechaYId(regs);
-  poblarCombosModal();
-  const tp = Math.max(1, Math.ceil(regs.length / REGISTROS_POR_PAGINA_MODAL)); if (paginaModalActual > tp) paginaModalActual = tp; if (paginaModalActual < 1) paginaModalActual = 1;
-  const ini = (paginaModalActual-1)*REGISTROS_POR_PAGINA_MODAL; const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_MODAL);
-  const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
-  document.getElementById('filtroInfo').textContent = `${formatoEntero(datosModalTotales)} totales | Mostrando ${regs.length?formatoEntero(ini+1):0}-${formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_MODAL, regs.length))} (pág ${paginaModalActual}/${tp}) | IDs repetidos: ${formatoEntero(Object.values(cg).filter(c=>c>1).length)}`;
-  const tbody = document.getElementById('modalTbody');
-  if (!pag.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:60px;color:var(--text-muted)">No hay registros</td></tr>'; document.getElementById('modalPaginacion').innerHTML = ''; return; }
-  tbody.innerHTML = pag.map(r => { const { clase, ind } = claseYIndicadorSimple(r, cf, cg); return `<tr class="${clase}"><td>${fmtFecha(r.fecha)}</td><td><span class="badge badge-unidad">${r.unidad||''}</span></td><td><strong>${r.idPedido||''}</strong>${ind}</td><td>${r.nombre||''}</td><td>${dirDe(r)}</td><td>${canonComuna(r.comuna)}</td><td>${formatoMonedaAlineado(r.valor)}</td><td>${r.observacion||''}</td><td>${r.transporte||''}</td><td><span class="badge badge-${(r.rango||'').toLowerCase()}">${r.rango||''}</span></td></tr>`; }).join('');
-  let h = `<div class="modal-paginacion-info">Página ${paginaModalActual} de ${tp}</div>`;
-  h += paginaModalActual>1 ? `<button class="btn-pag-nav" onclick="irAPaginaModal(${paginaModalActual-1})">‹ Anterior</button>` : `<button class="btn-pag-nav" disabled>‹ Anterior</button>`;
-  const pI = Math.max(1,paginaModalActual-2), pF = Math.min(tp,paginaModalActual+2);
-  for (let i=pI;i<=pF;i++) h += i===paginaModalActual ? `<button class="btn-pag-numero activa">${i}</button>` : `<button class="btn-pag-numero" onclick="irAPaginaModal(${i})">${i}</button>`;
-  h += paginaModalActual<tp ? `<button class="btn-pag-nav" onclick="irAPaginaModal(${paginaModalActual+1})">Siguiente ›</button>` : `<button class="btn-pag-nav" disabled>Siguiente ›</button>`;
-  document.getElementById('modalPaginacion').innerHTML = h;
-}
-
-function generarPDFRegistros(regs, titulo) { const suma = sumaValores(regs), n1 = conteoUnPeso(regs); const nA = regs.filter(r=>r.rango==='AM').length, nP = regs.filter(r=>r.rango==='PM').length;
-  const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
-  doc.setFontSize(14); doc.text(`DESPACHO RETAIL - ${titulo}`, 40, 32); doc.setFontSize(9);
-  doc.text(`Pedidos: ${formatoEntero(regs.length)} | AM: ${formatoEntero(nA)} | PM: ${formatoEntero(nP)} | Valor: ${formatoMoneda(suma)}${n1?` (excluye ${formatoEntero(n1)} de $1)`:''}`, 40, 48);
-  doc.text(`Generado: ${new Date().toLocaleString('es-CL')}`, 40, 60);
-  doc.autoTable({ startY: 72, head: [['Fecha','Unidad','ID Pedido','Cliente','Direccion','Comuna','Valor','Observacion','Transporte','Rango']], body: regs.map(r => [fmtFecha(r.fecha), r.unidad||'', r.idPedido||'', r.nombre||'', dirDe(r), canonComuna(r.comuna), formatoMoneda(r.valor), r.observacion||'', r.transporte||'', r.rango||'']), styles: { fontSize:7, cellPadding:3, overflow:'linebreak' }, headStyles: { fillColor:[0,120,212], textColor:255 }, alternateRowStyles: { fillColor:[245,245,245] }, columnStyles: { 0:{cellWidth:55}, 2:{cellWidth:60}, 5:{cellWidth:60}, 6:{cellWidth:65,halign:'right'}, 9:{cellWidth:35} } });
-  doc.save(`DespachoRetail_${titulo.replace(/\s+/g,'_')}.pdf`); toast(`PDF exportado: ${formatoEntero(regs.length)} registros`,'ok'); }
-window.exportarPDFBD = function() { if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } const t = tabBdActiva==='b2c'?'B2C':(tabBdActiva==='ampmadmqdm'?'AMPMADM':'AMPM'); let r = obtenerRegsFiltradosBD(t); const f = document.getElementById(t==='AMPM'?'filtroIdAmpm':(t==='B2C'?'filtroIdB2c':'filtroIdAmpmAdmQdm')).value; if (f) { const ff = f.toUpperCase().trim(); r = r.filter(x => (x.idPedido||'').toString().toUpperCase().includes(ff)); } if (!r.length) { toast('No hay registros','err'); return; } generarPDFRegistros(r, `${t} - ${textoPeriodo(t)}`); };
-window.exportarPDFModal = function() { const t = tipoBusquedaActual; const f = document.getElementById('filtroIdModal').value.toUpperCase().trim(); const fm = leerFiltrosModal(); let r = datosModal.slice(); if (f) r = r.filter(x => (x.idPedido||'').toString().toUpperCase().includes(f)); r = aplicarFiltrosCampoModal(r, fm); if (!r.length) { toast('No hay registros','err'); return; } let t2 = `${t} - ${textoPeriodoBusqueda(t)}`; if (f) t2 += ` - ID ${f}`; generarPDFRegistros(r, t2); };
-
-// =====================================================================
-// 📊 MÓDULO INFORMES - VACÍO (solo la pestaña existe)
-// =====================================================================
-window.setInfTipo = function(t) {
-  // Módulo desactivado - no hace nada
-};
-
-// ✅ Función vacía para evitar errores al cambiar a la pestaña INFORMES
-function renderInformes() {
-  // Módulo INFORMES desactivado - pestaña vacía
-}
-
-(function init(){
-  if (seccionInicial === 'basedatos') document.title = 'DR-BASE DE DATOS';
-  else if (seccionInicial === 'informes') document.title = 'DR-INFORMES';
-  else if (seccionInicial === 'bitacoras') document.title = 'DR-BITACORAS';
-
-  const st = document.createElement('style');
-  st.textContent = `tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;}`;
-  document.head.appendChild(st);
-  const bp = document.getElementById('btnPegarSel'); if (bp) bp.remove();
-  const be = document.querySelector('.btn-exportar');
-  if (be) { be.style.background = '#a5d6a7'; be.style.color = '#1b5e20'; }
-  const dl = document.getElementById('dlTransporteDesc'); if (dl) dl.innerHTML = OPCIONES_TRANSPORTE.map(o => `<option value="${o}"></option>`).join('');
-  ['filtroDiaAmpm','filtroDiaB2c','filtroDiaAmpmAdmQdm','vfDia','expDia'].forEach(id => { const s = document.getElementById(id); if (!s) return; for (let i=1;i<=31;i++){ const o = document.createElement('option'); o.value = String(i).padStart(2,'0'); o.textContent=i; s.appendChild(o); } });
-  document.getElementById('fFecha').valueAsDate = new Date();
-  document.getElementById('fObs').addEventListener('input', e => { const p = e.target.selectionStart; e.target.value = e.target.value.toUpperCase(); e.target.setSelectionRange(p,p); });
-  document.getElementById('buscar').addEventListener('input', () => { paginaDesc = 1; render(); });
-  document.getElementById('bmMes').addEventListener('change', actualizarInfoBorrarMes);
-  document.getElementById('bmAnio').addEventListener('change', actualizarInfoBorrarMes);
-  const pw = document.getElementById('pwInput');
-  if (pw) pw.addEventListener('keydown', e => { if (e.key === 'Enter') confirmarPassword(); });
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.filtro-combo') && !e.target.closest('.obs-combo-wrap') && !e.target.closest('.fecha-wrap') && !e.target.closest('.fecha-cell-wrap') && !e.target.closest('.cal-popup-fila')) {
-      cerrarTodosCombos(); cerrarCombosModal(); cerrarCombosBD();
-    }
-  });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') {
-    if (document.getElementById('passwordOverlay').classList.contains('show')) cerrarPassword();
-    else if (document.getElementById('exportarModal').classList.contains('show')) cerrarModalExportar();
-    else if (document.getElementById('borrarMesOverlay').classList.contains('show')) cerrarBorrarMes();
-    else if (document.getElementById('verFechaOverlay').classList.contains('show')) cerrarModalVerFecha();
-    else if (calendarioAbierto) { calendarioAbierto = false; const p = document.getElementById('calendarioPopup'); if (p) p.classList.remove('show'); }
-    else if (calFilaAbierto) { const p = document.getElementById('cal_popup_' + calFilaAbierto); if (p) p.classList.remove('show'); calFilaAbierto = null; }
-    else cerrarModal();
-  } });
-  const t = localStorage.getItem('temaDespachoRetail'); if (t) cambiarTema(t);
-  actualizarContadorEnviar();
-})();
-
-setInterval(() => { const hoy = new Date().toISOString().split('T')[0]; const f = document.getElementById('fFecha'); if (f && f.value !== hoy) { f.value = hoy; paginaDesc = 1; render(); } }, 60000);
+</script>
+</body>
+</html>
