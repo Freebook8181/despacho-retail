@@ -82,18 +82,57 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .header-right{display:flex;align-items:center;gap:12px}
 .user-info{color:var(--text-secondary);font-size:.85em;font-weight:500}
 
-.reloj-digital{display:flex;align-items:center;gap:8px;background:var(--bg-secondary);border:2px solid var(--accent-blue);border-radius:10px;padding:8px 14px;margin-right:12px;box-shadow:0 0 15px rgba(59,130,246,0.3);font-family:'Courier New',monospace;min-width:180px;justify-content:center}
-.reloj-fecha{color:var(--accent-orange);font-size:0.7em;font-weight:700;text-transform:uppercase;letter-spacing:1px}
-.reloj-hora{color:var(--accent-blue);font-size:1.4em;font-weight:900;letter-spacing:2px;text-shadow:0 0 10px rgba(59,130,246,0.5)}
-.reloj-segundos{color:var(--accent-green);font-size:0.9em;font-weight:700;min-width:25px}
-[data-theme="light"] .reloj-digital{background:var(--bg-tertiary);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-[data-theme="light"] .reloj-hora{color:var(--accent-blue-hover)}
-[data-theme="light"] .reloj-fecha{color:var(--accent-orange-hover)}
-[data-theme="light"] .reloj-segundos{color:var(--accent-green-hover)}
-[data-theme="feminino"] .reloj-digital{background:var(--bg-tertiary);box-shadow:0 2px 8px rgba(192,38,211,0.2)}
-[data-theme="feminino"] .reloj-hora{color:var(--accent-blue-hover)}
-[data-theme="feminino"] .reloj-fecha{color:var(--accent-orange-hover)}
-[data-theme="feminino"] .reloj-segundos{color:var(--accent-green-hover)}
+/* ✅ RELOJ DIGITAL */
+.reloj-digital {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  border: 2px solid #3b82f6;
+  border-radius: 10px;
+  padding: 6px 12px;
+  margin-right: 12px;
+  box-shadow: 0 0 15px rgba(59,130,246,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  font-family: 'Courier New', monospace;
+  min-width: 160px;
+  justify-content: center;
+}
+.reloj-fecha {
+  color: #f59e0b;
+  font-size: 0.65em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.reloj-hora {
+  color: #3b82f6;
+  font-size: 1.3em;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(59,130,246,0.5);
+}
+.reloj-segundos {
+  color: #10b981;
+  font-size: 0.85em;
+  font-weight: 700;
+  min-width: 22px;
+}
+[data-theme="light"] .reloj-digital {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+[data-theme="light"] .reloj-hora { color: #1d4ed8; }
+[data-theme="light"] .reloj-fecha { color: #ea580c; }
+[data-theme="light"] .reloj-segundos { color: #059669; }
+[data-theme="feminino"] .reloj-digital {
+  background: linear-gradient(135deg, #fdf4ff 0%, #f5d0fe 100%);
+  border-color: #c026d3;
+  box-shadow: 0 2px 8px rgba(192,38,211,0.2);
+}
+[data-theme="feminino"] .reloj-hora { color: #a21caf; }
+[data-theme="feminino"] .reloj-fecha { color: #d97706; }
+[data-theme="feminino"] .reloj-segundos { color: #059669; }
 
 .theme-selector{display:flex;gap:6px;align-items:center;margin-right:12px}
 .theme-btn{position:relative;width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;padding:0!important;font-size:0!important;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);overflow:hidden;background:transparent!important}
@@ -107,15 +146,14 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .theme-btn[data-theme="feminino"]:hover{transform:translateY(-1px) scale(1.1);box-shadow:0 4px 10px rgba(192,38,211,0.5)}
 .theme-btn.active{transform:translateY(-1px) scale(1.15);box-shadow:0 4px 12px rgba(0,0,0,0.4),inset 0 1px 2px rgba(255,255,255,0.6),0 0 0 2px rgba(255,255,255,0.4)}
 .theme-btn.active::after{background:linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%)}
-.btn-logout{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-red);padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85em;font-weight:600;transition:background .2s}
-.btn-logout:hover{background:var(--accent-red);color:#fff}
+.btn-logout{background:var(--accent-red);color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85em;font-weight:600;transition:background .2s}
+.btn-logout:hover{background:var(--accent-red-hover)}
 
 .secciones-bar{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;transition:background .3s}
 .secciones-header{display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border-color);flex-wrap:wrap}
 .seccion-tab{padding:12px 22px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;letter-spacing:.5px;text-transform:uppercase}
 .seccion-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
 .seccion-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue);background:var(--accent-blue-pastel)}
-
 .seccion-contenido{padding:16px 28px;display:none}
 .seccion-contenido.show{display:block}
 .submenu-header{display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer;border-bottom:1px solid var(--border-color);margin-bottom:10px}
@@ -124,66 +162,57 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .btn-flecha-submenu.rotada{transform:rotate(180deg)}
 .submenu-contenido{display:none;padding-bottom:10px}
 .submenu-contenido.show{display:block}
-
 .busqueda-filtros{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .busqueda-filtros label{color:var(--text-secondary);font-weight:600;font-size:.85em}
 .select-filtro{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;font-weight:500;cursor:pointer;min-width:90px;height:34px;transition:border-color .2s}
 .select-filtro:focus{outline:none;border-color:var(--accent-blue)}
-
-.btn-bd-importar,.btn-importar-accion{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-green)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bd-importar:hover,.btn-importar-accion:hover{background:var(--accent-green-pastel);color:var(--accent-green)}
-.btn-exportar,.btn-exportar-completo{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-exportar:hover,.btn-exportar-completo:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
-.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bd-guardar:hover,.btn-guardar:hover,.btn-bitacora-guardar:hover,.btn-registrar:hover,.btn-mc-azul:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
-.btn-bd-pdf,.btn-bitacora-jpeg{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-purple)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bd-pdf:hover,.btn-bitacora-jpeg:hover{background:var(--accent-purple-pastel);color:var(--accent-purple)}
-.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-red)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bd-borrar-mes:hover,.btn-acc.btn-borrar:hover,.btn-mc-rojo:hover{background:var(--accent-red-pastel);color:var(--accent-red)}
-.btn-enviar{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-orange)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-enviar:hover{background:var(--accent-orange-pastel);color:var(--accent-orange)}
-.btn-buscar{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-buscar:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
+.btn-bd-importar,.btn-importar-accion{background:#000000;color:#ffffff;border:2px solid var(--accent-green)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bd-importar:hover,.btn-importar-accion:hover{background:var(--accent-green);color:#fff}
+.btn-exportar{background:#000000;color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-exportar:hover{background:var(--accent-blue);color:#fff}
+.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul{background:var(--accent-blue);color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bd-guardar:hover,.btn-guardar:hover,.btn-bitacora-guardar:hover,.btn-registrar:hover,.btn-mc-azul:hover{background:var(--accent-blue-hover)}
+.btn-bd-pdf,.btn-bitacora-jpeg{background:var(--accent-purple);color:#ffffff;border:2px solid var(--accent-purple)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bd-pdf:hover,.btn-bitacora-jpeg:hover{background:var(--accent-purple-hover)}
+.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo{background:#000000;color:#ffffff;border:2px solid var(--accent-red)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bd-borrar-mes:hover,.btn-acc.btn-borrar:hover,.btn-mc-rojo:hover{background:var(--accent-red);color:#fff}
+.btn-enviar{background:#000000;color:#ffffff;border:2px solid var(--accent-orange)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-enviar:hover{background:var(--accent-orange);color:#fff}
+.btn-buscar{background:var(--accent-blue);color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-buscar:hover{background:var(--accent-blue-hover)}
 .btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar{background:var(--bg-tertiary);color:var(--text-primary);border:2px solid var(--border-color)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:500;font-size:.85em;transition:all .2s}
 .btn-limpiar:hover,.btn-mc-cancelar:hover,.btn-exportar-cancelar:hover{background:var(--border-color)}
-.btn-bitacora-excel{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bitacora-excel:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
-.btn-bitacora-imprimir{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-orange)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bitacora-imprimir:hover{background:var(--accent-orange-pastel);color:var(--accent-orange)}
+.btn-bitacora-excel{background:#000000;color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bitacora-excel:hover{background:var(--accent-blue);color:#fff}
 .btn-bd-pag,.btn-pag-numero{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--border-color)!important;width:32px;height:32px;border-radius:4px;cursor:pointer;font-weight:500;font-size:.85em;transition:all .2s;display:flex;align-items:center;justify-content:center}
 .btn-bd-pag:hover,.btn-pag-numero:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)!important;color:var(--accent-blue)}
 .btn-bd-pag.activa,.btn-pag-numero.activa{background:var(--accent-blue);color:#fff;border-color:var(--accent-blue)!important}
 .btn-bd-pag-nav,.btn-pag-nav{background:var(--bg-secondary);color:var(--accent-blue);border:2px solid var(--accent-blue)!important;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s}
-.btn-bd-pag-nav:hover,.btn-pag-nav:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
+.btn-bd-pag-nav:hover,.btn-pag-nav:hover{background:var(--accent-blue);color:#fff}
 .btn-bd-pag-nav:disabled{opacity:.4;cursor:not-allowed}
 .btn-acc{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--border-color)!important;border-radius:4px;cursor:pointer;font-size:.8em;padding:3px 8px;margin-left:4px;transition:all .2s}
 .btn-acc:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)!important;color:var(--accent-blue)}
-.btn-calendario,.btn-cal-fila{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;border-radius:4px;cursor:pointer;font-size:.85em;transition:all .2s}
-.btn-calendario:hover,.btn-cal-fila:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
+.btn-calendario,.btn-cal-fila{background:var(--accent-blue);color:#fff;border:2px solid var(--accent-blue)!important;border-radius:4px;cursor:pointer;font-size:.85em;transition:all .2s}
+.btn-calendario:hover,.btn-cal-fila:hover{background:var(--accent-blue-hover)}
 .modal-btn{height:32px;border:2px solid rgba(255,255,255,0.3);border-radius:4px;cursor:pointer;font-size:1em;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;transition:all .2s;background:rgba(255,255,255,0.1)}
 .modal-btn.close:hover{background:var(--accent-red)}
 .modal-btn.pdf{padding:0 12px;font-size:.85em;width:auto}
 .modal-btn.pdf:hover{background:rgba(255,255,255,0.2)}
-.btn-exportar-confirmar{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;padding:8px 20px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.9em;transition:all .2s}
-.btn-exportar-confirmar:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
-
+.btn-exportar-confirmar{background:var(--accent-blue);color:#fff;border:2px solid var(--accent-blue)!important;padding:8px 20px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.9em;transition:all .2s}
+.btn-exportar-confirmar:hover{background:var(--accent-blue-hover)}
 .basedatos-subtitulo{color:var(--accent-blue);font-size:1.1em;font-weight:700;margin:10px 0 15px 0;padding-bottom:8px;border-bottom:2px solid var(--border-color);text-transform:uppercase;letter-spacing:1px}
-.basedatos-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color);flex-wrap:wrap}
+.basedatos-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color)}
 .basedatos-tab{padding:10px 20px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
 .basedatos-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
 .basedatos-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
-
 .bitacora-movil-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color);flex-wrap:wrap}
 .bitacora-movil-tab{padding:8px 16px;cursor:pointer;font-weight:600;font-size:.8em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
 .bitacora-movil-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
 .bitacora-movil-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
-
 .basedatos-tab-content{display:none}
 .basedatos-tab-content.show{display:block}
 .bitacora-movil-content{display:block}
-
 .bitacora-actions{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap}
-.bitacora-actions-completo{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;padding:10px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border-color)}
 .bd-filtro-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .bd-filtro-row label{color:var(--text-secondary);font-weight:600;font-size:.85em;white-space:nowrap}
 .bd-filtro-input{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:200px;transition:border-color .2s}
@@ -197,26 +226,21 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .bd-resumen .res-periodo strong{color:var(--accent-green)}
 .bd-resumen small{color:var(--text-secondary)}
 .bd-descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;margin:4px 0 8px 0;letter-spacing:.5px;text-transform:uppercase}
-
 .basedatos-tabla-wrap{overflow:auto;max-height:500px;border:1px solid var(--border-color);border-radius:4px;margin-bottom:10px;background:var(--bg-secondary)}
 .basedatos-tabla-wrap::-webkit-scrollbar{width:8px;height:8px}
 .basedatos-tabla-wrap::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
 .basedatos-tabla{width:100%;border-collapse:collapse;font-size:.85em}
-.basedatos-tabla thead{display:table-header-group}
 .basedatos-tabla th{background:var(--bg-tertiary);color:var(--text-primary);padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-color);position:sticky;top:0;z-index:10;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;font-size:.8em;vertical-align:top}
 .basedatos-tabla td{padding:8px;border-bottom:1px solid var(--border-color);color:var(--text-primary);white-space:nowrap}
 .basedatos-tabla tr:hover td{background:var(--row-hover)}
 .basedatos-tabla tr.id-repetido td{background:var(--id-repetido-bg)!important;color:var(--text-primary)!important;font-weight:600}
 .basedatos-tabla tr.id-repetido-otro td{background:var(--id-otro-bg)!important;color:var(--text-primary)!important;font-weight:600}
-
 .bd-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px;background:var(--bg-tertiary);border-radius:4px;flex-wrap:wrap;border:1px solid var(--border-color)}
 .bd-paginacion-info{color:var(--text-secondary);font-size:.85em;font-weight:600;margin-right:15px}
-
 .stats-bar{display:flex;gap:12px;padding:8px 28px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;flex-wrap:wrap;align-items:center;transition:background .3s}
 .stat-item{background:var(--bg-tertiary);padding:6px 14px;border-radius:4px;border-left:3px solid var(--accent-blue)}
 .stat-item .val{color:var(--accent-blue);font-size:1.2em;font-weight:700}
 .stat-item .lbl{color:var(--text-secondary);font-size:.7em;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-
 .seccion-registro{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;transition:background .3s}
 .seccion-registro-header{display:flex;align-items:center;justify-content:space-between;padding:10px 28px;cursor:pointer;transition:background .2s;border-bottom:1px solid var(--border-color)}
 .seccion-registro-header:hover{background:var(--bg-tertiary)}
@@ -232,12 +256,10 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .campo select{cursor:pointer}
 .campo input[type="date"]{background:var(--bg-input)!important;color:var(--text-primary)!important;cursor:pointer;font-weight:500}
 .c-fecha{width:140px}.c-unidad{width:170px}.c-id{width:100px}.c-nombre{width:180px}.c-direccion{width:200px}.c-comuna{width:120px}.c-valor{width:110px}.c-obs{width:160px}.c-transporte{width:140px}.c-rango{width:70px}
-
 .descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;padding:12px 28px 0 28px;letter-spacing:.5px;border-left:3px solid var(--accent-blue);padding-left:12px;text-transform:uppercase}
 .acciones-bar{display:flex;gap:8px;padding:8px 28px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);align-items:center;flex-shrink:0;flex-wrap:wrap;transition:background .3s}
 .buscar-input{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:250px;min-width:150px;transition:border-color .2s}
 .buscar-input:focus{outline:none;border-color:var(--accent-blue)}
-
 .tabla-section{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0}
 .tabla-scroll-vertical{flex:1;overflow-y:auto;padding:0 28px 20px}
 .tabla-scroll-vertical::-webkit-scrollbar{width:10px}
@@ -252,33 +274,28 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .tabla-scroll-horizontal::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:5px}
 .tabla-scroll-horizontal::-webkit-scrollbar-thumb{background:var(--scrollbar-h);border-radius:5px;border:2px solid var(--bg-tertiary)}
 .tabla-scroll-horizontal table{width:100%;min-width:1100px}
-
 table{width:100%;border-collapse:collapse;font-size:.82em;margin-top:8px;background:var(--bg-secondary)}
 th{background:var(--bg-tertiary);color:var(--text-primary);padding:8px 6px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;border-bottom:2px solid var(--border-color);white-space:nowrap;font-size:.8em;text-transform:uppercase;letter-spacing:.5px;vertical-align:top}
 th.th-sel,td.td-sel{text-align:center;width:34px}
 td{padding:6px;border-bottom:1px solid var(--border-color);color:var(--text-primary);white-space:nowrap}
 tr:hover td{background:var(--row-hover)}
-
 .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:.75em;font-weight:600}
 .badge-am{background:var(--accent-orange);color:#fff}
 .badge-pm{background:var(--accent-purple);color:#fff}
 .badge-b2c{background:var(--accent-blue);color:#fff}
 .badge-unidad{background:var(--badge-unidad-bg);color:var(--badge-unidad-text);border:1px solid var(--border-color)}
 .badge-pendiente{background:var(--accent-orange);color:#fff;margin-left:4px}
-
 tr.id-repetido td{background:var(--id-repetido-bg)!important;color:var(--text-primary)!important;font-weight:600}
 tr.id-repetido:hover td{background:var(--id-repetido-hover)!important}
 tr.id-repetido .badge{background:#fff!important;color:var(--accent-red)!important}
 tr.id-repetido-otro td{background:var(--id-otro-bg)!important;color:var(--text-primary)!important;font-weight:600}
 tr.id-repetido-otro:hover td{background:var(--id-otro-hover)!important}
 tr.id-repetido-otro .badge{background:#fff!important;color:var(--accent-orange)!important}
-
 .celda-edit input,.celda-edit select{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:3px 5px;border-radius:4px;font-size:.9em;width:100%;min-width:70px;transition:border-color .2s}
 .celda-edit select{min-width:110px}
 .celda-edit input:focus,.celda-edit select:focus{outline:none;border-color:var(--accent-blue)}
 td.td-acciones{white-space:nowrap;text-align:center}
 td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:middle}
-
 .filtro-combo{position:relative;margin-top:8px}
 .filtro-combo input{width:100%;padding-right:22px}
 .combo-arrow{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8em;padding:0}
@@ -286,23 +303,18 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .combo-item{padding:6px 10px;cursor:pointer;color:var(--text-primary);font-size:.9em;font-weight:400;text-transform:none;letter-spacing:0;white-space:nowrap;transition:background .15s;border-bottom:1px solid var(--border-color)}
 .combo-item:last-child{border-bottom:none}
 .combo-item:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
-
 .obs-combo-wrap{position:relative;display:inline-block;width:100%}
 .obs-combo-wrap input{width:100%;padding-right:22px}
-
 .valor-alineado{display:inline-block;min-width:140px;text-align:right;font-family:inherit;font-weight:700;font-size:1.05em;letter-spacing:0;color:var(--text-primary)}
-
 .empty-msg{text-align:center;padding:60px;color:var(--text-muted);font-style:italic;font-size:1.1em}
 .loading-msg{text-align:center;padding:60px;color:var(--text-secondary)}
 .spinner{border:3px solid var(--border-color);border-top:3px solid var(--accent-blue);border-radius:50%;width:28px;height:28px;animation:spin 1s linear infinite;margin:0 auto 10px}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-
 .toast{position:fixed;top:15px;right:15px;padding:10px 18px;border-radius:4px;color:#fff;font-weight:600;font-size:.85em;z-index:9999;transform:translateX(400px);transition:transform .3s;box-shadow:0 2px 8px var(--shadow);border-left:4px solid rgba(255,255,255,0.3)}
 .toast.show{transform:translateX(0)}
 .toast.ok{background:var(--toast-ok)}
 .toast.err{background:var(--toast-err)}
 .toast.info{background:var(--toast-info)}
-
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000}
 .modal-overlay.show{display:flex}
 .modal-window{width:100vw;height:100vh;background:var(--bg-primary);display:flex;flex-direction:column;overflow:hidden}
@@ -328,7 +340,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .modal-body tbody tr.id-repetido-otro td{background:var(--id-otro-bg)!important;color:var(--text-primary)!important;font-weight:600}
 .modal-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:12px 20px;background:var(--bg-tertiary);border-top:1px solid var(--border-color);flex-wrap:wrap}
 .modal-paginacion-info{color:var(--text-secondary);font-size:.85em;font-weight:600;margin-right:15px}
-
 .overlay-centro{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:3000;align-items:center;justify-content:center}
 .overlay-centro.show{display:flex}
 .modal-caja{background:var(--bg-secondary);border-radius:4px;padding:25px;max-width:400px;width:90%;box-shadow:0 8px 32px var(--shadow-modal);border:1px solid var(--border-color)}
@@ -343,7 +354,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .modal-caja .form-group select:focus,.modal-caja .form-group input:focus{outline:none;border-color:var(--accent-blue)}
 .modal-caja .info-registros{color:var(--accent-orange);font-size:.85em;margin:10px 0;text-align:center;font-weight:600;padding:8px;background:var(--accent-orange-pastel);border-radius:4px}
 .modal-caja-buttons{display:flex;gap:10px;justify-content:center;margin-top:15px}
-
 .exportar-modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:2000;align-items:center;justify-content:center}
 .exportar-modal-overlay.show{display:flex}
 .exportar-modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:25px;max-width:560px;width:90%;box-shadow:0 8px 32px var(--shadow-modal)}
@@ -357,7 +367,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .exportar-modal .checkbox-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--accent-blue)}
 .exportar-modal .checkbox-item label{color:var(--text-primary);font-size:.9em;cursor:pointer;flex:1;font-weight:500}
 .exportar-modal-buttons{display:flex;gap:10px;justify-content:flex-end;padding-top:15px;border-top:1px solid var(--border-color)}
-
 .fecha-wrap{position:relative;display:flex;align-items:center;gap:6px}
 .fecha-wrap input[type="date"]{width:140px}
 .calendario-popup{display:none;position:absolute;top:100%;left:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:10px;z-index:1000;box-shadow:0 4px 12px var(--shadow);min-width:280px;margin-top:4px}
@@ -374,11 +383,9 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .calendario-grid .dia.seleccionado{background:var(--accent-blue);color:#fff;font-weight:700}
 .calendario-grid .dia.vacio{cursor:default}
 .calendario-grid .dia.vacio:hover{background:transparent;color:transparent}
-
 .fecha-cell-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
 .fecha-cell-wrap input[type="date"]{width:110px;background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:3px 5px;border-radius:4px;font-size:.85em}
 .fecha-cell-wrap input[type="date"]:focus{outline:none;border-color:var(--accent-blue)}
-
 .cal-popup-fila{display:none;position:absolute;top:100%;left:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:8px;z-index:500;box-shadow:0 4px 12px var(--shadow);min-width:240px;margin-top:2px}
 .cal-popup-fila.show{display:block}
 .cal-header-fila{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -393,40 +400,22 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .cal-grid-fila .dia.seleccionado{background:var(--accent-blue);color:#fff;font-weight:700}
 .cal-grid-fila .dia.vacio{cursor:default}
 .cal-grid-fila .dia.vacio:hover{background:transparent;color:transparent}
-
-/* ✅ BITÁCORAS SIEMPRE CON FONDO BLANCO - INDEPENDIENTE DEL TEMA */
-.bitacora-wrapper{background:#ffffff !important;border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.bitacora-header-info{background:#1a5490 !important;color:#ffffff !important;padding:12px 20px;border-radius:6px 6px 0 0;font-size:1.1em;font-weight:700;text-align:center;letter-spacing:1px}
-.bitacora-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;table-layout:auto;background:#ffffff !important}
-.bitacora-table thead th{background:#1a5490 !important;color:#ffffff !important;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e;text-align:center}
-.bitacora-table tbody td{border:1px solid #999 !important;padding:6px 8px;font-size:11px;vertical-align:middle;background:#ffffff !important;color:#000000 !important}
-.bitacora-table tbody tr:nth-child(even) td{background:#ffffff !important}
-.bitacora-table tbody tr:nth-child(odd) td{background:#ffffff !important}
-.bitacora-table tbody tr:hover td{background:#e3f2fd !important;color:#000000 !important}
-.bitacora-table tbody tr:hover input{color:#000000 !important}
-.bitacora-table .num-col{background:#f0f0f0 !important;font-weight:600;text-align:center;width:40px;color:#000000 !important}
-.bitacora-table input{border:none;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;white-space:normal;word-wrap:break-word}
-.bitacora-footer-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;margin-top:0;table-layout:auto;background:#ffffff !important}
-.bitacora-footer-table thead th{background:#1a5490 !important;color:#ffffff !important;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e}
-.bitacora-footer-table tbody td{border:1px solid #999 !important;padding:8px;font-size:11px;text-align:center;background:#ffffff !important;color:#000000 !important}
-.bitacora-footer-table input{border:none;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;text-align:center}
-
-/* Modal Exportar Completo */
-.exportar-completo-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:4000;align-items:center;justify-content:center}
-.exportar-completo-overlay.show{display:flex}
-.exportar-completo-modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:25px;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px var(--shadow-modal)}
-.exportar-completo-modal h3{color:var(--accent-blue);font-size:1.2em;margin-bottom:15px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:1px}
-.exportar-completo-modal .tipo-section{margin-bottom:20px;padding:15px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border-color)}
-.exportar-completo-modal .tipo-section h4{color:var(--accent-orange);font-size:1em;margin-bottom:10px;font-weight:700;text-transform:uppercase}
-.exportar-completo-modal .bitacora-checks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.exportar-completo-modal .checkbox-item{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-input);border-radius:4px;cursor:pointer;transition:background .2s;border:1px solid var(--border-color)}
-.exportar-completo-modal .checkbox-item:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)}
-.exportar-completo-modal .checkbox-item input[type="checkbox"]{width:16px;height:16px;cursor:pointer;accent-color:var(--accent-blue)}
-.exportar-completo-modal .checkbox-item label{color:var(--text-primary);font-size:.85em;cursor:pointer;flex:1;font-weight:500}
-.exportar-completo-modal .select-all-btn{background:var(--accent-blue);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:.8em;font-weight:600;margin-bottom:10px;transition:background .2s}
-.exportar-completo-modal .select-all-btn:hover{background:var(--accent-blue-hover)}
-.exportar-completo-modal .deselect-all-btn{background:var(--accent-red);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:.8em;font-weight:600;margin-bottom:10px;margin-left:8px;transition:background .2s}
-.exportar-completo-modal .deselect-all-btn:hover{background:var(--accent-red-hover)}
+.bitacora-wrapper{background:#fff;border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.bitacora-header-info{background:#1a5490;color:#fff;padding:12px 20px;border-radius:6px 6px 0 0;font-size:1.1em;font-weight:700;text-align:center;letter-spacing:1px}
+.bitacora-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;table-layout:auto}
+.bitacora-table thead th{background:#1a5490;color:#fff;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e;text-align:center}
+.bitacora-table tbody td{border:1px solid #999;padding:6px 8px;font-size:11px;vertical-align:middle;background:#fff}
+.bitacora-table tbody tr:nth-child(even){background:#f9f9f9}
+.bitacora-table tbody tr:nth-child(odd){background:#ffffff}
+.bitacora-table tbody tr:hover{background:#1a5490!important;color:#fff!important}
+.bitacora-table tbody tr:hover td{color:#fff!important;background:#1a5490!important}
+.bitacora-table tbody tr:hover input{color:#fff!important;background:transparent!important}
+.bitacora-table .num-col{background:#f0f0f0;font-weight:600;text-align:center;width:40px}
+.bitacora-table input{border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000;white-space:normal;word-wrap:break-word}
+.bitacora-footer-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;margin-top:0;table-layout:auto}
+.bitacora-footer-table thead th{background:#1a5490;color:#fff;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e}
+.bitacora-footer-table tbody td{border:1px solid #999;padding:8px;font-size:11px;text-align:center;background:#fff}
+.bitacora-footer-table input{border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000;text-align:center}
 </style>
 </head>
 <body>
@@ -446,6 +435,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
   <div class="header">
     <div class="header-left"><h1>DESPACHO RETAIL v1.0</h1></div>
     <div class="header-right">
+      <!-- ✅ RELOJ DIGITAL -->
       <div class="reloj-digital">
         <div class="reloj-fecha" id="relojFecha">--</div>
         <div class="reloj-hora" id="relojHora">--:--</div>
@@ -465,8 +455,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
     <div class="secciones-header">
       <div class="seccion-tab active" data-seccion="ampm" onclick="cambiarSeccion('ampm')">AM/PM</div>
       <div class="seccion-tab" data-seccion="b2c" onclick="cambiarSeccion('b2c')">B2C</div>
-      <div class="seccion-tab" data-seccion="adm" onclick="cambiarSeccion('adm')">ADM</div>
-      <div class="seccion-tab" data-seccion="qdm" onclick="cambiarSeccion('qdm')">QDM</div>
+      <div class="seccion-tab" data-seccion="ampmadmqdm" onclick="cambiarSeccion('ampmadmqdm')">AM/PM-ADM-QDM</div>
       <div class="seccion-tab" data-seccion="bitacoras" onclick="cambiarSeccion('bitacoras')">BITACORAS</div>
       <div class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')" style="display:none">BASE DE DATOS</div>
       <div class="seccion-tab" data-seccion="informes" onclick="cambiarSeccion('informes')" style="display:none">INFORMES</div>
@@ -500,30 +489,16 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       </div>
     </div>
 
-    <div class="seccion-contenido" id="seccionAdm">
-      <div class="submenu-header" onclick="toggleSubmenu('busquedaAdm')">
-        <h3>Búsqueda ADM</h3><button class="btn-flecha-submenu" id="flechaBusquedaAdm">▼</button>
+    <div class="seccion-contenido" id="seccionAmpmadmqdm">
+      <div class="submenu-header" onclick="toggleSubmenu('busquedaAmpmAdmQdm')">
+        <h3>Búsqueda AM/PM-ADM-QDM</h3><button class="btn-flecha-submenu" id="flechaBusquedaAmpmAdmQdm">▼</button>
       </div>
-      <div class="submenu-contenido show" id="submenuBusquedaAdm">
+      <div class="submenu-contenido show" id="submenuBusquedaAmpmAdmQdm">
         <div class="busqueda-filtros">
-          <label>Día:</label><select class="select-filtro" id="filtroDiaAdm"><option value="">-- Día --</option></select>
-          <label>Mes:</label><select class="select-filtro" id="filtroMesAdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
-          <label>Año:</label><select class="select-filtro" id="filtroAnioAdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
-          <button class="btn-buscar" onclick="buscarFiltrosAdm()">BUSCAR</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="seccion-contenido" id="seccionQdm">
-      <div class="submenu-header" onclick="toggleSubmenu('busquedaQdm')">
-        <h3>Búsqueda QDM</h3><button class="btn-flecha-submenu" id="flechaBusquedaQdm">▼</button>
-      </div>
-      <div class="submenu-contenido show" id="submenuBusquedaQdm">
-        <div class="busqueda-filtros">
-          <label>Día:</label><select class="select-filtro" id="filtroDiaQdm"><option value="">-- Día --</option></select>
-          <label>Mes:</label><select class="select-filtro" id="filtroMesQdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
-          <label>Año:</label><select class="select-filtro" id="filtroAnioQdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
-          <button class="btn-buscar" onclick="buscarFiltrosQdm()">BUSCAR</button>
+          <label>Día:</label><select class="select-filtro" id="filtroDiaAmpmAdmQdm"><option value="">-- Día --</option></select>
+          <label>Mes:</label><select class="select-filtro" id="filtroMesAmpmAdmQdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
+          <label>Año:</label><select class="select-filtro" id="filtroAnioAmpmAdmQdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
+          <button class="btn-buscar" onclick="buscarFiltrosAmpmAdmQdm()">BUSCAR</button>
         </div>
       </div>
     </div>
@@ -533,15 +508,8 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       <div class="basedatos-tabs">
         <div class="basedatos-tab active" data-btab="ampm" onclick="cambiarTabBit('ampm')">AM/PM</div>
         <div class="basedatos-tab" data-btab="b2c" onclick="cambiarTabBit('b2c')">B2C</div>
-        <div class="basedatos-tab" data-btab="adm" onclick="cambiarTabBit('adm')">ADM</div>
-        <div class="basedatos-tab" data-btab="qdm" onclick="cambiarTabBit('qdm')">QDM</div>
+        <div class="basedatos-tab" data-btab="ampmadmqdm" onclick="cambiarTabBit('ampmadmqdm')">AM/PM-ADM-QDM</div>
       </div>
-      
-      <!-- ✅ Botón Exportar Excel Completo -->
-      <div class="bitacora-actions-completo">
-        <button class="btn-exportar-completo" onclick="abrirModalExportarCompleto()"> EXPORTAR EXCEL COMPLETO</button>
-      </div>
-
       <div class="basedatos-tab-content show" id="bitContentAmpm">
         <div class="bitacora-movil-tabs">
           <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('ampm',1)">MOVIL 1</div>
@@ -574,37 +542,21 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
       </div>
-      <div class="basedatos-tab-content" id="bitContentAdm">
+      <div class="basedatos-tab-content" id="bitContentAmpmAdmQdm">
         <div class="bitacora-movil-tabs">
-          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('adm',1)">MOVIL 1</div>
-          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('adm',2)">MOVIL 2</div>
-          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('adm',3)">MOVIL 3</div>
-          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('adm',4)">MOVIL 4</div>
-          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('adm',5)">MOVIL 5</div>
-          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('adm',6)">MOVIL 6</div>
+          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('ampmadmqdm',1)">MOVIL 1</div>
+          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('ampmadmqdm',2)">MOVIL 2</div>
+          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('ampmadmqdm',3)">MOVIL 3</div>
+          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('ampmadmqdm',4)">MOVIL 4</div>
+          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('ampmadmqdm',5)">MOVIL 5</div>
+          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('ampmadmqdm',6)">MOVIL 6</div>
         </div>
-        <div id="bitacoraAdmMovil1" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil2" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil3" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil4" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil5" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil6" class="bitacora-movil-content"></div>
-      </div>
-      <div class="basedatos-tab-content" id="bitContentQdm">
-        <div class="bitacora-movil-tabs">
-          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('qdm',1)">MOVIL 1</div>
-          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('qdm',2)">MOVIL 2</div>
-          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('qdm',3)">MOVIL 3</div>
-          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('qdm',4)">MOVIL 4</div>
-          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('qdm',5)">MOVIL 5</div>
-          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('qdm',6)">MOVIL 6</div>
-        </div>
-        <div id="bitacoraQdmMovil1" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil2" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil3" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil4" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil5" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmadmqdmMovil6" class="bitacora-movil-content"></div>
       </div>
     </div>
 
@@ -613,8 +565,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       <div class="basedatos-tabs">
         <div class="basedatos-tab active" data-tab="ampm" onclick="cambiarTabBD('ampm')">AM/PM</div>
         <div class="basedatos-tab" data-tab="b2c" onclick="cambiarTabBD('b2c')">B2C</div>
-        <div class="basedatos-tab" data-tab="adm" onclick="cambiarTabBD('adm')">ADM</div>
-        <div class="basedatos-tab" data-tab="qdm" onclick="cambiarTabBD('qdm')">QDM</div>
+        <div class="basedatos-tab" data-tab="ampmadmqdm" onclick="cambiarTabBD('ampmadmqdm')">AM/PM-ADM-QDM</div>
       </div>
       <div class="basedatos-tab-content show" id="tabContentAmpm">
         <div class="bd-filtro-row">
@@ -646,44 +597,36 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadB2c"></thead><tbody id="bdTbodyB2c"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionB2c"></div>
       </div>
-      <div class="basedatos-tab-content" id="tabContentAdm">
+      <div class="basedatos-tab-content" id="tabContentAmpmAdmQdm">
         <div class="bd-filtro-row">
-          <button class="btn-buscar" onclick="abrirModalVerFecha('ADM')">VER MES</button>
-          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdAdm" placeholder="Escribe ID..." oninput="filtrarBD('ADM')">
-          <span class="pendientes-info" id="pendientesAdm"></span>
-          <button class="btn-bd-importar" onclick="importarDesdeBD('ADM')">IMPORTAR</button>
+          <button class="btn-buscar" onclick="abrirModalVerFecha('AMPMADM')">VER MES</button>
+          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdAmpmAdmQdm" placeholder="Escribe ID..." oninput="filtrarBD('AMPMADM')">
+          <span class="pendientes-info" id="pendientesAmpmAdmQdm"></span>
+          <button class="btn-bd-importar" onclick="importarDesdeBD('AMPMADM')">IMPORTAR</button>
           <button class="btn-bd-guardar" onclick="guardarEnFirebase()">GUARDAR</button>
           <button class="btn-bd-pdf" onclick="exportarPDFBD()">EXPORTAR PDF</button>
-          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('ADM')">BORRAR MES</button>
+          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('AMPMADM')">BORRAR MES</button>
         </div>
-        <div class="bd-resumen" id="bdResumenAdm"></div>
+        <div class="bd-resumen" id="bdResumenAmpmAdmQdm"></div>
         <div class="bd-descripcion-subtitulo">Descripción</div>
-        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAdm"></thead><tbody id="bdTbodyAdm"></tbody></table></div>
-        <div class="bd-paginacion" id="bdPaginacionAdm"></div>
-      </div>
-      <div class="basedatos-tab-content" id="tabContentQdm">
-        <div class="bd-filtro-row">
-          <button class="btn-buscar" onclick="abrirModalVerFecha('QDM')">VER MES</button>
-          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdQdm" placeholder="Escribe ID..." oninput="filtrarBD('QDM')">
-          <span class="pendientes-info" id="pendientesQdm"></span>
-          <button class="btn-bd-importar" onclick="importarDesdeBD('QDM')">IMPORTAR</button>
-          <button class="btn-bd-guardar" onclick="guardarEnFirebase()">GUARDAR</button>
-          <button class="btn-bd-pdf" onclick="exportarPDFBD()">EXPORTAR PDF</button>
-          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('QDM')">BORRAR MES</button>
-        </div>
-        <div class="bd-resumen" id="bdResumenQdm"></div>
-        <div class="bd-descripcion-subtitulo">Descripción</div>
-        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadQdm"></thead><tbody id="bdTbodyQdm"></tbody></table></div>
-        <div class="bd-paginacion" id="bdPaginacionQdm"></div>
+        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAmpmAdmQdm"></thead><tbody id="bdTbodyAmpmAdmQdm"></tbody></table></div>
+        <div class="bd-paginacion" id="bdPaginacionAmpmAdmQdm"></div>
       </div>
     </div>
 
-    <!-- ✅ MÓDULO INFORMES VACÍO -->
     <div class="seccion-contenido" id="seccionInformes">
-      <h3 class="basedatos-subtitulo"> INFORMES LOGÍSTICOS</h3>
-      <div style="padding:60px;text-align:center;color:var(--text-muted);font-style:italic;">
-        <h3 style="margin-bottom:15px;color:var(--accent-blue)">Módulo en desarrollo</h3>
-        <p>Próximamente disponible.</p>
+      <h3 class="basedatos-subtitulo">📊 INFORMES LOGÍSTICOS - BUSINESS INTELLIGENCE</h3>
+      <div class="basedatos-tabs">
+        <div class="basedatos-tab active" data-inftipo="AMPM" onclick="setInfTipo('AMPM')">AM/PM</div>
+        <div class="basedatos-tab" data-inftipo="B2C" onclick="setInfTipo('B2C')">B2C</div>
+        <div class="basedatos-tab" data-inftipo="AMPMADM" onclick="setInfTipo('AMPMADM')">AM/PM-ADM-QDM</div>
+      </div>
+      <div id="infResultado">
+        <div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">
+          <h3 style="margin-bottom:15px;color:var(--accent-blue)">📊 Módulo de Informes Logísticos</h3>
+          <p>Seleccione los filtros y presione <strong>GENERAR INFORME</strong> para visualizar el análisis completo.</p>
+          <p style="margin-top:10px;font-size:.85em">Datos en tiempo real desde Firebase • Análisis BI profesional</p>
+        </div>
       </div>
     </div>
   </div>
@@ -705,7 +648,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <label>Fecha</label>
           <div class="fecha-wrap">
             <input type="date" id="fFecha" required>
-            <button type="button" class="btn-calendario" onclick="toggleCalendario()" title="Abrir calendario">📅</button>
+            <button type="button" class="btn-calendario" onclick="toggleCalendario()" title="Abrir calendario"></button>
             <div class="calendario-popup" id="calendarioPopup"></div>
           </div>
         </div>
@@ -744,47 +687,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
   </div>
 </div>
 
-<!-- ✅ Modal Exportar Excel Completo -->
-<div class="exportar-completo-overlay" id="exportarCompletoOverlay">
-  <div class="exportar-completo-modal">
-    <h3>📊 Exportar Bitácoras Completas</h3>
-    <p style="color:var(--text-secondary);font-size:.85em;margin-bottom:15px;text-align:center">Selecciona las bitácoras que deseas exportar</p>
-    
-    <div class="tipo-section">
-      <h4>AM/PM</h4>
-      <button class="select-all-btn" onclick="seleccionarTodosTipo('ampm')">Seleccionar todos</button>
-      <button class="deselect-all-btn" onclick="deseleccionarTodosTipo('ampm')">Deseleccionar</button>
-      <div class="bitacora-checks" id="checksAmpm"></div>
-    </div>
-    
-    <div class="tipo-section">
-      <h4>B2C</h4>
-      <button class="select-all-btn" onclick="seleccionarTodosTipo('b2c')">Seleccionar todos</button>
-      <button class="deselect-all-btn" onclick="deseleccionarTodosTipo('b2c')">Deseleccionar</button>
-      <div class="bitacora-checks" id="checksB2c"></div>
-    </div>
-    
-    <div class="tipo-section">
-      <h4>ADM</h4>
-      <button class="select-all-btn" onclick="seleccionarTodosTipo('adm')">Seleccionar todos</button>
-      <button class="deselect-all-btn" onclick="deseleccionarTodosTipo('adm')">Deseleccionar</button>
-      <div class="bitacora-checks" id="checksAdm"></div>
-    </div>
-    
-    <div class="tipo-section">
-      <h4>QDM</h4>
-      <button class="select-all-btn" onclick="seleccionarTodosTipo('qdm')">Seleccionar todos</button>
-      <button class="deselect-all-btn" onclick="deseleccionarTodosTipo('qdm')">Deseleccionar</button>
-      <div class="bitacora-checks" id="checksQdm"></div>
-    </div>
-    
-    <div class="exportar-modal-buttons">
-      <button class="btn-exportar-cancelar" onclick="cerrarModalExportarCompleto()">Cancelar</button>
-      <button class="btn-exportar-confirmar" onclick="confirmarExportarCompleto()">📥 Exportar Seleccionadas</button>
-    </div>
-  </div>
-</div>
-
 <input type="file" id="importFile" accept=".xlsx,.xls,.xlsm,.xlsb,.ods,.csv,.json" style="display:none">
 <datalist id="dlTransporteDesc"></datalist>
 
@@ -813,7 +715,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <th>Valor</th>
           <th>Observación<div class="filtro-combo"><input type="text" class="th-filter" id="fModObservacion" placeholder="Filtrar…" oninput="filtrarComboModal('observacion', this.value)" onfocus="abrirComboModal('observacion')"><button class="combo-arrow" onclick="toggleComboModal('observacion')">▼</button><div class="combo-list" id="comboModal_observacion"></div></div></th>
           <th>Transporte<div class="filtro-combo"><input type="text" class="th-filter" id="fModTransporte" placeholder="Filtrar…" oninput="filtrarComboModal('transporte', this.value)" onfocus="abrirComboModal('transporte')"><button class="combo-arrow" onclick="toggleComboModal('transporte')">▼</button><div class="combo-list" id="comboModal_transporte"></div></div></th>
-          <th>Rango<div class="filtro-combo"><input type="text" class="th-filter" id="fModRango" placeholder="Filtrar…" oninput="filtrarComboModal('rango', this.value)" onfocus="abrirComboModal('rango')">▼</button><div class="combo-list" id="comboModal_rango"></div></div></th>
+          <th>Rango<div class="filtro-combo"><input type="text" class="th-filter" id="fModRango" placeholder="Filtrar…" oninput="filtrarComboModal('rango', this.value)" onfocus="abrirComboModal('rango')"><button class="combo-arrow" onclick="toggleComboModal('rango')">▼</button><div class="combo-list" id="comboModal_rango"></div></div></th>
         </tr></thead>
         <tbody id="modalTbody"></tbody>
       </table>
@@ -907,6 +809,12 @@ window.addEventListener('DOMContentLoaded', function() {
   if (emailInput) emailInput.value = '';
   if (passInput) passInput.value = '';
   if (passInput) passInput.setAttribute('autocomplete', 'new-password');
+  const params = new URLSearchParams(window.location.search);
+  const emailParam = params.get('email');
+  if (emailParam && emailInput) {
+    emailInput.value = emailParam;
+    setTimeout(() => { if (passInput) passInput.focus(); }, 100);
+  }
 });
 </script>
 </body>
