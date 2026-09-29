@@ -274,12 +274,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .obs-combo-wrap input{width:100%;padding-right:22px}
 
 .valor-alineado{display:inline-block;min-width:140px;text-align:right;font-family:inherit;font-weight:700;font-size:1.05em;letter-spacing:0;color:var(--text-primary)}
-.direccion-truncada{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;cursor:help}
-.direccion-truncada:hover{white-space:normal;overflow:visible;max-width:none;background:var(--bg-tertiary);padding:4px;border-radius:4px;z-index:100;position:relative}
-.transporte-cell{min-width:140px;max-width:160px}
-.transporte-cell input{min-width:130px}
-.rango-cell{min-width:70px;max-width:90px}
-.rango-cell select{min-width:65px;max-width:85px}
 
 .empty-msg{text-align:center;padding:60px;color:var(--text-muted);font-style:italic;font-size:1.1em}
 .loading-msg{text-align:center;padding:60px;color:var(--text-secondary)}
@@ -432,7 +426,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
     <div class="secciones-header">
       <div class="seccion-tab active" data-seccion="ampm" onclick="cambiarSeccion('ampm')">AM/PM</div>
       <div class="seccion-tab" data-seccion="b2c" onclick="cambiarSeccion('b2c')">B2C</div>
-      <div class="seccion-tab" data-seccion="ampmadmqdm" onclick="cambiarSeccion('ampmadmqdm')">AM/PM-ADM-QDM</div>
       <div class="seccion-tab" data-seccion="bitacoras" onclick="cambiarSeccion('bitacoras')">BITACORAS</div>
       <div class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')" style="display:none">BASE DE DATOS</div>
       <div class="seccion-tab" data-seccion="informes" onclick="cambiarSeccion('informes')" style="display:none">INFORMES</div>
@@ -466,26 +459,11 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       </div>
     </div>
 
-    <div class="seccion-contenido" id="seccionAmpmadmqdm">
-      <div class="submenu-header" onclick="toggleSubmenu('busquedaAmpmAdmQdm')">
-        <h3>Búsqueda AM/PM-ADM-QDM</h3><button class="btn-flecha-submenu" id="flechaBusquedaAmpmAdmQdm">▼</button>
-      </div>
-      <div class="submenu-contenido show" id="submenuBusquedaAmpmAdmQdm">
-        <div class="busqueda-filtros">
-          <label>Día:</label><select class="select-filtro" id="filtroDiaAmpmAdmQdm"><option value="">-- Día --</option></select>
-          <label>Mes:</label><select class="select-filtro" id="filtroMesAmpmAdmQdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
-          <label>Año:</label><select class="select-filtro" id="filtroAnioAmpmAdmQdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
-          <button class="btn-buscar" onclick="buscarFiltrosAmpmAdmQdm()">BUSCAR</button>
-        </div>
-      </div>
-    </div>
-
     <div class="seccion-contenido" id="seccionBitacoras">
       <h3 class="basedatos-subtitulo">BITACORAS</h3>
       <div class="basedatos-tabs">
         <div class="basedatos-tab active" data-btab="ampm" onclick="cambiarTabBit('ampm')">AM/PM</div>
         <div class="basedatos-tab" data-btab="b2c" onclick="cambiarTabBit('b2c')">B2C</div>
-        <div class="basedatos-tab" data-btab="ampmadmqdm" onclick="cambiarTabBit('ampmadmqdm')">AM/PM-ADM-QDM</div>
       </div>
       <div class="basedatos-tab-content show" id="bitContentAmpm">
         <div class="bitacora-movil-tabs">
@@ -519,22 +497,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
       </div>
-      <div class="basedatos-tab-content" id="bitContentAmpmAdmQdm">
-        <div class="bitacora-movil-tabs">
-          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('ampmadmqdm',1)">MOVIL 1</div>
-          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('ampmadmqdm',2)">MOVIL 2</div>
-          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('ampmadmqdm',3)">MOVIL 3</div>
-          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('ampmadmqdm',4)">MOVIL 4</div>
-          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('ampmadmqdm',5)">MOVIL 5</div>
-          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('ampmadmqdm',6)">MOVIL 6</div>
-        </div>
-        <div id="bitacoraAmpmadmqdmMovil1" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil2" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil3" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil4" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil5" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil6" class="bitacora-movil-content"></div>
-      </div>
     </div>
 
     <div class="seccion-contenido" id="seccionBasedatos">
@@ -542,7 +504,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       <div class="basedatos-tabs">
         <div class="basedatos-tab active" data-tab="ampm" onclick="cambiarTabBD('ampm')">AM/PM</div>
         <div class="basedatos-tab" data-tab="b2c" onclick="cambiarTabBD('b2c')">B2C</div>
-        <div class="basedatos-tab" data-tab="ampmadmqdm" onclick="cambiarTabBD('ampmadmqdm')">AM/PM-ADM-QDM</div>
       </div>
       <div class="basedatos-tab-content show" id="tabContentAmpm">
         <div class="bd-filtro-row">
@@ -574,32 +535,20 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadB2c"></thead><tbody id="bdTbodyB2c"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionB2c"></div>
       </div>
-      <div class="basedatos-tab-content" id="tabContentAmpmAdmQdm">
-        <div class="bd-filtro-row">
-          <button class="btn-buscar" onclick="abrirModalVerFecha('AMPMADM')">VER MES</button>
-          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdAmpmAdmQdm" placeholder="Escribe ID..." oninput="filtrarBD('AMPMADM')">
-          <span class="pendientes-info" id="pendientesAmpmAdmQdm"></span>
-          <button class="btn-bd-importar" onclick="importarDesdeBD('AMPMADM')">IMPORTAR</button>
-          <button class="btn-bd-guardar" onclick="guardarEnFirebase()">GUARDAR</button>
-          <button class="btn-bd-pdf" onclick="exportarPDFBD()">EXPORTAR PDF</button>
-          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('AMPMADM')">BORRAR MES</button>
-        </div>
-        <div class="bd-resumen" id="bdResumenAmpmAdmQdm"></div>
-        <div class="bd-descripcion-subtitulo">Descripción</div>
-        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAmpmAdmQdm"></thead><tbody id="bdTbodyAmpmAdmQdm"></tbody></table></div>
-        <div class="bd-paginacion" id="bdPaginacionAmpmAdmQdm"></div>
-      </div>
     </div>
 
     <div class="seccion-contenido" id="seccionInformes">
-      <h3 class="basedatos-subtitulo">INFORMES LOGÍSTICOS</h3>
+      <h3 class="basedatos-subtitulo">📊 INFORMES LOGÍSTICOS - BUSINESS INTELLIGENCE</h3>
       <div class="basedatos-tabs">
         <div class="basedatos-tab active" data-inftipo="AMPM" onclick="setInfTipo('AMPM')">AM/PM</div>
         <div class="basedatos-tab" data-inftipo="B2C" onclick="setInfTipo('B2C')">B2C</div>
-        <div class="basedatos-tab" data-inftipo="AMPMADM" onclick="setInfTipo('AMPMADM')">AM/PM-ADM-QDM</div>
       </div>
       <div id="infResultado">
-        <div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">Módulo de informes en desarrollo</div>
+        <div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">
+          <h3 style="margin-bottom:15px;color:var(--accent-blue)"> Módulo de Informes Logísticos</h3>
+          <p>Seleccione los filtros y presione <strong>GENERAR INFORME</strong> para visualizar el análisis completo.</p>
+          <p style="margin-top:10px;font-size:.85em">Datos en tiempo real desde Firebase • Análisis BI profesional</p>
+        </div>
       </div>
     </div>
   </div>
@@ -647,8 +596,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       <button class="btn-accion btn-importar-accion" onclick="importarExcelSegunSeccion()">IMPORTAR EXCEL</button>
       <button class="btn-accion btn-exportar" onclick="abrirModalExportar()">EXPORTAR EXCEL</button>
       <button class="btn-accion btn-guardar" id="btnGuardarAmpm" onclick="guardarPendientesSeccion()">GUARDAR</button>
-      <!-- ✅ NUEVO BOTÓN: Cambiar fecha a todos los pendientes -->
-      <button class="btn-accion" style="background:var(--accent-purple);color:#fff;border:2px solid var(--accent-purple)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;text-transform:uppercase" onclick="abrirModalCambiarFechaTodos()">📅 CAMBIAR FECHA A TODOS</button>
       <button class="btn-accion btn-enviar" id="btnEnviar" onclick="enviarSeleccion()">ENVIAR A BITACORA</button>
     </div>
     <div class="tabla-scroll-vertical">
@@ -724,27 +671,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
     <div class="modal-caja-buttons">
       <button class="btn-mc-cancelar" onclick="cerrarBorrarMes()">Cancelar</button>
       <button class="btn-mc-rojo" onclick="confirmarBorrarMes()">ELIMINAR</button>
-    </div>
-  </div>
-</div>
-
-<!-- ✅ NUEVO MODAL: Cambiar fecha a todos los pendientes -->
-<div class="overlay-centro" id="cambiarFechaTodosOverlay">
-  <div class="modal-caja azul" style="max-width:500px">
-    <h3>📅 CAMBIAR FECHA A TODOS LOS PENDIENTES</h3>
-    <div class="info-registros" id="cfTodosInfo">Cargando información...</div>
-    <div class="form-group">
-      <label> Nueva fecha para todos los registros pendientes:</label>
-      <input type="date" id="cfTodosNuevaFecha" style="font-size:1.1em;padding:10px">
-    </div>
-    <div class="form-group">
-      <label style="color:var(--accent-orange);font-size:.8em">
-        ⚠️ Esta acción cambiará la fecha de TODOS los registros pendientes (no guardados aún) a la fecha seleccionada. Los registros ya guardados en Firebase NO se verán afectados.
-      </label>
-    </div>
-    <div class="modal-caja-buttons">
-      <button class="btn-mc-cancelar" onclick="cerrarModalCambiarFechaTodos()">Cancelar</button>
-      <button class="btn-mc-azul" onclick="confirmarCambiarFechaTodos()">✅ Aplicar a todos</button>
     </div>
   </div>
 </div>
