@@ -81,6 +81,20 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .header h1{color:var(--accent-blue);font-size:1.3em;font-weight:700;letter-spacing:1px;transition:color .3s}
 .header-right{display:flex;align-items:center;gap:12px}
 .user-info{color:var(--text-secondary);font-size:.85em;font-weight:500}
+
+.reloj-digital{display:flex;align-items:center;gap:8px;background:var(--bg-secondary);border:2px solid var(--accent-blue);border-radius:10px;padding:8px 14px;margin-right:12px;box-shadow:0 0 15px rgba(59,130,246,0.3);font-family:'Courier New',monospace;min-width:180px;justify-content:center}
+.reloj-fecha{color:var(--accent-orange);font-size:0.7em;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.reloj-hora{color:var(--accent-blue);font-size:1.4em;font-weight:900;letter-spacing:2px;text-shadow:0 0 10px rgba(59,130,246,0.5)}
+.reloj-segundos{color:var(--accent-green);font-size:0.9em;font-weight:700;min-width:25px}
+[data-theme="light"] .reloj-digital{background:var(--bg-tertiary);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+[data-theme="light"] .reloj-hora{color:var(--accent-blue-hover)}
+[data-theme="light"] .reloj-fecha{color:var(--accent-orange-hover)}
+[data-theme="light"] .reloj-segundos{color:var(--accent-green-hover)}
+[data-theme="feminino"] .reloj-digital{background:var(--bg-tertiary);box-shadow:0 2px 8px rgba(192,38,211,0.2)}
+[data-theme="feminino"] .reloj-hora{color:var(--accent-blue-hover)}
+[data-theme="feminino"] .reloj-fecha{color:var(--accent-orange-hover)}
+[data-theme="feminino"] .reloj-segundos{color:var(--accent-green-hover)}
+
 .theme-selector{display:flex;gap:6px;align-items:center;margin-right:12px}
 .theme-btn{position:relative;width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;padding:0!important;font-size:0!important;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);overflow:hidden;background:transparent!important}
 .theme-btn::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:9px;background:inherit;filter:brightness(1.2);opacity:0.7}
@@ -118,8 +132,8 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 
 .btn-bd-importar,.btn-importar-accion{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-green)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
 .btn-bd-importar:hover,.btn-importar-accion:hover{background:var(--accent-green-pastel);color:var(--accent-green)}
-.btn-exportar{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-exportar:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
+.btn-exportar,.btn-exportar-completo{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-exportar:hover,.btn-exportar-completo:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
 .btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
 .btn-bd-guardar:hover,.btn-guardar:hover,.btn-bitacora-guardar:hover,.btn-registrar:hover,.btn-mc-azul:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
 .btn-bd-pdf,.btn-bitacora-jpeg{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-purple)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
@@ -134,6 +148,8 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .btn-limpiar:hover,.btn-mc-cancelar:hover,.btn-exportar-cancelar:hover{background:var(--border-color)}
 .btn-bitacora-excel{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
 .btn-bitacora-excel:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
+.btn-bitacora-imprimir{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--accent-orange)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-bitacora-imprimir:hover{background:var(--accent-orange-pastel);color:var(--accent-orange)}
 .btn-bd-pag,.btn-pag-numero{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--border-color)!important;width:32px;height:32px;border-radius:4px;cursor:pointer;font-weight:500;font-size:.85em;transition:all .2s;display:flex;align-items:center;justify-content:center}
 .btn-bd-pag:hover,.btn-pag-numero:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)!important;color:var(--accent-blue)}
 .btn-bd-pag.activa,.btn-pag-numero.activa{background:var(--accent-blue);color:#fff;border-color:var(--accent-blue)!important}
@@ -167,6 +183,7 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .bitacora-movil-content{display:block}
 
 .bitacora-actions{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap}
+.bitacora-actions-completo{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;padding:10px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border-color)}
 .bd-filtro-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .bd-filtro-row label{color:var(--text-secondary);font-weight:600;font-size:.85em;white-space:nowrap}
 .bd-filtro-input{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:200px;transition:border-color .2s}
@@ -377,35 +394,39 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .cal-grid-fila .dia.vacio{cursor:default}
 .cal-grid-fila .dia.vacio:hover{background:transparent;color:transparent}
 
-.bitacora-wrapper{background:#fff;border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.bitacora-header-info{background:#1a5490;color:#fff;padding:12px 20px;border-radius:6px 6px 0 0;font-size:1.1em;font-weight:700;text-align:center;letter-spacing:1px}
-.bitacora-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;table-layout:auto}
-.bitacora-table thead th{background:#1a5490;color:#fff;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e;text-align:center}
-.bitacora-table tbody td{border:1px solid #999;padding:6px 8px;font-size:11px;vertical-align:middle;background:#fff}
-.bitacora-table tbody tr:nth-child(even){background:#f9f9f9}
-.bitacora-table tbody tr:nth-child(odd){background:#ffffff}
-.bitacora-table tbody tr:hover{background:#1a5490!important;color:#fff!important}
-.bitacora-table tbody tr:hover td{color:#fff!important;background:#1a5490!important}
-.bitacora-table tbody tr:hover input{color:#fff!important;background:transparent!important}
-.bitacora-table .num-col{background:#f0f0f0;font-weight:600;text-align:center;width:40px}
-.bitacora-table input{border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000;white-space:normal;word-wrap:break-word}
-.bitacora-footer-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;margin-top:0;table-layout:auto}
-.bitacora-footer-table thead th{background:#1a5490;color:#fff;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e}
-.bitacora-footer-table tbody td{border:1px solid #999;padding:8px;font-size:11px;text-align:center;background:#fff}
-.bitacora-footer-table input{border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000;text-align:center}
+/* ✅ BITÁCORAS SIEMPRE CON FONDO BLANCO - INDEPENDIENTE DEL TEMA */
+.bitacora-wrapper{background:#ffffff !important;border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.bitacora-header-info{background:#1a5490 !important;color:#ffffff !important;padding:12px 20px;border-radius:6px 6px 0 0;font-size:1.1em;font-weight:700;text-align:center;letter-spacing:1px}
+.bitacora-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;table-layout:auto;background:#ffffff !important}
+.bitacora-table thead th{background:#1a5490 !important;color:#ffffff !important;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e;text-align:center}
+.bitacora-table tbody td{border:1px solid #999 !important;padding:6px 8px;font-size:11px;vertical-align:middle;background:#ffffff !important;color:#000000 !important}
+.bitacora-table tbody tr:nth-child(even) td{background:#ffffff !important}
+.bitacora-table tbody tr:nth-child(odd) td{background:#ffffff !important}
+.bitacora-table tbody tr:hover td{background:#e3f2fd !important;color:#000000 !important}
+.bitacora-table tbody tr:hover input{color:#000000 !important}
+.bitacora-table .num-col{background:#f0f0f0 !important;font-weight:600;text-align:center;width:40px;color:#000000 !important}
+.bitacora-table input{border:none;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;white-space:normal;word-wrap:break-word}
+.bitacora-footer-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;margin-top:0;table-layout:auto;background:#ffffff !important}
+.bitacora-footer-table thead th{background:#1a5490 !important;color:#ffffff !important;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e}
+.bitacora-footer-table tbody td{border:1px solid #999 !important;padding:8px;font-size:11px;text-align:center;background:#ffffff !important;color:#000000 !important}
+.bitacora-footer-table input{border:none;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;text-align:center}
 
-.reloj-digital{display:flex;align-items:center;gap:8px;background:var(--bg-secondary);border:2px solid var(--accent-blue);border-radius:10px;padding:8px 14px;margin-right:12px;box-shadow:0 0 15px rgba(59,130,246,0.3);font-family:'Courier New',monospace;min-width:180px;justify-content:center}
-.reloj-fecha{color:var(--accent-orange);font-size:0.7em;font-weight:700;text-transform:uppercase;letter-spacing:1px}
-.reloj-hora{color:var(--accent-blue);font-size:1.4em;font-weight:900;letter-spacing:2px;text-shadow:0 0 10px rgba(59,130,246,0.5)}
-.reloj-segundos{color:var(--accent-green);font-size:0.9em;font-weight:700;min-width:25px}
-[data-theme="light"] .reloj-digital{background:var(--bg-tertiary);border-color:var(--accent-blue);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-[data-theme="light"] .reloj-hora{color:var(--accent-blue-hover)}
-[data-theme="light"] .reloj-fecha{color:var(--accent-orange-hover)}
-[data-theme="light"] .reloj-segundos{color:var(--accent-green-hover)}
-[data-theme="feminino"] .reloj-digital{background:var(--bg-tertiary);border-color:var(--accent-blue);box-shadow:0 2px 8px rgba(192,38,211,0.2)}
-[data-theme="feminino"] .reloj-hora{color:var(--accent-blue-hover)}
-[data-theme="feminino"] .reloj-fecha{color:var(--accent-orange-hover)}
-[data-theme="feminino"] .reloj-segundos{color:var(--accent-green-hover)}
+/* Modal Exportar Completo */
+.exportar-completo-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:4000;align-items:center;justify-content:center}
+.exportar-completo-overlay.show{display:flex}
+.exportar-completo-modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:25px;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px var(--shadow-modal)}
+.exportar-completo-modal h3{color:var(--accent-blue);font-size:1.2em;margin-bottom:15px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:1px}
+.exportar-completo-modal .tipo-section{margin-bottom:20px;padding:15px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border-color)}
+.exportar-completo-modal .tipo-section h4{color:var(--accent-orange);font-size:1em;margin-bottom:10px;font-weight:700;text-transform:uppercase}
+.exportar-completo-modal .bitacora-checks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.exportar-completo-modal .checkbox-item{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-input);border-radius:4px;cursor:pointer;transition:background .2s;border:1px solid var(--border-color)}
+.exportar-completo-modal .checkbox-item:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)}
+.exportar-completo-modal .checkbox-item input[type="checkbox"]{width:16px;height:16px;cursor:pointer;accent-color:var(--accent-blue)}
+.exportar-completo-modal .checkbox-item label{color:var(--text-primary);font-size:.85em;cursor:pointer;flex:1;font-weight:500}
+.exportar-completo-modal .select-all-btn{background:var(--accent-blue);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:.8em;font-weight:600;margin-bottom:10px;transition:background .2s}
+.exportar-completo-modal .select-all-btn:hover{background:var(--accent-blue-hover)}
+.exportar-completo-modal .deselect-all-btn{background:var(--accent-red);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:.8em;font-weight:600;margin-bottom:10px;margin-left:8px;transition:background .2s}
+.exportar-completo-modal .deselect-all-btn:hover{background:var(--accent-red-hover)}
 </style>
 </head>
 <body>
@@ -515,6 +536,12 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div class="basedatos-tab" data-btab="adm" onclick="cambiarTabBit('adm')">ADM</div>
         <div class="basedatos-tab" data-btab="qdm" onclick="cambiarTabBit('qdm')">QDM</div>
       </div>
+      
+      <!-- ✅ Botón Exportar Excel Completo -->
+      <div class="bitacora-actions-completo">
+        <button class="btn-exportar-completo" onclick="abrirModalExportarCompleto()"> EXPORTAR EXCEL COMPLETO</button>
+      </div>
+
       <div class="basedatos-tab-content show" id="bitContentAmpm">
         <div class="bitacora-movil-tabs">
           <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('ampm',1)">MOVIL 1</div>
@@ -523,9 +550,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('ampm',4)">MOVIL 4</div>
           <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('ampm',5)">MOVIL 5</div>
           <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('ampm',6)">MOVIL 6</div>
-          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('ampm','spot')">SPOT</div>
-          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('ampm','spot1')">SPOT 1</div>
-          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('ampm','spot2')">SPOT 2</div>
         </div>
         <div id="bitacoraAmpmMovil1" class="bitacora-movil-content"></div>
         <div id="bitacoraAmpmMovil2" class="bitacora-movil-content"></div>
@@ -533,9 +557,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraAmpmMovil4" class="bitacora-movil-content"></div>
         <div id="bitacoraAmpmMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraAmpmMovil6" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovilspot" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovilspot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovilspot2" class="bitacora-movil-content"></div>
       </div>
       <div class="basedatos-tab-content" id="bitContentB2c">
         <div class="bitacora-movil-tabs">
@@ -545,9 +566,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('b2c',4)">MOVIL 4</div>
           <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('b2c',5)">MOVIL 5</div>
           <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('b2c',6)">MOVIL 6</div>
-          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('b2c','spot')">SPOT</div>
-          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('b2c','spot1')">SPOT 1</div>
-          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('b2c','spot2')">SPOT 2</div>
         </div>
         <div id="bitacoraB2cMovil1" class="bitacora-movil-content"></div>
         <div id="bitacoraB2cMovil2" class="bitacora-movil-content"></div>
@@ -555,9 +573,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraB2cMovil4" class="bitacora-movil-content"></div>
         <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovilspot" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovilspot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovilspot2" class="bitacora-movil-content"></div>
       </div>
       <div class="basedatos-tab-content" id="bitContentAdm">
         <div class="bitacora-movil-tabs">
@@ -567,9 +582,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('adm',4)">MOVIL 4</div>
           <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('adm',5)">MOVIL 5</div>
           <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('adm',6)">MOVIL 6</div>
-          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('adm','spot')">SPOT</div>
-          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('adm','spot1')">SPOT 1</div>
-          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('adm','spot2')">SPOT 2</div>
         </div>
         <div id="bitacoraAdmMovil1" class="bitacora-movil-content"></div>
         <div id="bitacoraAdmMovil2" class="bitacora-movil-content"></div>
@@ -577,9 +589,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraAdmMovil4" class="bitacora-movil-content"></div>
         <div id="bitacoraAdmMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraAdmMovil6" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovilspot" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovilspot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovilspot2" class="bitacora-movil-content"></div>
       </div>
       <div class="basedatos-tab-content" id="bitContentQdm">
         <div class="bitacora-movil-tabs">
@@ -589,9 +598,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('qdm',4)">MOVIL 4</div>
           <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('qdm',5)">MOVIL 5</div>
           <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('qdm',6)">MOVIL 6</div>
-          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('qdm','spot')">SPOT</div>
-          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('qdm','spot1')">SPOT 1</div>
-          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('qdm','spot2')">SPOT 2</div>
         </div>
         <div id="bitacoraQdmMovil1" class="bitacora-movil-content"></div>
         <div id="bitacoraQdmMovil2" class="bitacora-movil-content"></div>
@@ -599,9 +605,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraQdmMovil4" class="bitacora-movil-content"></div>
         <div id="bitacoraQdmMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraQdmMovil6" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovilspot" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovilspot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovilspot2" class="bitacora-movil-content"></div>
       </div>
     </div>
 
@@ -675,20 +678,12 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       </div>
     </div>
 
+    <!-- ✅ MÓDULO INFORMES VACÍO -->
     <div class="seccion-contenido" id="seccionInformes">
-      <h3 class="basedatos-subtitulo">📊 INFORMES LOGÍSTICOS - BUSINESS INTELLIGENCE</h3>
-      <div class="basedatos-tabs">
-        <div class="basedatos-tab active" data-inftipo="AMPM" onclick="setInfTipo('AMPM')">AM/PM</div>
-        <div class="basedatos-tab" data-inftipo="B2C" onclick="setInfTipo('B2C')">B2C</div>
-        <div class="basedatos-tab" data-inftipo="ADM" onclick="setInfTipo('ADM')">ADM</div>
-        <div class="basedatos-tab" data-inftipo="QDM" onclick="setInfTipo('QDM')">QDM</div>
-      </div>
-      <div id="infResultado">
-        <div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">
-          <h3 style="margin-bottom:15px;color:var(--accent-blue)">📊 Módulo de Informes Logísticos</h3>
-          <p>Seleccione los filtros y presione <strong>GENERAR INFORME</strong> para visualizar el análisis completo.</p>
-          <p style="margin-top:10px;font-size:.85em">Datos en tiempo real desde Firebase • Análisis BI profesional</p>
-        </div>
+      <h3 class="basedatos-subtitulo"> INFORMES LOGÍSTICOS</h3>
+      <div style="padding:60px;text-align:center;color:var(--text-muted);font-style:italic;">
+        <h3 style="margin-bottom:15px;color:var(--accent-blue)">Módulo en desarrollo</h3>
+        <p>Próximamente disponible.</p>
       </div>
     </div>
   </div>
@@ -710,7 +705,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <label>Fecha</label>
           <div class="fecha-wrap">
             <input type="date" id="fFecha" required>
-            <button type="button" class="btn-calendario" onclick="toggleCalendario()" title="Abrir calendario"></button>
+            <button type="button" class="btn-calendario" onclick="toggleCalendario()" title="Abrir calendario">📅</button>
             <div class="calendario-popup" id="calendarioPopup"></div>
           </div>
         </div>
@@ -749,6 +744,47 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
   </div>
 </div>
 
+<!-- ✅ Modal Exportar Excel Completo -->
+<div class="exportar-completo-overlay" id="exportarCompletoOverlay">
+  <div class="exportar-completo-modal">
+    <h3>📊 Exportar Bitácoras Completas</h3>
+    <p style="color:var(--text-secondary);font-size:.85em;margin-bottom:15px;text-align:center">Selecciona las bitácoras que deseas exportar</p>
+    
+    <div class="tipo-section">
+      <h4>AM/PM</h4>
+      <button class="select-all-btn" onclick="seleccionarTodosTipo('ampm')">Seleccionar todos</button>
+      <button class="deselect-all-btn" onclick="deseleccionarTodosTipo('ampm')">Deseleccionar</button>
+      <div class="bitacora-checks" id="checksAmpm"></div>
+    </div>
+    
+    <div class="tipo-section">
+      <h4>B2C</h4>
+      <button class="select-all-btn" onclick="seleccionarTodosTipo('b2c')">Seleccionar todos</button>
+      <button class="deselect-all-btn" onclick="deseleccionarTodosTipo('b2c')">Deseleccionar</button>
+      <div class="bitacora-checks" id="checksB2c"></div>
+    </div>
+    
+    <div class="tipo-section">
+      <h4>ADM</h4>
+      <button class="select-all-btn" onclick="seleccionarTodosTipo('adm')">Seleccionar todos</button>
+      <button class="deselect-all-btn" onclick="deseleccionarTodosTipo('adm')">Deseleccionar</button>
+      <div class="bitacora-checks" id="checksAdm"></div>
+    </div>
+    
+    <div class="tipo-section">
+      <h4>QDM</h4>
+      <button class="select-all-btn" onclick="seleccionarTodosTipo('qdm')">Seleccionar todos</button>
+      <button class="deselect-all-btn" onclick="deseleccionarTodosTipo('qdm')">Deseleccionar</button>
+      <div class="bitacora-checks" id="checksQdm"></div>
+    </div>
+    
+    <div class="exportar-modal-buttons">
+      <button class="btn-exportar-cancelar" onclick="cerrarModalExportarCompleto()">Cancelar</button>
+      <button class="btn-exportar-confirmar" onclick="confirmarExportarCompleto()">📥 Exportar Seleccionadas</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="importFile" accept=".xlsx,.xls,.xlsm,.xlsb,.ods,.csv,.json" style="display:none">
 <datalist id="dlTransporteDesc"></datalist>
 
@@ -777,7 +813,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <th>Valor</th>
           <th>Observación<div class="filtro-combo"><input type="text" class="th-filter" id="fModObservacion" placeholder="Filtrar…" oninput="filtrarComboModal('observacion', this.value)" onfocus="abrirComboModal('observacion')"><button class="combo-arrow" onclick="toggleComboModal('observacion')">▼</button><div class="combo-list" id="comboModal_observacion"></div></div></th>
           <th>Transporte<div class="filtro-combo"><input type="text" class="th-filter" id="fModTransporte" placeholder="Filtrar…" oninput="filtrarComboModal('transporte', this.value)" onfocus="abrirComboModal('transporte')"><button class="combo-arrow" onclick="toggleComboModal('transporte')">▼</button><div class="combo-list" id="comboModal_transporte"></div></div></th>
-          <th>Rango<div class="filtro-combo"><input type="text" class="th-filter" id="fModRango" placeholder="Filtrar…" oninput="filtrarComboModal('rango', this.value)" onfocus="abrirComboModal('rango')"><button class="combo-arrow" onclick="toggleComboModal('rango')">▼</button><div class="combo-list" id="comboModal_rango"></div></div></th>
+          <th>Rango<div class="filtro-combo"><input type="text" class="th-filter" id="fModRango" placeholder="Filtrar…" oninput="filtrarComboModal('rango', this.value)" onfocus="abrirComboModal('rango')">▼</button><div class="combo-list" id="comboModal_rango"></div></div></th>
         </tr></thead>
         <tbody id="modalTbody"></tbody>
       </table>
@@ -871,12 +907,6 @@ window.addEventListener('DOMContentLoaded', function() {
   if (emailInput) emailInput.value = '';
   if (passInput) passInput.value = '';
   if (passInput) passInput.setAttribute('autocomplete', 'new-password');
-  const params = new URLSearchParams(window.location.search);
-  const emailParam = params.get('email');
-  if (emailParam && emailInput) {
-    emailInput.value = emailParam;
-    setTimeout(() => { if (passInput) passInput.focus(); }, 100);
-  }
 });
 </script>
 </body>
