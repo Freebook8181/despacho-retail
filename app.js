@@ -172,10 +172,10 @@ let filtroDiaBD = { AMPM: '', B2C: '', ADM: '', QDM: '' };
 let filtroMesBD = { AMPM: '', B2C: '', ADM: '', QDM: '' };
 let filtroAnioBD = { AMPM: '', B2C: '', ADM: '', QDM: '' };
 let filtroDescBD = {
-  AMPM:  { unidad:'', comuna:'', transporte:'', rango:'' },
-  B2C:   { unidad:'', comuna:'', transporte:'', rango:'' },
-  ADM:   { unidad:'', comuna:'', transporte:'', rango:'' },
-  QDM:   { unidad:'', comuna:'', transporte:'', rango:'' }
+  AMPM:  { unidad:'', comuna:'', transporte:'', rango:'', fecha:'', idPedido:'', nombre:'', direccion:'', observacion:'' },
+  B2C:   { unidad:'', comuna:'', transporte:'', rango:'', fecha:'', idPedido:'', nombre:'', direccion:'', observacion:'' },
+  ADM:   { unidad:'', comuna:'', transporte:'', rango:'', fecha:'', idPedido:'', nombre:'', direccion:'', observacion:'' },
+  QDM:   { unidad:'', comuna:'', transporte:'', rango:'', fecha:'', idPedido:'', nombre:'', direccion:'', observacion:'' }
 };
 let seleccionadosDesc = new Set();
 let keysVisiblesDesc = [];
@@ -495,9 +495,22 @@ function actualizarContadorEnviar() {
   if (b) b.textContent = seleccionadosDesc.size > 0 ? 'ENVIAR A BITACORA (' + seleccionadosDesc.size + ')' : 'ENVIAR A BITACORA'; 
 }
 
+// =====================================================================
+// ✅ MODIFICADO: Lee todos los filtros incluyendo los nuevos
+// =====================================================================
 function leerFiltrosDesc() {
   const g = function(id) { const el = document.getElementById(id); return el ? normSinTildes(el.value.trim()) : ''; };
-  return { unidad: g('fDescUnidad'), comuna: g('fDescComuna'), transporte: g('fDescTransporte'), rango: g('fDescRango') };
+  return { 
+    unidad: g('fDescUnidad'), 
+    comuna: g('fDescComuna'), 
+    transporte: g('fDescTransporte'), 
+    rango: g('fDescRango'),
+    fecha: g('fDescFecha'),
+    idPedido: g('fDescIdPedido'),
+    nombre: g('fDescNombre'),
+    direccion: g('fDescDireccion'),
+    observacion: g('fDescObservacion')
+  };
 }
 
 function getDescBaseRows() {
@@ -595,6 +608,13 @@ window.filtrarComboDesc = function(col, val) {
   poblarCombo(col, val);
   const list = document.getElementById('combo_' + col);
   if (list) { list.style.display = 'block'; comboAbierto = col; }
+  render();
+};
+
+// =====================================================================
+// ✅ NUEVO: Filtros de texto para columnas sin combo
+// =====================================================================
+window.filtrarTextoDesc = function(col) {
   render();
 };
 
@@ -917,7 +937,7 @@ window.filtrarBDCombo = function(tipo, campo, val){
 };
 
 // =====================================================================
-// ✅ ENCABEZADOS EN UNA SOLA FILA CON FILTROS DEBAJO
+// ✅ MODIFICADO: Encabezados en una fila con filtros debajo en TODAS las columnas
 // =====================================================================
 function renderDescThead() {
   const thead = document.getElementById('theadDesc');
@@ -927,53 +947,77 @@ function renderDescThead() {
   const sel = '<th class="th-sel" rowspan="2"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>';
   const acc = '<th rowspan="2">Acciones</th>';
   
-  // Filtros combo reutilizables
+  // Filtros combo
   const filtroUnidad = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescUnidad" placeholder="Filtrar..." oninput="filtrarComboDesc(\'unidad\', this.value)" onfocus="abrirCombo(\'unidad\')"><button class="combo-arrow" onclick="toggleCombo(\'unidad\')">▼</button><div class="combo-list" id="combo_unidad"></div></div>';
   const filtroComuna = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescComuna" placeholder="Filtrar..." oninput="filtrarComboDesc(\'comuna\', this.value)" onfocus="abrirCombo(\'comuna\')"><button class="combo-arrow" onclick="toggleCombo(\'comuna\')">▼</button><div class="combo-list" id="combo_comuna"></div></div>';
   const filtroTransporte = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescTransporte" placeholder="Filtrar..." oninput="filtrarComboDesc(\'transporte\', this.value)" onfocus="abrirCombo(\'transporte\')"><button class="combo-arrow" onclick="toggleCombo(\'transporte\')">▼</button><div class="combo-list" id="combo_transporte"></div></div>';
   const filtroRango = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescRango" placeholder="Filtrar..." oninput="filtrarComboDesc(\'rango\', this.value)" onfocus="abrirCombo(\'rango\')"><button class="combo-arrow" onclick="toggleCombo(\'rango\')">▼</button><div class="combo-list" id="combo_rango"></div></div>';
   
+  // Filtros de texto para las demás columnas
+  const filtroFecha = '<div style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescFecha" placeholder="Filtrar..." oninput="filtrarTextoDesc(\'fecha\')"></div>';
+  const filtroId = '<div style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescIdPedido" placeholder="Filtrar..." oninput="filtrarTextoDesc(\'idPedido\')"></div>';
+  const filtroNombre = '<div style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescNombre" placeholder="Filtrar..." oninput="filtrarTextoDesc(\'nombre\')"></div>';
+  const filtroDireccion = '<div style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescDireccion" placeholder="Filtrar..." oninput="filtrarTextoDesc(\'direccion\')"></div>';
+  const filtroObservacion = '<div style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescObservacion" placeholder="Filtrar..." oninput="filtrarTextoDesc(\'observacion\')"></div>';
+  const filtroVacio = '<div style="margin:4px 0 0 0"></div>';
+  
   if (b2c) {
     thead.innerHTML = '<tr>' +
       sel +
-      '<th rowspan="2">Fecha</th>' +
+      '<th>Fecha</th>' +
       '<th>Unidad Negocio</th>' +
-      '<th rowspan="2">ID Pedido</th>' +
-      '<th rowspan="2">Nombre Cliente</th>' +
-      '<th rowspan="2">Celular</th>' +
-      '<th rowspan="2">E-Mail</th>' +
-      '<th rowspan="2">Dirección</th>' +
+      '<th>ID Pedido</th>' +
+      '<th>Nombre Cliente</th>' +
+      '<th>Celular</th>' +
+      '<th>E-Mail</th>' +
+      '<th>Dirección</th>' +
       '<th>Comuna</th>' +
-      '<th rowspan="2">Valor Producto</th>' +
-      '<th rowspan="2">Observación</th>' +
+      '<th>Valor Producto</th>' +
+      '<th>Observación</th>' +
       '<th>Transporte</th>' +
       '<th>Rango</th>' +
       acc +
       '</tr><tr>' +
+      '<td>' + filtroFecha + '</td>' +
       '<td>' + filtroUnidad + '</td>' +
+      '<td>' + filtroId + '</td>' +
+      '<td>' + filtroNombre + '</td>' +
+      '<td>' + filtroVacio + '</td>' +
+      '<td>' + filtroVacio + '</td>' +
+      '<td>' + filtroDireccion + '</td>' +
       '<td>' + filtroComuna + '</td>' +
+      '<td>' + filtroVacio + '</td>' +
+      '<td>' + filtroObservacion + '</td>' +
       '<td>' + filtroTransporte + '</td>' +
       '<td>' + filtroRango + '</td>' +
+      '<td>' + filtroVacio + '</td>' +
       '</tr>';
   } else {
     thead.innerHTML = '<tr>' +
       sel +
-      '<th rowspan="2">Fecha</th>' +
+      '<th>Fecha</th>' +
       '<th>Unidad Negocio</th>' +
-      '<th rowspan="2">ID Pedido</th>' +
-      '<th rowspan="2">Nombre Cliente</th>' +
-      '<th rowspan="2">Dirección</th>' +
+      '<th>ID Pedido</th>' +
+      '<th>Nombre Cliente</th>' +
+      '<th>Dirección</th>' +
       '<th>Comuna</th>' +
-      '<th rowspan="2">Valor</th>' +
-      '<th rowspan="2">Observación</th>' +
+      '<th>Valor</th>' +
+      '<th>Observación</th>' +
       '<th>Transporte</th>' +
       '<th>Rango</th>' +
       acc +
       '</tr><tr>' +
+      '<td>' + filtroFecha + '</td>' +
       '<td>' + filtroUnidad + '</td>' +
+      '<td>' + filtroId + '</td>' +
+      '<td>' + filtroNombre + '</td>' +
+      '<td>' + filtroDireccion + '</td>' +
       '<td>' + filtroComuna + '</td>' +
+      '<td>' + filtroVacio + '</td>' +
+      '<td>' + filtroObservacion + '</td>' +
       '<td>' + filtroTransporte + '</td>' +
       '<td>' + filtroRango + '</td>' +
+      '<td>' + filtroVacio + '</td>' +
       '</tr>';
   }
 }
@@ -1013,11 +1057,19 @@ function render() {
     const reg = Object.assign({}, p.reg, { key: p.key, anio: p.anio, mes: p.mes, pendiente: true });
     regs.push(reg); 
   });
+  
+  // ✅ Aplicar todos los filtros
   const fd = leerFiltrosDesc();
   if (fd.unidad) regs = regs.filter(function(r) { return normSinTildes(r.unidad||'').includes(fd.unidad); });
   if (fd.comuna) regs = regs.filter(function(r) { return normSinTildes(canonComuna(r.comuna)||'').includes(fd.comuna); });
   if (fd.transporte) regs = regs.filter(function(r) { return normSinTildes(r.transporte||'').includes(fd.transporte); });
   if (fd.rango) regs = regs.filter(function(r) { return normSinTildes(r.rango||'').includes(fd.rango); });
+  if (fd.fecha) regs = regs.filter(function(r) { return normSinTildes(r.fecha||'').includes(fd.fecha); });
+  if (fd.idPedido) regs = regs.filter(function(r) { return normSinTildes((r.idPedido||'').toString()).includes(fd.idPedido); });
+  if (fd.nombre) regs = regs.filter(function(r) { return normSinTildes(r.nombre||'').includes(fd.nombre); });
+  if (fd.direccion) regs = regs.filter(function(r) { return normSinTildes(dirDe(r)).includes(fd.direccion); });
+  if (fd.observacion) regs = regs.filter(function(r) { return normSinTildes(r.observacion||'').includes(fd.observacion); });
+  
   ordenarPorFechaDireccionId(regs);
   document.getElementById('sTotal').textContent = formatoEntero(regs.length);
   document.getElementById('sValor').textContent = formatoMoneda(sumaValores(regs));
@@ -3132,7 +3184,7 @@ function renderInformes() {
   else if (seccionInicial === 'informes') document.title = 'DR-INFORMES';
   else if (seccionInicial === 'bitacoras') document.title = 'DR-BITACORAS';
   const st = document.createElement('style');
-  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;}';
+  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;} #theadDesc th{vertical-align:middle !important;text-align:center !important;} #theadDesc tr:first-child th{padding:8px 6px !important;border-bottom:1px solid var(--border-color) !important;} #theadDesc tr:last-child td{padding:4px 6px !important;border-top:none !important;} #theadDesc .th-filter{font-size:0.75em !important;padding:3px 6px !important;margin:0 !important;}';
   document.head.appendChild(st);
   const bp = document.getElementById('btnPegarSel'); 
   if (bp) bp.remove();
