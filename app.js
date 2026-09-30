@@ -917,7 +917,7 @@ window.filtrarBDCombo = function(tipo, campo, val){
 };
 
 // =====================================================================
-// ✅ MODIFICADO: Encabezados en dos filas (títulos arriba, filtros abajo)
+// ✅ ENCABEZADOS EN UNA SOLA FILA CON FILTROS DEBAJO
 // =====================================================================
 function renderDescThead() {
   const thead = document.getElementById('theadDesc');
@@ -928,15 +928,14 @@ function renderDescThead() {
   const acc = '<th rowspan="2">Acciones</th>';
   
   // Filtros combo reutilizables
-  const filtroUnidad = '<th><div class="filtro-combo" style="margin:0"><input type="text" class="th-filter" id="fDescUnidad" placeholder="Filtrar..." oninput="filtrarComboDesc(\'unidad\', this.value)" onfocus="abrirCombo(\'unidad\')"><button class="combo-arrow" onclick="toggleCombo(\'unidad\')">▼</button><div class="combo-list" id="combo_unidad"></div></div></th>';
-  const filtroComuna = '<th><div class="filtro-combo" style="margin:0"><input type="text" class="th-filter" id="fDescComuna" placeholder="Filtrar..." oninput="filtrarComboDesc(\'comuna\', this.value)" onfocus="abrirCombo(\'comuna\')"><button class="combo-arrow" onclick="toggleCombo(\'comuna\')">▼</button><div class="combo-list" id="combo_comuna"></div></div></th>';
-  const filtroTransporte = '<th><div class="filtro-combo" style="margin:0"><input type="text" class="th-filter" id="fDescTransporte" placeholder="Filtrar..." oninput="filtrarComboDesc(\'transporte\', this.value)" onfocus="abrirCombo(\'transporte\')"><button class="combo-arrow" onclick="toggleCombo(\'transporte\')">▼</button><div class="combo-list" id="combo_transporte"></div></div></th>';
-  const filtroRango = '<th><div class="filtro-combo" style="margin:0"><input type="text" class="th-filter" id="fDescRango" placeholder="Filtrar..." oninput="filtrarComboDesc(\'rango\', this.value)" onfocus="abrirCombo(\'rango\')"><button class="combo-arrow" onclick="toggleCombo(\'rango\')">▼</button><div class="combo-list" id="combo_rango"></div></div></th>';
-  const vacio = '<th></th>';
+  const filtroUnidad = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescUnidad" placeholder="Filtrar..." oninput="filtrarComboDesc(\'unidad\', this.value)" onfocus="abrirCombo(\'unidad\')"><button class="combo-arrow" onclick="toggleCombo(\'unidad\')">▼</button><div class="combo-list" id="combo_unidad"></div></div>';
+  const filtroComuna = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescComuna" placeholder="Filtrar..." oninput="filtrarComboDesc(\'comuna\', this.value)" onfocus="abrirCombo(\'comuna\')"><button class="combo-arrow" onclick="toggleCombo(\'comuna\')">▼</button><div class="combo-list" id="combo_comuna"></div></div>';
+  const filtroTransporte = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescTransporte" placeholder="Filtrar..." oninput="filtrarComboDesc(\'transporte\', this.value)" onfocus="abrirCombo(\'transporte\')"><button class="combo-arrow" onclick="toggleCombo(\'transporte\')">▼</button><div class="combo-list" id="combo_transporte"></div></div>';
+  const filtroRango = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescRango" placeholder="Filtrar..." oninput="filtrarComboDesc(\'rango\', this.value)" onfocus="abrirCombo(\'rango\')"><button class="combo-arrow" onclick="toggleCombo(\'rango\')">▼</button><div class="combo-list" id="combo_rango"></div></div>';
   
   if (b2c) {
-    // Primera fila: títulos
-    const fila1 = sel + 
+    thead.innerHTML = '<tr>' +
+      sel +
       '<th rowspan="2">Fecha</th>' +
       '<th>Unidad Negocio</th>' +
       '<th rowspan="2">ID Pedido</th>' +
@@ -949,13 +948,16 @@ function renderDescThead() {
       '<th rowspan="2">Observación</th>' +
       '<th>Transporte</th>' +
       '<th>Rango</th>' +
-      acc;
-    // Segunda fila: filtros
-    const fila2 = vacio + vacio + filtroUnidad + vacio + vacio + vacio + vacio + vacio + filtroComuna + vacio + vacio + filtroTransporte + filtroRango + vacio;
-    thead.innerHTML = '<tr>' + fila1 + '</tr><tr>' + fila2 + '</tr>';
+      acc +
+      '</tr><tr>' +
+      '<td>' + filtroUnidad + '</td>' +
+      '<td>' + filtroComuna + '</td>' +
+      '<td>' + filtroTransporte + '</td>' +
+      '<td>' + filtroRango + '</td>' +
+      '</tr>';
   } else {
-    // Primera fila: títulos
-    const fila1 = sel + 
+    thead.innerHTML = '<tr>' +
+      sel +
       '<th rowspan="2">Fecha</th>' +
       '<th>Unidad Negocio</th>' +
       '<th rowspan="2">ID Pedido</th>' +
@@ -966,10 +968,13 @@ function renderDescThead() {
       '<th rowspan="2">Observación</th>' +
       '<th>Transporte</th>' +
       '<th>Rango</th>' +
-      acc;
-    // Segunda fila: filtros
-    const fila2 = vacio + vacio + filtroUnidad + vacio + vacio + vacio + filtroComuna + vacio + vacio + filtroTransporte + filtroRango + vacio;
-    thead.innerHTML = '<tr>' + fila1 + '</tr><tr>' + fila2 + '</tr>';
+      acc +
+      '</tr><tr>' +
+      '<td>' + filtroUnidad + '</td>' +
+      '<td>' + filtroComuna + '</td>' +
+      '<td>' + filtroTransporte + '</td>' +
+      '<td>' + filtroRango + '</td>' +
+      '</tr>';
   }
 }
 
@@ -3127,7 +3132,7 @@ function renderInformes() {
   else if (seccionInicial === 'informes') document.title = 'DR-INFORMES';
   else if (seccionInicial === 'bitacoras') document.title = 'DR-BITACORAS';
   const st = document.createElement('style');
-  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;} #theadDesc tr:last-child th{padding:4px 6px !important;height:38px !important;vertical-align:middle !important;} #theadDesc tr:last-child .filtro-combo{margin:0 !important;} #theadDesc tr:last-child .th-filter{font-size:0.8em !important;padding:3px 6px !important;}';
+  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;}';
   document.head.appendChild(st);
   const bp = document.getElementById('btnPegarSel'); 
   if (bp) bp.remove();
