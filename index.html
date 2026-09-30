@@ -81,71 +81,26 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .header h1{color:var(--accent-blue);font-size:1.3em;font-weight:700;letter-spacing:1px;transition:color .3s}
 .header-right{display:flex;align-items:center;gap:12px}
 .user-info{color:var(--text-secondary);font-size:.85em;font-weight:500}
-
-/* ✅ RELOJ DIGITAL */
-.reloj-digital {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
-  border: 2px solid #3b82f6;
-  border-radius: 10px;
-  padding: 6px 12px;
-  margin-right: 12px;
-  box-shadow: 0 0 15px rgba(59,130,246,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
-  font-family: 'Courier New', monospace;
-  min-width: 160px;
-  justify-content: center;
-}
-.reloj-fecha {
-  color: #f59e0b;
-  font-size: 0.65em;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.reloj-hora {
-  color: #3b82f6;
-  font-size: 1.3em;
-  font-weight: 900;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px rgba(59,130,246,0.5);
-}
-.reloj-segundos {
-  color: #10b981;
-  font-size: 0.85em;
-  font-weight: 700;
-  min-width: 22px;
-}
-[data-theme="light"] .reloj-digital {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border-color: #2563eb;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-[data-theme="light"] .reloj-hora { color: #1d4ed8; }
-[data-theme="light"] .reloj-fecha { color: #ea580c; }
-[data-theme="light"] .reloj-segundos { color: #059669; }
-[data-theme="feminino"] .reloj-digital {
-  background: linear-gradient(135deg, #fdf4ff 0%, #f5d0fe 100%);
-  border-color: #c026d3;
-  box-shadow: 0 2px 8px rgba(192,38,211,0.2);
-}
-[data-theme="feminino"] .reloj-hora { color: #a21caf; }
-[data-theme="feminino"] .reloj-fecha { color: #d97706; }
-[data-theme="feminino"] .reloj-segundos { color: #059669; }
-
+.reloj-digital{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);border:2px solid #3b82f6;border-radius:10px;padding:6px 12px;margin-right:12px;box-shadow:0 0 15px rgba(59,130,246,0.3),inset 0 1px 0 rgba(255,255,255,0.1);font-family:'Courier New',monospace;min-width:160px;justify-content:center}
+.reloj-fecha{color:#f59e0b;font-size:0.65em;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.reloj-hora{color:#3b82f6;font-size:1.3em;font-weight:900;letter-spacing:2px;text-shadow:0 0 10px rgba(59,130,246,0.5)}
+.reloj-segundos{color:#10b981;font-size:0.85em;font-weight:700;min-width:22px}
+[data-theme="light"] .reloj-digital{background:linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);border-color:#2563eb;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+[data-theme="light"] .reloj-hora{color:#1d4ed8}
+[data-theme="light"] .reloj-fecha{color:#ea580c}
+[data-theme="light"] .reloj-segundos{color:#059669}
+[data-theme="feminino"] .reloj-digital{background:linear-gradient(135deg, #fdf4ff 0%, #f5d0fe 100%);border-color:#c026d3;box-shadow:0 2px 8px rgba(192,38,211,0.2)}
+[data-theme="feminino"] .reloj-hora{color:#a21caf}
+[data-theme="feminino"] .reloj-fecha{color:#d97706}
+[data-theme="feminino"] .reloj-segundos{color:#059669}
 .theme-selector{display:flex;gap:6px;align-items:center;margin-right:12px}
-.theme-btn{position:relative;width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;padding:0!important;font-size:0!important;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);overflow:hidden;background:transparent!important}
+.theme-btn{position:relative;width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;padding:0!important;font-size:0!important;transition:all .3s;overflow:hidden;background:transparent!important}
 .theme-btn::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:9px;background:inherit;filter:brightness(1.2);opacity:0.7}
 .theme-btn::after{content:'';position:absolute;top:1px;left:2px;right:2px;height:40%;border-radius:7px 7px 50% 50%;background:linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%)}
 .theme-btn[data-theme="dark"]{background:linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #141414 100%);box-shadow:0 2px 6px rgba(0,0,0,0.8),inset 0 1px 1px rgba(59,130,246,0.3),0 0 0 1px rgba(59,130,246,0.2)}
-.theme-btn[data-theme="dark"]:hover{transform:translateY(-1px) scale(1.1);box-shadow:0 4px 10px rgba(59,130,246,0.4)}
 .theme-btn[data-theme="light"]{background:linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #ffffff 100%);box-shadow:0 2px 6px rgba(0,0,0,0.15),inset 0 1px 1px rgba(255,255,255,0.9),0 0 0 1px rgba(37,99,235,0.3)}
-.theme-btn[data-theme="light"]:hover{transform:translateY(-1px) scale(1.1);box-shadow:0 4px 10px rgba(37,99,235,0.3)}
 .theme-btn[data-theme="feminino"]{background:linear-gradient(135deg, #c026d3 0%, #e879f9 50%, #fdf4ff 100%);box-shadow:0 2px 6px rgba(192,38,211,0.4),inset 0 1px 1px rgba(255,255,255,0.5),0 0 0 1px rgba(192,38,211,0.3)}
-.theme-btn[data-theme="feminino"]:hover{transform:translateY(-1px) scale(1.1);box-shadow:0 4px 10px rgba(192,38,211,0.5)}
 .theme-btn.active{transform:translateY(-1px) scale(1.15);box-shadow:0 4px 12px rgba(0,0,0,0.4),inset 0 1px 2px rgba(255,255,255,0.6),0 0 0 2px rgba(255,255,255,0.4)}
-.theme-btn.active::after{background:linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%)}
 .btn-logout{background:var(--accent-red);color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85em;font-weight:600;transition:background .2s}
 .btn-logout:hover{background:var(--accent-red-hover)}
 
@@ -197,11 +152,10 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .modal-btn{height:32px;border:2px solid rgba(255,255,255,0.3);border-radius:4px;cursor:pointer;font-size:1em;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;transition:all .2s;background:rgba(255,255,255,0.1)}
 .modal-btn.close:hover{background:var(--accent-red)}
 .modal-btn.pdf{padding:0 12px;font-size:.85em;width:auto}
-.modal-btn.pdf:hover{background:rgba(255,255,255,0.2)}
 .btn-exportar-confirmar{background:var(--accent-blue);color:#fff;border:2px solid var(--accent-blue)!important;padding:8px 20px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.9em;transition:all .2s}
 .btn-exportar-confirmar:hover{background:var(--accent-blue-hover)}
 .basedatos-subtitulo{color:var(--accent-blue);font-size:1.1em;font-weight:700;margin:10px 0 15px 0;padding-bottom:8px;border-bottom:2px solid var(--border-color);text-transform:uppercase;letter-spacing:1px}
-.basedatos-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color)}
+.basedatos-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color);flex-wrap:wrap}
 .basedatos-tab{padding:10px 20px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
 .basedatos-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
 .basedatos-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
@@ -224,7 +178,6 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .bd-resumen .res-am strong{color:var(--accent-orange)}
 .bd-resumen .res-pm strong{color:var(--accent-purple)}
 .bd-resumen .res-periodo strong{color:var(--accent-green)}
-.bd-resumen small{color:var(--text-secondary)}
 .bd-descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;margin:4px 0 8px 0;letter-spacing:.5px;text-transform:uppercase}
 .basedatos-tabla-wrap{overflow:auto;max-height:500px;border:1px solid var(--border-color);border-radius:4px;margin-bottom:10px;background:var(--bg-secondary)}
 .basedatos-tabla-wrap::-webkit-scrollbar{width:8px;height:8px}
@@ -382,7 +335,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .calendario-grid .dia.hoy{background:var(--accent-orange);color:#fff;font-weight:700}
 .calendario-grid .dia.seleccionado{background:var(--accent-blue);color:#fff;font-weight:700}
 .calendario-grid .dia.vacio{cursor:default}
-.calendario-grid .dia.vacio:hover{background:transparent;color:transparent}
 .fecha-cell-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
 .fecha-cell-wrap input[type="date"]{width:110px;background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:3px 5px;border-radius:4px;font-size:.85em}
 .fecha-cell-wrap input[type="date"]:focus{outline:none;border-color:var(--accent-blue)}
@@ -399,23 +351,35 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .cal-grid-fila .dia.hoy{background:var(--accent-orange);color:#fff;font-weight:700}
 .cal-grid-fila .dia.seleccionado{background:var(--accent-blue);color:#fff;font-weight:700}
 .cal-grid-fila .dia.vacio{cursor:default}
-.cal-grid-fila .dia.vacio:hover{background:transparent;color:transparent}
-.bitacora-wrapper{background:#fff;border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.bitacora-header-info{background:#1a5490;color:#fff;padding:12px 20px;border-radius:6px 6px 0 0;font-size:1.1em;font-weight:700;text-align:center;letter-spacing:1px}
-.bitacora-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;table-layout:auto}
-.bitacora-table thead th{background:#1a5490;color:#fff;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e;text-align:center}
-.bitacora-table tbody td{border:1px solid #999;padding:6px 8px;font-size:11px;vertical-align:middle;background:#fff}
-.bitacora-table tbody tr:nth-child(even){background:#f9f9f9}
-.bitacora-table tbody tr:nth-child(odd){background:#ffffff}
-.bitacora-table tbody tr:hover{background:#1a5490!important;color:#fff!important}
-.bitacora-table tbody tr:hover td{color:#fff!important;background:#1a5490!important}
-.bitacora-table tbody tr:hover input{color:#fff!important;background:transparent!important}
-.bitacora-table .num-col{background:#f0f0f0;font-weight:600;text-align:center;width:40px}
-.bitacora-table input{border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000;white-space:normal;word-wrap:break-word}
-.bitacora-footer-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;margin-top:0;table-layout:auto}
-.bitacora-footer-table thead th{background:#1a5490;color:#fff;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e}
-.bitacora-footer-table tbody td{border:1px solid #999;padding:8px;font-size:11px;text-align:center;background:#fff}
-.bitacora-footer-table input{border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000;text-align:center}
+
+/* ✅ TABLAS DE BITÁCORA SIEMPRE BLANCAS */
+.bitacora-wrapper{background:#ffffff !important;border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);color:#000000 !important}
+.bitacora-header-info{background:#1a5490 !important;color:#ffffff !important;padding:12px 20px;border-radius:6px 6px 0 0;font-size:1.1em;font-weight:700;text-align:center;letter-spacing:1px}
+.bitacora-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;table-layout:auto;background:#ffffff !important}
+.bitacora-table thead th{background:#1a5490 !important;color:#ffffff !important;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e;text-align:center}
+.bitacora-table tbody td{border:1px solid #999 !important;padding:6px 8px;font-size:11px;vertical-align:middle;background:#ffffff !important;color:#000000 !important}
+.bitacora-table tbody tr:nth-child(even) td{background:#f9f9f9 !important}
+.bitacora-table tbody tr:nth-child(odd) td{background:#ffffff !important}
+.bitacora-table tbody tr:hover td{background:#1a5490 !important;color:#ffffff !important}
+.bitacora-table tbody tr:hover input{color:#ffffff !important;background:transparent !important}
+.bitacora-table .num-col{background:#f0f0f0 !important;font-weight:600;text-align:center;width:40px;color:#000000 !important}
+.bitacora-table input{border:none !important;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;white-space:normal;word-wrap:break-word}
+.bitacora-footer-table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;margin-top:0;table-layout:auto;background:#ffffff !important}
+.bitacora-footer-table thead th{background:#1a5490 !important;color:#ffffff !important;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e}
+.bitacora-footer-table tbody td{border:1px solid #999 !important;padding:8px;font-size:11px;text-align:center;background:#ffffff !important;color:#000000 !important}
+.bitacora-footer-table input{border:none !important;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;text-align:center}
+
+/* ✅ MODAL EXPORTAR BITÁCORAS */
+.bitacora-export-modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;padding:25px;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px var(--shadow-modal)}
+.bitacora-export-modal h3{color:var(--accent-blue);font-size:1.2em;margin-bottom:15px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:1px}
+.bitacora-export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.bitacora-export-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-tertiary);border-radius:6px;cursor:pointer;transition:background .2s;border:1px solid var(--border-color)}
+.bitacora-export-item:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)}
+.bitacora-export-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--accent-blue)}
+.bitacora-export-item label{color:var(--text-primary);font-size:.9em;cursor:pointer;flex:1;font-weight:500}
+.bitacora-export-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:15px;border-top:1px solid var(--border-color)}
+.bitacora-export-select-all{background:var(--accent-green);color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;margin-bottom:15px}
+.bitacora-export-select-all:hover{background:var(--accent-green-hover)}
 </style>
 </head>
 <body>
@@ -435,7 +399,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
   <div class="header">
     <div class="header-left"><h1>DESPACHO RETAIL v1.0</h1></div>
     <div class="header-right">
-      <!-- ✅ RELOJ DIGITAL -->
       <div class="reloj-digital">
         <div class="reloj-fecha" id="relojFecha">--</div>
         <div class="reloj-hora" id="relojHora">--:--</div>
@@ -455,7 +418,8 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
     <div class="secciones-header">
       <div class="seccion-tab active" data-seccion="ampm" onclick="cambiarSeccion('ampm')">AM/PM</div>
       <div class="seccion-tab" data-seccion="b2c" onclick="cambiarSeccion('b2c')">B2C</div>
-      <div class="seccion-tab" data-seccion="ampmadmqdm" onclick="cambiarSeccion('ampmadmqdm')">AM/PM-ADM-QDM</div>
+      <div class="seccion-tab" data-seccion="adm" onclick="cambiarSeccion('adm')">ADM</div>
+      <div class="seccion-tab" data-seccion="qdm" onclick="cambiarSeccion('qdm')">QDM</div>
       <div class="seccion-tab" data-seccion="bitacoras" onclick="cambiarSeccion('bitacoras')">BITACORAS</div>
       <div class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')" style="display:none">BASE DE DATOS</div>
       <div class="seccion-tab" data-seccion="informes" onclick="cambiarSeccion('informes')" style="display:none">INFORMES</div>
@@ -489,16 +453,30 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       </div>
     </div>
 
-    <div class="seccion-contenido" id="seccionAmpmadmqdm">
-      <div class="submenu-header" onclick="toggleSubmenu('busquedaAmpmAdmQdm')">
-        <h3>Búsqueda AM/PM-ADM-QDM</h3><button class="btn-flecha-submenu" id="flechaBusquedaAmpmAdmQdm">▼</button>
+    <div class="seccion-contenido" id="seccionAdm">
+      <div class="submenu-header" onclick="toggleSubmenu('busquedaAdm')">
+        <h3>Búsqueda ADM</h3><button class="btn-flecha-submenu" id="flechaBusquedaAdm">▼</button>
       </div>
-      <div class="submenu-contenido show" id="submenuBusquedaAmpmAdmQdm">
+      <div class="submenu-contenido show" id="submenuBusquedaAdm">
         <div class="busqueda-filtros">
-          <label>Día:</label><select class="select-filtro" id="filtroDiaAmpmAdmQdm"><option value="">-- Día --</option></select>
-          <label>Mes:</label><select class="select-filtro" id="filtroMesAmpmAdmQdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
-          <label>Año:</label><select class="select-filtro" id="filtroAnioAmpmAdmQdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
-          <button class="btn-buscar" onclick="buscarFiltrosAmpmAdmQdm()">BUSCAR</button>
+          <label>Día:</label><select class="select-filtro" id="filtroDiaAdm"><option value="">-- Día --</option></select>
+          <label>Mes:</label><select class="select-filtro" id="filtroMesAdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
+          <label>Año:</label><select class="select-filtro" id="filtroAnioAdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
+          <button class="btn-buscar" onclick="buscarFiltrosADM()">BUSCAR</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion-contenido" id="seccionQdm">
+      <div class="submenu-header" onclick="toggleSubmenu('busquedaQdm')">
+        <h3>Búsqueda QDM</h3><button class="btn-flecha-submenu" id="flechaBusquedaQdm">▼</button>
+      </div>
+      <div class="submenu-contenido show" id="submenuBusquedaQdm">
+        <div class="busqueda-filtros">
+          <label>Día:</label><select class="select-filtro" id="filtroDiaQdm"><option value="">-- Día --</option></select>
+          <label>Mes:</label><select class="select-filtro" id="filtroMesQdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
+          <label>Año:</label><select class="select-filtro" id="filtroAnioQdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select>
+          <button class="btn-buscar" onclick="buscarFiltrosQDM()">BUSCAR</button>
         </div>
       </div>
     </div>
@@ -508,7 +486,8 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       <div class="basedatos-tabs">
         <div class="basedatos-tab active" data-btab="ampm" onclick="cambiarTabBit('ampm')">AM/PM</div>
         <div class="basedatos-tab" data-btab="b2c" onclick="cambiarTabBit('b2c')">B2C</div>
-        <div class="basedatos-tab" data-btab="ampmadmqdm" onclick="cambiarTabBit('ampmadmqdm')">AM/PM-ADM-QDM</div>
+        <div class="basedatos-tab" data-btab="adm" onclick="cambiarTabBit('adm')">ADM</div>
+        <div class="basedatos-tab" data-btab="qdm" onclick="cambiarTabBit('qdm')">QDM</div>
       </div>
       <div class="basedatos-tab-content show" id="bitContentAmpm">
         <div class="bitacora-movil-tabs">
@@ -542,21 +521,47 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
       </div>
-      <div class="basedatos-tab-content" id="bitContentAmpmAdmQdm">
+      <div class="basedatos-tab-content" id="bitContentAdm">
         <div class="bitacora-movil-tabs">
-          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('ampmadmqdm',1)">MOVIL 1</div>
-          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('ampmadmqdm',2)">MOVIL 2</div>
-          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('ampmadmqdm',3)">MOVIL 3</div>
-          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('ampmadmqdm',4)">MOVIL 4</div>
-          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('ampmadmqdm',5)">MOVIL 5</div>
-          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('ampmadmqdm',6)">MOVIL 6</div>
+          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('adm',1)">MOVIL 1</div>
+          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('adm',2)">MOVIL 2</div>
+          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('adm',3)">MOVIL 3</div>
+          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('adm',4)">MOVIL 4</div>
+          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('adm',5)">MOVIL 5</div>
+          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('adm',6)">MOVIL 6</div>
         </div>
-        <div id="bitacoraAmpmadmqdmMovil1" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil2" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil3" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil4" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil5" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmadmqdmMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil6" class="bitacora-movil-content"></div>
+      </div>
+      <div class="basedatos-tab-content" id="bitContentQdm">
+        <div class="bitacora-movil-tabs">
+          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('qdm',1)">MOVIL 1</div>
+          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('qdm',2)">MOVIL 2</div>
+          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('qdm',3)">MOVIL 3</div>
+          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('qdm',4)">MOVIL 4</div>
+          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('qdm',5)">MOVIL 5</div>
+          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('qdm',6)">MOVIL 6</div>
+        </div>
+        <div id="bitacoraQdmMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil6" class="bitacora-movil-content"></div>
+      </div>
+      <div class="basedatos-tab-content" id="bitContentSpot">
+        <div class="bitacora-movil-tabs">
+          <div class="bitacora-movil-tab active" data-movil="spot" onclick="cambiarMovilBit('spot','spot')">SPOT</div>
+          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('spot','spot1')">SPOT 1</div>
+          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('spot','spot2')">SPOT 2</div>
+        </div>
+        <div id="bitacoraSpotMovilspot" class="bitacora-movil-content"></div>
+        <div id="bitacoraSpotMovilspot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraSpotMovilspot2" class="bitacora-movil-content"></div>
       </div>
     </div>
 
@@ -565,7 +570,8 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
       <div class="basedatos-tabs">
         <div class="basedatos-tab active" data-tab="ampm" onclick="cambiarTabBD('ampm')">AM/PM</div>
         <div class="basedatos-tab" data-tab="b2c" onclick="cambiarTabBD('b2c')">B2C</div>
-        <div class="basedatos-tab" data-tab="ampmadmqdm" onclick="cambiarTabBD('ampmadmqdm')">AM/PM-ADM-QDM</div>
+        <div class="basedatos-tab" data-tab="adm" onclick="cambiarTabBD('adm')">ADM</div>
+        <div class="basedatos-tab" data-tab="qdm" onclick="cambiarTabBD('qdm')">QDM</div>
       </div>
       <div class="basedatos-tab-content show" id="tabContentAmpm">
         <div class="bd-filtro-row">
@@ -597,33 +603,49 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadB2c"></thead><tbody id="bdTbodyB2c"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionB2c"></div>
       </div>
-      <div class="basedatos-tab-content" id="tabContentAmpmAdmQdm">
+      <div class="basedatos-tab-content" id="tabContentAdm">
         <div class="bd-filtro-row">
-          <button class="btn-buscar" onclick="abrirModalVerFecha('AMPMADM')">VER MES</button>
-          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdAmpmAdmQdm" placeholder="Escribe ID..." oninput="filtrarBD('AMPMADM')">
-          <span class="pendientes-info" id="pendientesAmpmAdmQdm"></span>
-          <button class="btn-bd-importar" onclick="importarDesdeBD('AMPMADM')">IMPORTAR</button>
+          <button class="btn-buscar" onclick="abrirModalVerFecha('ADM')">VER MES</button>
+          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdAdm" placeholder="Escribe ID..." oninput="filtrarBD('ADM')">
+          <span class="pendientes-info" id="pendientesAdm"></span>
+          <button class="btn-bd-importar" onclick="importarDesdeBD('ADM')">IMPORTAR</button>
           <button class="btn-bd-guardar" onclick="guardarEnFirebase()">GUARDAR</button>
           <button class="btn-bd-pdf" onclick="exportarPDFBD()">EXPORTAR PDF</button>
-          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('AMPMADM')">BORRAR MES</button>
+          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('ADM')">BORRAR MES</button>
         </div>
-        <div class="bd-resumen" id="bdResumenAmpmAdmQdm"></div>
+        <div class="bd-resumen" id="bdResumenAdm"></div>
         <div class="bd-descripcion-subtitulo">Descripción</div>
-        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAmpmAdmQdm"></thead><tbody id="bdTbodyAmpmAdmQdm"></tbody></table></div>
-        <div class="bd-paginacion" id="bdPaginacionAmpmAdmQdm"></div>
+        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAdm"></thead><tbody id="bdTbodyAdm"></tbody></table></div>
+        <div class="bd-paginacion" id="bdPaginacionAdm"></div>
+      </div>
+      <div class="basedatos-tab-content" id="tabContentQdm">
+        <div class="bd-filtro-row">
+          <button class="btn-buscar" onclick="abrirModalVerFecha('QDM')">VER MES</button>
+          <label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdQdm" placeholder="Escribe ID..." oninput="filtrarBD('QDM')">
+          <span class="pendientes-info" id="pendientesQdm"></span>
+          <button class="btn-bd-importar" onclick="importarDesdeBD('QDM')">IMPORTAR</button>
+          <button class="btn-bd-guardar" onclick="guardarEnFirebase()">GUARDAR</button>
+          <button class="btn-bd-pdf" onclick="exportarPDFBD()">EXPORTAR PDF</button>
+          <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('QDM')">BORRAR MES</button>
+        </div>
+        <div class="bd-resumen" id="bdResumenQdm"></div>
+        <div class="bd-descripcion-subtitulo">Descripción</div>
+        <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadQdm"></thead><tbody id="bdTbodyQdm"></tbody></table></div>
+        <div class="bd-paginacion" id="bdPaginacionQdm"></div>
       </div>
     </div>
 
     <div class="seccion-contenido" id="seccionInformes">
-      <h3 class="basedatos-subtitulo"> INFORMES LOGÍSTICOS - BUSINESS INTELLIGENCE</h3>
+      <h3 class="basedatos-subtitulo">📊 INFORMES LOGÍSTICOS - BUSINESS INTELLIGENCE</h3>
       <div class="basedatos-tabs">
         <div class="basedatos-tab active" data-inftipo="AMPM" onclick="setInfTipo('AMPM')">AM/PM</div>
         <div class="basedatos-tab" data-inftipo="B2C" onclick="setInfTipo('B2C')">B2C</div>
-        <div class="basedatos-tab" data-inftipo="AMPMADM" onclick="setInfTipo('AMPMADM')">AM/PM-ADM-QDM</div>
+        <div class="basedatos-tab" data-inftipo="ADM" onclick="setInfTipo('ADM')">ADM</div>
+        <div class="basedatos-tab" data-inftipo="QDM" onclick="setInfTipo('QDM')">QDM</div>
       </div>
       <div id="infResultado">
         <div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">
-          <h3 style="margin-bottom:15px;color:var(--accent-blue)">📊 Módulo de Informes Logísticos</h3>
+          <h3 style="margin-bottom:15px;color:var(--accent-blue)"> Módulo de Informes Logísticos</h3>
           <p>Seleccione los filtros y presione <strong>GENERAR INFORME</strong> para visualizar el análisis completo.</p>
           <p style="margin-top:10px;font-size:.85em">Datos en tiempo real desde Firebase • Análisis BI profesional</p>
         </div>
@@ -660,7 +682,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div class="campo c-valor"><label>Valor</label><input type="number" id="fValor" step="0.01" min="0" required></div>
         <div class="campo c-obs"><label>Observación</label><input type="text" id="fObs" placeholder="Elegir o escribir" autocomplete="off"></div>
         <div class="campo c-transporte"><label>Transporte</label><select id="fTransporte" required><option value="">-- Elegir --</option><option>MOVIL 1</option><option>MOVIL 2</option><option>MOVIL 3</option><option>MOVIL 4</option><option>MOVIL 5</option><option>MOVIL 6</option><option>DON JOSE</option><option>DON RAUL</option><option>SERVICIO AM/PM</option><option>SERVICIO B2C</option><option>SPOT</option><option>SPOT 1</option><option>SPOT 2</option><option>RETIRA CLIENTE</option><option>SERVICIO 3PL</option><option>TRANSGAMBOA</option></select></div>
-        <div class="campo c-rango"><label>Rango</label><select id="fRango" required><option value="">--</option><option>AM</option><option>PM</option><option>B2C</option></select></div>
+        <div class="campo c-rango"><label>Rango</label><select id="fRango" required><option value="">--</option><option>AM</option><option>PM</option><option>B2C</option><option>ADM</option><option>QDM</option></select></div>
         <button type="submit" class="btn-registrar">REGISTRAR</button>
         <button type="button" class="btn-limpiar" onclick="limpiar()">LIMPIAR</button>
       </form>
@@ -794,6 +816,20 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
   </div>
 </div>
 
+<!-- ✅ NUEVO MODAL: Exportar Bitácoras -->
+<div class="overlay-centro" id="bitacoraExportOverlay">
+  <div class="bitacora-export-modal">
+    <h3>📤 Exportar Bitácoras a Excel</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Selecciona las bitácoras que deseas exportar. Cada una irá en una planilla separada.</p>
+    <button class="bitacora-export-select-all" onclick="seleccionarTodasBitacoras()">✅ Seleccionar todas</button>
+    <div class="bitacora-export-grid" id="bitacoraExportGrid"></div>
+    <div class="bitacora-export-actions">
+      <button class="btn-exportar-cancelar" onclick="cerrarModalExportarBitacoras()">Cancelar</button>
+      <button class="btn-exportar-confirmar" onclick="confirmarExportarBitacoras()">📊 Exportar seleccionadas</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -813,7 +849,7 @@ window.addEventListener('DOMContentLoaded', function() {
   const emailParam = params.get('email');
   if (emailParam && emailInput) {
     emailInput.value = emailParam;
-    setTimeout(() => { if (passInput) passInput.focus(); }, 100);
+    setTimeout(function() { if (passInput) passInput.focus(); }, 100);
   }
 });
 </script>
