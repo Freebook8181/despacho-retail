@@ -36,9 +36,6 @@ const MOVILES_POR_TIPO = {
   qdm: [1,2,3,4,5,6,'spot','spot1','spot2']
 };
 
-// =====================================================================
-// 🚚 REGLA PM - Autocompletado por comuna (antes de 14:00)
-// =====================================================================
 const REGLA_PM = {
   'MOVIL 1': ['maipu','cerrillos','lo espejo','la cisterna','pedro aguirre cerda','el bosque','san bernardo','la florida','puente alto','san ramon'],
   'MOVIL 2': ['huechuraba','recoleta','quilicura','conchali','quinta normal','pudahuel','cerro navia','independencia','renca','lo prado','colina','lampa'],
@@ -47,9 +44,6 @@ const REGLA_PM = {
   'MOVIL 5': ['santiago','estacion central','san joaquin','macul','san miguel']
 };
 
-// =====================================================================
-// 🚚 REGLA AM - Autocompletado por comuna (después de 14:01, para día siguiente)
-// =====================================================================
 const REGLA_AM = {
   1: {
     'MOVIL 1': ['la reina','casa'],
@@ -922,21 +916,61 @@ window.filtrarBDCombo = function(tipo, campo, val){
   renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]);
 };
 
+// =====================================================================
+// ✅ MODIFICADO: Encabezados en dos filas (títulos arriba, filtros abajo)
+// =====================================================================
 function renderDescThead() {
   const thead = document.getElementById('theadDesc');
   if (!thead) return;
   const b2c = (seccionActiva === 'b2c');
-  const combo = function(col, label) { 
-    return '<th>' + label + '<div class="filtro-combo"><input type="text" class="th-filter" id="fDesc' + col.charAt(0).toUpperCase() + col.slice(1) + '" placeholder="Filtrar..." oninput="filtrarComboDesc(\'' + col + '\', this.value)" onfocus="abrirCombo(\'' + col + '\')"><button class="combo-arrow" onclick="toggleCombo(\'' + col + '\')">▼</button><div class="combo-list" id="combo_' + col + '"></div></div></th>'; 
-  };
-  const sel = '<th class="th-sel"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>';
-  let h;
+  
+  const sel = '<th class="th-sel" rowspan="2"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>';
+  const acc = '<th rowspan="2">Acciones</th>';
+  
+  // Filtros combo reutilizables
+  const filtroUnidad = '<th><div class="filtro-combo" style="margin:0"><input type="text" class="th-filter" id="fDescUnidad" placeholder="Filtrar..." oninput="filtrarComboDesc(\'unidad\', this.value)" onfocus="abrirCombo(\'unidad\')"><button class="combo-arrow" onclick="toggleCombo(\'unidad\')">▼</button><div class="combo-list" id="combo_unidad"></div></div></th>';
+  const filtroComuna = '<th><div class="filtro-combo" style="margin:0"><input type="text" class="th-filter" id="fDescComuna" placeholder="Filtrar..." oninput="filtrarComboDesc(\'comuna\', this.value)" onfocus="abrirCombo(\'comuna\')"><button class="combo-arrow" onclick="toggleCombo(\'comuna\')">▼</button><div class="combo-list" id="combo_comuna"></div></div></th>';
+  const filtroTransporte = '<th><div class="filtro-combo" style="margin:0"><input type="text" class="th-filter" id="fDescTransporte" placeholder="Filtrar..." oninput="filtrarComboDesc(\'transporte\', this.value)" onfocus="abrirCombo(\'transporte\')"><button class="combo-arrow" onclick="toggleCombo(\'transporte\')">▼</button><div class="combo-list" id="combo_transporte"></div></div></th>';
+  const filtroRango = '<th><div class="filtro-combo" style="margin:0"><input type="text" class="th-filter" id="fDescRango" placeholder="Filtrar..." oninput="filtrarComboDesc(\'rango\', this.value)" onfocus="abrirCombo(\'rango\')"><button class="combo-arrow" onclick="toggleCombo(\'rango\')">▼</button><div class="combo-list" id="combo_rango"></div></div></th>';
+  const vacio = '<th></th>';
+  
   if (b2c) {
-    h = sel + '<th>Fecha</th>' + combo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Celular</th><th>E-Mail</th><th>Direccion</th>' + combo('comuna','Comuna') + '<th>Valor Producto</th><th>Observacion</th>' + combo('transporte','Transporte') + combo('rango','Rango') + '<th>Acciones</th>';
+    // Primera fila: títulos
+    const fila1 = sel + 
+      '<th rowspan="2">Fecha</th>' +
+      '<th>Unidad Negocio</th>' +
+      '<th rowspan="2">ID Pedido</th>' +
+      '<th rowspan="2">Nombre Cliente</th>' +
+      '<th rowspan="2">Celular</th>' +
+      '<th rowspan="2">E-Mail</th>' +
+      '<th rowspan="2">Dirección</th>' +
+      '<th>Comuna</th>' +
+      '<th rowspan="2">Valor Producto</th>' +
+      '<th rowspan="2">Observación</th>' +
+      '<th>Transporte</th>' +
+      '<th>Rango</th>' +
+      acc;
+    // Segunda fila: filtros
+    const fila2 = vacio + vacio + filtroUnidad + vacio + vacio + vacio + vacio + vacio + filtroComuna + vacio + vacio + filtroTransporte + filtroRango + vacio;
+    thead.innerHTML = '<tr>' + fila1 + '</tr><tr>' + fila2 + '</tr>';
   } else {
-    h = sel + '<th>Fecha</th>' + combo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Direccion</th>' + combo('comuna','Comuna') + '<th>Valor</th><th>Observacion</th>' + combo('transporte','Transporte') + combo('rango','Rango') + '<th>Acciones</th>';
+    // Primera fila: títulos
+    const fila1 = sel + 
+      '<th rowspan="2">Fecha</th>' +
+      '<th>Unidad Negocio</th>' +
+      '<th rowspan="2">ID Pedido</th>' +
+      '<th rowspan="2">Nombre Cliente</th>' +
+      '<th rowspan="2">Dirección</th>' +
+      '<th>Comuna</th>' +
+      '<th rowspan="2">Valor</th>' +
+      '<th rowspan="2">Observación</th>' +
+      '<th>Transporte</th>' +
+      '<th>Rango</th>' +
+      acc;
+    // Segunda fila: filtros
+    const fila2 = vacio + vacio + filtroUnidad + vacio + vacio + vacio + filtroComuna + vacio + vacio + filtroTransporte + filtroRango + vacio;
+    thead.innerHTML = '<tr>' + fila1 + '</tr><tr>' + fila2 + '</tr>';
   }
-  thead.innerHTML = '<tr>' + h + '</tr>';
 }
 
 function render() {
@@ -1073,7 +1107,7 @@ function filaHTMLTabla(r, cf, cg, dr) {
   const tieneCambioFecha = cambiosFechaLocales[r.key] !== undefined;
   if (tieneCambioFecha) clase += 'fila-fecha-modificada ';
   const bp = r.pendiente ? '<span class="badge badge-pendiente">SIN GUARDAR</span>' : '';
-  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">️</span>' : '';
+  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">✏️</span>' : '';
   const fechaMostrar = tieneCambioFecha ? cambiosFechaLocales[r.key].nuevaFecha : r.fecha;
   const celdaFecha = '<td><div class="fecha-cell-wrap"><input type="date" value="' + (fechaMostrar||'') + '" onchange="cambiarFechaFila(\'' + r.key + '\', this.value, ' + (r.pendiente?true:false) + ')"></div> ' + bp + indicadorCambio + '</td>';
   const celdaSel = '<td class="td-sel"><input type="checkbox" style="width:16px;height:16px;" ' + sel + ' onchange="toggleSeleccionDesc(\'' + r.key + '\', this.checked)"></td>';
@@ -1508,7 +1542,6 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
     creado: new Date().toISOString(), 
     usuario: auth.currentUser ? auth.currentUser.email : '' 
   };
-  // ✅ Solo REGLA AM y REGLA PM para AM/PM
   if (!reg.transporte) {
     if (esAntesDe1400()) {
       reg = autocompletarTransportePM(reg);
@@ -3094,7 +3127,7 @@ function renderInformes() {
   else if (seccionInicial === 'informes') document.title = 'DR-INFORMES';
   else if (seccionInicial === 'bitacoras') document.title = 'DR-BITACORAS';
   const st = document.createElement('style');
-  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;}';
+  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;} #theadDesc tr:last-child th{padding:4px 6px !important;height:38px !important;vertical-align:middle !important;} #theadDesc tr:last-child .filtro-combo{margin:0 !important;} #theadDesc tr:last-child .th-filter{font-size:0.8em !important;padding:3px 6px !important;}';
   document.head.appendChild(st);
   const bp = document.getElementById('btnPegarSel'); 
   if (bp) bp.remove();
