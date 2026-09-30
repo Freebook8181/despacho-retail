@@ -58,295 +58,292 @@
 body{background:var(--bg-primary);color:var(--text-primary);min-height:100vh;display:flex;flex-direction:column;transition:background .3s,color .3s}
 body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oculta-principal .acciones-bar,body.oculta-principal .tabla-section{display:none!important}
 
-#loginSection{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#000000;position:relative;overflow:hidden}
-#loginSection::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%, rgba(59,130,246,0.15) 0%, transparent 50%),radial-gradient(circle at 70% 80%, rgba(168,85,247,0.1) 0%, transparent 50%);animation:rotate 30s linear infinite}
-@keyframes rotate{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-.login-box{background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:50px 45px;border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.08),inset 0 1px 0 rgba(255,255,255,0.1);text-align:center;max-width:440px;width:90%;position:relative;z-index:1}
-.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%);border-radius:24px 24px 0 0;pointer-events:none}
-.login-box h1{color:#3b82f6;margin-bottom:8px;font-size:2em;font-weight:800;letter-spacing:1px;text-shadow:0 2px 4px rgba(0,0,0,0.5);position:relative;z-index:1}
-.login-box .version{color:#f59e0b;font-size:.85em;font-weight:700;margin-bottom:20px;letter-spacing:3px;text-transform:uppercase;position:relative;z-index:1}
-.login-box p{color:#a1a1aa;margin-bottom:30px;font-size:.95em;position:relative;z-index:1}
-.login-box input{width:100%;padding:14px 16px;margin:10px 0;background:rgba(10,10,10,0.9);backdrop-filter:blur(10px);color:#e4e4e7;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:1em;font-weight:500;transition:all .3s ease;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3);position:relative;z-index:1}
-.login-box input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,0.2),inset 0 2px 4px rgba(0,0,0,0.3)}
-.login-box input::placeholder{color:#71717a;font-weight:400}
-.login-box button{width:100%;padding:14px;margin-top:14px;background:transparent;color:#ffffff;border:2px solid #3b82f6;border-radius:12px;font-size:1em;font-weight:600;cursor:pointer;letter-spacing:.5px;transition:all .3s ease;box-shadow:0 4px 12px rgba(59,130,246,0.3),inset 0 1px 0 rgba(255,255,255,0.1);position:relative;z-index:1;overflow:hidden}
-.login-box button::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);transition:left .5s ease}
-.login-box button:hover::before{left:100%}
-.login-box button:hover{background:rgba(59,130,246,0.2);transform:translateY(-2px);box-shadow:0 6px 20px rgba(59,130,246,0.4),inset 0 1px 0 rgba(255,255,255,0.2)}
-.login-box button:active{transform:translateY(0) scale(0.98)}
+#loginSection{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#000000}
+.login-box{background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);padding:50px 45px;border-radius:24px;box-shadow:0 8px 32px rgba(0,0,0,0.6);text-align:center;max-width:440px;width:90%}
+.login-box h1{color:#3b82f6;margin-bottom:8px;font-size:2em;font-weight:800;letter-spacing:1px}
+.login-box .version{color:#f59e0b;font-size:.85em;font-weight:700;margin-bottom:20px;letter-spacing:3px;text-transform:uppercase}
+.login-box p{color:#a1a1aa;margin-bottom:30px}
+.login-box input{width:100%;padding:14px 16px;margin:10px 0;background:rgba(10,10,10,0.9);color:#e4e4e7;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-size:1em}
+.login-box input:focus{outline:none;border-color:#3b82f6}
+.login-box button{width:100%;padding:14px;margin-top:14px;background:transparent;color:#fff;border:2px solid #3b82f6;border-radius:12px;font-size:1em;font-weight:600;cursor:pointer;transition:all .3s}
+.login-box button:hover{background:rgba(59,130,246,0.2)}
 
 #appSection{display:none;flex-direction:column;min-height:100vh}
-.header{background:var(--bg-secondary);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);flex-shrink:0;transition:background .3s}
-.header-left{display:flex;align-items:center;gap:15px}
-.header h1{color:var(--accent-blue);font-size:1.3em;font-weight:700;letter-spacing:1px;transition:color .3s}
+.header{background:var(--bg-secondary);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color)}
+.header-left h1{color:var(--accent-blue);font-size:1.3em;font-weight:700;letter-spacing:1px}
 .header-right{display:flex;align-items:center;gap:12px}
-.user-info{color:var(--text-secondary);font-size:.85em;font-weight:500}
-.reloj-digital{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);border:2px solid #3b82f6;border-radius:10px;padding:6px 12px;margin-right:12px;box-shadow:0 0 15px rgba(59,130,246,0.3),inset 0 1px 0 rgba(255,255,255,0.1);font-family:'Courier New',monospace;min-width:160px;justify-content:center}
-.reloj-fecha{color:#f59e0b;font-size:0.65em;font-weight:700;text-transform:uppercase;letter-spacing:1px}
-.reloj-hora{color:#3b82f6;font-size:1.3em;font-weight:900;letter-spacing:2px;text-shadow:0 0 10px rgba(59,130,246,0.5)}
-.reloj-segundos{color:#10b981;font-size:0.85em;font-weight:700;min-width:22px}
-[data-theme="light"] .reloj-digital{background:linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);border-color:#2563eb;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-[data-theme="light"] .reloj-hora{color:#1d4ed8}
-[data-theme="light"] .reloj-fecha{color:#ea580c}
-[data-theme="light"] .reloj-segundos{color:#059669}
-[data-theme="feminino"] .reloj-digital{background:linear-gradient(135deg, #fdf4ff 0%, #f5d0fe 100%);border-color:#c026d3;box-shadow:0 2px 8px rgba(192,38,211,0.2)}
-[data-theme="feminino"] .reloj-hora{color:#a21caf}
-[data-theme="feminino"] .reloj-fecha{color:#d97706}
-[data-theme="feminino"] .reloj-segundos{color:#059669}
+.user-info{color:var(--text-secondary);font-size:.85em}
+.reloj-digital{display:flex;align-items:center;gap:8px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;padding:6px 12px;margin-right:12px;font-family:'Courier New',monospace;min-width:160px;justify-content:center}
+.reloj-fecha{color:var(--accent-orange);font-size:0.65em;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.reloj-hora{color:var(--accent-blue);font-size:1.3em;font-weight:900;letter-spacing:2px}
+.reloj-segundos{color:var(--accent-green);font-size:0.85em;font-weight:700;min-width:22px}
 .theme-selector{display:flex;gap:6px;align-items:center;margin-right:12px}
-.theme-btn{position:relative;width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;padding:0!important;font-size:0!important;transition:all .3s;overflow:hidden;background:transparent!important}
-.theme-btn::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:9px;background:inherit;filter:brightness(1.2);opacity:0.7}
-.theme-btn::after{content:'';position:absolute;top:1px;left:2px;right:2px;height:40%;border-radius:7px 7px 50% 50%;background:linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%)}
-.theme-btn[data-theme="dark"]{background:linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #141414 100%);box-shadow:0 2px 6px rgba(0,0,0,0.8),inset 0 1px 1px rgba(59,130,246,0.3),0 0 0 1px rgba(59,130,246,0.2)}
-.theme-btn[data-theme="light"]{background:linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #ffffff 100%);box-shadow:0 2px 6px rgba(0,0,0,0.15),inset 0 1px 1px rgba(255,255,255,0.9),0 0 0 1px rgba(37,99,235,0.3)}
-.theme-btn[data-theme="feminino"]{background:linear-gradient(135deg, #c026d3 0%, #e879f9 50%, #fdf4ff 100%);box-shadow:0 2px 6px rgba(192,38,211,0.4),inset 0 1px 1px rgba(255,255,255,0.5),0 0 0 1px rgba(192,38,211,0.3)}
-.theme-btn.active{transform:translateY(-1px) scale(1.15);box-shadow:0 4px 12px rgba(0,0,0,0.4),inset 0 1px 2px rgba(255,255,255,0.6),0 0 0 2px rgba(255,255,255,0.4)}
-.btn-logout{background:var(--accent-red);color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85em;font-weight:600;transition:background .2s}
+.theme-btn{width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;background:transparent!important}
+.theme-btn[data-theme="dark"]{background:linear-gradient(135deg,#000,#141414)}
+.theme-btn[data-theme="light"]{background:linear-gradient(135deg,#e2e8f0,#fff)}
+.theme-btn[data-theme="feminino"]{background:linear-gradient(135deg,#c026d3,#fdf4ff)}
+.theme-btn.active{transform:scale(1.15);box-shadow:0 0 0 2px var(--accent-blue)}
+.btn-logout{background:var(--accent-red);color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85em;font-weight:600}
 .btn-logout:hover{background:var(--accent-red-hover)}
 
-.secciones-bar{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;transition:background .3s}
-.secciones-header{display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border-color);flex-wrap:wrap}
-.seccion-tab{padding:12px 22px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;letter-spacing:.5px;text-transform:uppercase}
-.seccion-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
+.secciones-bar{background:var(--bg-secondary);border-bottom:1px solid var(--border-color)}
+.secciones-header{display:flex;flex-wrap:wrap}
+.seccion-tab{padding:12px 22px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;text-transform:uppercase}
+.seccion-tab:hover{color:var(--accent-blue)}
 .seccion-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue);background:var(--accent-blue-pastel)}
+
 .seccion-contenido{padding:16px 28px;display:none}
 .seccion-contenido.show{display:block}
 .submenu-header{display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer;border-bottom:1px solid var(--border-color);margin-bottom:10px}
-.submenu-header h3{color:var(--accent-blue);font-size:1em;font-weight:700;letter-spacing:.5px}
-.btn-flecha-submenu{background:none;border:none;color:var(--text-secondary);font-size:1em;cursor:pointer;transition:transform .3s}
+.submenu-header h3{color:var(--accent-blue);font-size:1em;font-weight:700}
+.btn-flecha-submenu{background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1em}
 .btn-flecha-submenu.rotada{transform:rotate(180deg)}
 .submenu-contenido{display:none;padding-bottom:10px}
 .submenu-contenido.show{display:block}
+
 .busqueda-filtros{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .busqueda-filtros label{color:var(--text-secondary);font-weight:600;font-size:.85em}
-.select-filtro{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;font-weight:500;cursor:pointer;min-width:90px;height:34px;transition:border-color .2s}
+.select-filtro{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;cursor:pointer;min-width:90px;height:34px}
 .select-filtro:focus{outline:none;border-color:var(--accent-blue)}
-.btn-bd-importar,.btn-importar-accion{background:#000000;color:#ffffff;border:2px solid var(--accent-green)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bd-importar:hover,.btn-importar-accion:hover{background:var(--accent-green);color:#fff}
-.btn-exportar{background:#000000;color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-exportar:hover{background:var(--accent-blue);color:#fff}
-.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul{background:var(--accent-blue);color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bd-guardar:hover,.btn-guardar:hover,.btn-bitacora-guardar:hover,.btn-registrar:hover,.btn-mc-azul:hover{background:var(--accent-blue-hover)}
-.btn-bd-pdf,.btn-bitacora-jpeg{background:var(--accent-purple);color:#ffffff;border:2px solid var(--accent-purple)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bd-pdf:hover,.btn-bitacora-jpeg:hover{background:var(--accent-purple-hover)}
-.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo{background:#000000;color:#ffffff;border:2px solid var(--accent-red)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bd-borrar-mes:hover,.btn-acc.btn-borrar:hover,.btn-mc-rojo:hover{background:var(--accent-red);color:#fff}
-.btn-enviar{background:#000000;color:#ffffff;border:2px solid var(--accent-orange)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-enviar:hover{background:var(--accent-orange);color:#fff}
-.btn-buscar{background:var(--accent-blue);color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-buscar:hover{background:var(--accent-blue-hover)}
-.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar{background:var(--bg-tertiary);color:var(--text-primary);border:2px solid var(--border-color)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:500;font-size:.85em;transition:all .2s}
-.btn-limpiar:hover,.btn-mc-cancelar:hover,.btn-exportar-cancelar:hover{background:var(--border-color)}
-.btn-bitacora-excel{background:#000000;color:#ffffff;border:2px solid var(--accent-blue)!important;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.btn-bitacora-excel:hover{background:var(--accent-blue);color:#fff}
-.btn-bd-pag,.btn-pag-numero{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--border-color)!important;width:32px;height:32px;border-radius:4px;cursor:pointer;font-weight:500;font-size:.85em;transition:all .2s;display:flex;align-items:center;justify-content:center}
-.btn-bd-pag:hover,.btn-pag-numero:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)!important;color:var(--accent-blue)}
-.btn-bd-pag.activa,.btn-pag-numero.activa{background:var(--accent-blue);color:#fff;border-color:var(--accent-blue)!important}
-.btn-bd-pag-nav,.btn-pag-nav{background:var(--bg-secondary);color:var(--accent-blue);border:2px solid var(--accent-blue)!important;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;transition:all .2s}
-.btn-bd-pag-nav:hover,.btn-pag-nav:hover{background:var(--accent-blue);color:#fff}
+
+/* ✅ BOTONES SERIOS - SIN FONDO, SOLO BORDES DELGADOS */
+.btn-bd-importar,.btn-importar-accion,.btn-exportar,.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul,.btn-bd-pdf,.btn-bitacora-jpeg,.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo,.btn-enviar,.btn-buscar,.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar,.btn-bitacora-excel,.btn-bd-pag,.btn-pag-numero,.btn-bd-pag-nav,.btn-pag-nav,.btn-acc,.btn-calendario,.btn-cal-fila,.modal-btn,.btn-exportar-confirmar,.btn-exportar-bitacora,.btn-imprimir-bitacora,.btn-jpeg-bitacora,.btn-guardar-bitacora,.bitacora-export-select-all{
+  background:transparent !important;
+  color:var(--text-primary) !important;
+  border:1px solid var(--border-color) !important;
+  padding:6px 14px !important;
+  border-radius:4px !important;
+  cursor:pointer !important;
+  font-weight:600 !important;
+  font-size:.85em !important;
+  transition:all .2s !important;
+  text-transform:uppercase !important;
+  letter-spacing:.5px !important;
+}
+.btn-bd-importar:hover,.btn-importar-accion:hover{border-color:var(--accent-green) !important;color:var(--accent-green) !important;background:var(--accent-green-pastel) !important}
+.btn-exportar:hover,.btn-bitacora-excel:hover,.btn-exportar-bitacora:hover{border-color:var(--accent-blue) !important;color:var(--accent-blue) !important;background:var(--accent-blue-pastel) !important}
+.btn-bd-guardar:hover,.btn-guardar:hover,.btn-bitacora-guardar:hover,.btn-registrar:hover,.btn-mc-azul:hover,.btn-guardar-bitacora:hover{border-color:var(--accent-blue) !important;color:var(--accent-blue) !important;background:var(--accent-blue-pastel) !important}
+.btn-bd-pdf:hover,.btn-bitacora-jpeg:hover,.btn-jpeg-bitacora:hover{border-color:var(--accent-purple) !important;color:var(--accent-purple) !important;background:var(--accent-purple-pastel) !important}
+.btn-bd-borrar-mes:hover,.btn-acc.btn-borrar:hover,.btn-mc-rojo:hover{border-color:var(--accent-red) !important;color:var(--accent-red) !important;background:var(--accent-red-pastel) !important}
+.btn-enviar:hover{border-color:var(--accent-orange) !important;color:var(--accent-orange) !important;background:var(--accent-orange-pastel) !important}
+.btn-buscar:hover{border-color:var(--accent-blue) !important;color:var(--accent-blue) !important;background:var(--accent-blue-pastel) !important}
+.btn-limpiar:hover,.btn-mc-cancelar:hover,.btn-exportar-cancelar:hover{border-color:var(--border-hover) !important;background:var(--bg-tertiary) !important}
+.btn-bd-pag:hover,.btn-pag-numero:hover{background:var(--accent-blue-pastel) !important;border-color:var(--accent-blue) !important;color:var(--accent-blue) !important}
+.btn-bd-pag.activa,.btn-pag-numero.activa{background:var(--accent-blue) !important;color:#fff !important;border-color:var(--accent-blue) !important}
+.btn-bd-pag-nav:hover,.btn-pag-nav:hover{background:var(--accent-blue) !important;color:#fff !important;border-color:var(--accent-blue) !important}
 .btn-bd-pag-nav:disabled{opacity:.4;cursor:not-allowed}
-.btn-acc{background:var(--bg-secondary);color:var(--text-primary);border:2px solid var(--border-color)!important;border-radius:4px;cursor:pointer;font-size:.8em;padding:3px 8px;margin-left:4px;transition:all .2s}
-.btn-acc:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)!important;color:var(--accent-blue)}
-.btn-calendario,.btn-cal-fila{background:var(--accent-blue);color:#fff;border:2px solid var(--accent-blue)!important;border-radius:4px;cursor:pointer;font-size:.85em;transition:all .2s}
-.btn-calendario:hover,.btn-cal-fila:hover{background:var(--accent-blue-hover)}
-.modal-btn{height:32px;border:2px solid rgba(255,255,255,0.3);border-radius:4px;cursor:pointer;font-size:1em;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;transition:all .2s;background:rgba(255,255,255,0.1)}
-.modal-btn.close:hover{background:var(--accent-red)}
-.modal-btn.pdf{padding:0 12px;font-size:.85em;width:auto}
-.btn-exportar-confirmar{background:var(--accent-blue);color:#fff;border:2px solid var(--accent-blue)!important;padding:8px 20px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.9em;transition:all .2s}
-.btn-exportar-confirmar:hover{background:var(--accent-blue-hover)}
+.btn-acc:hover{background:var(--accent-blue-pastel) !important;border-color:var(--accent-blue) !important;color:var(--accent-blue) !important}
+.btn-calendario:hover,.btn-cal-fila:hover{background:var(--accent-blue) !important;color:#fff !important;border-color:var(--accent-blue) !important}
+.modal-btn.close:hover{background:var(--accent-red) !important;color:#fff !important;border-color:var(--accent-red) !important}
+.modal-btn.pdf:hover{background:var(--accent-purple) !important;color:#fff !important;border-color:var(--accent-purple) !important}
+.btn-exportar-confirmar:hover{background:var(--accent-blue) !important;color:#fff !important;border-color:var(--accent-blue) !important}
+.btn-imprimir-bitacora:hover{border-color:var(--accent-orange) !important;color:var(--accent-orange) !important;background:var(--accent-orange-pastel) !important}
+.bitacora-export-select-all:hover{border-color:var(--accent-green) !important;color:var(--accent-green) !important;background:var(--accent-green-pastel) !important}
+
 .basedatos-subtitulo{color:var(--accent-blue);font-size:1.1em;font-weight:700;margin:10px 0 15px 0;padding-bottom:8px;border-bottom:2px solid var(--border-color);text-transform:uppercase;letter-spacing:1px}
 .basedatos-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color);flex-wrap:wrap}
-.basedatos-tab{padding:10px 20px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.basedatos-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
+.basedatos-tab{padding:10px 20px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;text-transform:uppercase}
+.basedatos-tab:hover{color:var(--accent-blue)}
 .basedatos-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
+
 .bitacora-movil-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color);flex-wrap:wrap}
-.bitacora-movil-tab{padding:8px 16px;cursor:pointer;font-weight:600;font-size:.8em;color:var(--text-secondary);border-bottom:3px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
-.bitacora-movil-tab:hover{background:var(--bg-tertiary);color:var(--accent-blue)}
+.bitacora-movil-tab{padding:8px 16px;cursor:pointer;font-weight:600;font-size:.8em;color:var(--text-secondary);border-bottom:3px solid transparent;text-transform:uppercase}
+.bitacora-movil-tab:hover{color:var(--accent-blue)}
 .bitacora-movil-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
+
 .basedatos-tab-content{display:none}
 .basedatos-tab-content.show{display:block}
 .bitacora-movil-content{display:block}
-.bitacora-actions{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap}
+
+.bitacora-actions{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;padding:10px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border-color)}
 .bd-filtro-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
-.bd-filtro-row label{color:var(--text-secondary);font-weight:600;font-size:.85em;white-space:nowrap}
-.bd-filtro-input{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:200px;transition:border-color .2s}
+.bd-filtro-row label{color:var(--text-secondary);font-weight:600;font-size:.85em}
+.bd-filtro-input{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:200px}
 .bd-filtro-input:focus{outline:none;border-color:var(--accent-blue)}
 .pendientes-info{color:var(--accent-orange);font-size:.85em;font-weight:700}
-.bd-resumen{display:flex;gap:22px;flex-wrap:wrap;align-items:center;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;padding:10px 15px;margin-bottom:10px;font-size:.9em;color:var(--text-primary)}
-.bd-resumen span{display:flex;align-items:center;gap:6px}
+.bd-resumen{display:flex;gap:22px;flex-wrap:wrap;align-items:center;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;padding:10px 15px;margin-bottom:10px;font-size:.9em}
 .bd-resumen strong{color:var(--accent-blue);font-size:1.05em}
 .bd-resumen .res-am strong{color:var(--accent-orange)}
 .bd-resumen .res-pm strong{color:var(--accent-purple)}
 .bd-resumen .res-periodo strong{color:var(--accent-green)}
-.bd-descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;margin:4px 0 8px 0;letter-spacing:.5px;text-transform:uppercase}
+.bd-descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;margin:4px 0 8px 0;text-transform:uppercase}
+
 .basedatos-tabla-wrap{overflow:auto;max-height:500px;border:1px solid var(--border-color);border-radius:4px;margin-bottom:10px;background:var(--bg-secondary)}
-.basedatos-tabla-wrap::-webkit-scrollbar{width:8px;height:8px}
-.basedatos-tabla-wrap::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
 .basedatos-tabla{width:100%;border-collapse:collapse;font-size:.85em}
-.basedatos-tabla th{background:var(--bg-tertiary);color:var(--text-primary);padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-color);position:sticky;top:0;z-index:10;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;font-size:.8em;vertical-align:top}
-.basedatos-tabla td{padding:8px;border-bottom:1px solid var(--border-color);color:var(--text-primary);white-space:nowrap}
+.basedatos-tabla th{background:var(--bg-tertiary);color:var(--text-primary);padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-color);position:sticky;top:0;z-index:10;text-transform:uppercase;font-size:.8em}
+.basedatos-tabla td{padding:8px;border-bottom:1px solid var(--border-color);color:var(--text-primary)}
 .basedatos-tabla tr:hover td{background:var(--row-hover)}
-.basedatos-tabla tr.id-repetido td{background:var(--id-repetido-bg)!important;color:var(--text-primary)!important;font-weight:600}
-.basedatos-tabla tr.id-repetido-otro td{background:var(--id-otro-bg)!important;color:var(--text-primary)!important;font-weight:600}
+.basedatos-tabla tr.id-repetido td{background:var(--id-repetido-bg)!important;font-weight:600}
+.basedatos-tabla tr.id-repetido-otro td{background:var(--id-otro-bg)!important;font-weight:600}
+
 .bd-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px;background:var(--bg-tertiary);border-radius:4px;flex-wrap:wrap;border:1px solid var(--border-color)}
 .bd-paginacion-info{color:var(--text-secondary);font-size:.85em;font-weight:600;margin-right:15px}
-.stats-bar{display:flex;gap:12px;padding:8px 28px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;flex-wrap:wrap;align-items:center;transition:background .3s}
+
+.stats-bar{display:flex;gap:12px;padding:8px 28px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-wrap:wrap;align-items:center}
 .stat-item{background:var(--bg-tertiary);padding:6px 14px;border-radius:4px;border-left:3px solid var(--accent-blue)}
 .stat-item .val{color:var(--accent-blue);font-size:1.2em;font-weight:700}
-.stat-item .lbl{color:var(--text-secondary);font-size:.7em;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
-.seccion-registro{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;transition:background .3s}
-.seccion-registro-header{display:flex;align-items:center;justify-content:space-between;padding:10px 28px;cursor:pointer;transition:background .2s;border-bottom:1px solid var(--border-color)}
+.stat-item .lbl{color:var(--text-secondary);font-size:.7em;text-transform:uppercase;font-weight:600}
+
+.seccion-registro{background:var(--bg-secondary);border-bottom:1px solid var(--border-color)}
+.seccion-registro-header{display:flex;align-items:center;justify-content:space-between;padding:10px 28px;cursor:pointer;border-bottom:1px solid var(--border-color)}
 .seccion-registro-header:hover{background:var(--bg-tertiary)}
-.seccion-registro-header h3{color:var(--text-primary);font-size:.9em;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
-.btn-flecha{background:none;border:none;color:var(--text-secondary);font-size:1em;cursor:pointer;transition:transform .3s}
+.seccion-registro-header h3{color:var(--text-primary);font-size:.9em;font-weight:700;text-transform:uppercase}
+.btn-flecha{background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1em}
 .btn-flecha.rotada{transform:rotate(180deg)}
 .seccion-registro .seccion-contenido{padding:12px 28px}
 .form-fila{display:flex;gap:6px;align-items:flex-end;overflow-x:auto;padding-bottom:4px}
 .campo{display:flex;flex-direction:column;flex-shrink:0}
-.campo label{color:var(--text-secondary);font-size:.65em;font-weight:700;margin-bottom:2px;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px}
-.campo input,.campo select{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;transition:border-color .2s}
+.campo label{color:var(--text-secondary);font-size:.65em;font-weight:700;margin-bottom:2px;text-transform:uppercase}
+.campo input,.campo select{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em}
 .campo input:focus,.campo select:focus{outline:none;border-color:var(--accent-blue)}
 .campo select{cursor:pointer}
-.campo input[type="date"]{background:var(--bg-input)!important;color:var(--text-primary)!important;cursor:pointer;font-weight:500}
+.campo input[type="date"]{background:var(--bg-input)!important;cursor:pointer}
 .c-fecha{width:140px}.c-unidad{width:170px}.c-id{width:100px}.c-nombre{width:180px}.c-direccion{width:200px}.c-comuna{width:120px}.c-valor{width:110px}.c-obs{width:160px}.c-transporte{width:140px}.c-rango{width:70px}
-.descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;padding:12px 28px 0 28px;letter-spacing:.5px;border-left:3px solid var(--accent-blue);padding-left:12px;text-transform:uppercase}
-.acciones-bar{display:flex;gap:8px;padding:8px 28px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);align-items:center;flex-shrink:0;flex-wrap:wrap;transition:background .3s}
-.buscar-input{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:250px;min-width:150px;transition:border-color .2s}
+
+.descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;padding:12px 28px 0 28px;border-left:3px solid var(--accent-blue);padding-left:12px;text-transform:uppercase}
+.acciones-bar{display:flex;gap:8px;padding:8px 28px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);align-items:center;flex-wrap:wrap}
+.buscar-input{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:250px;min-width:150px}
 .buscar-input:focus{outline:none;border-color:var(--accent-blue)}
+
 .tabla-section{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0}
 .tabla-scroll-vertical{flex:1;overflow-y:auto;padding:0 28px 20px}
 .tabla-scroll-vertical::-webkit-scrollbar{width:10px}
 .tabla-scroll-vertical::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:5px}
-.tabla-scroll-vertical::-webkit-scrollbar-thumb{background:var(--scrollbar-v);border-radius:5px;border:2px solid var(--bg-tertiary)}
-.tabla-scroll-horizontal-top{overflow-x:auto;border-bottom:2px solid var(--accent-orange);margin-bottom:0}
+.tabla-scroll-vertical::-webkit-scrollbar-thumb{background:var(--scrollbar-v);border-radius:5px}
+.tabla-scroll-horizontal-top{overflow-x:auto;border-bottom:2px solid var(--accent-orange)}
 .tabla-scroll-horizontal-top::-webkit-scrollbar{height:8px}
-.tabla-scroll-horizontal-top::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:4px}
 .tabla-scroll-horizontal-top::-webkit-scrollbar-thumb{background:var(--accent-orange);border-radius:4px}
 .tabla-scroll-horizontal{overflow-x:auto;border-top:2px solid var(--accent-orange)}
 .tabla-scroll-horizontal::-webkit-scrollbar{height:10px}
-.tabla-scroll-horizontal::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:5px}
-.tabla-scroll-horizontal::-webkit-scrollbar-thumb{background:var(--scrollbar-h);border-radius:5px;border:2px solid var(--bg-tertiary)}
+.tabla-scroll-horizontal::-webkit-scrollbar-thumb{background:var(--scrollbar-h);border-radius:5px}
 .tabla-scroll-horizontal table{width:100%;min-width:1100px}
+
 table{width:100%;border-collapse:collapse;font-size:.82em;margin-top:8px;background:var(--bg-secondary)}
-th{background:var(--bg-tertiary);color:var(--text-primary);padding:8px 6px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;border-bottom:2px solid var(--border-color);white-space:nowrap;font-size:.8em;text-transform:uppercase;letter-spacing:.5px;vertical-align:top}
+th{background:var(--bg-tertiary);color:var(--text-primary);padding:8px 6px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;border-bottom:2px solid var(--border-color);text-transform:uppercase;font-size:.8em}
 th.th-sel,td.td-sel{text-align:center;width:34px}
-td{padding:6px;border-bottom:1px solid var(--border-color);color:var(--text-primary);white-space:nowrap}
+td{padding:6px;border-bottom:1px solid var(--border-color);color:var(--text-primary)}
 tr:hover td{background:var(--row-hover)}
+
 .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:.75em;font-weight:600}
 .badge-am{background:var(--accent-orange);color:#fff}
 .badge-pm{background:var(--accent-purple);color:#fff}
 .badge-b2c{background:var(--accent-blue);color:#fff}
+.badge-adm{background:var(--accent-green);color:#fff}
+.badge-qdm{background:var(--accent-red);color:#fff}
 .badge-unidad{background:var(--badge-unidad-bg);color:var(--badge-unidad-text);border:1px solid var(--border-color)}
 .badge-pendiente{background:var(--accent-orange);color:#fff;margin-left:4px}
-tr.id-repetido td{background:var(--id-repetido-bg)!important;color:var(--text-primary)!important;font-weight:600}
-tr.id-repetido:hover td{background:var(--id-repetido-hover)!important}
-tr.id-repetido .badge{background:#fff!important;color:var(--accent-red)!important}
-tr.id-repetido-otro td{background:var(--id-otro-bg)!important;color:var(--text-primary)!important;font-weight:600}
-tr.id-repetido-otro:hover td{background:var(--id-otro-hover)!important}
-tr.id-repetido-otro .badge{background:#fff!important;color:var(--accent-orange)!important}
-.celda-edit input,.celda-edit select{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:3px 5px;border-radius:4px;font-size:.9em;width:100%;min-width:70px;transition:border-color .2s}
+
+tr.id-repetido td{background:var(--id-repetido-bg)!important;font-weight:600}
+tr.id-repetido-otro td{background:var(--id-otro-bg)!important;font-weight:600}
+
+.celda-edit input,.celda-edit select{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:3px 5px;border-radius:4px;font-size:.9em;width:100%;min-width:70px}
 .celda-edit select{min-width:110px}
 .celda-edit input:focus,.celda-edit select:focus{outline:none;border-color:var(--accent-blue)}
 td.td-acciones{white-space:nowrap;text-align:center}
-td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:middle}
+td.td-acciones input[type="checkbox"]{width:16px;height:16px}
+
 .filtro-combo{position:relative;margin-top:8px}
 .filtro-combo input{width:100%;padding-right:22px}
-.combo-arrow{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8em;padding:0}
+.combo-arrow{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8em}
 .combo-list{display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;max-height:180px;overflow-y:auto;z-index:300;box-shadow:0 4px 12px var(--shadow);min-width:100%}
-.combo-item{padding:6px 10px;cursor:pointer;color:var(--text-primary);font-size:.9em;font-weight:400;text-transform:none;letter-spacing:0;white-space:nowrap;transition:background .15s;border-bottom:1px solid var(--border-color)}
+.combo-item{padding:6px 10px;cursor:pointer;color:var(--text-primary);font-size:.9em;border-bottom:1px solid var(--border-color)}
 .combo-item:last-child{border-bottom:none}
 .combo-item:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
+
 .obs-combo-wrap{position:relative;display:inline-block;width:100%}
 .obs-combo-wrap input{width:100%;padding-right:22px}
-.valor-alineado{display:inline-block;min-width:140px;text-align:right;font-family:inherit;font-weight:700;font-size:1.05em;letter-spacing:0;color:var(--text-primary)}
-.empty-msg{text-align:center;padding:60px;color:var(--text-muted);font-style:italic;font-size:1.1em}
-.loading-msg{text-align:center;padding:60px;color:var(--text-secondary)}
+
+.valor-alineado{display:inline-block;min-width:140px;text-align:right;font-weight:700;font-size:1.05em}
+
+.empty-msg,.loading-msg{text-align:center;padding:60px;color:var(--text-muted)}
 .spinner{border:3px solid var(--border-color);border-top:3px solid var(--accent-blue);border-radius:50%;width:28px;height:28px;animation:spin 1s linear infinite;margin:0 auto 10px}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-.toast{position:fixed;top:15px;right:15px;padding:10px 18px;border-radius:4px;color:#fff;font-weight:600;font-size:.85em;z-index:9999;transform:translateX(400px);transition:transform .3s;box-shadow:0 2px 8px var(--shadow);border-left:4px solid rgba(255,255,255,0.3)}
+
+.toast{position:fixed;top:15px;right:15px;padding:10px 18px;border-radius:4px;color:#fff;font-weight:600;font-size:.85em;z-index:9999;transform:translateX(400px);transition:transform .3s}
 .toast.show{transform:translateX(0)}
 .toast.ok{background:var(--toast-ok)}
 .toast.err{background:var(--toast-err)}
 .toast.info{background:var(--toast-info)}
+
 .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:1000}
 .modal-overlay.show{display:flex}
 .modal-window{width:100vw;height:100vh;background:var(--bg-primary);display:flex;flex-direction:column;overflow:hidden}
-.modal-titlebar{background:var(--accent-blue);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.modal-title{color:#fff;font-weight:700;font-size:1.1em;display:flex;align-items:center;gap:8px}
+.modal-titlebar{background:var(--accent-blue);padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.modal-title{color:#fff;font-weight:700;font-size:1.1em}
 .modal-controls{display:flex;gap:6px}
-.modal-body{flex:1;overflow:auto;padding:0;background:var(--bg-primary)}
-.modal-body::-webkit-scrollbar{width:8px;height:8px}
-.modal-body::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
-.modal-info{color:var(--text-primary);font-size:.9em;padding:12px 20px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color);flex-shrink:0}
-.modal-filtro{display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-shrink:0;flex-wrap:wrap}
-.modal-filtro label{color:var(--text-secondary);font-weight:600;font-size:.85em;white-space:nowrap}
-.modal-filtro input{background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:6px 12px;border-radius:4px;font-size:.9em;width:250px;max-width:100%;transition:border-color .2s}
+.modal-body{flex:1;overflow:auto;padding:0}
+.modal-info{color:var(--text-primary);font-size:.9em;padding:12px 20px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color)}
+.modal-filtro{display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-wrap:wrap}
+.modal-filtro label{color:var(--text-secondary);font-weight:600;font-size:.85em}
+.modal-filtro input{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:6px 12px;border-radius:4px;font-size:.9em;width:250px}
 .modal-filtro input:focus{outline:none;border-color:var(--accent-blue)}
 .modal-filtro .filtro-info{color:var(--accent-orange);font-size:.85em;font-weight:600}
 .modal-body table{width:100%;border-collapse:collapse;font-size:.9em}
-.modal-body thead th{background:var(--bg-tertiary);color:var(--text-primary);padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-color);position:sticky;top:0;z-index:10;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;font-size:.85em;vertical-align:top}
-.modal-body thead th .th-filter{display:block;width:100%;margin-top:6px;background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);border-radius:4px;padding:4px 6px;font-size:.9em;font-weight:400;text-transform:none;letter-spacing:0;white-space:nowrap}
+.modal-body thead th{background:var(--bg-tertiary);color:var(--text-primary);padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-color);position:sticky;top:0;z-index:10;text-transform:uppercase;font-size:.85em}
+.modal-body thead th .th-filter{display:block;width:100%;margin-top:6px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);border-radius:4px;padding:4px 6px;font-size:.9em}
 .modal-body thead th .th-filter:focus{outline:none;border-color:var(--accent-blue)}
-.modal-body tbody td{padding:10px;border-bottom:1px solid var(--border-color);color:var(--text-primary);white-space:nowrap}
+.modal-body tbody td{padding:10px;border-bottom:1px solid var(--border-color);color:var(--text-primary)}
 .modal-body tbody tr:hover td{background:var(--row-hover)}
-.modal-body tbody tr.id-repetido td{background:var(--id-repetido-bg)!important;color:var(--text-primary)!important;font-weight:600}
-.modal-body tbody tr.id-repetido-otro td{background:var(--id-otro-bg)!important;color:var(--text-primary)!important;font-weight:600}
 .modal-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:12px 20px;background:var(--bg-tertiary);border-top:1px solid var(--border-color);flex-wrap:wrap}
 .modal-paginacion-info{color:var(--text-secondary);font-size:.85em;font-weight:600;margin-right:15px}
+
 .overlay-centro{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:3000;align-items:center;justify-content:center}
 .overlay-centro.show{display:flex}
 .modal-caja{background:var(--bg-secondary);border-radius:4px;padding:25px;max-width:400px;width:90%;box-shadow:0 8px 32px var(--shadow-modal);border:1px solid var(--border-color)}
 .modal-caja.roja{border-top:4px solid var(--accent-red)}
 .modal-caja.azul{border-top:4px solid var(--accent-blue)}
-.modal-caja h3{font-size:1.1em;margin-bottom:15px;text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.modal-caja h3{font-size:1.1em;margin-bottom:15px;text-align:center;font-weight:700;text-transform:uppercase}
 .modal-caja.roja h3{color:var(--accent-red)}
 .modal-caja.azul h3{color:var(--accent-blue)}
 .modal-caja .form-group{margin-bottom:12px}
 .modal-caja .form-group label{display:block;color:var(--text-secondary);font-size:.85em;margin-bottom:5px;font-weight:600}
-.modal-caja .form-group select,.modal-caja .form-group input{width:100%;background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:8px;border-radius:4px;font-size:.9em;transition:border-color .2s}
+.modal-caja .form-group select,.modal-caja .form-group input{width:100%;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:8px;border-radius:4px;font-size:.9em}
 .modal-caja .form-group select:focus,.modal-caja .form-group input:focus{outline:none;border-color:var(--accent-blue)}
 .modal-caja .info-registros{color:var(--accent-orange);font-size:.85em;margin:10px 0;text-align:center;font-weight:600;padding:8px;background:var(--accent-orange-pastel);border-radius:4px}
 .modal-caja-buttons{display:flex;gap:10px;justify-content:center;margin-top:15px}
-.exportar-modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:2000;align-items:center;justify-content:center}
-.exportar-modal-overlay.show{display:flex}
-.exportar-modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:25px;max-width:560px;width:90%;box-shadow:0 8px 32px var(--shadow-modal)}
-.exportar-modal h3{color:var(--accent-blue);font-size:1.2em;margin-bottom:15px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:1px}
+
+.exportar-modal-overlay,.bitacora-export-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:var(--modal-overlay);z-index:2000;align-items:center;justify-content:center}
+.exportar-modal-overlay.show,.bitacora-export-overlay.show{display:flex}
+.exportar-modal,.bitacora-export-modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:25px;max-width:700px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px var(--shadow-modal)}
+.exportar-modal h3,.bitacora-export-modal h3{color:var(--accent-blue);font-size:1.2em;margin-bottom:15px;font-weight:700;text-align:center;text-transform:uppercase}
 .exp-fecha-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px;background:var(--bg-tertiary);border-radius:4px;border:1px solid var(--border-color)}
-.exp-fecha-row label{color:var(--text-secondary);font-weight:600;font-size:.85em;white-space:nowrap}
+.exp-fecha-row label{color:var(--text-secondary);font-weight:600;font-size:.85em}
 .exp-info{color:var(--accent-orange);font-size:.85em;margin-bottom:12px;font-weight:600;text-align:center;padding:8px;background:var(--accent-orange-pastel);border-radius:4px}
-.exportar-modal .checkbox-group{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
-.exportar-modal .checkbox-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-tertiary);border-radius:4px;cursor:pointer;transition:background .2s;border:1px solid var(--border-color)}
-.exportar-modal .checkbox-item:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)}
-.exportar-modal .checkbox-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--accent-blue)}
-.exportar-modal .checkbox-item label{color:var(--text-primary);font-size:.9em;cursor:pointer;flex:1;font-weight:500}
-.exportar-modal-buttons{display:flex;gap:10px;justify-content:flex-end;padding-top:15px;border-top:1px solid var(--border-color)}
+.exportar-modal .checkbox-group,.bitacora-export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.exportar-modal .checkbox-item,.bitacora-export-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-tertiary);border-radius:4px;cursor:pointer;border:1px solid var(--border-color)}
+.exportar-modal .checkbox-item:hover,.bitacora-export-item:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)}
+.exportar-modal .checkbox-item input[type="checkbox"],.bitacora-export-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--accent-blue)}
+.exportar-modal .checkbox-item label,.bitacora-export-item label{color:var(--text-primary);font-size:.9em;cursor:pointer;flex:1;font-weight:500}
+.exportar-modal-buttons,.bitacora-export-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:15px;border-top:1px solid var(--border-color)}
+
 .fecha-wrap{position:relative;display:flex;align-items:center;gap:6px}
 .fecha-wrap input[type="date"]{width:140px}
 .calendario-popup{display:none;position:absolute;top:100%;left:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:10px;z-index:1000;box-shadow:0 4px 12px var(--shadow);min-width:280px;margin-top:4px}
 .calendario-popup.show{display:block}
 .calendario-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.calendario-header button{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:.85em;transition:all .2s}
+.calendario-header button{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);padding:4px 8px;border-radius:4px;cursor:pointer}
 .calendario-header button:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue);color:var(--accent-blue)}
 .calendario-header span{font-weight:700;color:var(--accent-blue);font-size:.9em}
 .calendario-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .calendario-grid .dia-semana{text-align:center;font-size:.75em;font-weight:700;color:var(--text-secondary);padding:4px;text-transform:uppercase}
-.calendario-grid .dia{text-align:center;padding:6px 4px;cursor:pointer;border-radius:4px;font-size:.85em;color:var(--text-primary);transition:all .2s;font-weight:500}
+.calendario-grid .dia{text-align:center;padding:6px 4px;cursor:pointer;border-radius:4px;font-size:.85em;color:var(--text-primary)}
 .calendario-grid .dia:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
 .calendario-grid .dia.hoy{background:var(--accent-orange);color:#fff;font-weight:700}
 .calendario-grid .dia.seleccionado{background:var(--accent-blue);color:#fff;font-weight:700}
 .calendario-grid .dia.vacio{cursor:default}
+
 .fecha-cell-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
-.fecha-cell-wrap input[type="date"]{width:110px;background:var(--bg-input);color:var(--text-primary);border:2px solid var(--border-color);padding:3px 5px;border-radius:4px;font-size:.85em}
+.fecha-cell-wrap input[type="date"]{width:110px;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:3px 5px;border-radius:4px;font-size:.85em}
 .fecha-cell-wrap input[type="date"]:focus{outline:none;border-color:var(--accent-blue)}
+
 .cal-popup-fila{display:none;position:absolute;top:100%;left:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:8px;z-index:500;box-shadow:0 4px 12px var(--shadow);min-width:240px;margin-top:2px}
 .cal-popup-fila.show{display:block}
 .cal-header-fila{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.cal-header-fila button{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);padding:2px 6px;border-radius:4px;cursor:pointer;font-size:.8em;transition:all .2s}
-.cal-header-fila button:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)}
+.cal-header-fila button{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);padding:2px 6px;border-radius:4px;cursor:pointer}
 .cal-header-fila span{font-weight:700;color:var(--accent-blue);font-size:.85em}
 .cal-grid-fila{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
 .cal-grid-fila .dia-semana{text-align:center;font-size:.7em;font-weight:700;color:var(--text-secondary);padding:3px;text-transform:uppercase}
-.cal-grid-fila .dia{text-align:center;padding:4px 2px;cursor:pointer;border-radius:4px;font-size:.8em;color:var(--text-primary);transition:all .2s}
+.cal-grid-fila .dia{text-align:center;padding:4px 2px;cursor:pointer;border-radius:4px;font-size:.8em;color:var(--text-primary)}
 .cal-grid-fila .dia:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
 .cal-grid-fila .dia.hoy{background:var(--accent-orange);color:#fff;font-weight:700}
 .cal-grid-fila .dia.seleccionado{background:var(--accent-blue);color:#fff;font-weight:700}
@@ -368,18 +365,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
 .bitacora-footer-table thead th{background:#1a5490 !important;color:#ffffff !important;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e}
 .bitacora-footer-table tbody td{border:1px solid #999 !important;padding:8px;font-size:11px;text-align:center;background:#ffffff !important;color:#000000 !important}
 .bitacora-footer-table input{border:none !important;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;text-align:center}
-
-/* ✅ MODAL EXPORTAR BITÁCORAS */
-.bitacora-export-modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;padding:25px;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px var(--shadow-modal)}
-.bitacora-export-modal h3{color:var(--accent-blue);font-size:1.2em;margin-bottom:15px;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:1px}
-.bitacora-export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
-.bitacora-export-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-tertiary);border-radius:6px;cursor:pointer;transition:background .2s;border:1px solid var(--border-color)}
-.bitacora-export-item:hover{background:var(--accent-blue-pastel);border-color:var(--accent-blue)}
-.bitacora-export-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--accent-blue)}
-.bitacora-export-item label{color:var(--text-primary);font-size:.9em;cursor:pointer;flex:1;font-weight:500}
-.bitacora-export-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:15px;border-top:1px solid var(--border-color)}
-.bitacora-export-select-all{background:var(--accent-green);color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85em;margin-bottom:15px}
-.bitacora-export-select-all:hover{background:var(--accent-green-hover)}
 </style>
 </head>
 <body>
@@ -489,7 +474,14 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div class="basedatos-tab" data-btab="adm" onclick="cambiarTabBit('adm')">ADM</div>
         <div class="basedatos-tab" data-btab="qdm" onclick="cambiarTabBit('qdm')">QDM</div>
       </div>
+      
       <div class="basedatos-tab-content show" id="bitContentAmpm">
+        <div class="bitacora-actions">
+          <button class="btn-guardar-bitacora" onclick="guardarBitacora('ampm')">💾 GUARDAR</button>
+          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('ampm')">📤 EXPORTAR EXCEL</button>
+          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('ampm')">🖼️ EXPORTAR JPEG</button>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('ampm')">🖨️ IMPRIMIR</button>
+        </div>
         <div class="bitacora-movil-tabs">
           <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('ampm',1)">MOVIL 1</div>
           <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('ampm',2)">MOVIL 2</div>
@@ -497,6 +489,9 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('ampm',4)">MOVIL 4</div>
           <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('ampm',5)">MOVIL 5</div>
           <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('ampm',6)">MOVIL 6</div>
+          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('ampm','spot')">SPOT</div>
+          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('ampm','spot1')">SPOT 1</div>
+          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('ampm','spot2')">SPOT 2</div>
         </div>
         <div id="bitacoraAmpmMovil1" class="bitacora-movil-content"></div>
         <div id="bitacoraAmpmMovil2" class="bitacora-movil-content"></div>
@@ -504,8 +499,18 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraAmpmMovil4" class="bitacora-movil-content"></div>
         <div id="bitacoraAmpmMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraAmpmMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovilspot" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovilspot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovilspot2" class="bitacora-movil-content"></div>
       </div>
+      
       <div class="basedatos-tab-content" id="bitContentB2c">
+        <div class="bitacora-actions">
+          <button class="btn-guardar-bitacora" onclick="guardarBitacora('b2c')">💾 GUARDAR</button>
+          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('b2c')">📤 EXPORTAR EXCEL</button>
+          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('b2c')">🖼️ EXPORTAR JPEG</button>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('b2c')">️ IMPRIMIR</button>
+        </div>
         <div class="bitacora-movil-tabs">
           <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('b2c',1)">MOVIL 1</div>
           <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('b2c',2)">MOVIL 2</div>
@@ -513,6 +518,9 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('b2c',4)">MOVIL 4</div>
           <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('b2c',5)">MOVIL 5</div>
           <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('b2c',6)">MOVIL 6</div>
+          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('b2c','spot')">SPOT</div>
+          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('b2c','spot1')">SPOT 1</div>
+          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('b2c','spot2')">SPOT 2</div>
         </div>
         <div id="bitacoraB2cMovil1" class="bitacora-movil-content"></div>
         <div id="bitacoraB2cMovil2" class="bitacora-movil-content"></div>
@@ -520,8 +528,18 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraB2cMovil4" class="bitacora-movil-content"></div>
         <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovilspot" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovilspot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovilspot2" class="bitacora-movil-content"></div>
       </div>
+      
       <div class="basedatos-tab-content" id="bitContentAdm">
+        <div class="bitacora-actions">
+          <button class="btn-guardar-bitacora" onclick="guardarBitacora('adm')">💾 GUARDAR</button>
+          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('adm')">📤 EXPORTAR EXCEL</button>
+          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('adm')">🖼️ EXPORTAR JPEG</button>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('adm')">🖨️ IMPRIMIR</button>
+        </div>
         <div class="bitacora-movil-tabs">
           <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('adm',1)">MOVIL 1</div>
           <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('adm',2)">MOVIL 2</div>
@@ -529,6 +547,9 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('adm',4)">MOVIL 4</div>
           <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('adm',5)">MOVIL 5</div>
           <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('adm',6)">MOVIL 6</div>
+          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('adm','spot')">SPOT</div>
+          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('adm','spot1')">SPOT 1</div>
+          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('adm','spot2')">SPOT 2</div>
         </div>
         <div id="bitacoraAdmMovil1" class="bitacora-movil-content"></div>
         <div id="bitacoraAdmMovil2" class="bitacora-movil-content"></div>
@@ -536,8 +557,18 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraAdmMovil4" class="bitacora-movil-content"></div>
         <div id="bitacoraAdmMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraAdmMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovilspot" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovilspot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovilspot2" class="bitacora-movil-content"></div>
       </div>
+      
       <div class="basedatos-tab-content" id="bitContentQdm">
+        <div class="bitacora-actions">
+          <button class="btn-guardar-bitacora" onclick="guardarBitacora('qdm')">💾 GUARDAR</button>
+          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('qdm')">📤 EXPORTAR EXCEL</button>
+          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('qdm')">🖼️ EXPORTAR JPEG</button>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('qdm')">🖨️ IMPRIMIR</button>
+        </div>
         <div class="bitacora-movil-tabs">
           <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('qdm',1)">MOVIL 1</div>
           <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('qdm',2)">MOVIL 2</div>
@@ -545,6 +576,9 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
           <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('qdm',4)">MOVIL 4</div>
           <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('qdm',5)">MOVIL 5</div>
           <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('qdm',6)">MOVIL 6</div>
+          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('qdm','spot')">SPOT</div>
+          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('qdm','spot1')">SPOT 1</div>
+          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('qdm','spot2')">SPOT 2</div>
         </div>
         <div id="bitacoraQdmMovil1" class="bitacora-movil-content"></div>
         <div id="bitacoraQdmMovil2" class="bitacora-movil-content"></div>
@@ -552,16 +586,9 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div id="bitacoraQdmMovil4" class="bitacora-movil-content"></div>
         <div id="bitacoraQdmMovil5" class="bitacora-movil-content"></div>
         <div id="bitacoraQdmMovil6" class="bitacora-movil-content"></div>
-      </div>
-      <div class="basedatos-tab-content" id="bitContentSpot">
-        <div class="bitacora-movil-tabs">
-          <div class="bitacora-movil-tab active" data-movil="spot" onclick="cambiarMovilBit('spot','spot')">SPOT</div>
-          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('spot','spot1')">SPOT 1</div>
-          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('spot','spot2')">SPOT 2</div>
-        </div>
-        <div id="bitacoraSpotMovilspot" class="bitacora-movil-content"></div>
-        <div id="bitacoraSpotMovilspot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraSpotMovilspot2" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovilspot" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovilspot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovilspot2" class="bitacora-movil-content"></div>
       </div>
     </div>
 
@@ -681,7 +708,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
         <div class="campo c-comuna"><label>Comuna</label><input type="text" id="fComuna" required autocomplete="off"></div>
         <div class="campo c-valor"><label>Valor</label><input type="number" id="fValor" step="0.01" min="0" required></div>
         <div class="campo c-obs"><label>Observación</label><input type="text" id="fObs" placeholder="Elegir o escribir" autocomplete="off"></div>
-        <div class="campo c-transporte"><label>Transporte</label><select id="fTransporte" required><option value="">-- Elegir --</option><option>MOVIL 1</option><option>MOVIL 2</option><option>MOVIL 3</option><option>MOVIL 4</option><option>MOVIL 5</option><option>MOVIL 6</option><option>DON JOSE</option><option>DON RAUL</option><option>SERVICIO AM/PM</option><option>SERVICIO B2C</option><option>SPOT</option><option>SPOT 1</option><option>SPOT 2</option><option>RETIRA CLIENTE</option><option>SERVICIO 3PL</option><option>TRANSGAMBOA</option></select></div>
+        <div class="campo c-transporte"><label>Transporte</label><select id="fTransporte" required><option value="">-- Elegir --</option><option>MOVIL 1</option><option>MOVIL 2</option><option>MOVIL 3</option><option>MOVIL 4</option><option>MOVIL 5</option><option>MOVIL 6</option><option>DON JOSE</option><option>DON RAUL</option><option>SERVICIO AM/PM</option><option>SERVICIO B2C</option><option>SERVICIO ADM</option><option>SERVICIO QDM</option><option>SPOT</option><option>SPOT 1</option><option>SPOT 2</option><option>RETIRA CLIENTE</option><option>SERVICIO 3PL</option><option>TRANSGAMBOA</option></select></div>
         <div class="campo c-rango"><label>Rango</label><select id="fRango" required><option value="">--</option><option>AM</option><option>PM</option><option>B2C</option><option>ADM</option><option>QDM</option></select></div>
         <button type="submit" class="btn-registrar">REGISTRAR</button>
         <button type="button" class="btn-limpiar" onclick="limpiar()">LIMPIAR</button>
@@ -693,10 +720,10 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
     <div class="descripcion-subtitulo">Descripción</div>
     <div class="acciones-bar">
       <input type="text" class="buscar-input" id="buscar" placeholder="Buscar...">
-      <button class="btn-accion btn-importar-accion" onclick="importarExcelSegunSeccion()">IMPORTAR EXCEL</button>
-      <button class="btn-accion btn-exportar" onclick="abrirModalExportar()">EXPORTAR EXCEL</button>
-      <button class="btn-accion btn-guardar" id="btnGuardarAmpm" onclick="guardarPendientesSeccion()">GUARDAR</button>
-      <button class="btn-accion btn-enviar" id="btnEnviar" onclick="enviarSeleccion()">ENVIAR A BITACORA</button>
+      <button class="btn-importar-accion" onclick="importarExcelSegunSeccion()">IMPORTAR EXCEL</button>
+      <button class="btn-exportar" onclick="abrirModalExportar()">EXPORTAR EXCEL</button>
+      <button class="btn-guardar" id="btnGuardarAmpm" onclick="guardarPendientesSeccion()">GUARDAR</button>
+      <button class="btn-enviar" id="btnEnviar" onclick="enviarSeleccion()">ENVIAR A BITACORA</button>
     </div>
     <div class="tabla-scroll-vertical">
       <div class="tabla-scroll-horizontal-top" id="scrollTop"><div style="min-width:1100px;height:8px"></div></div>
@@ -816,16 +843,44 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px;vertical-align:midd
   </div>
 </div>
 
-<!-- ✅ NUEVO MODAL: Exportar Bitácoras -->
-<div class="overlay-centro" id="bitacoraExportOverlay">
+<!-- ✅ MODAL EXPORTAR BITÁCORAS EXCEL -->
+<div class="bitacora-export-overlay" id="bitacoraExportOverlay">
   <div class="bitacora-export-modal">
-    <h3>📤 Exportar Bitácoras a Excel</h3>
-    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Selecciona las bitácoras que deseas exportar. Cada una irá en una planilla separada.</p>
+    <h3 id="bitExpTitulo">📤 Exportar Bitácoras a Excel</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitExpSubtitulo">Selecciona las bitácoras que deseas exportar. Cada una irá en una planilla separada.</p>
     <button class="bitacora-export-select-all" onclick="seleccionarTodasBitacoras()">✅ Seleccionar todas</button>
     <div class="bitacora-export-grid" id="bitacoraExportGrid"></div>
     <div class="bitacora-export-actions">
       <button class="btn-exportar-cancelar" onclick="cerrarModalExportarBitacoras()">Cancelar</button>
       <button class="btn-exportar-confirmar" onclick="confirmarExportarBitacoras()">📊 Exportar seleccionadas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ MODAL EXPORTAR BITÁCORAS JPEG -->
+<div class="bitacora-export-overlay" id="bitacoraJPEGOverlay">
+  <div class="bitacora-export-modal">
+    <h3 id="bitJpegTitulo">️ Exportar Bitácoras como JPEG</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitJpegSubtitulo">Selecciona las bitácoras que deseas exportar como imagen.</p>
+    <button class="bitacora-export-select-all" onclick="seleccionarTodasBitacorasJPEG()">✅ Seleccionar todas</button>
+    <div class="bitacora-export-grid" id="bitacoraJPEGGrid"></div>
+    <div class="bitacora-export-actions">
+      <button class="btn-exportar-cancelar" onclick="cerrarModalJPEGBitacoras()">Cancelar</button>
+      <button class="btn-exportar-confirmar" onclick="confirmarExportarJPEGBitacoras()">🖼️ Exportar seleccionadas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ MODAL IMPRIMIR BITÁCORAS -->
+<div class="bitacora-export-overlay" id="bitacoraPrintOverlay">
+  <div class="bitacora-export-modal">
+    <h3 id="bitPrintTitulo">🖨️ Imprimir Bitácoras</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitPrintSubtitulo">Selecciona las bitácoras que deseas imprimir.</p>
+    <button class="bitacora-export-select-all" onclick="seleccionarTodasBitacorasPrint()">✅ Seleccionar todas</button>
+    <div class="bitacora-export-grid" id="bitacoraPrintGrid"></div>
+    <div class="bitacora-export-actions">
+      <button class="btn-exportar-cancelar" onclick="cerrarModalImprimirBitacoras()">Cancelar</button>
+      <button class="btn-exportar-confirmar" onclick="confirmarImprimirBitacoras()">🖨️ Imprimir seleccionadas</button>
     </div>
   </div>
 </div>
