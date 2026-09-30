@@ -38,7 +38,8 @@ let seccionInicial = mSec ? mSec[1] : '';
 let cache = {};
 let pendientes = [];
 let pendientesAMPM = [];
-let pendientesAmpmAdmQdm = [];
+let pendientesADM = [];
+let pendientesQDM = [];
 let pendientesB2C = [];
 let modoImportActual = '';
 let seccionActiva = 'ampm';
@@ -51,16 +52,18 @@ let datosModalTotales = 0;
 let paginaModalActual = 1;
 let paginaBDAmpm = 1;
 let paginaBDB2c = 1;
-let paginaBDAmpmAdmQdm = 1;
+let paginaBDAdm = 1;
+let paginaBDQdm = 1;
 let paginaDesc = 1;
 let tipoBorrarMes = 'AMPM';
-let filtroDiaBD = { AMPM: '', B2C: '', AMPMADM: '' };
-let filtroMesBD = { AMPM: '', B2C: '', AMPMADM: '' };
-let filtroAnioBD = { AMPM: '', B2C: '', AMPMADM: '' };
+let filtroDiaBD = { AMPM: '', B2C: '', ADM: '', QDM: '' };
+let filtroMesBD = { AMPM: '', B2C: '', ADM: '', QDM: '' };
+let filtroAnioBD = { AMPM: '', B2C: '', ADM: '', QDM: '' };
 let filtroDescBD = {
   AMPM:  { unidad:'', comuna:'', transporte:'', rango:'' },
   B2C:   { unidad:'', comuna:'', transporte:'', rango:'' },
-  AMPMADM:{ unidad:'', comuna:'', transporte:'', rango:'' }
+  ADM:   { unidad:'', comuna:'', transporte:'', rango:'' },
+  QDM:   { unidad:'', comuna:'', transporte:'', rango:'' }
 };
 let seleccionadosDesc = new Set();
 let keysVisiblesDesc = [];
@@ -87,10 +90,10 @@ let infPeriodo = 'dia';
 let infVista = 'mapa';
 let bitacorasData = {};
 
-function toast(msg, tipo) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show ' + tipo; setTimeout(() => t.className = 'toast', 3000); }
-function fmtFecha(f) { if (!f) return ''; const [y,m,d] = f.split('-'); return d + '/' + m + '/' + y; }
+function toast(msg, tipo) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show ' + tipo; setTimeout(function() { t.className = 'toast'; }, 3000); }
+function fmtFecha(f) { if (!f) return ''; const p = f.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
 function nombreDiaSemana(f) { if (!f) return ''; const p = f.split('-'); if (p.length !== 3) return ''; return DIAS_SEMANA[new Date(+p[0], +p[1]-1, +p[2]).getDay()] || ''; }
-function fmtFechaConDia(f) { if (!f) return ''; const [y,m,d] = f.split('-'); const dS = nombreDiaSemana(f); return dS ? dS + ', ' + d + '-' + m + '-' + y : d + '-' + m + '-' + y; }
+function fmtFechaConDia(f) { if (!f) return ''; const p = f.split('-'); const dS = nombreDiaSemana(f); return dS ? dS + ', ' + p[2] + '-' + p[1] + '-' + p[0] : p[2] + '-' + p[1] + '-' + p[0]; }
 function formatoMoneda(v) { return '$' + (Number(v)||0).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatoMonedaAlineado(v) {
   const num = Number(v) || 0;
@@ -99,9 +102,9 @@ function formatoMonedaAlineado(v) {
 }
 function formatoEntero(v) { return Math.round(Number(v)||0).toLocaleString('es-CL'); }
 function formatoPorcentaje(v) { return (Number(v)||0).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %'; }
-function getTipoRegistro(reg) { return reg.tipo || (reg.rango === 'B2C' ? 'B2C' : 'AMPM'); }
-function sumaValores(regs) { return regs.reduce((s,r) => s + (((r.valor||0) === 1) ? 0 : (r.valor||0)), 0); }
-function conteoUnPeso(regs) { return regs.filter(r => (r.valor||0) === 1).length; }
+function getTipoRegistro(reg) { return reg.tipo || (reg.rango === 'B2C' ? 'B2C' : (reg.rango === 'ADM' ? 'ADM' : (reg.rango === 'QDM' ? 'QDM' : 'AMPM'))); }
+function sumaValores(regs) { return regs.reduce(function(s,r) { return s + (((r.valor||0) === 1) ? 0 : (r.valor||0)); }, 0); }
+function conteoUnPeso(regs) { return regs.filter(function(r) { return (r.valor||0) === 1; }).length; }
 function sinTildes(s) { return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function normSinTildes(s) { return sinTildes(String(s||'').toLowerCase()); }
 function normEnc(h) { return sinTildes(h).toUpperCase(); }
@@ -241,7 +244,7 @@ window.confirmarPassword = function() {
 };
 
 // =====================================================================
-// 🕐 RELOJ DIGITAL
+//  RELOJ DIGITAL
 // =====================================================================
 function actualizarReloj() {
   const ahora = new Date();
@@ -351,23 +354,29 @@ function aplicarRol() {
   } 
 }
 
+// =====================================================================
+// 🧭 TIPOS Y SECCIONES (ACTUALIZADO)
+// =====================================================================
 function tipoDeSeccion() {
   if (seccionActiva === 'ampm') return 'AMPM';
   if (seccionActiva === 'b2c') return 'B2C';
-  if (seccionActiva === 'ampmadmqdm') return 'AMPMADM';
+  if (seccionActiva === 'adm') return 'ADM';
+  if (seccionActiva === 'qdm') return 'QDM';
   return 'AMPM';
 }
 
 function getBitacoraTipo() {
   if (seccionActiva === 'ampm') return 'ampm';
   if (seccionActiva === 'b2c') return 'b2c';
-  if (seccionActiva === 'ampmadmqdm') return 'ampmadmqdm';
+  if (seccionActiva === 'adm') return 'adm';
+  if (seccionActiva === 'qdm') return 'qdm';
   return 'ampm';
 }
 
 function pendientesDeSeccion() {
   if (seccionActiva === 'ampm') return pendientesAMPM;
-  if (seccionActiva === 'ampmadmqdm') return pendientesAmpmAdmQdm;
+  if (seccionActiva === 'adm') return pendientesADM;
+  if (seccionActiva === 'qdm') return pendientesQDM;
   if (seccionActiva === 'b2c') return pendientesB2C;
   return [];
 }
@@ -409,7 +418,8 @@ window.cambiarTabBD = function(tab) {
   document.querySelectorAll('.basedatos-tab[data-tab]').forEach(function(t) { t.classList.remove('active'); });
   document.querySelector('.basedatos-tab[data-tab="' + tab + '"]').classList.add('active');
   document.querySelectorAll('#seccionBasedatos .basedatos-tab-content').forEach(function(c) { c.classList.remove('show'); });
-  document.getElementById(tab === 'ampm' ? 'tabContentAmpm' : (tab === 'b2c' ? 'tabContentB2c' : 'tabContentAmpmAdmQdm')).classList.add('show'); 
+  const map = { ampm: 'tabContentAmpm', b2c: 'tabContentB2c', adm: 'tabContentAdm', qdm: 'tabContentQdm' };
+  document.getElementById(map[tab] || 'tabContentAmpm').classList.add('show'); 
   renderizarBaseDatos();
 };
 
@@ -418,11 +428,13 @@ window.cambiarTabBit = function(tab) {
   const b = document.querySelector('.basedatos-tab[data-btab="' + tab + '"]'); 
   if (b) b.classList.add('active');
   document.querySelectorAll('#seccionBitacoras .basedatos-tab-content').forEach(function(c) { c.classList.remove('show'); });
-  document.getElementById(tab === 'ampm' ? 'bitContentAmpm' : (tab === 'b2c' ? 'bitContentB2c' : 'bitContentAmpmAdmQdm')).classList.add('show');
+  const map = { ampm: 'bitContentAmpm', b2c: 'bitContentB2c', adm: 'bitContentAdm', qdm: 'bitContentQdm', spot: 'bitContentSpot' };
+  document.getElementById(map[tab] || 'bitContentAmpm').classList.add('show');
 };
 
 window.cambiarMovilBit = function(tipo, movil) {
-  const cont = document.getElementById(tipo === 'ampm' ? 'bitContentAmpm' : (tipo === 'b2c' ? 'bitContentB2c' : 'bitContentAmpmAdmQdm'));
+  const map = { ampm: 'bitContentAmpm', b2c: 'bitContentB2c', adm: 'bitContentAdm', qdm: 'bitContentQdm', spot: 'bitContentSpot' };
+  const cont = document.getElementById(map[tipo] || 'bitContentAmpm');
   if (!cont) return;
   cont.querySelectorAll('.bitacora-movil-tab').forEach(function(t) { t.classList.remove('active'); });
   cont.querySelector('.bitacora-movil-tab[data-movil="' + movil + '"]').classList.add('active');
@@ -483,7 +495,7 @@ function getDescBaseRows() {
     return r.fecha === fechaTrabajo;
   });
   pendientesDeSeccion().forEach(function(p) { 
-    const reg = { ...p.reg, key: p.key, anio: p.anio, mes: p.mes, pendiente: true };
+    const reg = Object.assign({}, p.reg, { key: p.key, anio: p.anio, mes: p.mes, pendiente: true });
     regs.push(reg); 
   });
   return regs;
@@ -500,7 +512,7 @@ function getDistinctValues(col) {
     else if (col === 'rango') v = r.rango || '';
     if (v) set.add(v);
   });
-  return [...set].sort();
+  return Array.from(set).sort();
 }
 
 function poblarCombo(col, filtro) {
@@ -603,7 +615,7 @@ window.elegirOpcionTransporte = function(key, val) {
 };
 
 function actualizarTransporteRegistro(key, nuevoTransporte) {
-  let p = pendientesAMPM.find(function(p) { return p.key===key; }) || pendientesAmpmAdmQdm.find(function(p) { return p.key===key; }) || pendientesB2C.find(function(p) { return p.key===key; });
+  let p = pendientesAMPM.find(function(p) { return p.key===key; }) || pendientesADM.find(function(p) { return p.key===key; }) || pendientesQDM.find(function(p) { return p.key===key; }) || pendientesB2C.find(function(p) { return p.key===key; });
   if (p) {
     if (p.reg.transporte !== nuevoTransporte) {
       p.reg.transporte = nuevoTransporte;
@@ -677,7 +689,7 @@ window.elegirOpcionObs = function(key, val) {
 };
 
 function actualizarObservacionRegistro(key, nuevaObs) {
-  let p = pendientesAMPM.find(function(p) { return p.key===key; }) || pendientesAmpmAdmQdm.find(function(p) { return p.key===key; }) || pendientesB2C.find(function(p) { return p.key===key; });
+  let p = pendientesAMPM.find(function(p) { return p.key===key; }) || pendientesADM.find(function(p) { return p.key===key; }) || pendientesQDM.find(function(p) { return p.key===key; }) || pendientesB2C.find(function(p) { return p.key===key; });
   if (p) {
     p.reg.observacion = nuevaObs.toUpperCase();
     if (cache[p.anio] && cache[p.anio][p.mes] && cache[p.anio][p.mes][key]) {
@@ -736,6 +748,148 @@ window.elegirOpcionObsEdicion = function(val) {
   if (list) list.style.display = 'none';
 };
 
+function getDistinctModal(col) {
+  const set = new Set();
+  datosModal.forEach(function(r) {
+    let v = '';
+    if (col==='fecha') v = fmtFecha(r.fecha);
+    else if (col==='unidad') v = r.unidad||'';
+    else if (col==='comuna') v = canonComuna(r.comuna)||'';
+    else if (col==='transporte') v = r.transporte||'';
+    else if (col==='observacion') v = r.observacion||'';
+    else if (col==='rango') v = r.rango||'';
+    if (v) set.add(v);
+  });
+  return Array.from(set).sort();
+}
+
+function poblarComboModal(col, filtro) {
+  const list = document.getElementById('comboModal_'+col);
+  if (!list) return;
+  let vals = getDistinctModal(col);
+  if (filtro) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(filtro)); });
+  list.innerHTML = vals.length
+    ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionModal(\'' + col + '\', \'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('')
+    : '<div class="combo-item">Sin coincidencias</div>';
+}
+
+function poblarCombosModal() { 
+  ['fecha','unidad','comuna','transporte','observacion','rango'].forEach(function(col) { 
+    const inp = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1)); 
+    poblarComboModal(col, inp ? inp.value : ''); 
+  }); 
+}
+
+function cerrarCombosModal() { 
+  document.querySelectorAll('.combo-list').forEach(function(l) { if (l.id.startsWith('comboModal_')) l.style.display='none'; }); 
+  comboModalAbierto = null; 
+}
+
+window.toggleComboModal = function(col) {
+  const list = document.getElementById('comboModal_'+col);
+  if (!list) return;
+  if (comboModalAbierto === col) { list.style.display='none'; comboModalAbierto=null; }
+  else { cerrarCombosModal(); poblarComboModal(col,''); list.style.display='block'; comboModalAbierto=col; }
+};
+
+function abrirComboModal(col) { 
+  cerrarCombosModal(); 
+  poblarComboModal(col,''); 
+  const list=document.getElementById('comboModal_'+col); 
+  if(list){ list.style.display='block'; comboModalAbierto=col; } 
+}
+
+window.elegirOpcionModal = function(col, val) {
+  const input = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1));
+  if (input) input.value = val;
+  cerrarCombosModal();
+  aplicarFiltrosModal();
+};
+
+window.filtrarComboModal = function(col, val) {
+  poblarComboModal(col, val);
+  const list = document.getElementById('comboModal_'+col);
+  if (list) { list.style.display='block'; comboModalAbierto=col; }
+  aplicarFiltrosModal();
+};
+
+function sufBD(tipo){ 
+  if (tipo==='AMPM') return 'Ampm';
+  if (tipo==='B2C') return 'B2c';
+  if (tipo==='ADM') return 'Adm';
+  return 'Qdm';
+}
+
+function getBDBaseRows(tipo){ 
+  let r = obtenerRegsTipo(tipo); 
+  const f = filtroDiaBD[tipo]; 
+  if (f.d) r = r.filter(function(x) { return (x.fecha||'').split('-')[2] === f.d; }); 
+  if (f.m) r = r.filter(function(x) { return x.mes === f.m; }); 
+  if (f.a) r = r.filter(function(x) { return x.anio === f.a; }); 
+  return r; 
+}
+
+function getDistinctBD(tipo, campo){ 
+  const set = new Set(); 
+  getBDBaseRows(tipo).forEach(function(r) { 
+    let v=''; 
+    if(campo==='unidad')v=r.unidad||''; 
+    else if(campo==='comuna')v=canonComuna(r.comuna)||''; 
+    else if(campo==='transporte')v=r.transporte||''; 
+    else if(campo==='rango')v=r.rango||''; 
+    if(v)set.add(v); 
+  }); 
+  return Array.from(set).sort(); 
+}
+
+function poblarComboBD(tipo, campo, filtro){
+  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
+  if(!list) return;
+  let vals = getDistinctBD(tipo, campo);
+  if (filtro) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(filtro)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionBD(\'' + tipo + '\',\'' + campo + '\',\'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+}
+
+function cerrarCombosBD(){ 
+  document.querySelectorAll('.combo-list').forEach(function(l) { if (l.id.startsWith('comboBD_')) l.style.display='none'; }); 
+  comboBDAbierto = null; 
+}
+
+window.toggleComboBD = function(tipo, campo){
+  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
+  if(!list) return;
+  const id = tipo+'_'+campo;
+  if (comboBDAbierto === id) { list.style.display='none'; comboBDAbierto=null; }
+  else { cerrarCombosBD(); poblarComboBD(tipo,campo,''); list.style.display='block'; comboBDAbierto=id; }
+};
+
+function abrirComboBD(tipo, campo){ 
+  cerrarCombosBD(); 
+  poblarComboBD(tipo,campo,''); 
+  const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); 
+  if(list){ list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } 
+}
+
+window.elegirOpcionBD = function(tipo, campo, val){
+  const input = document.getElementById('fBD'+sufBD(tipo)+'_'+campo);
+  if (input) input.value = val;
+  filtroDescBD[tipo][campo] = normSinTildes(val);
+  cerrarCombosBD();
+  const idMap = { AMPM: 'filtroIdAmpm', B2C: 'filtroIdB2c', ADM: 'filtroIdAdm', QDM: 'filtroIdQdm' };
+  const pagMap = { AMPM: paginaBDAmpm, B2C: paginaBDB2c, ADM: paginaBDAdm, QDM: paginaBDQdm };
+  renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]);
+};
+
+window.filtrarBDCombo = function(tipo, campo, val){
+  filtroDescBD[tipo][campo] = normSinTildes(val);
+  poblarComboBD(tipo, campo, val);
+  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
+  if (list) { list.style.display='block'; comboBDAbierto=tipo+'_'+campo; }
+  const idMap = { AMPM: 'filtroIdAmpm', B2C: 'filtroIdB2c', ADM: 'filtroIdAdm', QDM: 'filtroIdQdm' };
+  const pagMap = { AMPM: paginaBDAmpm, B2C: paginaBDB2c, ADM: paginaBDAdm, QDM: paginaBDQdm };
+  renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]);
+};
+
 function renderDescThead() {
   const thead = document.getElementById('theadDesc');
   if (!thead) return;
@@ -785,7 +939,7 @@ function render() {
     });
   }
   pendientesDeSeccion().forEach(function(p) { 
-    const reg = { ...p.reg, key: p.key, anio: p.anio, mes: p.mes, pendiente: true };
+    const reg = Object.assign({}, p.reg, { key: p.key, anio: p.anio, mes: p.mes, pendiente: true });
     regs.push(reg); 
   });
   const fd = leerFiltrosDesc();
@@ -901,7 +1055,7 @@ function filaHTMLTabla(r, cf, cg, dr) {
     const comunaInput = '<td class="celda-edit"><input type="text" id="edi_comuna" value="' + (r.comuna||'').replace(/"/g,'&quot;') + '"></td>';
     const obsInput = '<td class="celda-edit"><div class="obs-combo-wrap"><input type="text" id="edi_obs" value="' + (r.observacion||'').replace(/"/g,'&quot;') + '" oninput="filtrarComboObsEdicion(this.value)" onfocus="abrirComboObsEdicion()"><button class="combo-arrow" onclick="toggleComboObsEdicion()">▼</button><div class="combo-list" id="combo_edicion_obs"></div></div></td>';
     const transInput = '<td class="celda-edit"><div class="filtro-combo" style="margin:0"><input type="text" id="edi_transporte" value="' + (r.transporte||'').replace(/"/g,'&quot;') + '" oninput="filtrarComboEdicion(this.value)" onfocus="abrirComboEdicion()"><button class="combo-arrow" onclick="toggleComboEdicion()">▼</button><div class="combo-list" id="combo_edicion_transporte"></div></div></td>';
-    const rangoInput = '<td class="celda-edit"><select id="edi_rango"><option value="">--</option><option value="AM" ' + (r.rango==='AM'?'selected':'') + '>AM</option><option value="PM" ' + (r.rango==='PM'?'selected':'') + '>PM</option><option value="B2C" ' + (r.rango==='B2C'?'selected':'') + '>B2C</option></select></td>';
+    const rangoInput = '<td class="celda-edit"><select id="edi_rango"><option value="">--</option><option value="AM" ' + (r.rango==='AM'?'selected':'') + '>AM</option><option value="PM" ' + (r.rango==='PM'?'selected':'') + '>PM</option><option value="B2C" ' + (r.rango==='B2C'?'selected':'') + '>B2C</option><option value="ADM" ' + (r.rango==='ADM'?'selected':'') + '>ADM</option><option value="QDM" ' + (r.rango==='QDM'?'selected':'') + '>QDM</option></select></td>';
     const acc = '<td class="td-acciones"><button class="btn-acc" onclick="guardarEdicionInline(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\',' + (r.pendiente?true:false) + ')">✔</button><button class="btn-acc" onclick="cancelarEdicionInline()">#</button></td>';
     if (b2c) return '<tr class="' + clase + '">' + celdaSel + fechaInput + unidadInput + idInput + nombreInput + '<td class="celda-edit"><input type="text" id="edi_celular" value="' + (r.celular||'').replace(/"/g,'&quot;') + '"></td><td class="celda-edit"><input type="text" id="edi_email" value="' + (r.email||'').replace(/"/g,'&quot;') + '"></td>' + dirInput + comunaInput + '<td class="celda-edit">' + formatoMonedaAlineado(r.valor) + '</td>' + obsInput + transInput + rangoInput + acc + '</tr>';
     return '<tr class="' + clase + '">' + celdaSel + fechaInput + unidadInput + idInput + nombreInput + dirInput + comunaInput + '<td class="celda-edit">' + formatoMonedaAlineado(r.valor) + '</td>' + obsInput + transInput + rangoInput + acc + '</tr>';
@@ -911,13 +1065,13 @@ function filaHTMLTabla(r, cf, cg, dr) {
   if (r.pendiente) {
     obs = '<td class="celda-edit"><div class="obs-combo-wrap"><input type="text" id="obs_input_' + r.key + '" value="' + (r.observacion||'').replace(/"/g,'&quot;') + '" oninput="filtrarComboObs(\'' + r.key + '\', this.value)" onfocus="abrirComboObs(\'' + r.key + '\')"><button class="combo-arrow" onclick="toggleComboObs(\'' + r.key + '\')">▼</button><div class="combo-list" id="combo_obs_' + r.key + '"></div></div></td>';
     trans = '<td class="celda-edit"><div class="filtro-combo" style="margin:0"><input type="text" id="trans_input_' + r.key + '" value="' + (r.transporte||'').replace(/"/g,'&quot;') + '" oninput="filtrarComboTransporte(\'' + r.key + '\', this.value)" onfocus="abrirComboTransporte(\'' + r.key + '\')"><button class="combo-arrow" onclick="toggleComboTransporte(\'' + r.key + '\')">▼</button><div class="combo-list" id="combo_trans_' + r.key + '"></div>' + (debeElegir ? '<div style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-top:2px">Elige: ' + cands.join(' / ') + '</div>' : '') + '</div></td>';
-    rango = '<td class="celda-edit"><select onchange="editarRangoPendiente(\'' + r.key + '\', this.value)"><option value="">--</option><option value="AM" ' + (r.rango==='AM'?'selected':'') + '>AM</option><option value="PM" ' + (r.rango==='PM'?'selected':'') + '>PM</option><option value="B2C" ' + (r.rango==='B2C'?'selected':'') + '>B2C</option></select></td>';
+    rango = '<td class="celda-edit"><select onchange="editarRangoPendiente(\'' + r.key + '\', this.value)"><option value="">--</option><option value="AM" ' + (r.rango==='AM'?'selected':'') + '>AM</option><option value="PM" ' + (r.rango==='PM'?'selected':'') + '>PM</option><option value="B2C" ' + (r.rango==='B2C'?'selected':'') + '>B2C</option><option value="ADM" ' + (r.rango==='ADM'?'selected':'') + '>ADM</option><option value="QDM" ' + (r.rango==='QDM'?'selected':'') + '>QDM</option></select></td>';
   } else {
     obs = '<td><div class="obs-combo-wrap" style="display:inline-block;vertical-align:middle;width:100%"><input type="text" id="obs_input_' + r.key + '" value="' + (r.observacion||'').replace(/"/g,'&quot;') + '" oninput="filtrarComboObs(\'' + r.key + '\', this.value)" onfocus="abrirComboObs(\'' + r.key + '\')"><button class="combo-arrow" onclick="toggleComboObs(\'' + r.key + '\')">▼</button><div class="combo-list" id="combo_obs_' + r.key + '"></div></div></td>';
     trans = '<td><div class="filtro-combo" style="margin:0;display:inline-block;vertical-align:middle"><input type="text" id="trans_input_' + r.key + '" value="' + (r.transporte||'').replace(/"/g,'&quot;') + '" style="width:120px;padding-right:22px" oninput="filtrarComboTransporte(\'' + r.key + '\', this.value)" onfocus="abrirComboTransporte(\'' + r.key + '\')"><button class="combo-arrow" onclick="toggleComboTransporte(\'' + r.key + '\')">▼</button><div class="combo-list" id="combo_trans_' + r.key + '"></div></div>' + (debeElegir ? '<div style="color:var(--accent-orange);font-size:.7em;font-weight:700">Elige: ' + cands.join(' / ') + '</div>' : '') + '</td>';
     rango = '<td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td>';
   }
-  const acc = '<td class="td-acciones"><input type="checkbox" ' + (r.otroPalet?'checked':'') + ' onchange="toggleOtroPalet(\'' + r.key + '\', ' + (r.pendiente?true:false) + ', this.checked)"><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistro(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\',' + (r.pendiente?true:false) + ')">🗑️</button></td>';
+  const acc = '<td class="td-acciones"><input type="checkbox" ' + (r.otroPalet?'checked':'') + ' onchange="toggleOtroPalet(\'' + r.key + '\', ' + (r.pendiente?true:false) + ', this.checked)"><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistro(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\',' + (r.pendiente?true:false) + ')"></button></td>';
   const valorCelda = '<td>' + formatoMonedaAlineado(r.valor) + '</td>';
   if (b2c) {
     return '<tr class="' + clase + '">' + celdaSel + celdaFecha + '<td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + ind + '</td><td>' + (r.nombre||'') + '</td><td>' + (r.celular||'') + '</td><td>' + (r.email||'') + '</td><td>' + dirShow + (dirRep?' <span style="color:var(--accent-orange);font-size:.7em;font-weight:700">[misma dir x' + dr[dirKey] + ']</span>':'') + '</td><td>' + canonComuna(r.comuna) + '</td>' + valorCelda + obs + trans + rango + acc + '</tr>';
@@ -942,7 +1096,7 @@ window.toggleComboEdicion = function() {
   const list = document.getElementById('combo_edicion_transporte');
   if (!list) return;
   if (list.style.display === 'block') { list.style.display = 'none'; }
-  else { filtrarComboEdicion(document.getElementById('edi_transporte')?.value || ''); }
+  else { filtrarComboEdicion(document.getElementById('edi_transporte') ? document.getElementById('edi_transporte').value : ''); }
 };
 
 window.elegirOpcionEdicion = function(val) {
@@ -953,18 +1107,18 @@ window.elegirOpcionEdicion = function(val) {
 };
 
 window.editarObsPendiente = function(k,v) { 
-  const p = pendientesAMPM.find(function(p){return p.key===k;}) || pendientesAmpmAdmQdm.find(function(p){return p.key===k;}) || pendientesB2C.find(function(p){return p.key===k;}); 
+  const p = pendientesAMPM.find(function(p){return p.key===k;}) || pendientesADM.find(function(p){return p.key===k;}) || pendientesQDM.find(function(p){return p.key===k;}) || pendientesB2C.find(function(p){return p.key===k;}); 
   if (p) p.reg.observacion = v.toUpperCase(); 
 };
 
 window.editarRangoPendiente = function(k,v) { 
-  const p = pendientesAMPM.find(function(p){return p.key===k;}) || pendientesAmpmAdmQdm.find(function(p){return p.key===k;}) || pendientesB2C.find(function(p){return p.key===k;}); 
+  const p = pendientesAMPM.find(function(p){return p.key===k;}) || pendientesADM.find(function(p){return p.key===k;}) || pendientesQDM.find(function(p){return p.key===k;}) || pendientesB2C.find(function(p){return p.key===k;}); 
   if (p) p.reg.rango = v; 
 };
 
 window.toggleOtroPalet = function(key, esPend, checked) {
   if (esPend) { 
-    const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesAmpmAdmQdm.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;}); 
+    const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;}); 
     if (p){ p.reg.otroPalet = checked; render(); } 
   }
   else { 
@@ -1019,7 +1173,7 @@ window.guardarPendientesSeccion = function() {
   Object.keys(cambiosFechaLocales).forEach(function(key) {
     const cambio = cambiosFechaLocales[key];
     if (cambio.esPendiente) {
-      const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesAmpmAdmQdm.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
+      const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
       if (p) {
         p.reg.fecha = cambio.nuevaFecha;
         p.anio = cambio.nuevaAnio;
@@ -1032,7 +1186,7 @@ window.guardarPendientesSeccion = function() {
       const nuevaMes = cambio.nuevaMes;
       const nuevaFecha = cambio.nuevaFecha;
       if (cache[anioOriginal] && cache[anioOriginal][mesOriginal] && cache[anioOriginal][mesOriginal][key]) {
-        const regData = { ...cache[anioOriginal][mesOriginal][key] };
+        const regData = Object.assign({}, cache[anioOriginal][mesOriginal][key]);
         delete cache[anioOriginal][mesOriginal][key];
         if (!cache[nuevaAnio]) cache[nuevaAnio] = {};
         if (!cache[nuevaAnio][nuevaMes]) cache[nuevaAnio][nuevaMes] = {};
@@ -1053,7 +1207,7 @@ window.guardarPendientesSeccion = function() {
   const proc = function() {
     if (li >= lotes.length) {
       lotes.flat().forEach(function(p) {
-        const l = {...p.reg};
+        const l = Object.assign({}, p.reg);
         delete l.pendiente;
         delete l._candidatos;
         if (!cache[p.anio]) cache[p.anio] = {};
@@ -1061,7 +1215,8 @@ window.guardarPendientesSeccion = function() {
         cache[p.anio][p.mes]['local_' + p.key] = l;
       });
       if (seccionActiva==='ampm') pendientesAMPM=[];
-      else if (seccionActiva==='ampmadmqdm') pendientesAmpmAdmQdm=[];
+      else if (seccionActiva==='adm') pendientesADM=[];
+      else if (seccionActiva==='qdm') pendientesQDM=[];
       else if (seccionActiva==='b2c') pendientesB2C=[];
       Promise.all(promesasFecha)
         .then(function() {
@@ -1077,7 +1232,7 @@ window.guardarPendientesSeccion = function() {
       return;
     }
     Promise.all(lotes[li].map(function(p) {
-      const l = {...p.reg};
+      const l = Object.assign({}, p.reg);
       delete l.pendiente;
       delete l._candidatos;
       return push(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes), l).then(function(){g++;});
@@ -1094,11 +1249,15 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
       let i = pendientesAMPM.findIndex(function(p){return p.key===key;});
       if (i>=0) pendientesAMPM.splice(i,1);
       else { 
-        i = pendientesAmpmAdmQdm.findIndex(function(p){return p.key===key;}); 
-        if (i>=0) pendientesAmpmAdmQdm.splice(i,1); 
+        i = pendientesADM.findIndex(function(p){return p.key===key;}); 
+        if (i>=0) pendientesADM.splice(i,1); 
         else { 
-          i = pendientesB2C.findIndex(function(p){return p.key===key;}); 
-          if (i>=0) pendientesB2C.splice(i,1); 
+          i = pendientesQDM.findIndex(function(p){return p.key===key;}); 
+          if (i>=0) pendientesQDM.splice(i,1); 
+          else {
+            i = pendientesB2C.findIndex(function(p){return p.key===key;}); 
+            if (i>=0) pendientesB2C.splice(i,1); 
+          }
         } 
       }
       if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) delete cache[anio][mes][key];
@@ -1130,7 +1289,7 @@ window.enviarSeleccion = function() {
     outer: for (const a of Object.keys(cache)) {
       for (const m of Object.keys(cache[a]||{})) {
         if (cache[a][m] && cache[a][m][key]) { 
-          reg = { ...cache[a][m][key] }; 
+          reg = Object.assign({}, cache[a][m][key]); 
           anio = a; 
           mes = m; 
           break outer; 
@@ -1138,8 +1297,8 @@ window.enviarSeleccion = function() {
       }
     }
     if (!reg) {
-      const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesAmpmAdmQdm.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
-      if (p) { reg = { ...p.reg }; anio = p.anio; mes = p.mes; }
+      const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
+      if (p) { reg = Object.assign({}, p.reg); anio = p.anio; mes = p.mes; }
     }
     if (!reg) { errores.push('Registro ' + key + ' no encontrado'); return; }
     if (cambiosFechaLocales[key]) {
@@ -1150,7 +1309,7 @@ window.enviarSeleccion = function() {
     let movilNum = null;
     if (match) {
       movilNum = parseInt(match[1]);
-    } else if (tipoSec === 'B2C') {
+    } else if (tipoSec === 'B2C' || tipoSec === 'QDM') {
       movilNum = 1;
     }
     if (!movilNum || movilNum < 1 || movilNum > 6) { errores.push((reg.idPedido || key) + ': Transporte no válido'); return; }
@@ -1205,11 +1364,13 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
   e.preventDefault();
   const fecha = document.getElementById('fFecha').value; 
   if (!fecha) { toast('Seleccione fecha','err'); return; }
-  const [a,m] = fecha.split('-'); 
+  const parts = fecha.split('-');
+  const a = parts[0];
+  const m = parts[1];
   const rango = document.getElementById('fRango').value; 
   if (!rango) { toast('Elija RANGO','err'); return; }
   const tipoSec = tipoDeSeccion();
-  if (tipoSec === 'B2C') {
+  if (tipoSec === 'B2C' || tipoSec === 'QDM') {
     const reg = { 
       fecha: fecha, 
       unidad: document.getElementById('fUnidad').value, 
@@ -1221,14 +1382,15 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
       comuna: canonComuna(document.getElementById('fComuna').value), 
       valor: parseFloat(document.getElementById('fValor').value)||0, 
       observacion: document.getElementById('fObs').value.toUpperCase(), 
-      transporte:'SERVICIO B2C', 
-      rango:'B2C', 
-      tipo:'B2C', 
+      transporte: tipoSec === 'B2C' ? 'SERVICIO B2C' : 'SERVICIO QDM',
+      rango: tipoSec,
+      tipo: tipoSec, 
       otroPalet:false, 
       creado: new Date().toISOString(), 
       usuario: auth.currentUser ? auth.currentUser.email : '' 
     };
-    pendientesB2C.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
+    const lista = tipoSec === 'B2C' ? pendientesB2C : pendientesQDM;
+    lista.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
     toast('Agregado. Presiona GUARDAR.','info'); 
     limpiar(); 
     paginaDesc = 1; 
@@ -1236,7 +1398,7 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
     actualizarBotonGuardar();
     return;
   }
-  const tipoReg = (rango==='B2C') ? 'B2C' : tipoSec;
+  const tipoReg = (rango==='B2C') ? 'B2C' : (rango==='ADM' ? 'ADM' : (rango==='QDM' ? 'QDM' : tipoSec));
   let reg = { 
     fecha: fecha, 
     unidad: document.getElementById('fUnidad').value, 
@@ -1253,12 +1415,12 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
     creado: new Date().toISOString(), 
     usuario: auth.currentUser ? auth.currentUser.email : '' 
   };
-  if (tipoSec === 'AMPMADM') {
+  if (tipoSec === 'ADM') {
     if (!reg.transporte) reg = autocompletarTransporteNuevoAdm(reg);
   } else {
     if (!reg.transporte) reg = autocompletarTransporteNuevo(reg);
   }
-  const dest = (tipoSec==='AMPMADM') ? pendientesAmpmAdmQdm : pendientesAMPM;
+  const dest = (tipoSec==='ADM') ? pendientesADM : pendientesAMPM;
   dest.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
   toast('Agregado. Presiona GUARDAR.','info'); 
   limpiar(); 
@@ -1272,436 +1434,886 @@ window.limpiar = function() {
   document.getElementById('fFecha').valueAsDate = new Date(); 
 };
 
-async function cargarDatos() {
-  const inicio = performance.now(); 
-  toast('Cargando datos...', 'info');
-  cache = {};
-  const anios = [2026,2027,2028,2029,2030]; 
-  const tareas = [];
-  anios.forEach(function(anio) { 
-    for (let mes = 1; mes <= 12; mes++) { 
-      const ms = String(mes).padStart(2,'0');
-      tareas.push(get(ref(db, RUTA_BASE + '/' + anio + '/' + ms)).then(function(s) { return {t:'b', anio: anio, ms: ms, datos: s.val()}; }).catch(function() { return {t:'b', anio: anio, ms: ms, datos: null}; })); 
+window.abrirModalExportar = function() { 
+  const tipo = tipoDeSeccion(); 
+  const hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('expFilaFecha').style.display = 'none';
+  document.getElementById('expTitulo').textContent = 'Exportar a Excel — ' + fmtFechaConDia(hoy) + ' (' + tipo + ')';
+  document.getElementById('expInfo').textContent = 'Registros del día: ' + formatoEntero(contarRegsDelDia(tipo).length);
+  document.getElementById('exportarModal').classList.add('show'); 
+};
+
+window.actualizarExpInfo = function() { 
+  const tipo = tipoDeSeccion(); 
+  const hoy = new Date().toISOString().split('T')[0]; 
+  document.getElementById('expInfo').textContent = 'Registros del día ' + fmtFechaConDia(hoy) + ': ' + formatoEntero(contarRegsDelDia(tipo).length); 
+};
+
+function contarRegsDelDia(tipo) { 
+  const hoy = new Date().toISOString().split('T')[0]; 
+  let r = obtenerRegsTipo(tipo).filter(function(r) { return r.fecha === hoy; });
+  if (tipo==='AMPM') r = r.concat(pendientesAMPM.map(function(p){return Object.assign({}, p.reg, {key:p.key});}));
+  if (tipo==='ADM') r = r.concat(pendientesADM.map(function(p){return Object.assign({}, p.reg, {key:p.key});}));
+  if (tipo==='QDM') r = r.concat(pendientesQDM.map(function(p){return Object.assign({}, p.reg, {key:p.key});}));
+  if (tipo==='B2C') r = r.concat(pendientesB2C.map(function(p){return Object.assign({}, p.reg, {key:p.key});}));
+  return r; 
+}
+
+window.cerrarModalExportar = function() { document.getElementById('exportarModal').classList.remove('show'); };
+
+window.confirmarExportar = function() {
+  const cols = [
+    {id:'expFecha',key:'fecha',label:'Fecha'},
+    {id:'expUnidad',key:'unidad',label:'Unidad Negocio'},
+    {id:'expIdPedido',key:'idPedido',label:'ID Pedido'},
+    {id:'expNombre',key:'nombre',label:'Nombre Cliente'},
+    {id:'expCelular',key:'celular',label:'Celular'},
+    {id:'expEmail',key:'email',label:'E-Mail'},
+    {id:'expDireccion',key:'direccion',label:'Dirección'},
+    {id:'expComuna',key:'comuna',label:'Comuna'},
+    {id:'expValor',key:'valor',label:'Valor'},
+    {id:'expObservacion',key:'observacion',label:'Observación'},
+    {id:'expTransporte',key:'transporte',label:'Transporte'},
+    {id:'expRango',key:'rango',label:'Rango'}
+  ].filter(function(c) { return document.getElementById(c.id).checked; });
+  if (!cols.length) { toast('Elige al menos una columna','err'); return; }
+  const tipo = tipoDeSeccion(); 
+  let regs = contarRegsDelDia(tipo); 
+  ordenarPorFechaDireccionId(regs);
+  if (!regs.length) { toast('No hay registros del día','err'); return; }
+  const datos = regs.map(function(r) { 
+    const f = {}; 
+    cols.forEach(function(c) { 
+      if (c.key==='fecha') f[c.label]=fmtFechaConDia(r.fecha); 
+      else if (c.key==='direccion') f[c.label]=dirDe(r); 
+      else if (c.key==='comuna') f[c.label]=canonComuna(r.comuna); 
+      else if (c.key==='valor') f[c.label]=formatoMoneda(r.valor); 
+      else f[c.label]=r[c.key]!==undefined ? r[c.key] : ''; 
+    }); 
+    return f; 
+  });
+  const ws = XLSX.utils.json_to_sheet(datos); 
+  const wb = XLSX.utils.book_new(); 
+  XLSX.utils.book_append_sheet(wb, ws, 'Despachos');
+  XLSX.writeFile(wb, 'DespachoRetail_' + tipo + '_' + new Date().toISOString().split('T')[0] + '.xlsx');
+  toast('Exportados ' + formatoEntero(regs.length) + ' registros','ok'); 
+  cerrarModalExportar();
+};
+
+// =====================================================================
+// 📤 MODAL EXPORTAR BITÁCORAS
+// =====================================================================
+const BITACORAS_DISPONIBLES = [
+  { tipo: 'ampm', movil: 1, label: 'AM/PM - MOVIL 1' },
+  { tipo: 'ampm', movil: 2, label: 'AM/PM - MOVIL 2' },
+  { tipo: 'ampm', movil: 3, label: 'AM/PM - MOVIL 3' },
+  { tipo: 'ampm', movil: 4, label: 'AM/PM - MOVIL 4' },
+  { tipo: 'ampm', movil: 5, label: 'AM/PM - MOVIL 5' },
+  { tipo: 'ampm', movil: 6, label: 'AM/PM - MOVIL 6' },
+  { tipo: 'b2c', movil: 1, label: 'B2C - MOVIL 1' },
+  { tipo: 'b2c', movil: 2, label: 'B2C - MOVIL 2' },
+  { tipo: 'b2c', movil: 3, label: 'B2C - MOVIL 3' },
+  { tipo: 'b2c', movil: 4, label: 'B2C - MOVIL 4' },
+  { tipo: 'b2c', movil: 5, label: 'B2C - MOVIL 5' },
+  { tipo: 'b2c', movil: 6, label: 'B2C - MOVIL 6' },
+  { tipo: 'adm', movil: 1, label: 'ADM - MOVIL 1' },
+  { tipo: 'adm', movil: 2, label: 'ADM - MOVIL 2' },
+  { tipo: 'adm', movil: 3, label: 'ADM - MOVIL 3' },
+  { tipo: 'adm', movil: 4, label: 'ADM - MOVIL 4' },
+  { tipo: 'adm', movil: 5, label: 'ADM - MOVIL 5' },
+  { tipo: 'adm', movil: 6, label: 'ADM - MOVIL 6' },
+  { tipo: 'qdm', movil: 1, label: 'QDM - MOVIL 1' },
+  { tipo: 'qdm', movil: 2, label: 'QDM - MOVIL 2' },
+  { tipo: 'qdm', movil: 3, label: 'QDM - MOVIL 3' },
+  { tipo: 'qdm', movil: 4, label: 'QDM - MOVIL 4' },
+  { tipo: 'qdm', movil: 5, label: 'QDM - MOVIL 5' },
+  { tipo: 'qdm', movil: 6, label: 'QDM - MOVIL 6' },
+  { tipo: 'spot', movil: 'spot', label: 'SPOT' },
+  { tipo: 'spot', movil: 'spot1', label: 'SPOT 1' },
+  { tipo: 'spot', movil: 'spot2', label: 'SPOT 2' }
+];
+
+window.abrirModalExportarBitacoras = function() {
+  const grid = document.getElementById('bitacoraExportGrid');
+  if (!grid) return;
+  
+  let html = '';
+  BITACORAS_DISPONIBLES.forEach(function(item, idx) {
+    const key = item.tipo + '_movil' + item.movil;
+    const data = bitacorasData[key];
+    const tieneDatos = data && data.filas && data.filas.length > 0;
+    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
+    const label = item.label + (count > 0 ? ' (' + count + ')' : '');
+    html += '<div class="bitacora-export-item">';
+    html += '<input type="checkbox" id="bitExp_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
+    html += '<label for="bitExp_' + idx + '">' + label + '</label>';
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+  document.getElementById('bitacoraExportOverlay').classList.add('show');
+};
+
+window.cerrarModalExportarBitacoras = function() {
+  document.getElementById('bitacoraExportOverlay').classList.remove('show');
+};
+
+window.seleccionarTodasBitacoras = function() {
+  const checkboxes = document.querySelectorAll('#bitacoraExportGrid input[type="checkbox"]');
+  const allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+  checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
+};
+
+window.confirmarExportarBitacoras = function() {
+  const checkboxes = document.querySelectorAll('#bitacoraExportGrid input[type="checkbox"]:checked');
+  if (checkboxes.length === 0) {
+    toast('Selecciona al menos una bitácora', 'err');
+    return;
+  }
+  
+  const wb = XLSX.utils.book_new();
+  let exportadas = 0;
+  
+  checkboxes.forEach(function(cb) {
+    const idx = parseInt(cb.id.replace('bitExp_', ''));
+    const item = BITACORAS_DISPONIBLES[idx];
+    const key = item.tipo + '_movil' + item.movil;
+    const data = bitacorasData[key];
+    if (!data || !data.filas || data.filas.length === 0) return;
+    
+    const filasConDatos = data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); });
+    if (filasConDatos.length === 0) return;
+    
+    const wsData = [];
+    wsData.push(['Bitácora ' + item.label, '', '', '', '', '', '']);
+    wsData.push(['', '', '', '', '', '', '']);
+    wsData.push(['N°', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
+    filasConDatos.forEach(function(fila, i) {
+      wsData.push([i+1, fila.requirente||'', fila.documentos||'', fila.cliente||'', fila.direccion||'', fila.comuna||'', fila.obs||'']);
+    });
+    wsData.push(['', '', '', '', '', '', '']);
+    wsData.push(['Transporte', 'Fecha', 'Ruta', 'Responsable', 'Firma', '', '']);
+    wsData.push([data.footer.transporte||'', data.footer.fecha||'', data.footer.ruta||'', data.footer.responsable||'', data.footer.firma||'', '', '']);
+    
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+    ws['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 18 }, { wch: 20 }];
+    const sheetName = item.label.substring(0, 31);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    exportadas++;
+  });
+  
+  if (exportadas === 0) {
+    toast('No hay bitácoras con datos para exportar', 'err');
+    return;
+  }
+  
+  const fecha = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, 'Bitacoras_Completas_' + fecha + '.xlsx');
+  toast(exportadas + ' bitácoras exportadas', 'ok');
+  cerrarModalExportarBitacoras();
+};
+
+function procesarArchivoB2C(file, lista) {
+  const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
+  toast('Leyendo ' + file.name + '...', 'info');
+  leerFilas(file, function(filas) { 
+    try {
+      if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
+      const enc = filas[0].map(normEnc);
+      const col = { 
+        TRACKING: enc.findIndex(function(h) { return h.includes('TRACKING'); }), 
+        EMPRESA: enc.findIndex(function(h) { return h.includes('EMPRESA'); }), 
+        NOMBRE: enc.findIndex(function(h) { return h.includes('NOMBRE'); }), 
+        CELULAR: enc.findIndex(function(h) { return h.includes('CELULAR'); }), 
+        EMAIL: enc.findIndex(function(h) { return h.includes('EMAIL') || h.includes('MAIL'); }), 
+        DIRECCION: enc.findIndex(function(h) { return h.includes('DIRECCION'); }), 
+        COMUNA: enc.findIndex(function(h) { return h.includes('COMUNA'); }), 
+        VALOR: enc.findIndex(function(h) { return h.includes('VALOR'); }) 
+      };
+      const parts = ft.split('-');
+      const aT = parts[0];
+      const mT = parts[1];
+      const regs = [];
+      for (let i = 1; i < filas.length; i++) {
+        const row = filas[i]; 
+        if (!row || !row.length) continue;
+        const gv = function(idx) { return (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]); };
+        const tr = String(gv(col.TRACKING)).trim(); 
+        if (!tr) continue;
+        const comuna = canonComuna(gv(col.COMUNA));
+        regs.push({ 
+          anio:aT, 
+          mes:mT, 
+          reg: { 
+            fecha: ft, 
+            unidad: String(gv(col.EMPRESA)).trim(), 
+            idPedido: tr, 
+            nombre: String(gv(col.NOMBRE)).trim(), 
+            celular: String(gv(col.CELULAR)).trim(), 
+            email: String(gv(col.EMAIL)).trim(), 
+            direccion: limpiarDireccion(gv(col.DIRECCION), comuna), 
+            comuna: comuna, 
+            valor: parsearValor(gv(col.VALOR)), 
+            observacion: '', 
+            transporte: 'SERVICIO B2C', 
+            rango: 'B2C', 
+            otroPalet: false, 
+            tipo: 'B2C', 
+            creado: new Date().toISOString(), 
+            importado: true 
+          } 
+        });
+      }
+      if (!regs.length) { toast('Sin filas con N° de tracking','err'); return; }
+      if (lista) { 
+        lista.push.apply(lista, regs); 
+        paginaDesc = 1; 
+        toast(formatoEntero(regs.length) + ' filas B2C cargadas. Presiona GUARDAR.','info'); 
+        render(); 
+      }
+      else cargarPendientes(regs, 'B2C (' + file.name + ')');
+    } catch(e){ 
+      toast(''+e.message,'err'); 
     } 
   });
-  const res = await Promise.all(tareas); 
-  let total = 0;
-  res.forEach(function(item) {
-    const anio = item.anio;
-    const ms = item.ms;
-    const datos = item.datos;
-    if (datos) { 
-      if (!cache[anio]) cache[anio] = {}; 
-      cache[anio][ms] = datos; 
-      total += Object.keys(datos).length; 
-    }
+}
+
+window.importarExcelSegunSeccion = function() { 
+  modoImportActual = (seccionActiva === 'ampm') ? 'AMPM_DESC' : (seccionActiva === 'adm') ? 'ADM_DESC' : (seccionActiva === 'qdm') ? 'QDM_DESC' : 'B2C_DESC'; 
+  document.getElementById('importFile').click(); 
+};
+
+window.importarDesdeBD = function(tipo) { 
+  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
+  tipoImportacionActual = tipo; 
+  modoImportActual = tipo + '_BD'; 
+  document.getElementById('importFile').click(); 
+};
+
+document.getElementById('importFile').addEventListener('change', function(ev) {
+  const file = ev.target.files[0]; 
+  if (!file) return; 
+  const n = file.name.toLowerCase();
+  if (esJSON(n)) { 
+    if (modoImportActual==='AMPM_DESC') procesarJSONAMPM(file); 
+    else if (modoImportActual==='ADM_DESC') procesarJSONAdm(file);
+    else if (modoImportActual==='QDM_DESC') procesarJSONQdm(file);
+    else procesarJSON(file); 
+  }
+  else if (esExcel(n) || esCSV(n)) {
+    if (modoImportActual==='AMPM_DESC') procesarArchivoAMPM(file);
+    else if (modoImportActual==='ADM_DESC') procesarArchivoAdm(file);
+    else if (modoImportActual==='QDM_DESC') procesarArchivoQdm(file);
+    else if (modoImportActual==='B2C_DESC') procesarArchivoB2C(file, pendientesB2C);
+    else procesarArchivoGenerico(file, modoImportActual.replace('_BD',''));
+  }
+  else toast('Formato no soportado','err');
+  ev.target.value = '';
+});
+
+function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pendientesAMPM); }
+function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'ADM', pendientesADM); }
+function procesarArchivoQdm(file) { procesarArchivoTipoSeccion(file, 'QDM', pendientesQDM); }
+
+function procesarArchivoTipoSeccion(file, tipo, lista) {
+  const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
+  toast('Leyendo ' + file.name + '...','info');
+  leerFilas(file, function(filas) { 
+    try {
+      if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
+      const enc = filas[0].map(normEnc);
+      const col = { 
+        EMPRESA: enc.findIndex(function(h){return h.includes('EMPRESA');}), 
+        TRACKING: enc.findIndex(function(h){return h.includes('TRACKING');}), 
+        NOMBRE: enc.findIndex(function(h){return h.includes('NOMBRE');}), 
+        DIRECCION: enc.findIndex(function(h){return h.includes('DIRECCION');}), 
+        COMUNA: enc.findIndex(function(h){return h.includes('COMUNA');}), 
+        VALOR: enc.findIndex(function(h){return h.includes('VALOR');}), 
+        OBS: enc.findIndex(function(h){return h.includes('OBSERVACION');}) 
+      };
+      const parts = ft.split('-');
+      const aT = parts[0];
+      const mT = parts[1];
+      const nuevos = [];
+      for (let i=1;i<filas.length;i++){ 
+        const row = filas[i]; 
+        if (!row || !row.length) continue;
+        const gv = function(idx) { return (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]); };
+        const tr = String(gv(col.TRACKING)).trim(); 
+        if (!tr) continue; 
+        const comuna = canonComuna(gv(col.COMUNA));
+        let reg = { 
+          fecha: ft, 
+          unidad: String(gv(col.EMPRESA)).trim(), 
+          idPedido: tr, 
+          nombre: String(gv(col.NOMBRE)).trim(), 
+          direccion: limpiarDireccion(gv(col.DIRECCION), comuna), 
+          comuna: comuna, 
+          valor: parsearValor(gv(col.VALOR)), 
+          observacion: String(gv(col.OBS)).trim().toUpperCase(), 
+          transporte:'', 
+          rango:'', 
+          otroPalet:false, 
+          tipo: tipo 
+        };
+        if (tipo === 'ADM' || tipo === 'AMPMADM') { reg = autocompletarTransporteNuevoAdm(reg); } 
+        else { reg = autocompletarTransporteNuevo(reg); }
+        nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
+      }
+      if (!nuevos.length) { toast('Sin filas con tracking','err'); return; }
+      lista.push.apply(lista, nuevos); 
+      paginaDesc = 1; 
+      toast(formatoEntero(nuevos.length) + ' filas. Revisa TRANSPORTE/RANGO y presiona GUARDAR.','info'); 
+      render();
+    } catch(e){ 
+      toast(''+e.message,'err'); 
+    } 
   });
-  document.getElementById('loading').style.display = 'none';
-  toast('Carga completa: ' + total + ' registros (' + ((performance.now()-inicio)/1000).toFixed(1) + 's)', 'ok');
+}
+
+function procesarJSONAMPM(file) { procesarJSONTipoSeccion(file, 'AMPM', pendientesAMPM); }
+function procesarJSONAdm(file) { procesarJSONTipoSeccion(file, 'ADM', pendientesADM); }
+function procesarJSONQdm(file) { procesarJSONTipoSeccion(file, 'QDM', pendientesQDM); }
+
+function procesarJSONTipoSeccion(file, tipo, lista) {
+  const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
+  const reader = new FileReader();
+  reader.onload = function(e) { 
+    try {
+      const obj = JSON.parse(e.target.result);
+      let arr = Array.isArray(obj) ? obj : (Array.isArray(obj.registros) ? obj.registros : (Array.isArray(obj.datos) ? obj.datos : null));
+      if (!arr) { toast('JSON debe ser lista','err'); return; }
+      const parts = ft.split('-');
+      const aT = parts[0];
+      const mT = parts[1];
+      const nuevos = [];
+      arr.forEach(function(o,i) { 
+        const m = {}; 
+        Object.keys(o).forEach(function(k) { m[normEnc(k)] = o[k]; });
+        const gi = function() {
+          const subs = Array.from(arguments);
+          for (const k of Object.keys(m)) {
+            for (const s of subs) {
+              if (k.includes(s)) { 
+                const v = m[k]; 
+                if (v!=null && String(v).trim()!=='') return String(v); 
+              }
+            }
+          }
+          return ''; 
+        };
+        const tr = gi('TRACKING','ID PEDIDO','IDPEDIDO'); 
+        if (!tr) return; 
+        const comuna = canonComuna(gi('COMUNA'));
+        let reg = { 
+          fecha: ft, 
+          unidad: gi('EMPRESA','UNIDAD'), 
+          idPedido: tr, 
+          nombre: gi('NOMBRE'), 
+          direccion: limpiarDireccion(gi('DIRECCION'), comuna), 
+          comuna: comuna, 
+          valor: parsearValor(gi('VALOR')), 
+          observacion: gi('OBSERVACION').toUpperCase(), 
+          transporte: gi('TRANSPORTE'), 
+          rango: (gi('RANGO')||'').toUpperCase(), 
+          otroPalet:false, 
+          tipo: tipo 
+        };
+        if (tipo === 'ADM' || tipo === 'AMPMADM') { reg = autocompletarTransporteNuevoAdm(reg); } 
+        else { reg = autocompletarTransporteNuevo(reg); }
+        nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
+      });
+      if (!nuevos.length) { toast('JSON sin registros válidos','err'); return; }
+      lista.push.apply(lista, nuevos); 
+      paginaDesc = 1; 
+      toast(formatoEntero(nuevos.length) + ' registros JSON. Presiona GUARDAR.','info'); 
+      render();
+    } catch(e){ 
+      toast('JSON inválido','err'); 
+    } 
+  };
+  reader.readAsText(file);
+}
+
+function procesarArchivoGenerico(file, tipo) {
+  tipoImportacionActual = tipo; 
+  const mesAnio = detectarMesAnioDesdeNombre(file.name);
+  const mA = mesAnio.mes;
+  const aA = mesAnio.anio;
+  toast('Leyendo ' + file.name + '...','info');
+  leerFilas(file, function(filas) { 
+    try {
+      if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
+      const enc = filas[0].map(normEnc);
+      let idxID = enc.findIndex(function(h) { return h.includes('PEDIDO') && h.includes('ID') && !h.includes('N°') && !h.includes('NRO') && !h.includes('NUM') && !h.includes('NUMBER'); });
+      if (idxID < 0) idxID = enc.findIndex(function(h) { return h.includes('PEDIDO'); });
+      const col = { 
+        FECHA: enc.findIndex(function(h){return h.includes('FECHA');}), 
+        UNIDAD: enc.findIndex(function(h){return h.includes('UNIDAD')||h.includes('NEGOCIO');}), 
+        ID: idxID, 
+        NOMBRE: enc.findIndex(function(h){return h.includes('NOMBRE');}), 
+        DIRECCION: enc.findIndex(function(h){return h.includes('DIRECCION');}), 
+        COMUNA: enc.findIndex(function(h){return h.includes('COMUNA');}), 
+        VALOR: enc.findIndex(function(h){return h.includes('VALOR');}), 
+        OBS: enc.findIndex(function(h){return h.includes('OBSERVACION');}), 
+        TRANSPORTE: enc.findIndex(function(h){return h.includes('TRANSPORTE')||h.includes('MOVIL');}), 
+        RANGO: enc.findIndex(function(h){return h.includes('RANGO')||h.includes('TURNO');}) 
+      };
+      const regs = []; 
+      let sinF = 0;
+      for (let i=1;i<filas.length;i++){ 
+        const row = filas[i]; 
+        if (!row || !row.length) continue;
+        const gv = function(idx) { return (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]); };
+        const fr = col.FECHA>=0 ? gv(col.FECHA) : gv(0); 
+        if (fr === '') continue;
+        let fecha = null;
+        if (typeof fr === 'number' && Number.isInteger(fr) && fr>=1 && fr<=31) { 
+          if (mA&&aA) fecha = aA + '-' + mA + '-' + String(fr).padStart(2,'0'); 
+        }
+        else { 
+          fecha = parsearFecha(fr); 
+          if (!fecha && mA&&aA){ 
+            const d = parseInt(String(fr).trim()); 
+            if (!isNaN(d)&&d>=1&&d<=31) fecha = aA + '-' + mA + '-' + String(d).padStart(2,'0'); 
+          } 
+        }
+        if (!fecha) { sinF++; continue; }
+        const parts = fecha.split('-');
+        const anio = parts[0];
+        const mes = parts[1];
+        const rango = String(gv(col.RANGO)).trim().toUpperCase(); 
+        const comuna = canonComuna(gv(col.COMUNA));
+        regs.push({ 
+          anio: anio, 
+          mes: mes, 
+          reg: { 
+            fecha: fecha, 
+            unidad: String(gv(col.UNIDAD)).trim(), 
+            idPedido: String(gv(col.ID)).trim(), 
+            nombre: String(gv(col.NOMBRE)).trim(), 
+            direccion: limpiarDireccion(gv(col.DIRECCION), comuna), 
+            comuna: comuna, 
+            valor: parsearValor(gv(col.VALOR)), 
+            observacion: String(gv(col.OBS)).trim(), 
+            transporte: String(gv(col.TRANSPORTE)).trim(), 
+            rango: rango || (tipo==='B2C'?'B2C':'AM'), 
+            otroPalet:false, 
+            tipo: tipo, 
+            creado: new Date().toISOString(), 
+            importado:true 
+          } 
+        }); 
+      }
+      if (sinF) toast(formatoEntero(sinF) + ' filas sin fecha válida','err');
+      cargarPendientes(regs, (tipo==='B2C'?'B2C':'AM/PM') + ' (' + file.name + ')');
+    } catch(e){ 
+      toast(''+e.message,'err'); 
+    } 
+  });
+}
+
+function procesarJSON(file) { 
+  toast('Leyendo JSON: ' + file.name + '...','info'); 
+  const r = new FileReader(); 
+  r.onload = function(e) { 
+    try { 
+      const obj = JSON.parse(e.target.result); 
+      cargarPendientes(extraerRegsDesdeJSON(obj), 'JSON'); 
+    } catch(e){ 
+      toast('JSON inválido','err'); 
+    } 
+  }; 
+  r.readAsText(file); 
+}
+
+function extraerRegsDesdeJSON(obj) {
+  const out = []; 
+  const esA = function(k) { return /^20\d{2}$/.test(k); }; 
+  const esM = function(k) { return /^(0[1-9]|1[0-2])$/.test(k); };
+  const proc = function(n) { 
+    Object.keys(n).forEach(function(a) { 
+      if (!esA(a)) return; 
+      const ms = n[a]; 
+      if (typeof ms !== 'object') return; 
+      Object.keys(ms).forEach(function(m) { 
+        if (!esM(m)) return; 
+        const rs = ms[m]; 
+        if (typeof rs !== 'object') return; 
+        Object.keys(rs).forEach(function(k) { 
+          const r = rs[k]; 
+          if (r && r.fecha) out.push({ anio:a, mes:m, reg:Object.assign({}, r) }); 
+        }); 
+      }); 
+    }); 
+  };
+  if (Array.isArray(obj)) { 
+    obj.forEach(function(r) { 
+      if (r && r.fecha) { 
+        const parts = String(r.fecha).split('-'); 
+        out.push({ anio:parts[0], mes:parts[1], reg:Object.assign({}, r) }); 
+      } 
+    }); 
+    return out; 
+  }
+  if (Object.keys(obj).some(esA)) { proc(obj); return out; }
+  Object.keys(obj).forEach(function(k) { 
+    const v = obj[k]; 
+    if (v && typeof v==='object' && !Array.isArray(v) && Object.keys(v).some(esA)) proc(v); 
+  });
+  return out;
+}
+
+function cargarPendientes(regs, origen) {
+  if (!regs.length) { toast('Sin registros válidos','err'); return; }
+  regs.forEach(function(item) {
+    const anio = item.anio;
+    const mes = item.mes;
+    const reg = item.reg;
+    if (!reg.tipo) reg.tipo = tipoImportacionActual; 
+    if (!reg.rango) reg.rango = tipoImportacionActual==='B2C'?'B2C':(tipoImportacionActual==='ADM'?'ADM':(tipoImportacionActual==='QDM'?'QDM':'AM')); 
+    if (reg.comuna) reg.comuna = canonComuna(reg.comuna);
+    if (!cache[anio]) cache[anio] = {}; 
+    if (!cache[anio][mes]) cache[anio][mes] = {}; 
+    const tk = 'pend_'+Date.now()+'_'+Math.random().toString(36).substr(2,9); 
+    cache[anio][mes][tk] = reg; 
+    pendientes.push({ anio: anio, mes: mes, reg: reg });
+  });
+  actualizarPendientesInfo(); 
   render(); 
   renderizarBaseDatos(); 
-  actualizarBotonGuardar();
-  if (seccionActiva === 'informes') renderInformes();
-  await cargarBitacoras();
+  toast(formatoEntero(regs.length) + ' registros (' + origen + '). Guardando...','info'); 
+  guardarPendientesEnFirebase();
 }
 
-async function cargarBitacoras() {
-  try {
-    const snap = await get(ref(db, RUTA_BITACORAS));
-    bitacorasData = snap.val() || {};
-    renderizarTodasBitacoras();
-  } catch(e) { console.error('Error cargando bitácoras:', e); }
+function actualizarPendientesInfo() {
+  const nA = pendientes.filter(function(p){return p.reg.tipo==='AMPM';}).length;
+  const nB = pendientes.filter(function(p){return p.reg.tipo==='B2C';}).length;
+  const nAdm = pendientes.filter(function(p){return p.reg.tipo==='ADM';}).length;
+  const nQdm = pendientes.filter(function(p){return p.reg.tipo==='QDM';}).length;
+  const a = document.getElementById('pendientesAmpm');
+  const b = document.getElementById('pendientesB2c');
+  const ad = document.getElementById('pendientesAdm');
+  const qd = document.getElementById('pendientesQdm');
+  if (a) a.textContent = nA>0 ? 'Guardando: ' + formatoEntero(nA) : '';
+  if (b) b.textContent = nB>0 ? 'Guardando: ' + formatoEntero(nB) : '';
+  if (ad) ad.textContent = nAdm>0 ? 'Guardando: ' + formatoEntero(nAdm) : '';
+  if (qd) qd.textContent = nQdm>0 ? 'Guardando: ' + formatoEntero(nQdm) : '';
 }
 
-function renderizarTodasBitacoras() {
-  ['ampm','b2c','ampmadmqdm'].forEach(function(tipo) {
-    for (let i = 1; i <= 6; i++) renderizarBitacora(tipo, i);
-  });
-}
-
-function generarHTMLBitacora(tipo, movil) {
-  const key = tipo + '_movil' + movil;
-  const data = bitacorasData[key] || { filas: [], footer: { transporte: '3PL', fecha: '', ruta: 'AM', responsable: '', firma: '' } };
-  let html = '<div class="bitacora-print-container" style="background:#fff;padding:0;font-family:Arial,sans-serif;">';
-  html += '<table style="width:100%;border-collapse:collapse;border:2px solid #1a5490;">';
-  html += '<thead>';
-  html += '<tr><th colspan="4" style="background:#1a5490;color:#fff;padding:14px;text-align:center;font-size:18px;font-weight:bold;border:2px solid #1a5490;">Bitácora Movil ' + movil + '</th>';
-  html += '<th colspan="3" style="background:#1a5490;border:2px solid #1a5490;"></th></tr>';
-  html += '<tr style="background:#1a5490;color:#fff;">';
-  html += '<th style="border:1px solid #1a5490;padding:8px;width:45px;font-size:12px;">N°</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Requirente</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Documentos</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Cliente</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Direccion</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Comuna</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;width:110px;font-size:12px;">OBS</th>';
-  html += '</tr></thead><tbody>';
-  for (let i = 0; i < 10; i++) {
-    const fila = data.filas[i] || { requirente: '', documentos: '', cliente: '', direccion: '', comuna: '', obs: '' };
-    html += '<tr>';
-    html += '<td style="border:1px solid #999;padding:5px;text-align:center;font-weight:600;background:#f5f5f5;font-size:11px;">' + (i+1) + '</td>';
-    html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_requirente" value="' + (fila.requirente||'').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-    html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_documentos" value="' + (fila.documentos||'').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-    html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_cliente" value="' + (fila.cliente||'').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-    html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_direccion" value="' + (fila.direccion||'').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-    html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_comuna" value="' + (fila.comuna||'').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-    html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_obs" value="' + (fila.obs||'').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-    html += '</tr>';
-  }
-  html += '</tbody></table>';
-  html += '<table style="width:100%;border-collapse:collapse;border:2px solid #1a5490;border-top:none;">';
-  html += '<tr style="background:#1a5490;color:#fff;">';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Transporte</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Fecha</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Ruta</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Responsable</th>';
-  html += '<th style="border:1px solid #1a5490;padding:8px;font-size:12px;">Firma</th>';
-  html += '</tr><tr>';
-  html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_transporte" value="' + (data.footer.transporte||'3PL').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;text-align:center;font-weight:600;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-  html += '<td style="border:1px solid #999;padding:0;"><input type="date" id="bit_' + tipo + '_' + movil + '_footer_fecha" value="' + (data.footer.fecha||'') + '" style="border:none;width:100%;padding:4px;text-align:center;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-  html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_ruta" value="' + (data.footer.ruta||'AM').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;text-align:center;font-weight:600;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-  html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_responsable" value="' + (data.footer.responsable||'').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;text-align:center;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-  html += '<td style="border:1px solid #999;padding:0;"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_firma" value="' + (data.footer.firma||'').replace(/"/g,'&quot;') + '" style="border:none;width:100%;padding:4px;text-align:center;background:transparent;outline:none;font-family:Arial,sans-serif;font-size:11px;"></td>';
-  html += '</tr></table></div>';
-  return html;
-}
-
-function renderizarBitacora(tipo, movil) {
-  const cont = document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movil);
-  if (!cont) return;
-  let html = '<div class="bitacora-actions"> <button class="btn-bitacora btn-bitacora-guardar" onclick="guardarBitacora(\'' + tipo + '\',' + movil + ')">💾 GUARDAR</button> <button class="btn-bitacora btn-bitacora-excel" onclick="exportarBitacoraExcel(\'' + tipo + '\',' + movil + ')">📤 EXPORTAR EXCEL</button> <button class="btn-bitacora btn-bitacora-jpeg" onclick="exportarBitacoraJPEG(\'' + tipo + '\',' + movil + ')">🖼️ EXPORTAR JPEG</button> <button class="btn-bitacora" style="background:var(--accent-orange);color:#fff" onclick="imprimirBitacora(\'' + tipo + '\',' + movil + ')">🖨️ IMPRIMIR</button> </div> <div id="bitacoraTable_' + tipo + '_' + movil + '" style="background:#fff;padding:0;border-radius:4px;overflow:visible;">';
-  html += generarHTMLBitacora(tipo, movil);
-  html += '</div>';
-  cont.innerHTML = html;
-}
-
-window.imprimirBitacora = function(tipo, movil) {
-  const element = document.getElementById('bitacoraTable_' + tipo + '_' + movil);
-  if (!element) { toast('Elemento no encontrado', 'err'); return; }
-  const printWindow = window.open('', '_blank', 'width=900,height=700');
-  if (!printWindow) { toast('Bloqueador de popups activo', 'err'); return; }
-  const clone = element.cloneNode(true);
-  const inputs = clone.querySelectorAll('input');
-  inputs.forEach(function(inp) {
-    const span = document.createElement('span');
-    span.textContent = inp.value || '';
-    span.style.cssText = 'display:block;width:100%;padding:4px;font-family:Arial,sans-serif;font-size:11px;';
-    inp.parentNode.replaceChild(span, inp);
-  });
-  const html = '<!DOCTYPE html><html><head><title>Bitácora Movil ' + movil + '</title><style>@page { size: letter portrait; margin: 10mm; }* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: Arial, sans-serif; padding: 5mm; background: #fff; }h2 { text-align: center; color: #1a5490; font-size: 16pt; margin-bottom: 8px; }table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }th, td { border: 1px solid #333; padding: 4px 6px; text-align: left; font-size: 10pt; }th { background: #1a5490; color: white; font-weight: bold; }.num-col { text-align: center; background: #f5f5f5; font-weight: 600; width: 35px; }.no-print { text-align: center; margin-top: 15px; }.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }</style></head><body><h2>Bitácora Movil ' + movil + ' - ' + tipo.toUpperCase() + '</h2>' + clone.innerHTML + '<div class="no-print"><button onclick="window.print()">️ Imprimir</button><button onclick="window.close()">Cerrar</button></div></body></html>';
-  printWindow.document.write(html);
-  printWindow.document.close();
-  toast('Ventana de impresión abierta', 'ok');
-};
-
-window.guardarBitacora = function(tipo, movil) {
-  const key = tipo + '_movil' + movil;
-  const filas = [];
-  for (let i = 0; i < 10; i++) {
-    filas.push({
-      requirente: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_requirente')?.value || '',
-      documentos: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_documentos')?.value || '',
-      cliente: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_cliente')?.value || '',
-      direccion: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_direccion')?.value || '',
-      comuna: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_comuna')?.value || '',
-      obs: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_obs')?.value || ''
-    });
-  }
-  const footer = {
-    transporte: document.getElementById('bit_' + tipo + '_' + movil + '_footer_transporte')?.value || '',
-    fecha: document.getElementById('bit_' + tipo + '_' + movil + '_footer_fecha')?.value || '',
-    ruta: document.getElementById('bit_' + tipo + '_' + movil + '_footer_ruta')?.value || '',
-    responsable: document.getElementById('bit_' + tipo + '_' + movil + '_footer_responsable')?.value || '',
-    firma: document.getElementById('bit_' + tipo + '_' + movil + '_footer_firma')?.value || ''
+function guardarPendientesEnFirebase() {
+  if (!pendientes.length) return; 
+  const total = pendientes.length; 
+  const por = pendientes.slice(); 
+  let g = 0;
+  let f = 0; 
+  let li = 0; 
+  const lotes = []; 
+  for (let i=0;i<por.length;i+=50) lotes.push(por.slice(i,i+50));
+  const proc = function() { 
+    if (li >= lotes.length) { 
+      if (f) { toast('Guardados ' + g + ', FALLIDOS ' + f,'err'); return; } 
+      pendientes = []; 
+      actualizarPendientesInfo(); 
+      verificarGuardado(); 
+      return; 
+    }
+    Promise.all(lotes[li].map(function(p) { 
+      return push(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes), p.reg).then(function(){g++;}).catch(function(e){f++;}); 
+    })).then(function(){ li++; setTimeout(proc,100); }); 
   };
-  bitacorasData[key] = { filas: filas, footer: footer };
-  update(ref(db, RUTA_BITACORAS + '/' + key), { filas: filas, footer: footer })
-    .then(function() { toast('Bitácora guardada', 'ok'); })
-    .catch(function(e) { toast('Error al guardar: ' + e.message, 'err'); });
-};
-
-window.exportarBitacoraExcel = function(tipo, movil) {
-  const key = tipo + '_movil' + movil;
-  const data = bitacorasData[key] || { filas: [], footer: {} };
-  const wb = XLSX.utils.book_new();
-  const wsData = [];
-  wsData.push(['Bitácora Movil ' + movil, '', '', '', '', '', '']);
-  wsData.push(['', '', '', '', '', '', '']);
-  wsData.push(['N°', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
-  for (let i = 0; i < 10; i++) {
-    const fila = data.filas[i] || { requirente: '', documentos: '', cliente: '', direccion: '', comuna: '', obs: '' };
-    wsData.push([i+1, fila.requirente||'', fila.documentos||'', fila.cliente||'', fila.direccion||'', fila.comuna||'', fila.obs||'']);
-  }
-  wsData.push(['', '', '', '', '', '', '']);
-  wsData.push(['Transporte', 'Fecha', 'Ruta', 'Responsable', 'Firma', '', '']);
-  wsData.push([data.footer.transporte||'', data.footer.fecha||'', data.footer.ruta||'', data.footer.responsable||'', data.footer.firma||'', '', '']);
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, { s: { r: 14, c: 5 }, e: { r: 14, c: 6 } }, { s: { r: 15, c: 5 }, e: { r: 15, c: 6 } }];
-  ws['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 18 }, { wch: 20 }];
-  XLSX.utils.book_append_sheet(wb, ws, 'Movil ' + movil);
-  const fecha = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, 'Bitacora_' + tipo + '_Movil' + movil + '_' + fecha + '.xlsx');
-  toast('Excel exportado con diseño', 'ok');
-};
-
-window.exportarBitacoraJPEG = function(tipo, movil) {
-  const element = document.getElementById('bitacoraTable_' + tipo + '_' + movil);
-  if (!element) { toast('Elemento no encontrado', 'err'); return; }
-  const clone = element.cloneNode(true);
-  const actionsDiv = clone.querySelector('.bitacora-actions');
-  if (actionsDiv) actionsDiv.remove();
-  const inputs = clone.querySelectorAll('input');
-  inputs.forEach(function(inp) {
-    const span = document.createElement('span');
-    span.textContent = inp.value || '';
-    span.style.cssText = 'display:block;width:100%;padding:4px 6px;font-family:Arial,sans-serif;font-size:11px;color:#000;';
-    inp.parentNode.replaceChild(span, inp);
-  });
-  clone.style.position = 'absolute';
-  clone.style.left = '-9999px';
-  clone.style.top = '0';
-  clone.style.width = '900px';
-  clone.style.background = '#fff';
-  clone.style.padding = '20px';
-  clone.style.overflow = 'visible';
-  document.body.appendChild(clone);
-  html2canvas(clone, {
-    backgroundColor: '#ffffff', scale: 3, useCORS: true, allowTaint: true, logging: false,
-    width: 900, windowWidth: 900, windowHeight: clone.scrollHeight
-  }).then(function(canvas) {
-    document.body.removeChild(clone);
-    const link = document.createElement('a');
-    const fecha = new Date().toISOString().split('T')[0];
-    link.download = 'Bitacora_' + tipo + '_Movil' + movil + '_' + fecha + '.jpeg';
-    link.href = canvas.toDataURL('image/jpeg', 0.95);
-    link.click();
-    toast('JPEG exportado en alta calidad', 'ok');
-  }).catch(function(e) {
-    document.body.removeChild(clone);
-    toast('Error al exportar JPEG: ' + e.message, 'err');
-  });
-};
-
-window.toggleCalendario = function() {
-  const popup = document.getElementById('calendarioPopup');
-  if (!popup) return;
-  calendarioAbierto = !calendarioAbierto;
-  if (calendarioAbierto) { renderizarCalendario(); popup.classList.add('show'); }
-  else { popup.classList.remove('show'); }
-};
-
-function renderizarCalendario() {
-  const popup = document.getElementById('calendarioPopup');
-  if (!popup) return;
-  const hoy = new Date();
-  const primerDia = new Date(calendarioAnio, calendarioMes, 1);
-  const ultimoDia = new Date(calendarioAnio, calendarioMes + 1, 0);
-  const diasEnMes = ultimoDia.getDate();
-  let primerDiaSemana = primerDia.getDay();
-  if (primerDiaSemana === 0) primerDiaSemana = 7;
-  const fechaInput = document.getElementById('fFecha');
-  const fechaSeleccionada = fechaInput ? fechaInput.value : '';
-  let html = '<div class="calendario-header"><button onclick="cambiarMesCalendario(-1)">◀</button><span>' + MESES_NOM[calendarioMes].charAt(0) + MESES_NOM[calendarioMes].slice(1).toLowerCase() + ' ' + calendarioAnio + '</span><button onclick="cambiarMesCalendario(1)">▶</button></div><div class="calendario-grid">';
-  DIAS_SEMANA_CORTO.forEach(function(d) { html += '<div class="dia-semana">' + d + '</div>'; });
-  for (let i = 1; i < primerDiaSemana; i++) { html += '<div class="dia vacio"></div>'; }
-  for (let d = 1; d <= diasEnMes; d++) {
-    const fechaStr = calendarioAnio + '-' + String(calendarioMes + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-    const esHoy = (d === hoy.getDate() && calendarioMes === hoy.getMonth() && calendarioAnio === hoy.getFullYear());
-    const esSeleccionado = (fechaStr === fechaSeleccionada);
-    let clases = 'dia';
-    if (esHoy) clases += ' hoy';
-    if (esSeleccionado) clases += ' seleccionado';
-    html += '<div class="' + clases + '" onclick="seleccionarFechaCalendario(\'' + fechaStr + '\')">' + d + '</div>';
-  }
-  html += '</div>';
-  popup.innerHTML = html;
+  proc();
 }
 
-window.cambiarMesCalendario = function(delta) {
-  calendarioMes += delta;
-  if (calendarioMes > 11) { calendarioMes = 0; calendarioAnio++; }
-  if (calendarioMes < 0) { calendarioMes = 11; calendarioAnio--; }
-  renderizarCalendario();
+async function verificarGuardado() { 
+  const anios = [2026,2027,2028,2029,2030]; 
+  const t = []; 
+  anios.forEach(function(a) { 
+    for (let m=1;m<=12;m++){ 
+      const ms = String(m).padStart(2,'0'); 
+      t.push(get(ref(db, RUTA_BASE + '/' + a + '/' + ms)).then(function(s){return s.val();}).catch(function(){return null;})); 
+    } 
+  });
+  const res = await Promise.all(t); 
+  let total = 0; 
+  res.forEach(function(v) { if (v) total += Object.keys(v).length; }); 
+  toast('Verificado: ' + formatoEntero(total) + ' registros en Firebase','ok'); 
+  cargarDatos(); 
+}
+
+window.guardarEnFirebase = function() { 
+  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
+  if (!pendientes.length) { toast('Todo guardado','info'); return; } 
+  toast('Guardando pendientes...','info'); 
+  guardarPendientesEnFirebase(); 
 };
 
-window.seleccionarFechaCalendario = function(fecha) {
-  const input = document.getElementById('fFecha');
-  if (input) input.value = fecha;
-  calendarioAbierto = false;
-  const popup = document.getElementById('calendarioPopup');
-  if (popup) popup.classList.remove('show');
-  paginaDesc = 1;
+function obtenerRegsTipo(tipo) { 
+  const r = []; 
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      Object.keys(cache[a][m]).forEach(function(k) { 
+        const r2 = { key:k, anio:a, mes:m };
+        Object.keys(cache[a][m][k]).forEach(function(key) { r2[key] = cache[a][m][k][key]; });
+        if (getTipoRegistro(r2) === tipo) r.push(r2); 
+      }); 
+    }); 
+  }); 
+  return ordenarPorFechaYId(r); 
+}
+
+function obtenerRegsFiltradosBD(tipo) { 
+  let r = obtenerRegsTipo(tipo); 
+  if (filtroDiaBD[tipo].d) r = r.filter(function(x) { return (x.fecha||'').split('-')[2] === filtroDiaBD[tipo].d; }); 
+  if (filtroMesBD[tipo].m) r = r.filter(function(x) { return x.mes === filtroMesBD[tipo].m; }); 
+  if (filtroAnioBD[tipo].a) r = r.filter(function(x) { return x.anio === filtroAnioBD[tipo].a; }); 
+  return r; 
+}
+
+window.abrirModalVerFecha = function(tipo) { 
+  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
+  tipoVerFechaActual = tipo; 
+  document.getElementById('vfTipo').value = tipo; 
+  document.getElementById('vfDia').value = filtroDiaBD[tipo].d; 
+  document.getElementById('vfMes').value = filtroMesBD[tipo].m; 
+  document.getElementById('vfAnio').value = filtroAnioBD[tipo].a; 
+  document.getElementById('verFechaOverlay').classList.add('show'); 
+};
+
+window.cerrarModalVerFecha = function() { document.getElementById('verFechaOverlay').classList.remove('show'); };
+
+window.confirmarVerFecha = function() {
+  const t = tipoVerFechaActual;
+  const d = document.getElementById('vfDia').value;
+  const m = document.getElementById('vfMes').value;
+  const a = document.getElementById('vfAnio').value;
+  if (d && !m) { toast('Si eliges Día, también Mes','err'); return; }
+  filtroDiaBD[t] = {d:d, m:m, a:a};
+  const pagMap = { AMPM: 'paginaBDAmpm', B2C: 'paginaBDB2c', ADM: 'paginaBDAdm', QDM: 'paginaBDQdm' };
+  if (pagMap[t]) window[pagMap[t]] = 1;
+  const fd = document.getElementById('fFecha');
+  if (m && a) fd.value = a + '-' + m + '-' + (d || '01');
+  cerrarModalVerFecha(); 
+  renderizarBaseDatos(); 
   render();
+  toast('Mostrando: ' + textoPeriodo(t),'info');
 };
 
-window.toggleCalFila = function(key, event) {
-  if (event) event.stopPropagation();
-  document.querySelectorAll('.cal-popup-fila.show').forEach(function(p) { p.classList.remove('show'); });
-  const popup = document.getElementById('cal_popup_' + key);
-  if (!popup) return;
-  if (calFilaAbierto === key) { popup.classList.remove('show'); calFilaAbierto = null; return; }
-  let fechaActual = obtenerFechaActualRegistro(key);
-  if (fechaActual) {
-    const parts = fechaActual.split('-').map(Number);
-    calFilaMes = parts[1] - 1;
-    calFilaAnio = parts[0];
+function textoPeriodo(t) { 
+  const f = filtroDiaBD[t]; 
+  if (f.d && f.m) return 'Día ' + parseInt(f.d) + ' de ' + MESES_NOM[parseInt(f.m)-1] + (f.a?' '+f.a:''); 
+  if (f.m) return MESES_NOM[parseInt(f.m)-1] + (f.a?' '+f.a:''); 
+  if (f.a) return 'Año ' + f.a; 
+  return 'Todos'; 
+}
+
+function renderizarBaseDatos() { 
+  if (rolActual !== 'admin') return;
+  renderTabBD('AMPM', document.getElementById('filtroIdAmpm').value, paginaBDAmpm);
+  renderTabBD('B2C', document.getElementById('filtroIdB2c').value, paginaBDB2c);
+  renderTabBD('ADM', document.getElementById('filtroIdAdm').value, paginaBDAdm);
+  renderTabBD('QDM', document.getElementById('filtroIdQdm').value, paginaBDQdm);
+}
+
+function claseYIndicadorSimple(r, cf, cg) { 
+  const id = (r.idPedido||'').toString().trim().toUpperCase(); 
+  const k = (r.fecha||'') + '|' + id; 
+  const misma = id && cf[k] > 1; 
+  const otra = !misma && id && cg[id] > 1; 
+  let c = '', i = ''; 
+  if (misma){ c='id-repetido'; i='<span style="color:#fff;background:#e74c3c;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x' + cf[k] + '</span>'; } 
+  else if (otra){ c='id-repetido-otro'; i='<span style="color:#fff;background:#ff8c00;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x' + cg[id] + '</span>'; } 
+  return { clase:c, ind:i }; 
+}
+
+function renderBDThead(tipo) {
+  const suf = sufBD(tipo);
+  const thead = document.getElementById('thead'+suf);
+  if (!thead) return;
+  const bdCombo = function(campo, label) { 
+    return '<th>' + label + '<div class="filtro-combo"><input type="text" class="th-filter" id="fBD' + suf + '_' + campo + '" placeholder="Filtrar…" oninput="filtrarBDCombo(\'' + tipo + '\',\'' + campo + '\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'' + campo + '\')"><button class="combo-arrow" onclick="toggleComboBD(\'' + tipo + '\',\'' + campo + '\')">▼</button><div class="combo-list" id="comboBD_' + suf + '_' + campo + '"></div></div></th>'; 
+  };
+  thead.innerHTML = '<tr><th>Fecha</th>' + bdCombo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Dirección</th>' + bdCombo('comuna','Comuna') + '<th>Valor</th><th>Observación</th>' + bdCombo('transporte','Transporte') + bdCombo('rango','Rango') + '<th>Acciones</th></tr>';
+}
+
+function renderTabBD(tipo, filtroId, pagina) {
+  const suf = sufBD(tipo);
+  if (!theadBDConstruidos[suf]) { renderBDThead(tipo); theadBDConstruidos[suf] = true; }
+  let regs = obtenerRegsFiltradosBD(tipo); 
+  if (filtroId) { 
+    const f = filtroId.toUpperCase().trim(); 
+    regs = regs.filter(function(r) { return (r.idPedido||'').toString().toUpperCase().includes(f); }); 
+  }
+  const fd = filtroDescBD[tipo];
+  if (fd.unidad) regs = regs.filter(function(r) { return normSinTildes(r.unidad||'').includes(fd.unidad); });
+  if (fd.comuna) regs = regs.filter(function(r) { return normSinTildes(canonComuna(r.comuna)||'').includes(fd.comuna); });
+  if (fd.transporte) regs = regs.filter(function(r) { return normSinTildes(r.transporte||'').includes(fd.transporte); });
+  if (fd.rango) regs = regs.filter(function(r) { return normSinTildes(r.rango||'').includes(fd.rango); });
+  const rd = document.getElementById('bdResumen'+suf);
+  if (rd) { 
+    const suma = sumaValores(regs);
+    const n1 = conteoUnPeso(regs);
+    rd.innerHTML = '<span class="res-periodo">Viendo: <strong>' + textoPeriodo(tipo) + '</strong></span><span>Valor total: <strong>' + formatoMoneda(suma) + '</strong>' + (n1?'<small>(sin ' + formatoEntero(n1) + ' de $1)</small>':'') + '</span><span>Pedidos: <strong>' + formatoEntero(regs.length) + '</strong></span><span class="res-am">AM: <strong>' + formatoEntero(regs.filter(function(r){return r.rango==='AM';}).length) + '</strong></span><span class="res-pm">PM: <strong>' + formatoEntero(regs.filter(function(r){return r.rango==='PM';}).length) + '</strong></span>'; 
+  }
+  const tbody = document.getElementById('bdTbody'+suf); 
+  const pagDiv = document.getElementById('bdPaginacion'+suf);
+  if (!regs.length) { 
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted)">No hay registros</td></tr>'; 
+    pagDiv.innerHTML = ''; 
+    return; 
+  }
+  const tp = Math.max(1, Math.ceil(regs.length / REGISTROS_POR_PAGINA_BD)); 
+  if (pagina > tp) pagina = tp; 
+  if (pagina < 1) pagina = 1;
+  const pagMap = { AMPM: 'paginaBDAmpm', B2C: 'paginaBDB2c', ADM: 'paginaBDAdm', QDM: 'paginaBDQdm' };
+  if (pagMap[tipo]) window[pagMap[tipo]] = pagina;
+  const ini = (pagina-1)*REGISTROS_POR_PAGINA_BD; 
+  const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_BD);
+  const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
+  tbody.innerHTML = pag.map(function(r) { 
+    const claseYInd = claseYIndicadorSimple(r, cf, cg); 
+    return '<tr class="' + claseYInd.clase + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')"></button></td></tr>'; 
+  }).join('');
+  if (tp <= 1) { 
+    pagDiv.innerHTML = '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(regs.length) + ' de ' + formatoEntero(regs.length) + '</div>'; 
+    return; 
+  }
+  let h = '<div class="bd-paginacion-info">Página ' + pagina + ' de ' + tp + ' | ' + formatoEntero(ini+1) + '-' + formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_BD, regs.length)) + ' de ' + formatoEntero(regs.length) + '</div>';
+  h += pagina>1 ? '<button class="btn-bd-pag-nav" onclick="irPaginaBD(\'' + tipo + '\',' + (pagina-1) + ')">‹ Anterior</button>' : '<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>';
+  const pI = Math.max(1,pagina-2), pF = Math.min(tp,pagina+2);
+  if (pI>1){ h += '<button class="btn-bd-pag" onclick="irPaginaBD(\'' + tipo + '\',1)">1</button>'; if(pI>2) h += '<span style="color:var(--text-muted)">...</span>'; }
+  for (let i=pI;i<=pF;i++) h += i===pagina ? '<button class="btn-bd-pag activa">' + i + '</button>' : '<button class="btn-bd-pag" onclick="irPaginaBD(\'' + tipo + '\',' + i + ')">' + i + '</button>';
+  if (pF<tp){ if(pF<tp-1) h += '<span style="color:var(--text-muted)">...</span>'; h += '<button class="btn-bd-pag" onclick="irPaginaBD(\'' + tipo + '\',' + tp + ')">' + tp + '</button>'; }
+  h += pagina<tp ? '<button class="btn-bd-pag-nav" onclick="irPaginaBD(\'' + tipo + '\',' + (pagina+1) + ')">Siguiente ›</button>' : '<button class="btn-bd-pag-nav" disabled>Siguiente ›</button>';
+  pagDiv.innerHTML = h;
+}
+
+window.irPaginaBD = function(t,p) { 
+  if (rolActual !== 'admin') return; 
+  const pagMap = { AMPM: 'paginaBDAmpm', B2C: 'paginaBDB2c', ADM: 'paginaBDAdm', QDM: 'paginaBDQdm' };
+  if (pagMap[t]) window[pagMap[t]] = p; 
+  renderizarBaseDatos(); 
+};
+
+window.filtrarBD = function(t) { 
+  if (rolActual !== 'admin') return; 
+  const pagMap = { AMPM: 'paginaBDAmpm', B2C: 'paginaBDB2c', ADM: 'paginaBDAdm', QDM: 'paginaBDQdm' };
+  if (pagMap[t]) window[pagMap[t]] = 1; 
+  renderizarBaseDatos(); 
+};
+
+window.pedirEditarRegistroBD = function(key, anio, mes) {
+  pedirClave(function() { editandoKey = key; render(); renderizarBaseDatos(); });
+};
+
+window.guardarEdicionInline = function(key, anio, mes, esPend) {
+  const gv = function(id) { const el = document.getElementById(id); return el ? el.value : ''; };
+  const nuevo = {
+    fecha: gv('edi_fecha'), 
+    unidad: gv('edi_unidad'), 
+    idPedido: gv('edi_id'), 
+    nombre: gv('edi_nombre'),
+    direccion: gv('edi_direccion'), 
+    comuna: canonComuna(gv('edi_comuna')), 
+    valor: parseFloat(gv('edi_valor'))||0,
+    observacion: gv('edi_obs'), 
+    transporte: gv('edi_transporte'), 
+    rango: gv('edi_rango')
+  };
+  nuevo.tipo = gv('edi_rango') === 'B2C' ? 'B2C' : (gv('edi_rango') === 'ADM' ? 'ADM' : (gv('edi_rango') === 'QDM' ? 'QDM' : 'AMPM'));
+  if (document.getElementById('edi_celular')) nuevo.celular = gv('edi_celular');
+  if (document.getElementById('edi_email')) nuevo.email = gv('edi_email');
+  const parts = (nuevo.fecha||'').split('-');
+  const nA = parts[0];
+  const nM = parts[1];
+  if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
+    cache[anio][mes][key] = Object.assign({}, cache[anio][mes][key], nuevo);
+  }
+  if (nA && nM && (nA!==anio || nM!==mes)) {
+    if (cache[anio] && cache[anio][mes]) delete cache[anio][mes][key];
+    if (!cache[nA]) cache[nA] = {};
+    if (!cache[nA][nM]) cache[nA][nM] = {};
+    cache[nA][nM][key] = Object.assign({}, nuevo);
+    remove(ref(db, RUTA_BASE + '/' + anio + '/' + mes + '/' + key));
+    set(ref(db, RUTA_BASE + '/' + nA + '/' + nM + '/' + key), nuevo);
   } else {
-    calFilaMes = new Date().getMonth();
-    calFilaAnio = new Date().getFullYear();
+    update(ref(db, RUTA_BASE + '/' + anio + '/' + mes + '/' + key), nuevo);
   }
-  calFilaAbierto = key;
-  renderizarCalFila(key, fechaActual);
-  popup.classList.add('show');
+  editandoKey = null;
+  toast('Registro actualizado','ok');
+  render();
+  renderizarBaseDatos();
 };
 
-function obtenerFechaActualRegistro(key) {
-  if (cambiosFechaLocales[key]) {
-    return cambiosFechaLocales[key].nuevaFecha;
-  }
-  let p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesAmpmAdmQdm.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
-  if (p) return p.reg.fecha;
-  for (const a of Object.keys(cache)) {
-    for (const m of Object.keys(cache[a]||{})) {
-      if (cache[a][m] && cache[a][m][key]) {
-        return cache[a][m][key].fecha;
-      }
+window.cancelarEdicionInline = function() { editandoKey = null; render(); renderizarBaseDatos(); };
+
+window.pedirBorrarRegistroBD = function(key, anio, mes) {
+  pedirClave(function() {
+    if (!confirm('El registro se eliminará permanentemente.\n¿Confirmas?')) return;
+    if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
+      delete cache[anio][mes][key];
     }
-  }
-  return null;
+    remove(ref(db, RUTA_BASE + '/' + anio + '/' + mes + '/' + key)).then(function(){
+      toast('Eliminado de plataforma y Firebase','ok');
+      render();
+      renderizarBaseDatos();
+    }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
+  });
+};
+
+window.abrirBorrarMes = function(t) { 
+  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
+  tipoBorrarMes = t; 
+  document.getElementById('bmTipo').value = t; 
+  document.getElementById('bmMes').value = ''; 
+  document.getElementById('bmPassword').value = ''; 
+  document.getElementById('bmInfoRegistros').textContent = 'Selecciona mes y año para ver cantidad'; 
+  document.getElementById('borrarMesOverlay').classList.add('show'); 
+};
+
+window.cerrarBorrarMes = function() { document.getElementById('borrarMesOverlay').classList.remove('show'); };
+
+function actualizarInfoBorrarMes() { 
+  const m = document.getElementById('bmMes').value;
+  const a = document.getElementById('bmAnio').value;
+  const d = document.getElementById('bmInfoRegistros'); 
+  if (!m) { d.textContent = 'Selecciona mes y año para ver cantidad'; return; } 
+  const c = Object.keys((cache[a] && cache[a][m]) ? cache[a][m] : {}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; }).length; 
+  d.textContent = c === 0 ? 'Sin registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a : formatoEntero(c) + ' registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a; 
 }
 
-function renderizarCalFila(key, fechaSeleccionada) {
-  const popup = document.getElementById('cal_popup_' + key);
-  if (!popup) return;
-  const hoy = new Date();
-  const primerDia = new Date(calFilaAnio, calFilaMes, 1);
-  const ultimoDia = new Date(calFilaAnio, calFilaMes + 1, 0);
-  const diasEnMes = ultimoDia.getDate();
-  let primerDiaSemana = primerDia.getDay();
-  if (primerDiaSemana === 0) primerDiaSemana = 7;
-  let html = '<div class="cal-header-fila"><button onclick="cambiarMesCalFila(\'' + key + '\', -1, event)"></button><span>' + MESES_NOM[calFilaMes].charAt(0) + MESES_NOM[calFilaMes].slice(1).toLowerCase() + ' ' + calFilaAnio + '</span><button onclick="cambiarMesCalFila(\'' + key + '\', 1, event)">▶</button></div><div class="cal-grid-fila">';
-  DIAS_SEMANA_CORTO.forEach(function(d) { html += '<div class="dia-semana">' + d + '</div>'; });
-  for (let i = 1; i < primerDiaSemana; i++) { html += '<div class="dia vacio"></div>'; }
-  for (let d = 1; d <= diasEnMes; d++) {
-    const fechaStr = calFilaAnio + '-' + String(calFilaMes + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-    const esHoy = (d === hoy.getDate() && calFilaMes === hoy.getMonth() && calFilaAnio === hoy.getFullYear());
-    const esSeleccionado = (fechaStr === fechaSeleccionada);
-    let clases = 'dia';
-    if (esHoy) clases += ' hoy';
-    if (esSeleccionado) clases += ' seleccionado';
-    html += '<div class="' + clases + '" onclick="seleccionarFechaFila(\'' + key + '\', \'' + fechaStr + '\', event)">' + d + '</div>';
-  }
-  html += '</div>';
-  popup.innerHTML = html;
-}
-
-window.cambiarMesCalFila = function(key, delta, event) {
-  if (event) event.stopPropagation();
-  calFilaMes += delta;
-  if (calFilaMes > 11) { calFilaMes = 0; calFilaAnio++; }
-  if (calFilaMes < 0) { calFilaMes = 11; calFilaAnio--; }
-  const fechaActual = obtenerFechaActualRegistro(key);
-  renderizarCalFila(key, fechaActual);
-};
-
-window.seleccionarFechaFila = function(key, nuevaFecha, event) {
-  if (event) event.stopPropagation();
-  const popup = document.getElementById('cal_popup_' + key);
-  if (popup) popup.classList.remove('show');
-  calFilaAbierto = null;
-  const parts = nuevaFecha.split('-');
-  const nA = parts[0];
-  const nM = parts[1];
-  const fechaAnterior = obtenerFechaActualRegistro(key);
-  if (fechaAnterior === nuevaFecha) {
-    render();
-    return;
-  }
-  let p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesAmpmAdmQdm.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
-  if (p) {
-    cambiosFechaLocales[key] = {
-      esPendiente: true,
-      nuevaFecha: nuevaFecha,
-      nuevaAnio: nA,
-      nuevaMes: nM
-    };
-    toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info');
-    render();
-    return;
-  }
-  for (const a of Object.keys(cache)) {
-    for (const m of Object.keys(cache[a]||{})) {
-      if (cache[a][m] && cache[a][m][key]) {
-        cambiosFechaLocales[key] = {
-          esPendiente: false,
-          anioOriginal: a,
-          mesOriginal: m,
-          nuevaFecha: nuevaFecha,
-          nuevaAnio: nA,
-          nuevaMes: nM
-        };
-        toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info');
-        render();
-        return;
-      }
-    }
-  }
-  toast('Registro no encontrado', 'err');
-};
-
-window.cambiarFechaFila = function(key, nuevaFecha, esPend) {
-  if (!nuevaFecha) return;
-  const parts = nuevaFecha.split('-');
-  const nA = parts[0];
-  const nM = parts[1];
-  const fechaAnterior = obtenerFechaActualRegistro(key);
-  if (fechaAnterior === nuevaFecha) return;
-  let p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesAmpmAdmQdm.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
-  if (p) {
-    cambiosFechaLocales[key] = {
-      esPendiente: true,
-      nuevaFecha: nuevaFecha,
-      nuevaAnio: nA,
-      nuevaMes: nM
-    };
-    toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info');
-    render();
-    return;
-  }
-  for (const a of Object.keys(cache)) {
-    for (const m of Object.keys(cache[a]||{})) {
-      if (cache[a][m] && cache[a][m][key]) {
-        cambiosFechaLocales[key] = {
-          esPendiente: false,
-          anioOriginal: a,
-          mesOriginal: m,
-          nuevaFecha: nuevaFecha,
-          nuevaAnio: nA,
-          nuevaMes: nM
-        };
-        toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info');
-        render();
-        return;
-      }
-    }
-  }
-};
-
-window.setInfTipo = function(t) {
-  infTipo = t;
-  document.querySelectorAll('.basedatos-tab[data-inftipo]').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-inftipo') === t); });
-  const cont = document.getElementById('infResultado');
-  if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">Módulo de informes en desarrollo para ' + t + '</div>';
+window.confirmarBorrarMes = function() {
+  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; }
+  const m = document.getElementById('bmMes').value;
+  const a = document.getElementById('bmAnio').value;
+  const p = document.getElementById('bmPassword').value;
+  if (!m) { toast('Primero elige el mes','err'); return; }
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  const keys = Object.keys((cache[a] && cache[a][m]) ? cache[a][m] : {}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; });
+  if (!keys.length) { toast('No hay registros que borrar','info'); return; }
+  if (!confirm('Se BORRARÁN PERMANENTEMENTE ' + formatoEntero(keys.length) + ' registros ' + tipoBorrarMes + ' de ' + MESES_NOM[parseInt(m)-1] + ' ' + a + '.\nNo se puede deshacer.\n¿Confirmas?')) return;
+  toast('Borrando permanentemente...','info');
+  Promise.all(keys.map(function(k) { return remove(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + k)); }))
+    .then(function(){ 
+      keys.forEach(function(k) { if (cache[a] && cache[a][m]) delete cache[a][m][k]; });
+      toast('Mes borrado permanentemente','ok');
+      cerrarBorrarMes(); 
+      renderizarBaseDatos(); 
+      render(); 
+    })
+    .catch(function(e) { toast(''+e.message,'err'); });
 };
 
 window.buscarFiltrosAMPM = function() { buscarFiltros('AMPM'); };
 window.buscarFiltrosB2C = function() { buscarFiltros('B2C'); };
-window.buscarFiltrosAmpmAdmQdm = function() { buscarFiltros('AMPMADM'); };
+window.buscarFiltrosADM = function() { buscarFiltros('ADM'); };
+window.buscarFiltrosQDM = function() { buscarFiltros('QDM'); };
 
 function idsFecha(tipo) { 
   if (tipo === 'AMPM') return { dia:'filtroDiaAmpm', mes:'filtroMesAmpm', anio:'filtroAnioAmpm' }; 
   if (tipo === 'B2C') return { dia:'filtroDiaB2c', mes:'filtroMesB2c', anio:'filtroAnioB2c' }; 
-  return { dia:'filtroDiaAmpmAdmQdm', mes:'filtroMesAmpmAdmQdm', anio:'filtroAnioAmpmAdmQdm' }; 
+  if (tipo === 'ADM') return { dia:'filtroDiaAdm', mes:'filtroMesAdm', anio:'filtroAnioAdm' };
+  return { dia:'filtroDiaQdm', mes:'filtroMesQdm', anio:'filtroAnioQdm' }; 
 }
 
 function leerFiltrosBusqueda(t) { 
@@ -1824,267 +2436,6 @@ function renderizarModal() {
   document.getElementById('modalPaginacion').innerHTML = h;
 }
 
-function claseYIndicadorSimple(r, cf, cg) { 
-  const id = (r.idPedido||'').toString().trim().toUpperCase(); 
-  const k = (r.fecha||'') + '|' + id; 
-  const misma = id && cf[k] > 1; 
-  const otra = !misma && id && cg[id] > 1; 
-  let c = '', i = ''; 
-  if (misma){ c='id-repetido'; i='<span style="color:#fff;background:#e74c3c;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x' + cf[k] + '</span>'; } 
-  else if (otra){ c='id-repetido-otro'; i='<span style="color:#fff;background:#ff8c00;padding:2px 6px;border-radius:4px;font-size:.7em;font-weight:700">x' + cg[id] + '</span>'; } 
-  return { clase:c, ind:i }; 
-}
-
-function obtenerRegsTipo(tipo) { 
-  const r = []; 
-  Object.keys(cache).forEach(function(a) { 
-    Object.keys(cache[a]||{}).forEach(function(m) { 
-      Object.keys(cache[a][m]).forEach(function(k) { 
-        const r2 = { key:k, anio:a, mes:m };
-        Object.keys(cache[a][m][k]).forEach(function(key) { r2[key] = cache[a][m][k][key]; });
-        if (getTipoRegistro(r2) === tipo) r.push(r2); 
-      }); 
-    }); 
-  }); 
-  return ordenarPorFechaYId(r); 
-}
-
-function obtenerRegsFiltradosBD(tipo) { 
-  let r = obtenerRegsTipo(tipo); 
-  if (filtroDiaBD[tipo].d) r = r.filter(function(x) { return (x.fecha||'').split('-')[2] === filtroDiaBD[tipo].d; }); 
-  if (filtroMesBD[tipo].m) r = r.filter(function(x) { return x.mes === filtroMesBD[tipo].m; }); 
-  if (filtroAnioBD[tipo].a) r = r.filter(function(x) { return x.anio === filtroAnioBD[tipo].a; }); 
-  return r; 
-}
-
-window.abrirModalVerFecha = function(tipo) { 
-  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
-  tipoVerFechaActual = tipo; 
-  document.getElementById('vfTipo').value = tipo; 
-  document.getElementById('vfDia').value = filtroDiaBD[tipo].d; 
-  document.getElementById('vfMes').value = filtroDiaBD[tipo].m; 
-  document.getElementById('vfAnio').value = filtroDiaBD[tipo].a; 
-  document.getElementById('verFechaOverlay').classList.add('show'); 
-};
-
-window.cerrarModalVerFecha = function() { document.getElementById('verFechaOverlay').classList.remove('show'); };
-
-window.confirmarVerFecha = function() {
-  const t = tipoVerFechaActual;
-  const d = document.getElementById('vfDia').value;
-  const m = document.getElementById('vfMes').value;
-  const a = document.getElementById('vfAnio').value;
-  if (d && !m) { toast('Si eliges Día, también Mes','err'); return; }
-  filtroDiaBD[t] = {d:d, m:m, a:a};
-  if (t==='AMPM') paginaBDAmpm = 1; 
-  else if (t==='B2C') paginaBDB2c = 1; 
-  else paginaBDAmpmAdmQdm = 1;
-  const fd = document.getElementById('fFecha');
-  if (m && a) fd.value = a + '-' + m + '-' + (d || '01');
-  cerrarModalVerFecha(); 
-  renderizarBaseDatos(); 
-  render();
-  toast('Mostrando: ' + textoPeriodo(t),'info');
-};
-
-function textoPeriodo(t) { 
-  const f = filtroDiaBD[t]; 
-  if (f.d && f.m) return 'Día ' + parseInt(f.d) + ' de ' + MESES_NOM[parseInt(f.m)-1] + (f.a?' '+f.a:''); 
-  if (f.m) return MESES_NOM[parseInt(f.m)-1] + (f.a?' '+f.a:''); 
-  if (f.a) return 'Año ' + f.a; 
-  return 'Todos'; 
-}
-
-function renderizarBaseDatos() { 
-  if (rolActual !== 'admin') return;
-  renderTabBD('AMPM', document.getElementById('filtroIdAmpm').value, paginaBDAmpm);
-  renderTabBD('B2C', document.getElementById('filtroIdB2c').value, paginaBDB2c);
-  renderTabBD('AMPMADM', document.getElementById('filtroIdAmpmAdmQdm').value, paginaBDAmpmAdmQdm); 
-}
-
-function sufBD(tipo){ return tipo==='AMPM'?'Ampm':(tipo==='B2C'?'B2c':'AmpmAdmQdm'); }
-
-function renderBDThead(tipo) {
-  const suf = sufBD(tipo);
-  const thead = document.getElementById('thead'+suf);
-  if (!thead) return;
-  const bdCombo = function(campo, label) { 
-    return '<th>' + label + '<div class="filtro-combo"><input type="text" class="th-filter" id="fBD' + suf + '_' + campo + '" placeholder="Filtrar…" oninput="filtrarBDCombo(\'' + tipo + '\',\'' + campo + '\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'' + campo + '\')"><button class="combo-arrow" onclick="toggleComboBD(\'' + tipo + '\',\'' + campo + '\')">▼</button><div class="combo-list" id="comboBD_' + suf + '_' + campo + '"></div></div></th>'; 
-  };
-  thead.innerHTML = '<tr><th>Fecha</th>' + bdCombo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Dirección</th>' + bdCombo('comuna','Comuna') + '<th>Valor</th><th>Observación</th>' + bdCombo('transporte','Transporte') + bdCombo('rango','Rango') + '<th>Acciones</th></tr>';
-}
-
-function renderTabBD(tipo, filtroId, pagina) {
-  const suf = sufBD(tipo);
-  if (!theadBDConstruidos[suf]) { renderBDThead(tipo); theadBDConstruidos[suf] = true; }
-  let regs = obtenerRegsFiltradosBD(tipo); 
-  if (filtroId) { 
-    const f = filtroId.toUpperCase().trim(); 
-    regs = regs.filter(function(r) { return (r.idPedido||'').toString().toUpperCase().includes(f); }); 
-  }
-  const fd = filtroDescBD[tipo];
-  if (fd.unidad) regs = regs.filter(function(r) { return normSinTildes(r.unidad||'').includes(fd.unidad); });
-  if (fd.comuna) regs = regs.filter(function(r) { return normSinTildes(canonComuna(r.comuna)||'').includes(fd.comuna); });
-  if (fd.transporte) regs = regs.filter(function(r) { return normSinTildes(r.transporte||'').includes(fd.transporte); });
-  if (fd.rango) regs = regs.filter(function(r) { return normSinTildes(r.rango||'').includes(fd.rango); });
-  const rd = document.getElementById('bdResumen'+suf);
-  if (rd) { 
-    const suma = sumaValores(regs);
-    const n1 = conteoUnPeso(regs);
-    rd.innerHTML = '<span class="res-periodo">Viendo: <strong>' + textoPeriodo(tipo) + '</strong></span><span>Valor total: <strong>' + formatoMoneda(suma) + '</strong>' + (n1?'<small>(sin ' + formatoEntero(n1) + ' de $1)</small>':'') + '</span><span>Pedidos: <strong>' + formatoEntero(regs.length) + '</strong></span><span class="res-am">AM: <strong>' + formatoEntero(regs.filter(function(r){return r.rango==='AM';}).length) + '</strong></span><span class="res-pm">PM: <strong>' + formatoEntero(regs.filter(function(r){return r.rango==='PM';}).length) + '</strong></span>'; 
-  }
-  const tbody = document.getElementById('bdTbody'+suf); 
-  const pagDiv = document.getElementById('bdPaginacion'+suf);
-  if (!regs.length) { 
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-muted)">No hay registros</td></tr>'; 
-    pagDiv.innerHTML = ''; 
-    return; 
-  }
-  const tp = Math.max(1, Math.ceil(regs.length / REGISTROS_POR_PAGINA_BD)); 
-  if (pagina > tp) pagina = tp; 
-  if (pagina < 1) pagina = 1;
-  if (tipo==='AMPM') paginaBDAmpm = pagina; 
-  else if (tipo==='B2C') paginaBDB2c = pagina; 
-  else paginaBDAmpmAdmQdm = pagina;
-  const ini = (pagina-1)*REGISTROS_POR_PAGINA_BD; 
-  const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_BD);
-  const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
-  tbody.innerHTML = pag.map(function(r) { 
-    const claseYInd = claseYIndicadorSimple(r, cf, cg); 
-    return '<tr class="' + claseYInd.clase + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">🗑️</button></td></tr>'; 
-  }).join('');
-  if (tp <= 1) { 
-    pagDiv.innerHTML = '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(regs.length) + ' de ' + formatoEntero(regs.length) + '</div>'; 
-    return; 
-  }
-  let h = '<div class="bd-paginacion-info">Página ' + pagina + ' de ' + tp + ' | ' + formatoEntero(ini+1) + '-' + formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_BD, regs.length)) + ' de ' + formatoEntero(regs.length) + '</div>';
-  h += pagina>1 ? '<button class="btn-bd-pag-nav" onclick="irPaginaBD(\'' + tipo + '\',' + (pagina-1) + ')">‹ Anterior</button>' : '<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>';
-  const pI = Math.max(1,pagina-2), pF = Math.min(tp,pagina+2);
-  if (pI>1){ h += '<button class="btn-bd-pag" onclick="irPaginaBD(\'' + tipo + '\',1)">1</button>'; if(pI>2) h += '<span style="color:var(--text-muted)">...</span>'; }
-  for (let i=pI;i<=pF;i++) h += i===pagina ? '<button class="btn-bd-pag activa">' + i + '</button>' : '<button class="btn-bd-pag" onclick="irPaginaBD(\'' + tipo + '\',' + i + ')">' + i + '</button>';
-  if (pF<tp){ if(pF<tp-1) h += '<span style="color:var(--text-muted)">...</span>'; h += '<button class="btn-bd-pag" onclick="irPaginaBD(\'' + tipo + '\',' + tp + ')">' + tp + '</button>'; }
-  h += pagina<tp ? '<button class="btn-bd-pag-nav" onclick="irPaginaBD(\'' + tipo + '\',' + (pagina+1) + ')">Siguiente ›</button>' : '<button class="btn-bd-pag-nav" disabled>Siguiente ›</button>';
-  pagDiv.innerHTML = h;
-}
-
-window.irPaginaBD = function(t,p) { 
-  if (rolActual !== 'admin') return; 
-  if (t==='AMPM') paginaBDAmpm = p; 
-  else if (t==='B2C') paginaBDB2c = p; 
-  else paginaBDAmpmAdmQdm = p; 
-  renderizarBaseDatos(); 
-};
-
-window.filtrarBD = function(t) { 
-  if (rolActual !== 'admin') return; 
-  if (t==='AMPM') paginaBDAmpm = 1; 
-  else if (t==='B2C') paginaBDB2c = 1; 
-  else paginaBDAmpmAdmQdm = 1; 
-  renderizarBaseDatos(); 
-};
-
-window.pedirEditarRegistroBD = function(key, anio, mes) {
-  pedirClave(function() { editandoKey = key; render(); renderizarBaseDatos(); });
-};
-
-window.guardarEdicionInline = function(key, anio, mes, esPend) {
-  const gv = function(id) { const el = document.getElementById(id); return el ? el.value : ''; };
-  const nuevo = {
-    fecha: gv('edi_fecha'), 
-    unidad: gv('edi_unidad'), 
-    idPedido: gv('edi_id'), 
-    nombre: gv('edi_nombre'),
-    direccion: gv('edi_direccion'), 
-    comuna: canonComuna(gv('edi_comuna')), 
-    valor: parseFloat(gv('edi_valor'))||0,
-    observacion: gv('edi_obs'), 
-    transporte: gv('edi_transporte'), 
-    rango: gv('edi_rango')
-  };
-  nuevo.tipo = gv('edi_rango') === 'B2C' ? 'B2C' : 'AMPM';
-  if (document.getElementById('edi_celular')) nuevo.celular = gv('edi_celular');
-  if (document.getElementById('edi_email')) nuevo.email = gv('edi_email');
-  const parts = (nuevo.fecha||'').split('-');
-  const nA = parts[0];
-  const nM = parts[1];
-  if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
-    cache[anio][mes][key] = { ...cache[anio][mes][key], ...nuevo };
-  }
-  if (nA && nM && (nA!==anio || nM!==mes)) {
-    if (cache[anio] && cache[anio][mes]) delete cache[anio][mes][key];
-    if (!cache[nA]) cache[nA] = {};
-    if (!cache[nA][nM]) cache[nA][nM] = {};
-    cache[nA][nM][key] = { ...nuevo };
-    remove(ref(db, RUTA_BASE + '/' + anio + '/' + mes + '/' + key));
-    set(ref(db, RUTA_BASE + '/' + nA + '/' + nM + '/' + key), nuevo);
-  } else {
-    update(ref(db, RUTA_BASE + '/' + anio + '/' + mes + '/' + key), nuevo);
-  }
-  editandoKey = null;
-  toast('Registro actualizado','ok');
-  render();
-  renderizarBaseDatos();
-};
-
-window.cancelarEdicionInline = function() { editandoKey = null; render(); renderizarBaseDatos(); };
-
-window.pedirBorrarRegistroBD = function(key, anio, mes) {
-  pedirClave(function() {
-    if (!confirm('El registro se eliminará permanentemente.\n¿Confirmas?')) return;
-    if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
-      delete cache[anio][mes][key];
-    }
-    remove(ref(db, RUTA_BASE + '/' + anio + '/' + mes + '/' + key)).then(function(){
-      toast('Eliminado de plataforma y Firebase','ok');
-      render();
-      renderizarBaseDatos();
-    }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
-  });
-};
-
-window.abrirBorrarMes = function(t) { 
-  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
-  tipoBorrarMes = t; 
-  document.getElementById('bmTipo').value = t; 
-  document.getElementById('bmMes').value = ''; 
-  document.getElementById('bmPassword').value = ''; 
-  document.getElementById('bmInfoRegistros').textContent = 'Selecciona mes y año para ver cantidad'; 
-  document.getElementById('borrarMesOverlay').classList.add('show'); 
-};
-
-window.cerrarBorrarMes = function() { document.getElementById('borrarMesOverlay').classList.remove('show'); };
-
-function actualizarInfoBorrarMes() { 
-  const m = document.getElementById('bmMes').value;
-  const a = document.getElementById('bmAnio').value;
-  const d = document.getElementById('bmInfoRegistros'); 
-  if (!m) { d.textContent = 'Selecciona mes y año para ver cantidad'; return; } 
-  const c = Object.keys(cache[a]?.[m]||{}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; }).length; 
-  d.textContent = c === 0 ? 'Sin registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a : formatoEntero(c) + ' registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a; 
-}
-
-window.confirmarBorrarMes = function() {
-  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; }
-  const m = document.getElementById('bmMes').value;
-  const a = document.getElementById('bmAnio').value;
-  const p = document.getElementById('bmPassword').value;
-  if (!m) { toast('Primero elige el mes','err'); return; }
-  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
-  const keys = Object.keys(cache[a]?.[m]||{}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; });
-  if (!keys.length) { toast('No hay registros que borrar','info'); return; }
-  if (!confirm('Se BORRARÁN PERMANENTEMENTE ' + formatoEntero(keys.length) + ' registros ' + tipoBorrarMes + ' de ' + MESES_NOM[parseInt(m)-1] + ' ' + a + '.\nNo se puede deshacer.\n¿Confirmas?')) return;
-  toast('Borrando permanentemente...','info');
-  Promise.all(keys.map(function(k) { return remove(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + k)); }))
-    .then(function(){ 
-      keys.forEach(function(k) { if (cache[a] && cache[a][m]) delete cache[a][m][k]; });
-      toast('Mes borrado permanentemente','ok');
-      cerrarBorrarMes(); 
-      renderizarBaseDatos(); 
-      render(); 
-    })
-    .catch(function(e) { toast(''+e.message,'err'); });
-};
-
 function generarPDFRegistros(regs, titulo) { 
   const suma = sumaValores(regs);
   const n1 = conteoUnPeso(regs);
@@ -2112,9 +2463,10 @@ function generarPDFRegistros(regs, titulo) {
 
 window.exportarPDFBD = function() { 
   if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
-  const t = tabBdActiva==='b2c'?'B2C':(tabBdActiva==='ampmadmqdm'?'AMPMADM':'AMPM'); 
+  const t = tabBdActiva==='b2c'?'B2C':(tabBdActiva==='adm'?'ADM':(tabBdActiva==='qdm'?'QDM':'AMPM')); 
   let r = obtenerRegsFiltradosBD(t); 
-  const f = document.getElementById(t==='AMPM'?'filtroIdAmpm':(t==='B2C'?'filtroIdB2c':'filtroIdAmpmAdmQdm')).value; 
+  const idMap = { AMPM: 'filtroIdAmpm', B2C: 'filtroIdB2c', ADM: 'filtroIdAdm', QDM: 'filtroIdQdm' };
+  const f = document.getElementById(idMap[t]).value; 
   if (f) { 
     const ff = f.toUpperCase().trim(); 
     r = r.filter(function(x) { return (x.idPedido||'').toString().toUpperCase().includes(ff); }); 
@@ -2136,628 +2488,436 @@ window.exportarPDFModal = function() {
   generarPDFRegistros(r, t2); 
 };
 
-function getBDBaseRows(tipo){ 
-  let r = obtenerRegsTipo(tipo); 
-  const f = filtroDiaBD[tipo]; 
-  if (f.d) r = r.filter(function(x) { return (x.fecha||'').split('-')[2] === f.d; }); 
-  if (f.m) r = r.filter(function(x) { return x.mes === f.m; }); 
-  if (f.a) r = r.filter(function(x) { return x.anio === f.a; }); 
-  return r; 
-}
-
-function getDistinctBD(tipo, campo){ 
-  const set = new Set(); 
-  getBDBaseRows(tipo).forEach(function(r) { 
-    let v=''; 
-    if(campo==='unidad')v=r.unidad||''; 
-    else if(campo==='comuna')v=canonComuna(r.comuna)||''; 
-    else if(campo==='transporte')v=r.transporte||''; 
-    else if(campo==='rango')v=r.rango||''; 
-    if(v)set.add(v); 
-  }); 
-  return [...set].sort(); 
-}
-
-function poblarComboBD(tipo, campo, filtro){
-  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
-  if(!list) return;
-  let vals = getDistinctBD(tipo, campo);
-  if (filtro) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(filtro)); });
-  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionBD(\'' + tipo + '\',\'' + campo + '\',\'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
-}
-
-function cerrarCombosBD(){ 
-  document.querySelectorAll('.combo-list').forEach(function(l) { if (l.id.startsWith('comboBD_')) l.style.display='none'; }); 
-  comboBDAbierto = null; 
-}
-
-window.toggleComboBD = function(tipo, campo){
-  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
-  if(!list) return;
-  const id = tipo+'_'+campo;
-  if (comboBDAbierto === id) { list.style.display='none'; comboBDAbierto=null; }
-  else { cerrarCombosBD(); poblarComboBD(tipo,campo,''); list.style.display='block'; comboBDAbierto=id; }
+window.setInfTipo = function(t) {
+  infTipo = t;
+  document.querySelectorAll('.basedatos-tab[data-inftipo]').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-inftipo') === t); });
+  const cont = document.getElementById('infResultado');
+  if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">Módulo de informes en desarrollo para ' + t + '</div>';
 };
 
-function abrirComboBD(tipo, campo){ 
-  cerrarCombosBD(); 
-  poblarComboBD(tipo,campo,''); 
-  const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); 
-  if(list){ list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } 
-}
-
-window.elegirOpcionBD = function(tipo, campo, val){
-  const input = document.getElementById('fBD'+sufBD(tipo)+'_'+campo);
-  if (input) input.value = val;
-  filtroDescBD[tipo][campo] = normSinTildes(val);
-  cerrarCombosBD();
-  renderTabBD(tipo, document.getElementById(tipo==='AMPM'?'filtroIdAmpm':(tipo==='B2C'?'filtroIdB2c':'filtroIdAmpmAdmQdm')).value, tipo==='AMPM'?paginaBDAmpm:(tipo==='B2C'?paginaBDB2c:paginaBDAmpmAdmQdm));
-};
-
-window.filtrarBDCombo = function(tipo, campo, val){
-  filtroDescBD[tipo][campo] = normSinTildes(val);
-  poblarComboBD(tipo, campo, val);
-  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
-  if (list) { list.style.display='block'; comboBDAbierto=tipo+'_'+campo; }
-  renderTabBD(tipo, document.getElementById(tipo==='AMPM'?'filtroIdAmpm':(tipo==='B2C'?'filtroIdB2c':'filtroIdAmpmAdmQdm')).value, tipo==='AMPM'?paginaBDAmpm:(tipo==='B2C'?paginaBDB2c:paginaBDAmpmAdmQdm));
-};
-
-function getDistinctModal(col) {
-  const set = new Set();
-  datosModal.forEach(function(r) {
-    let v = '';
-    if (col==='fecha') v = fmtFecha(r.fecha);
-    else if (col==='unidad') v = r.unidad||'';
-    else if (col==='comuna') v = canonComuna(r.comuna)||'';
-    else if (col==='transporte') v = r.transporte||'';
-    else if (col==='observacion') v = r.observacion||'';
-    else if (col==='rango') v = r.rango||'';
-    if (v) set.add(v);
-  });
-  return [...set].sort();
-}
-
-function poblarComboModal(col, filtro) {
-  const list = document.getElementById('comboModal_'+col);
-  if (!list) return;
-  let vals = getDistinctModal(col);
-  if (filtro) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(filtro)); });
-  list.innerHTML = vals.length
-    ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionModal(\'' + col + '\',\'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('')
-    : '<div class="combo-item">Sin coincidencias</div>';
-}
-
-function poblarCombosModal() { 
-  ['fecha','unidad','comuna','transporte','observacion','rango'].forEach(function(col) { 
-    const inp = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1)); 
-    poblarComboModal(col, inp ? inp.value : ''); 
-  }); 
-}
-
-function cerrarCombosModal() { 
-  document.querySelectorAll('.combo-list').forEach(function(l) { if (l.id.startsWith('comboModal_')) l.style.display='none'; }); 
-  comboModalAbierto = null; 
-}
-
-window.toggleComboModal = function(col) {
-  const list = document.getElementById('comboModal_'+col);
-  if (!list) return;
-  if (comboModalAbierto === col) { list.style.display='none'; comboModalAbierto=null; }
-  else { cerrarCombosModal(); poblarComboModal(col,''); list.style.display='block'; comboModalAbierto=col; }
-};
-
-function abrirComboModal(col) { 
-  cerrarCombosModal(); 
-  poblarComboModal(col,''); 
-  const list=document.getElementById('comboModal_'+col); 
-  if(list){ list.style.display='block'; comboModalAbierto=col; } 
-}
-
-window.elegirOpcionModal = function(col, val) {
-  const input = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1));
-  if (input) input.value = val;
-  cerrarCombosModal();
-  aplicarFiltrosModal();
-};
-
-window.filtrarComboModal = function(col, val) {
-  poblarComboModal(col, val);
-  const list = document.getElementById('comboModal_'+col);
-  if (list) { list.style.display='block'; comboModalAbierto=col; }
-  aplicarFiltrosModal();
-};
-
-window.abrirModalExportar = function() { 
-  const tipo = tipoDeSeccion(); 
-  const hoy = new Date().toISOString().split('T')[0];
-  document.getElementById('expFilaFecha').style.display = 'none';
-  document.getElementById('expTitulo').textContent = 'Exportar a Excel — ' + fmtFechaConDia(hoy) + ' (' + tipo + ')';
-  document.getElementById('expInfo').textContent = 'Registros del día: ' + formatoEntero(contarRegsDelDia(tipo).length);
-  document.getElementById('exportarModal').classList.add('show'); 
-};
-
-window.actualizarExpInfo = function() { 
-  const tipo = tipoDeSeccion(); 
-  const hoy = new Date().toISOString().split('T')[0]; 
-  document.getElementById('expInfo').textContent = 'Registros del día ' + fmtFechaConDia(hoy) + ': ' + formatoEntero(contarRegsDelDia(tipo).length); 
-};
-
-function contarRegsDelDia(tipo) { 
-  const hoy = new Date().toISOString().split('T')[0]; 
-  let r = obtenerRegsTipo(tipo).filter(function(r) { return r.fecha === hoy; });
-  if (tipo==='AMPM') r = r.concat(pendientesAMPM.map(function(p){return {...p.reg,key:p.key};}));
-  if (tipo==='AMPMADM') r = r.concat(pendientesAmpmAdmQdm.map(function(p){return {...p.reg,key:p.key};}));
-  if (tipo==='B2C') r = r.concat(pendientesB2C.map(function(p){return {...p.reg,key:p.key};}));
-  return r; 
-}
-
-window.cerrarModalExportar = function() { document.getElementById('exportarModal').classList.remove('show'); };
-
-window.confirmarExportar = function() {
-  const cols = [
-    {id:'expFecha',key:'fecha',label:'Fecha'},
-    {id:'expUnidad',key:'unidad',label:'Unidad Negocio'},
-    {id:'expIdPedido',key:'idPedido',label:'ID Pedido'},
-    {id:'expNombre',key:'nombre',label:'Nombre Cliente'},
-    {id:'expCelular',key:'celular',label:'Celular'},
-    {id:'expEmail',key:'email',label:'E-Mail'},
-    {id:'expDireccion',key:'direccion',label:'Dirección'},
-    {id:'expComuna',key:'comuna',label:'Comuna'},
-    {id:'expValor',key:'valor',label:'Valor'},
-    {id:'expObservacion',key:'observacion',label:'Observación'},
-    {id:'expTransporte',key:'transporte',label:'Transporte'},
-    {id:'expRango',key:'rango',label:'Rango'}
-  ].filter(function(c) { return document.getElementById(c.id).checked; });
-  if (!cols.length) { toast('Elige al menos una columna','err'); return; }
-  const tipo = tipoDeSeccion(); 
-  let regs = contarRegsDelDia(tipo); 
-  ordenarPorFechaDireccionId(regs);
-  if (!regs.length) { toast('No hay registros del día','err'); return; }
-  const datos = regs.map(function(r) { 
-    const f = {}; 
-    cols.forEach(function(c) { 
-      if (c.key==='fecha') f[c.label]=fmtFechaConDia(r.fecha); 
-      else if (c.key==='direccion') f[c.label]=dirDe(r); 
-      else if (c.key==='comuna') f[c.label]=canonComuna(r.comuna); 
-      else if (c.key==='valor') f[c.label]=formatoMoneda(r.valor); 
-      else f[c.label]=r[c.key]??''; 
-    }); 
-    return f; 
-  });
-  const ws = XLSX.utils.json_to_sheet(datos); 
-  const wb = XLSX.utils.book_new(); 
-  XLSX.utils.book_append_sheet(wb, ws, 'Despachos');
-  XLSX.writeFile(wb, 'DespachoRetail_' + tipo + '_' + new Date().toISOString().split('T')[0] + '.xlsx');
-  toast('Exportados ' + formatoEntero(regs.length) + ' registros','ok'); 
-  cerrarModalExportar();
-};
-
-function procesarArchivoB2C(file, lista) {
-  const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
-  toast('Leyendo ' + file.name + '...', 'info');
-  leerFilas(file, function(filas) { 
-    try {
-      if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
-      const enc = filas[0].map(normEnc);
-      const col = { 
-        TRACKING: enc.findIndex(function(h) { return h.includes('TRACKING'); }), 
-        EMPRESA: enc.findIndex(function(h) { return h.includes('EMPRESA'); }), 
-        NOMBRE: enc.findIndex(function(h) { return h.includes('NOMBRE'); }), 
-        CELULAR: enc.findIndex(function(h) { return h.includes('CELULAR'); }), 
-        EMAIL: enc.findIndex(function(h) { return h.includes('EMAIL') || h.includes('MAIL'); }), 
-        DIRECCION: enc.findIndex(function(h) { return h.includes('DIRECCION'); }), 
-        COMUNA: enc.findIndex(function(h) { return h.includes('COMUNA'); }), 
-        VALOR: enc.findIndex(function(h) { return h.includes('VALOR'); }) 
-      };
-      const parts = ft.split('-');
-      const aT = parts[0];
-      const mT = parts[1];
-      const regs = [];
-      for (let i = 1; i < filas.length; i++) {
-        const row = filas[i]; 
-        if (!row || !row.length) continue;
-        const gv = function(idx) { return (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]); };
-        const tr = String(gv(col.TRACKING)).trim(); 
-        if (!tr) continue;
-        const comuna = canonComuna(gv(col.COMUNA));
-        regs.push({ 
-          anio:aT, 
-          mes:mT, 
-          reg: { 
-            fecha: ft, 
-            unidad: String(gv(col.EMPRESA)).trim(), 
-            idPedido: tr, 
-            nombre: String(gv(col.NOMBRE)).trim(), 
-            celular: String(gv(col.CELULAR)).trim(), 
-            email: String(gv(col.EMAIL)).trim(), 
-            direccion: limpiarDireccion(gv(col.DIRECCION), comuna), 
-            comuna: comuna, 
-            valor: parsearValor(gv(col.VALOR)), 
-            observacion: '', 
-            transporte: 'SERVICIO B2C', 
-            rango: 'B2C', 
-            otroPalet: false, 
-            tipo: 'B2C', 
-            creado: new Date().toISOString(), 
-            importado: true 
-          } 
-        });
-      }
-      if (!regs.length) { toast('Sin filas con N° de tracking','err'); return; }
-      if (lista) { 
-        lista.push(...regs); 
-        paginaDesc = 1; 
-        toast(formatoEntero(regs.length) + ' filas B2C cargadas. Presiona GUARDAR.','info'); 
-        render(); 
-      }
-      else cargarPendientes(regs, 'B2C (' + file.name + ')');
-    } catch(e){ 
-      toast(''+e.message,'err'); 
-    } 
-  });
-}
-
-window.importarExcelSegunSeccion = function() { 
-  modoImportActual = (seccionActiva === 'ampm') ? 'AMPM_DESC' : (seccionActiva === 'ampmadmqdm') ? 'AMPMADM_DESC' : 'B2C_DESC'; 
-  document.getElementById('importFile').click(); 
-};
-
-window.importarDesdeBD = function(tipo) { 
-  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
-  tipoImportacionActual = tipo; 
-  modoImportActual = tipo + '_BD'; 
-  document.getElementById('importFile').click(); 
-};
-
-document.getElementById('importFile').addEventListener('change', function(ev) {
-  const file = ev.target.files[0]; 
-  if (!file) return; 
-  const n = file.name.toLowerCase();
-  if (esJSON(n)) { 
-    if (modoImportActual==='AMPM_DESC') procesarJSONAMPM(file); 
-    else if (modoImportActual==='AMPMADM_DESC') procesarJSONAdm(file); 
-    else procesarJSON(file); 
-  }
-  else if (esExcel(n) || esCSV(n)) {
-    if (modoImportActual==='AMPM_DESC') procesarArchivoAMPM(file);
-    else if (modoImportActual==='AMPMADM_DESC') procesarArchivoAdm(file);
-    else if (modoImportActual==='B2C_DESC') procesarArchivoB2C(file, pendientesB2C);
-    else procesarArchivoGenerico(file, modoImportActual.replace('_BD',''));
-  }
-  else toast('Formato no soportado','err');
-  ev.target.value = '';
-});
-
-function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pendientesAMPM); }
-function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'AMPMADM', pendientesAmpmAdmQdm); }
-
-function procesarArchivoTipoSeccion(file, tipo, lista) {
-  const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
-  toast('Leyendo ' + file.name + '...','info');
-  leerFilas(file, function(filas) { 
-    try {
-      if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
-      const enc = filas[0].map(normEnc);
-      const col = { 
-        EMPRESA: enc.findIndex(function(h){return h.includes('EMPRESA');}), 
-        TRACKING: enc.findIndex(function(h){return h.includes('TRACKING');}), 
-        NOMBRE: enc.findIndex(function(h){return h.includes('NOMBRE');}), 
-        DIRECCION: enc.findIndex(function(h){return h.includes('DIRECCION');}), 
-        COMUNA: enc.findIndex(function(h){return h.includes('COMUNA');}), 
-        VALOR: enc.findIndex(function(h){return h.includes('VALOR');}), 
-        OBS: enc.findIndex(function(h){return h.includes('OBSERVACION');}) 
-      };
-      const parts = ft.split('-');
-      const aT = parts[0];
-      const mT = parts[1];
-      const nuevos = [];
-      for (let i=1;i<filas.length;i++){ 
-        const row = filas[i]; 
-        if (!row || !row.length) continue;
-        const gv = function(idx) { return (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]); };
-        const tr = String(gv(col.TRACKING)).trim(); 
-        if (!tr) continue; 
-        const comuna = canonComuna(gv(col.COMUNA));
-        let reg = { 
-          fecha: ft, 
-          unidad: String(gv(col.EMPRESA)).trim(), 
-          idPedido: tr, 
-          nombre: String(gv(col.NOMBRE)).trim(), 
-          direccion: limpiarDireccion(gv(col.DIRECCION), comuna), 
-          comuna: comuna, 
-          valor: parsearValor(gv(col.VALOR)), 
-          observacion: String(gv(col.OBS)).trim().toUpperCase(), 
-          transporte:'', 
-          rango:'', 
-          otroPalet:false, 
-          tipo: tipo 
-        };
-        if (tipo === 'AMPMADM') { reg = autocompletarTransporteNuevoAdm(reg); } 
-        else { reg = autocompletarTransporteNuevo(reg); }
-        nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
-      }
-      if (!nuevos.length) { toast('Sin filas con tracking','err'); return; }
-      lista.push(...nuevos); 
-      paginaDesc = 1; 
-      toast(formatoEntero(nuevos.length) + ' filas. Revisa TRANSPORTE/RANGO y presiona GUARDAR.','info'); 
-      render();
-    } catch(e){ 
-      toast(''+e.message,'err'); 
-    } 
-  });
-}
-
-function procesarJSONAMPM(file) { procesarJSONTipoSeccion(file, 'AMPM', pendientesAMPM); }
-function procesarJSONAdm(file) { procesarJSONTipoSeccion(file, 'AMPMADM', pendientesAmpmAdmQdm); }
-
-function procesarJSONTipoSeccion(file, tipo, lista) {
-  const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
-  const reader = new FileReader();
-  reader.onload = function(e) { 
-    try {
-      const obj = JSON.parse(e.target.result);
-      let arr = Array.isArray(obj) ? obj : (Array.isArray(obj.registros) ? obj.registros : (Array.isArray(obj.datos) ? obj.datos : null));
-      if (!arr) { toast('JSON debe ser lista','err'); return; }
-      const parts = ft.split('-');
-      const aT = parts[0];
-      const mT = parts[1];
-      const nuevos = [];
-      arr.forEach(function(o,i) { 
-        const m = {}; 
-        Object.keys(o).forEach(function(k) { m[normEnc(k)] = o[k]; });
-        const gi = function(...subs) { 
-          for (const k of Object.keys(m)) {
-            for (const s of subs) {
-              if (k.includes(s)) { 
-                const v = m[k]; 
-                if (v!=null && String(v).trim()!=='') return String(v); 
-              }
-            }
-          }
-          return ''; 
-        };
-        const tr = gi('TRACKING','ID PEDIDO','IDPEDIDO'); 
-        if (!tr) return; 
-        const comuna = canonComuna(gi('COMUNA'));
-        let reg = { 
-          fecha: ft, 
-          unidad: gi('EMPRESA','UNIDAD'), 
-          idPedido: tr, 
-          nombre: gi('NOMBRE'), 
-          direccion: limpiarDireccion(gi('DIRECCION'), comuna), 
-          comuna: comuna, 
-          valor: parsearValor(gi('VALOR')), 
-          observacion: gi('OBSERVACION').toUpperCase(), 
-          transporte: gi('TRANSPORTE'), 
-          rango: (gi('RANGO')||'').toUpperCase(), 
-          otroPalet:false, 
-          tipo: tipo 
-        };
-        if (tipo === 'AMPMADM') { reg = autocompletarTransporteNuevoAdm(reg); } 
-        else { reg = autocompletarTransporteNuevo(reg); }
-        nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
+// =====================================================================
+// 📒 BITÁCORAS
+// =====================================================================
+function renderizarTodasBitacoras() {
+  ['ampm','b2c','adm','qdm','spot'].forEach(function(tipo) {
+    if (tipo === 'spot') {
+      ['spot','spot1','spot2'].forEach(function(movil) {
+        renderizarBitacora(tipo, movil);
       });
-      if (!nuevos.length) { toast('JSON sin registros válidos','err'); return; }
-      lista.push(...nuevos); 
-      paginaDesc = 1; 
-      toast(formatoEntero(nuevos.length) + ' registros JSON. Presiona GUARDAR.','info'); 
-      render();
-    } catch(e){ 
-      toast('JSON inválido','err'); 
-    } 
-  };
-  reader.readAsText(file);
-}
-
-function procesarArchivoGenerico(file, tipo) {
-  tipoImportacionActual = tipo; 
-  const mesAnio = detectarMesAnioDesdeNombre(file.name);
-  const mA = mesAnio.mes;
-  const aA = mesAnio.anio;
-  toast('Leyendo ' + file.name + '...','info');
-  leerFilas(file, function(filas) { 
-    try {
-      if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
-      const enc = filas[0].map(normEnc);
-      let idxID = enc.findIndex(function(h) { return h.includes('PEDIDO') && h.includes('ID') && !h.includes('N°') && !h.includes('NRO') && !h.includes('NUM') && !h.includes('NUMBER'); });
-      if (idxID < 0) idxID = enc.findIndex(function(h) { return h.includes('PEDIDO'); });
-      const col = { 
-        FECHA: enc.findIndex(function(h){return h.includes('FECHA');}), 
-        UNIDAD: enc.findIndex(function(h){return h.includes('UNIDAD')||h.includes('NEGOCIO');}), 
-        ID: idxID, 
-        NOMBRE: enc.findIndex(function(h){return h.includes('NOMBRE');}), 
-        DIRECCION: enc.findIndex(function(h){return h.includes('DIRECCION');}), 
-        COMUNA: enc.findIndex(function(h){return h.includes('COMUNA');}), 
-        VALOR: enc.findIndex(function(h){return h.includes('VALOR');}), 
-        OBS: enc.findIndex(function(h){return h.includes('OBSERVACION');}), 
-        TRANSPORTE: enc.findIndex(function(h){return h.includes('TRANSPORTE')||h.includes('MOVIL');}), 
-        RANGO: enc.findIndex(function(h){return h.includes('RANGO')||h.includes('TURNO');}) 
-      };
-      const regs = []; 
-      let sinF = 0;
-      for (let i=1;i<filas.length;i++){ 
-        const row = filas[i]; 
-        if (!row || !row.length) continue;
-        const gv = function(idx) { return (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]); };
-        const fr = col.FECHA>=0 ? gv(col.FECHA) : gv(0); 
-        if (fr === '') continue;
-        let fecha = null;
-        if (typeof fr === 'number' && Number.isInteger(fr) && fr>=1 && fr<=31) { 
-          if (mA&&aA) fecha = aA + '-' + mA + '-' + String(fr).padStart(2,'0'); 
-        }
-        else { 
-          fecha = parsearFecha(fr); 
-          if (!fecha && mA&&aA){ 
-            const d = parseInt(String(fr).trim()); 
-            if (!isNaN(d)&&d>=1&&d<=31) fecha = aA + '-' + mA + '-' + String(d).padStart(2,'0'); 
-          } 
-        }
-        if (!fecha) { sinF++; continue; }
-        const parts = fecha.split('-');
-        const anio = parts[0];
-        const mes = parts[1];
-        const rango = String(gv(col.RANGO)).trim().toUpperCase(); 
-        const comuna = canonComuna(gv(col.COMUNA));
-        regs.push({ 
-          anio: anio, 
-          mes: mes, 
-          reg: { 
-            fecha: fecha, 
-            unidad: String(gv(col.UNIDAD)).trim(), 
-            idPedido: String(gv(col.ID)).trim(), 
-            nombre: String(gv(col.NOMBRE)).trim(), 
-            direccion: limpiarDireccion(gv(col.DIRECCION), comuna), 
-            comuna: comuna, 
-            valor: parsearValor(gv(col.VALOR)), 
-            observacion: String(gv(col.OBS)).trim(), 
-            transporte: String(gv(col.TRANSPORTE)).trim(), 
-            rango: rango || (tipo==='B2C'?'B2C':'AM'), 
-            otroPalet:false, 
-            tipo: tipo, 
-            creado: new Date().toISOString(), 
-            importado:true 
-          } 
-        }); 
-      }
-      if (sinF) toast(formatoEntero(sinF) + ' filas sin fecha válida','err');
-      cargarPendientes(regs, (tipo==='B2C'?'B2C':'AM/PM') + ' (' + file.name + ')');
-    } catch(e){ 
-      toast(''+e.message,'err'); 
-    } 
+    } else {
+      for (let i = 1; i <= 6; i++) renderizarBitacora(tipo, i);
+    }
   });
 }
 
-function procesarJSON(file) { 
-  toast('Leyendo JSON: ' + file.name + '...','info'); 
-  const r = new FileReader(); 
-  r.onload = function(e) { 
-    try { 
-      const obj = JSON.parse(e.target.result); 
-      cargarPendientes(extraerRegsDesdeJSON(obj), 'JSON'); 
-    } catch(e){ 
-      toast('JSON inválido','err'); 
-    } 
-  }; 
-  r.readAsText(file); 
-}
-
-function extraerRegsDesdeJSON(obj) {
-  const out = []; 
-  const esA = function(k) { return /^20\d{2}$/.test(k); }; 
-  const esM = function(k) { return /^(0[1-9]|1[0-2])$/.test(k); };
-  const proc = function(n) { 
-    Object.keys(n).forEach(function(a) { 
-      if (!esA(a)) return; 
-      const ms = n[a]; 
-      if (typeof ms !== 'object') return; 
-      Object.keys(ms).forEach(function(m) { 
-        if (!esM(m)) return; 
-        const rs = ms[m]; 
-        if (typeof rs !== 'object') return; 
-        Object.keys(rs).forEach(function(k) { 
-          const r = rs[k]; 
-          if (r && r.fecha) out.push({ anio:a, mes:m, reg:{...r} }); 
-        }); 
-      }); 
-    }); 
-  };
-  if (Array.isArray(obj)) { 
-    obj.forEach(function(r) { 
-      if (r && r.fecha) { 
-        const parts = String(r.fecha).split('-'); 
-        out.push({ anio:parts[0], mes:parts[1], reg:{...r} }); 
-      } 
-    }); 
-    return out; 
+function generarHTMLBitacora(tipo, movil) {
+  const key = tipo + '_movil' + movil;
+  const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : movil;
+  const data = bitacorasData[key] || { filas: [], footer: { transporte: tipo === 'spot' ? movilLabel : 'MOVIL ' + movil, fecha: '', ruta: 'AM', responsable: '', firma: '' } };
+  let html = '<div class="bitacora-wrapper">';
+  html += '<div class="bitacora-header-info">BITÁCORA ' + movilLabel + '</div>';
+  html += '<table class="bitacora-table">';
+  html += '<thead><tr>';
+  html += '<th style="width:40px;">N°</th><th>REQUIRENTE</th><th>DOCUMENTOS</th><th>CLIENTE</th><th>DIRECCION</th><th>COMUNA</th><th>OBS</th>';
+  html += '</tr></thead><tbody>';
+  const maxFilas = 15;
+  for (let i = 0; i < maxFilas; i++) {
+    const fila = data.filas[i] || { requirente: '', documentos: '', cliente: '', direccion: '', comuna: '', obs: '' };
+    html += '<tr><td class="num-col">' + (i+1) + '</td>';
+    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_requirente" value="' + (fila.requirente||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_documentos" value="' + (fila.documentos||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_cliente" value="' + (fila.cliente||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_direccion" value="' + (fila.direccion||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_comuna" value="' + (fila.comuna||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_obs" value="' + (fila.obs||'').replace(/"/g,'&quot;') + '"></td></tr>';
   }
-  if (Object.keys(obj).some(esA)) { proc(obj); return out; }
-  Object.keys(obj).forEach(function(k) { 
-    const v = obj[k]; 
-    if (v && typeof v==='object' && !Array.isArray(v) && Object.keys(v).some(esA)) proc(v); 
-  });
-  return out;
+  html += '</tbody></table>';
+  html += '<table class="bitacora-footer-table">';
+  html += '<thead><tr><th>TRANSPORTE</th><th>FECHA</th><th>RUTA</th><th>RESPONSABLE</th><th>FIRMA</th></tr></thead><tbody><tr>';
+  html += '<td style="background:#fff"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_transporte" value="' + (data.footer.transporte||'').replace(/"/g,'&quot;') + '"></td>';
+  html += '<td style="background:#fff"><input type="date" id="bit_' + tipo + '_' + movil + '_footer_fecha" value="' + (data.footer.fecha||'') + '"></td>';
+  html += '<td style="background:#fff"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_ruta" value="' + (data.footer.ruta||'AM').replace(/"/g,'&quot;') + '"></td>';
+  html += '<td style="background:#fff"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_responsable" value="' + (data.footer.responsable||'').replace(/"/g,'&quot;') + '"></td>';
+  html += '<td style="background:#fff"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_firma" value="' + (data.footer.firma||'').replace(/"/g,'&quot;') + '"></td>';
+  html += '</tr></tbody></table></div>';
+  return html;
 }
 
-function cargarPendientes(regs, origen) {
-  if (!regs.length) { toast('Sin registros válidos','err'); return; }
-  regs.forEach(function(item) {
-    const anio = item.anio;
-    const mes = item.mes;
-    const reg = item.reg;
-    if (!reg.tipo) reg.tipo = tipoImportacionActual; 
-    if (!reg.rango) reg.rango = tipoImportacionActual==='B2C'?'B2C':'AM'; 
-    if (reg.comuna) reg.comuna = canonComuna(reg.comuna);
-    if (!cache[anio]) cache[anio] = {}; 
-    if (!cache[anio][mes]) cache[anio][mes] = {}; 
-    const tk = 'pend_'+Date.now()+'_'+Math.random().toString(36).substr(2,9); 
-    cache[anio][mes][tk] = reg; 
-    pendientes.push({ anio: anio, mes: mes, reg: reg });
+function renderizarBitacora(tipo, movil) {
+  const movilId = (typeof movil === 'string') ? movil : movil;
+  const cont = document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movilId);
+  if (!cont) return;
+  let html = '<div class="bitacora-actions">';
+  html += '<button class="btn-bitacora btn-bitacora-guardar" onclick="guardarBitacora(\'' + tipo + '\',' + (typeof movil === 'string' ? '\'' + movil + '\'' : movil) + ')">GUARDAR</button>';
+  html += '<button class="btn-bitacora btn-bitacora-excel" onclick="abrirModalExportarBitacoras()">EXPORTAR TODAS LAS BITÁCORAS</button>';
+  html += '<button class="btn-bitacora btn-bitacora-jpeg" onclick="exportarBitacoraJPEG(\'' + tipo + '\',' + (typeof movil === 'string' ? '\'' + movil + '\'' : movil) + ')">EXPORTAR JPEG</button>';
+  html += '<button class="btn-bitacora" style="background:var(--accent-orange);color:#fff" onclick="imprimirBitacora(\'' + tipo + '\',' + (typeof movil === 'string' ? '\'' + movil + '\'' : movil) + ')">IMPRIMIR</button>';
+  html += '</div><div id="bitacoraTable_' + tipo + '_' + movilId + '">';
+  html += generarHTMLBitacora(tipo, movil);
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+window.imprimirBitacora = function(tipo, movil) {
+  const element = document.getElementById('bitacoraTable_' + tipo + '_' + movil);
+  if (!element) { toast('Elemento no encontrado', 'err'); return; }
+  const printWindow = window.open('', '_blank', 'width=1200,height=900');
+  if (!printWindow) { toast('Bloqueador de popups activo', 'err'); return; }
+  const clone = element.cloneNode(true);
+  const inputs = clone.querySelectorAll('input');
+  inputs.forEach(function(inp) {
+    const span = document.createElement('span');
+    span.textContent = inp.value || '';
+    span.style.cssText = 'display:block;width:100%;padding:4px;font-family:Arial,sans-serif;font-size:11px;';
+    inp.parentNode.replaceChild(span, inp);
   });
-  actualizarPendientesInfo(); 
+  const html = '<!DOCTYPE html><html><head><title>Bitácora ' + movil + '</title><style>@page { size: letter landscape; margin: 10mm; }* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: Arial, sans-serif; padding: 10mm; background: #fff; }h2 { text-align: center; color: #1a5490; font-size: 18pt; margin-bottom: 12px; }table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11pt; background: #fff; }th { background: #1a5490; color: white; font-weight: bold; }.no-print { text-align: center; margin-top: 15px; }.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }</style></head><body><h2>Bitácora ' + movil + ' - ' + tipo.toUpperCase() + '</h2>' + clone.innerHTML + '<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div></body></html>';
+  printWindow.document.write(html);
+  printWindow.document.close();
+  toast('Ventana de impresión abierta', 'ok');
+};
+
+window.guardarBitacora = function(tipo, movil) {
+  const key = tipo + '_movil' + movil;
+  const filas = [];
+  for (let i = 0; i < 15; i++) {
+    const requirenteEl = document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_requirente');
+    if (requirenteEl) {
+      const fila = {
+        requirente: requirenteEl.value || '',
+        documentos: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_documentos') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_documentos').value : '',
+        cliente: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_cliente') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_cliente').value : '',
+        direccion: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_direccion') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_direccion').value : '',
+        comuna: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_comuna') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_comuna').value : '',
+        obs: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_obs') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_obs').value : ''
+      };
+      if (fila.requirente || fila.documentos || fila.cliente) filas.push(fila);
+    }
+  }
+  const footer = {
+    transporte: document.getElementById('bit_' + tipo + '_' + movil + '_footer_transporte') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_transporte').value : '',
+    fecha: document.getElementById('bit_' + tipo + '_' + movil + '_footer_fecha') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_fecha').value : '',
+    ruta: document.getElementById('bit_' + tipo + '_' + movil + '_footer_ruta') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_ruta').value : '',
+    responsable: document.getElementById('bit_' + tipo + '_' + movil + '_footer_responsable') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_responsable').value : '',
+    firma: document.getElementById('bit_' + tipo + '_' + movil + '_footer_firma') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_firma').value : ''
+  };
+  bitacorasData[key] = { filas: filas, footer: footer };
+  update(ref(db, RUTA_BITACORAS + '/' + key), { filas: filas, footer: footer })
+    .then(function() { toast('Bitácora guardada', 'ok'); })
+    .catch(function(e) { toast('Error al guardar: ' + e.message, 'err'); });
+};
+
+window.exportarBitacoraExcel = function(tipo, movil) {
+  const key = tipo + '_movil' + movil;
+  const data = bitacorasData[key] || { filas: [], footer: {} };
+  const filasConDatos = data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); });
+  const wb = XLSX.utils.book_new();
+  const wsData = [];
+  wsData.push(['Bitácora Movil ' + movil, '', '', '', '', '', '']);
+  wsData.push(['', '', '', '', '', '', '']);
+  wsData.push(['N°', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
+  for (let i = 0; i < filasConDatos.length; i++) {
+    const fila = filasConDatos[i];
+    wsData.push([i+1, fila.requirente||'', fila.documentos||'', fila.cliente||'', fila.direccion||'', fila.comuna||'', fila.obs||'']);
+  }
+  wsData.push(['', '', '', '', '', '', '']);
+  wsData.push(['Transporte', 'Fecha', 'Ruta', 'Responsable', 'Firma', '', '']);
+  wsData.push([data.footer.transporte||'', data.footer.fecha||'', data.footer.ruta||'', data.footer.responsable||'', data.footer.firma||'', '', '']);
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+  ws['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 18 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'Movil ' + movil);
+  const fecha = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, 'Bitacora_' + tipo + '_Movil' + movil + '_' + fecha + '.xlsx');
+  toast('Excel exportado', 'ok');
+};
+
+window.exportarBitacoraJPEG = function(tipo, movil) {
+  const element = document.getElementById('bitacoraTable_' + tipo + '_' + movil);
+  if (!element) { toast('Elemento no encontrado', 'err'); return; }
+  const clone = element.cloneNode(true);
+  const inputs = clone.querySelectorAll('input');
+  inputs.forEach(function(inp) {
+    const span = document.createElement('span');
+    span.textContent = inp.value || '';
+    span.style.cssText = 'display:block;width:100%;padding:4px 6px;font-family:Arial,sans-serif;font-size:11px;color:#000;white-space:normal;word-wrap:break-word;';
+    inp.parentNode.replaceChild(span, inp);
+  });
+  const tables = clone.querySelectorAll('table');
+  tables.forEach(function(t) { t.style.tableLayout = 'auto'; t.style.width = '100%'; });
+  clone.style.position = 'absolute';
+  clone.style.left = '-9999px';
+  clone.style.top = '0';
+  clone.style.width = '1400px';
+  clone.style.background = '#fff';
+  clone.style.padding = '30px';
+  clone.style.overflow = 'visible';
+  document.body.appendChild(clone);
+  html2canvas(clone, {
+    backgroundColor: '#ffffff', scale: 2, useCORS: true, allowTaint: true, logging: false,
+    width: 1400, windowWidth: 1400, windowHeight: clone.scrollHeight, scrollX: 0, scrollY: 0
+  }).then(function(canvas) {
+    document.body.removeChild(clone);
+    const link = document.createElement('a');
+    const fecha = new Date().toISOString().split('T')[0];
+    link.download = 'Bitacora_' + tipo + '_Movil' + movil + '_' + fecha + '.jpeg';
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.click();
+    toast('JPEG exportado completo', 'ok');
+  }).catch(function(e) {
+    document.body.removeChild(clone);
+    toast('Error al exportar JPEG: ' + e.message, 'err');
+  });
+};
+
+// =====================================================================
+// 📅 CALENDARIOS
+// =====================================================================
+window.toggleCalendario = function() {
+  const popup = document.getElementById('calendarioPopup');
+  if (!popup) return;
+  calendarioAbierto = !calendarioAbierto;
+  if (calendarioAbierto) { renderizarCalendario(); popup.classList.add('show'); }
+  else { popup.classList.remove('show'); }
+};
+
+function renderizarCalendario() {
+  const popup = document.getElementById('calendarioPopup');
+  if (!popup) return;
+  const hoy = new Date();
+  const primerDia = new Date(calendarioAnio, calendarioMes, 1);
+  const ultimoDia = new Date(calendarioAnio, calendarioMes + 1, 0);
+  const diasEnMes = ultimoDia.getDate();
+  let primerDiaSemana = primerDia.getDay();
+  if (primerDiaSemana === 0) primerDiaSemana = 7;
+  const fechaInput = document.getElementById('fFecha');
+  const fechaSeleccionada = fechaInput ? fechaInput.value : '';
+  let html = '<div class="calendario-header"><button onclick="cambiarMesCalendario(-1)">◀</button><span>' + MESES_NOM[calendarioMes].charAt(0) + MESES_NOM[calendarioMes].slice(1).toLowerCase() + ' ' + calendarioAnio + '</span><button onclick="cambiarMesCalendario(1)">▶</button></div><div class="calendario-grid">';
+  DIAS_SEMANA_CORTO.forEach(function(d) { html += '<div class="dia-semana">' + d + '</div>'; });
+  for (let i = 1; i < primerDiaSemana; i++) { html += '<div class="dia vacio"></div>'; }
+  for (let d = 1; d <= diasEnMes; d++) {
+    const fechaStr = calendarioAnio + '-' + String(calendarioMes + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const esHoy = (d === hoy.getDate() && calendarioMes === hoy.getMonth() && calendarioAnio === hoy.getFullYear());
+    const esSeleccionado = (fechaStr === fechaSeleccionada);
+    let clases = 'dia';
+    if (esHoy) clases += ' hoy';
+    if (esSeleccionado) clases += ' seleccionado';
+    html += '<div class="' + clases + '" onclick="seleccionarFechaCalendario(\'' + fechaStr + '\')">' + d + '</div>';
+  }
+  html += '</div>';
+  popup.innerHTML = html;
+}
+
+window.cambiarMesCalendario = function(delta) {
+  calendarioMes += delta;
+  if (calendarioMes > 11) { calendarioMes = 0; calendarioAnio++; }
+  if (calendarioMes < 0) { calendarioMes = 11; calendarioAnio--; }
+  renderizarCalendario();
+};
+
+window.seleccionarFechaCalendario = function(fecha) {
+  const input = document.getElementById('fFecha');
+  if (input) input.value = fecha;
+  calendarioAbierto = false;
+  const popup = document.getElementById('calendarioPopup');
+  if (popup) popup.classList.remove('show');
+  paginaDesc = 1;
+  render();
+};
+
+window.toggleCalFila = function(key, event) {
+  if (event) event.stopPropagation();
+  document.querySelectorAll('.cal-popup-fila.show').forEach(function(p) { p.classList.remove('show'); });
+  const popup = document.getElementById('cal_popup_' + key);
+  if (!popup) return;
+  if (calFilaAbierto === key) { popup.classList.remove('show'); calFilaAbierto = null; return; }
+  let fechaActual = obtenerFechaActualRegistro(key);
+  if (fechaActual) {
+    const parts = fechaActual.split('-').map(Number);
+    calFilaMes = parts[1] - 1;
+    calFilaAnio = parts[0];
+  } else {
+    calFilaMes = new Date().getMonth();
+    calFilaAnio = new Date().getFullYear();
+  }
+  calFilaAbierto = key;
+  renderizarCalFila(key, fechaActual);
+  popup.classList.add('show');
+};
+
+function obtenerFechaActualRegistro(key) {
+  if (cambiosFechaLocales[key]) {
+    return cambiosFechaLocales[key].nuevaFecha;
+  }
+  let p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
+  if (p) return p.reg.fecha;
+  for (const a of Object.keys(cache)) {
+    for (const m of Object.keys(cache[a]||{})) {
+      if (cache[a][m] && cache[a][m][key]) {
+        return cache[a][m][key].fecha;
+      }
+    }
+  }
+  return null;
+}
+
+function renderizarCalFila(key, fechaSeleccionada) {
+  const popup = document.getElementById('cal_popup_' + key);
+  if (!popup) return;
+  const hoy = new Date();
+  const primerDia = new Date(calFilaAnio, calFilaMes, 1);
+  const ultimoDia = new Date(calFilaAnio, calFilaMes + 1, 0);
+  const diasEnMes = ultimoDia.getDate();
+  let primerDiaSemana = primerDia.getDay();
+  if (primerDiaSemana === 0) primerDiaSemana = 7;
+  let html = '<div class="cal-header-fila"><button onclick="cambiarMesCalFila(\'' + key + '\', -1, event)">◀</button><span>' + MESES_NOM[calFilaMes].charAt(0) + MESES_NOM[calFilaMes].slice(1).toLowerCase() + ' ' + calFilaAnio + '</span><button onclick="cambiarMesCalFila(\'' + key + '\', 1, event)">▶</button></div><div class="cal-grid-fila">';
+  DIAS_SEMANA_CORTO.forEach(function(d) { html += '<div class="dia-semana">' + d + '</div>'; });
+  for (let i = 1; i < primerDiaSemana; i++) { html += '<div class="dia vacio"></div>'; }
+  for (let d = 1; d <= diasEnMes; d++) {
+    const fechaStr = calFilaAnio + '-' + String(calFilaMes + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const esHoy = (d === hoy.getDate() && calFilaMes === hoy.getMonth() && calFilaAnio === hoy.getFullYear());
+    const esSeleccionado = (fechaStr === fechaSeleccionada);
+    let clases = 'dia';
+    if (esHoy) clases += ' hoy';
+    if (esSeleccionado) clases += ' seleccionado';
+    html += '<div class="' + clases + '" onclick="seleccionarFechaFila(\'' + key + '\', \'' + fechaStr + '\', event)">' + d + '</div>';
+  }
+  html += '</div>';
+  popup.innerHTML = html;
+}
+
+window.cambiarMesCalFila = function(key, delta, event) {
+  if (event) event.stopPropagation();
+  calFilaMes += delta;
+  if (calFilaMes > 11) { calFilaMes = 0; calFilaAnio++; }
+  if (calFilaMes < 0) { calFilaMes = 11; calFilaAnio--; }
+  const fechaActual = obtenerFechaActualRegistro(key);
+  renderizarCalFila(key, fechaActual);
+};
+
+window.seleccionarFechaFila = function(key, nuevaFecha, event) {
+  if (event) event.stopPropagation();
+  const popup = document.getElementById('cal_popup_' + key);
+  if (popup) popup.classList.remove('show');
+  calFilaAbierto = null;
+  const parts = nuevaFecha.split('-');
+  const nA = parts[0];
+  const nM = parts[1];
+  const fechaAnterior = obtenerFechaActualRegistro(key);
+  if (fechaAnterior === nuevaFecha) {
+    render();
+    return;
+  }
+  let p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
+  if (p) {
+    cambiosFechaLocales[key] = {
+      esPendiente: true,
+      nuevaFecha: nuevaFecha,
+      nuevaAnio: nA,
+      nuevaMes: nM
+    };
+    toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info');
+    render();
+    return;
+  }
+  for (const a of Object.keys(cache)) {
+    for (const m of Object.keys(cache[a]||{})) {
+      if (cache[a][m] && cache[a][m][key]) {
+        cambiosFechaLocales[key] = {
+          esPendiente: false,
+          anioOriginal: a,
+          mesOriginal: m,
+          nuevaFecha: nuevaFecha,
+          nuevaAnio: nA,
+          nuevaMes: nM
+        };
+        toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info');
+        render();
+        return;
+      }
+    }
+  }
+  toast('Registro no encontrado', 'err');
+};
+
+window.cambiarFechaFila = function(key, nuevaFecha, esPend) {
+  if (!nuevaFecha) return;
+  const parts = nuevaFecha.split('-');
+  const nA = parts[0];
+  const nM = parts[1];
+  const fechaAnterior = obtenerFechaActualRegistro(key);
+  if (fechaAnterior === nuevaFecha) return;
+  let p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
+  if (p) {
+    cambiosFechaLocales[key] = {
+      esPendiente: true,
+      nuevaFecha: nuevaFecha,
+      nuevaAnio: nA,
+      nuevaMes: nM
+    };
+    toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info');
+    render();
+    return;
+  }
+  for (const a of Object.keys(cache)) {
+    for (const m of Object.keys(cache[a]||{})) {
+      if (cache[a][m] && cache[a][m][key]) {
+        cambiosFechaLocales[key] = {
+          esPendiente: false,
+          anioOriginal: a,
+          mesOriginal: m,
+          nuevaFecha: nuevaFecha,
+          nuevaAnio: nA,
+          nuevaMes: nM
+        };
+        toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info');
+        render();
+        return;
+      }
+    }
+  }
+};
+
+async function cargarDatos() {
+  const inicio = performance.now(); 
+  toast('Cargando datos...', 'info');
+  cache = {};
+  const anios = [2026,2027,2028,2029,2030]; 
+  const tareas = [];
+  anios.forEach(function(anio) { 
+    for (let mes = 1; mes <= 12; mes++) { 
+      const ms = String(mes).padStart(2,'0');
+      tareas.push(get(ref(db, RUTA_BASE + '/' + anio + '/' + ms)).then(function(s) { return {t:'b', anio: anio, ms: ms, datos: s.val()}; }).catch(function() { return {t:'b', anio: anio, ms: ms, datos: null}; })); 
+    } 
+  });
+  const res = await Promise.all(tareas); 
+  let total = 0;
+  res.forEach(function(item) {
+    const anio = item.anio;
+    const ms = item.ms;
+    const datos = item.datos;
+    if (datos) { 
+      if (!cache[anio]) cache[anio] = {}; 
+      cache[anio][ms] = datos; 
+      total += Object.keys(datos).length; 
+    }
+  });
+  document.getElementById('loading').style.display = 'none';
+  toast('Carga completa: ' + total + ' registros (' + ((performance.now()-inicio)/1000).toFixed(1) + 's)', 'ok');
   render(); 
   renderizarBaseDatos(); 
-  toast(formatoEntero(regs.length) + ' registros (' + origen + '). Guardando...','info'); 
-  guardarPendientesEnFirebase();
+  actualizarBotonGuardar();
+  if (seccionActiva === 'informes') renderInformes();
+  await cargarBitacoras();
 }
 
-function actualizarPendientesInfo() {
-  const nA = pendientes.filter(function(p){return p.reg.tipo==='AMPM';}).length;
-  const nB = pendientes.filter(function(p){return p.reg.tipo==='B2C';}).length;
-  const nAdm = pendientes.filter(function(p){return p.reg.tipo==='AMPMADM';}).length;
-  const a = document.getElementById('pendientesAmpm');
-  const b = document.getElementById('pendientesB2c');
-  const ad = document.getElementById('pendientesAmpmAdmQdm');
-  if (a) a.textContent = nA>0 ? 'Guardando: ' + formatoEntero(nA) : '';
-  if (b) b.textContent = nB>0 ? 'Guardando: ' + formatoEntero(nB) : '';
-  if (ad) ad.textContent = nAdm>0 ? 'Guardando: ' + formatoEntero(nAdm) : '';
+async function cargarBitacoras() {
+  try {
+    const snap = await get(ref(db, RUTA_BITACORAS));
+    bitacorasData = snap.val() || {};
+    renderizarTodasBitacoras();
+  } catch(e) { console.error('Error cargando bitácoras:', e); }
 }
-
-function guardarPendientesEnFirebase() {
-  if (!pendientes.length) return; 
-  const total = pendientes.length; 
-  const por = pendientes.slice(); 
-  let g = 0;
-  let f = 0; 
-  let li = 0; 
-  const lotes = []; 
-  for (let i=0;i<por.length;i+=50) lotes.push(por.slice(i,i+50));
-  const proc = function() { 
-    if (li >= lotes.length) { 
-      if (f) { toast('Guardados ' + g + ', FALLIDOS ' + f,'err'); return; } 
-      pendientes = []; 
-      actualizarPendientesInfo(); 
-      verificarGuardado(); 
-      return; 
-    }
-    Promise.all(lotes[li].map(function(p) { 
-      return push(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes), p.reg).then(function(){g++;}).catch(function(e){f++;}); 
-    })).then(function(){ li++; setTimeout(proc,100); }); 
-  };
-  proc();
-}
-
-async function verificarGuardado() { 
-  const anios = [2026,2027,2028,2029,2030]; 
-  const t = []; 
-  anios.forEach(function(a) { 
-    for (let m=1;m<=12;m++){ 
-      const ms = String(m).padStart(2,'0'); 
-      t.push(get(ref(db, RUTA_BASE + '/' + a + '/' + ms)).then(function(s){return s.val();}).catch(function(){return null;})); 
-    } 
-  });
-  const res = await Promise.all(t); 
-  let total = 0; 
-  res.forEach(function(v) { if (v) total += Object.keys(v).length; }); 
-  toast('Verificado: ' + formatoEntero(total) + ' registros en Firebase','ok'); 
-  cargarDatos(); 
-}
-
-window.guardarEnFirebase = function() { 
-  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
-  if (!pendientes.length) { toast('Todo guardado','info'); return; } 
-  toast('Guardando pendientes...','info'); 
-  guardarPendientesEnFirebase(); 
-};
 
 function renderInformes() {
   const cont = document.getElementById('infResultado');
@@ -2778,7 +2938,7 @@ function renderInformes() {
   if (be) { be.style.background = '#a5d6a7'; be.style.color = '#1b5e20'; }
   const dl = document.getElementById('dlTransporteDesc'); 
   if (dl) dl.innerHTML = OPCIONES_TRANSPORTE.map(function(o) { return '<option value="' + o + '"></option>'; }).join('');
-  ['filtroDiaAmpm','filtroDiaB2c','filtroDiaAmpmAdmQdm','vfDia','expDia'].forEach(function(id) { 
+  ['filtroDiaAmpm','filtroDiaB2c','filtroDiaAdm','filtroDiaQdm','vfDia','expDia'].forEach(function(id) { 
     const s = document.getElementById(id); 
     if (!s) return; 
     for (let i=1;i<=31;i++){ 
@@ -2810,6 +2970,7 @@ function renderInformes() {
     if (e.key === 'Escape') {
       if (document.getElementById('passwordOverlay').classList.contains('show')) cerrarPassword();
       else if (document.getElementById('exportarModal').classList.contains('show')) cerrarModalExportar();
+      else if (document.getElementById('bitacoraExportOverlay').classList.contains('show')) cerrarModalExportarBitacoras();
       else if (document.getElementById('borrarMesOverlay').classList.contains('show')) cerrarBorrarMes();
       else if (document.getElementById('verFechaOverlay').classList.contains('show')) cerrarModalVerFecha();
       else if (calendarioAbierto) { calendarioAbierto = false; const p = document.getElementById('calendarioPopup'); if (p) p.classList.remove('show'); }
