@@ -37,6 +37,40 @@ const MOVILES_POR_TIPO = {
   qdm: [1,2,3,4,5,6,'spot','spot1','spot2']
 };
 
+// =====================================================================
+// 🚚 REGLA PM - Autocompletado por comuna (según imagen)
+// =====================================================================
+const REGLA_PM = {
+  'MOVIL 1': ['maipu','cerrillos','lo espejo','la cisterna','pedro aguirre cerda','el bosque','san bernardo','la florida','puente alto','san ramon'],
+  'MOVIL 2': ['huechuraba','recoleta','quilicura','conchali','quinta normal','pudahuel','cerro navia','independencia','renca','lo prado','colina','lampa'],
+  'MOVIL 3': ['providencia','nunoa','la reina','penalolen'],
+  'MOVIL 4': ['las condes','vitacura','lo barnechea'],
+  'MOVIL 5': ['santiago','estacion central','san joaquin','macul','san miguel']
+};
+
+function autocompletarTransportePM(reg) {
+  if (!reg || !reg.comuna) return reg;
+  const comunaNorm = normSinTildes(reg.comuna);
+  for (const movil in REGLA_PM) {
+    const comunas = REGLA_PM[movil];
+    for (let i = 0; i < comunas.length; i++) {
+      if (comunaNorm.includes(comunas[i]) || comunas[i].includes(comunaNorm)) {
+        reg.transporte = movil;
+        return reg;
+      }
+    }
+  }
+  return reg;
+}
+
+function esAntesDe1330() {
+  const ahora = new Date();
+  const horas = ahora.getHours();
+  const minutos = ahora.getMinutes();
+  const totalMinutos = horas * 60 + minutos;
+  return totalMinutos < (13 * 60 + 30); // antes de 13:30
+}
+
 function esAdmin(email) { return ADMIN_EMAILS.includes((email || '').toLowerCase().trim()); }
 let rolActual = 'operador';
 const mSec = (location.hash || '').match(/sec=([a-z]+)/);
@@ -183,99 +217,6 @@ function parsearFecha(raw) {
   return null;
 }
 
-// =====================================================================
-// 🚚 REGLAS RUTA PM - Autocompletado por comuna (antes de 13:30)
-// =====================================================================
-const REGLAS_RUTA_PM = {
-  'maipu': 'MOVIL 1', 'cerrillos': 'MOVIL 1', 'lo espejo': 'MOVIL 1',
-  'la cisterna': 'MOVIL 1', 'pedro aguirre cerda': 'MOVIL 1', 'el bosque': 'MOVIL 1',
-  'san bernardo': 'MOVIL 1', 'la florida': 'MOVIL 1', 'puente alto': 'MOVIL 1',
-  'san ramon': 'MOVIL 1',
-  
-  'huechuraba': 'MOVIL 2', 'recoleta': 'MOVIL 2', 'quilicura': 'MOVIL 2',
-  'conchali': 'MOVIL 2', 'quinta normal': 'MOVIL 2', 'pudahuel': 'MOVIL 2',
-  'cerro navia': 'MOVIL 2', 'independencia': 'MOVIL 2', 'renca': 'MOVIL 2',
-  'lo prado': 'MOVIL 2', 'colina': 'MOVIL 2', 'lampa': 'MOVIL 2',
-  
-  'providencia': 'MOVIL 3', 'nunoa': 'MOVIL 3', 'la reina': 'MOVIL 3',
-  'penalolen': 'MOVIL 3',
-  
-  'las condes': 'MOVIL 4', 'vitacura': 'MOVIL 4', 'lo barnechea': 'MOVIL 4',
-  
-  'santiago': 'MOVIL 5', 'estacion central': 'MOVIL 5', 'san joaquin': 'MOVIL 5',
-  'macul': 'MOVIL 5', 'san miguel': 'MOVIL 5'
-};
-
-function autocompletarTransporteRutaPM(reg) {
-  if (!reg.comuna) return reg;
-  const comunaNorm = sinTildes(reg.comuna).toLowerCase().trim();
-  const movil = REGLAS_RUTA_PM[comunaNorm];
-  if (movil) {
-    reg.transporte = movil;
-  }
-  return reg;
-}
-
-function esAntesDe1330() {
-  const ahora = new Date();
-  const horas = ahora.getHours();
-  const minutos = ahora.getMinutes();
-  const minutosTotales = horas * 60 + minutos;
-  return minutosTotales < (13 * 60 + 30); // 13:30 = 810 minutos
-}
-
-const REGLAS_MOVIL_POR_DIA = {
-  1: { 'MOVIL 1': ['la reina','casa','las condes','penalolen'], 'MOVIL 2': ['maipu','norte','pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','mut','nunoa','providencia'], 'MOVIL 4': ['alc','alto las condes','pa','parque arauco','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['nunoa','egana','santiago','san miguel'] },
-  2: { 'MOVIL 1': ['apmq','dom','dominicos','los dominicos','las condes','la reina','penalolen'], 'MOVIL 2': ['pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','santiago','nunoa','providencia','san miguel'], 'MOVIL 4': ['la dehesa','dehesa','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','lo espejo','san ramon','pedro aguirre cerda'], 'MOVIL 6': ['alc','alto las condes','pa','parque arauco'] },
-  3: { 'MOVIL 1': ['costanera','casa','las condes'], 'MOVIL 2': ['maipu','norte','pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['dominicos','los dominicos','egana','nunoa','la reina','penalolen'], 'MOVIL 4': ['alc','alto las condes','pa','parque arauco','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','lo espejo','san ramon','pedro aguirre cerda'] },
-  4: { 'MOVIL 1': ['nunoa','mut','santiago','san miguel'], 'MOVIL 2': ['pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','backcc','providencia','la reina','penalolen'], 'MOVIL 4': ['alc','alto las condes','pa','parque arauco','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','la cisternas','lo espejo','san ramon','pedro aguirre cerda'] },
-  5: { 'MOVIL 1': ['casa','dominicos','los dominicos','las condes','la reina','penalolen'], 'MOVIL 2': ['maipu','norte','pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','mut','providencia','nunoa','santiago','san miguel'], 'MOVIL 4': ['dehesa','la dehesa','pie andino','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['egana','tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','la cisternas','lo espejo','san ramon','pedro aguirre cerda'], 'MOVIL 6': ['alc','alto las condes','pa','parque arauco'] }
-};
-
-const REGLAS_MOVIL_POR_DIA_ADM = {
-  1: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago centro','stgo'], 'MOVIL 2': ['providencia','nunoa','las condes','la reina'], 'MOVIL 3': ['maipu','pudahuel','cerro navia','lo prado','quinta normal'], 'MOVIL 4': ['la florida','puente alto','la cisterna','san bernardo'], 'MOVIL 5': ['renca','conchali','independencia','recoleta','huechuraba'], 'MOVIL 6': ['vitacura','lo barnechea','la dehesa'] },
-  2: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago'], 'MOVIL 2': ['providencia','nunoa','macul','penalolen'], 'MOVIL 3': ['maipu','pudahuel','cerro navia','lo prado'], 'MOVIL 4': ['la florida','puente alto','san jose de maipo','pirque'], 'MOVIL 5': ['quilicura','renca','conchali','independencia'], 'MOVIL 6': ['vitacura','lo barnechea','las condes'] },
-  3: { 'MOVIL 1': ['adm','qdm','retiro','casa central','stgo centro'], 'MOVIL 2': ['providencia','nunoa','la reina','penalolen'], 'MOVIL 3': ['maipu','pudahuel','lo prado','cerro navia','quinta normal'], 'MOVIL 4': ['la florida','puente alto','la cisterna','el bosque'], 'MOVIL 5': ['renca','conchali','recoleta','independencia','huechuraba'], 'MOVIL 6': ['vitacura','lo barnechea','las condes'] },
-  4: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago'], 'MOVIL 2': ['providencia','nunoa','macul','la florida'], 'MOVIL 3': ['maipu','pudahuel','cerro navia','lo prado'], 'MOVIL 4': ['puente alto','la cisterna','san bernardo','la pintana'], 'MOVIL 5': ['quilicura','renca','conchali','independencia'], 'MOVIL 6': ['vitacura','lo barnechea','las condes','la reina'] },
-  5: { 'MOVIL 1': ['adm','qdm','casa central','retiro','santiago centro'], 'MOVIL 2': ['providencia','nunoa','la reina','penalolen','macul'], 'MOVIL 3': ['maipu','pudahuel','lo prado','cerro navia'], 'MOVIL 4': ['la florida','puente alto','la cisterna','san bernardo'], 'MOVIL 5': ['renca','conchali','independencia','recoleta','huechuraba','quilicura'], 'MOVIL 6': ['vitacura','lo barnechea','las condes'] }
-};
-
-function candidatosMovil(reg) {
-  const dia = diaSemanaNumero(reg.fecha);
-  const reglas = REGLAS_MOVIL_POR_DIA[dia];
-  if (!reglas) return [];
-  const texto = normSinTildes([reg.comuna, reg.unidad, reg.observacion, reg.direccion].join(' '));
-  const c = [];
-  Object.keys(reglas).forEach(function(mov) { if (reglas[mov].some(function(k) { return coincideClave(texto, k); })) c.push(mov); });
-  return c;
-}
-
-function candidatosMovilAdm(reg) {
-  const dia = diaSemanaNumero(reg.fecha);
-  const reglas = REGLAS_MOVIL_POR_DIA_ADM[dia];
-  if (!reglas) return [];
-  const texto = normSinTildes([reg.comuna, reg.unidad, reg.observacion, reg.direccion].join(' '));
-  const c = [];
-  Object.keys(reglas).forEach(function(mov) { if (reglas[mov].some(function(k) { return coincideClave(texto, k); })) c.push(mov); });
-  return c;
-}
-
-function autocompletarTransporteNuevo(reg) {
-  const c = candidatosMovil(reg);
-  reg._candidatos = c;
-  if (c.length === 1) { reg.transporte = c[0]; }
-  else if (!reg.transporte) { reg.transporte = ''; }
-  return reg;
-}
-
-function autocompletarTransporteNuevoAdm(reg) {
-  const c = candidatosMovilAdm(reg);
-  reg._candidatos = c;
-  if (c.length === 1) { reg.transporte = c[0]; }
-  else if (!reg.transporte) { reg.transporte = ''; }
-  return reg;
-}
-
 function pedirClave(onOk) {
   pwCallback = onOk;
   const inp = document.getElementById('pwInput');
@@ -296,7 +237,7 @@ window.confirmarPassword = function() {
 };
 
 // =====================================================================
-//  RELOJ DIGITAL
+// 🕐 RELOJ DIGITAL
 // =====================================================================
 function actualizarReloj() {
   const ahora = new Date();
@@ -482,19 +423,6 @@ window.cambiarTabBit = function(tab) {
   document.querySelectorAll('#seccionBitacoras .basedatos-tab-content').forEach(function(c) { c.classList.remove('show'); });
   const map = { ampm: 'bitContentAmpm', b2c: 'bitContentB2c', adm: 'bitContentAdm', qdm: 'bitContentQdm' };
   document.getElementById(map[tab] || 'bitContentAmpm').classList.add('show');
-  renderizarBitacorasTipo(tab);
-};
-
-window.cambiarMovilBit = function(tipo, movil) {
-  const map = { ampm: 'bitContentAmpm', b2c: 'bitContentB2c', adm: 'bitContentAdm', qdm: 'bitContentQdm' };
-  const cont = document.getElementById(map[tipo] || 'bitContentAmpm');
-  if (!cont) return;
-  cont.querySelectorAll('.bitacora-movil-tab').forEach(function(t) { t.classList.remove('active'); });
-  const tabBtn = cont.querySelector('.bitacora-movil-tab[data-movil="' + movil + '"]');
-  if (tabBtn) tabBtn.classList.add('active');
-  cont.querySelectorAll('.bitacora-movil-content').forEach(function(c) { c.classList.remove('show'); });
-  const movilId = (typeof movil === 'string') ? movil : movil;
-  document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movilId).classList.add('show');
 };
 
 window.cambiarTema = function(t) { 
@@ -1602,6 +1530,280 @@ window.confirmarExportar = function() {
   cerrarModalExportar();
 };
 
+// =====================================================================
+// 📤 EXPORTAR BITÁCORAS - MODAL CON SELECCIÓN (FILTRADO POR MÓDULO)
+// =====================================================================
+function getBitacorasDisponibles(tipo) {
+  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
+  return moviles.map(function(movil) {
+    return { tipo: tipo, movil: movil, label: tipo.toUpperCase() + ' - ' + ((typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil) };
+  });
+}
+
+window.abrirModalExportarBitacoras = function(tipo) {
+  bitacoraExportTipoActual = tipo;
+  const grid = document.getElementById('bitacoraExportGrid');
+  if (!grid) return;
+  
+  document.getElementById('bitExpTitulo').textContent = '📤 Exportar Bitácoras ' + tipo.toUpperCase() + ' a Excel';
+  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas exportar. Cada una irá en una planilla separada.';
+  
+  const bitacoras = getBitacorasDisponibles(tipo);
+  let html = '';
+  bitacoras.forEach(function(item, idx) {
+    const key = item.tipo + '_movil' + item.movil;
+    const data = bitacorasData[key];
+    const tieneDatos = data && data.filas && data.filas.length > 0;
+    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
+    const label = item.label + (count > 0 ? ' (' + count + ')' : '');
+    html += '<div class="bitacora-export-item">';
+    html += '<input type="checkbox" id="bitExp_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
+    html += '<label for="bitExp_' + idx + '">' + label + '</label>';
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+  document.getElementById('bitacoraExportOverlay').classList.add('show');
+};
+
+window.cerrarModalExportarBitacoras = function() {
+  document.getElementById('bitacoraExportOverlay').classList.remove('show');
+};
+
+window.seleccionarTodasBitacoras = function() {
+  const checkboxes = document.querySelectorAll('#bitacoraExportGrid input[type="checkbox"]');
+  const allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+  checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
+};
+
+window.confirmarExportarBitacoras = function() {
+  const checkboxes = document.querySelectorAll('#bitacoraExportGrid input[type="checkbox"]:checked');
+  if (checkboxes.length === 0) {
+    toast('Selecciona al menos una bitácora', 'err');
+    return;
+  }
+  
+  const tipo = bitacoraExportTipoActual;
+  const bitacoras = getBitacorasDisponibles(tipo);
+  const wb = XLSX.utils.book_new();
+  let exportadas = 0;
+  
+  checkboxes.forEach(function(cb) {
+    const idx = parseInt(cb.id.replace('bitExp_', ''));
+    const item = bitacoras[idx];
+    const key = item.tipo + '_movil' + item.movil;
+    const data = bitacorasData[key];
+    if (!data || !data.filas || data.filas.length === 0) return;
+    
+    const filasConDatos = data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); });
+    if (filasConDatos.length === 0) return;
+    
+    const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
+    const wsData = [];
+    wsData.push(['Bitácora ' + movilLabel + ' - ' + item.tipo.toUpperCase(), '', '', '', '', '', '']);
+    wsData.push(['', '', '', '', '', '', '']);
+    wsData.push(['N°', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
+    filasConDatos.forEach(function(fila, i) {
+      wsData.push([i+1, fila.requirente||'', fila.documentos||'', fila.cliente||'', fila.direccion||'', fila.comuna||'', fila.obs||'']);
+    });
+    wsData.push(['', '', '', '', '', '', '']);
+    wsData.push(['Transporte', 'Fecha', 'Ruta', 'Responsable', 'Firma', '', '']);
+    wsData.push([data.footer.transporte||'', data.footer.fecha||'', data.footer.ruta||'', data.footer.responsable||'', data.footer.firma||'', '', '']);
+    
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
+    ws['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 18 }, { wch: 20 }];
+    const sheetName = (item.tipo + '_' + movilLabel).substring(0, 31);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    exportadas++;
+  });
+  
+  if (exportadas === 0) {
+    toast('No hay bitácoras con datos para exportar', 'err');
+    return;
+  }
+  
+  const fecha = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, 'Bitacoras_' + tipo.toUpperCase() + '_' + fecha + '.xlsx');
+  toast('✅ ' + exportadas + ' bitácoras exportadas', 'ok');
+  cerrarModalExportarBitacoras();
+};
+
+// =====================================================================
+// 🖼️ EXPORTAR BITÁCORAS JPEG
+// =====================================================================
+window.abrirModalJPEGBitacoras = function(tipo) {
+  bitacoraJPEGTipoActual = tipo;
+  const grid = document.getElementById('bitacoraJPEGGrid');
+  if (!grid) return;
+  
+  document.getElementById('bitJpegTitulo').textContent = '🖼️ Exportar Bitácoras ' + tipo.toUpperCase() + ' como JPEG';
+  document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas exportar como imagen.';
+  
+  const bitacoras = getBitacorasDisponibles(tipo);
+  let html = '';
+  bitacoras.forEach(function(item, idx) {
+    const key = item.tipo + '_movil' + item.movil;
+    const data = bitacorasData[key];
+    const tieneDatos = data && data.filas && data.filas.length > 0;
+    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
+    const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
+    const label = movilLabel + (count > 0 ? ' (' + count + ' registros)' : '');
+    html += '<div class="bitacora-export-item">';
+    html += '<input type="checkbox" id="bitJpeg_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
+    html += '<label for="bitJpeg_' + idx + '">' + label + '</label>';
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+  document.getElementById('bitacoraJPEGOverlay').classList.add('show');
+};
+
+window.cerrarModalJPEGBitacoras = function() {
+  document.getElementById('bitacoraJPEGOverlay').classList.remove('show');
+};
+
+window.seleccionarTodasBitacorasJPEG = function() {
+  const checkboxes = document.querySelectorAll('#bitacoraJPEGGrid input[type="checkbox"]');
+  const allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+  checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
+};
+
+window.confirmarExportarJPEGBitacoras = function() {
+  const checkboxes = document.querySelectorAll('#bitacoraJPEGGrid input[type="checkbox"]:checked');
+  if (checkboxes.length === 0) {
+    toast('Selecciona al menos una bitácora', 'err');
+    return;
+  }
+  
+  const tipo = bitacoraJPEGTipoActual;
+  const bitacoras = getBitacorasDisponibles(tipo);
+  const fecha = new Date().toISOString().split('T')[0];
+  let exportadas = 0;
+  
+  checkboxes.forEach(function(cb) {
+    const idx = parseInt(cb.id.replace('bitJpeg_', ''));
+    const item = bitacoras[idx];
+    const movilId = (typeof item.movil === 'string') ? item.movil : item.movil;
+    const element = document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movilId);
+    if (!element) return;
+    
+    const clone = element.cloneNode(true);
+    const inputs = clone.querySelectorAll('input');
+    inputs.forEach(function(inp) {
+      const span = document.createElement('span');
+      span.textContent = inp.value || '';
+      span.style.cssText = 'display:block;width:100%;padding:4px 6px;font-family:Arial,sans-serif;font-size:11px;color:#000;white-space:normal;word-wrap:break-word;';
+      inp.parentNode.replaceChild(span, inp);
+    });
+    const tables = clone.querySelectorAll('table');
+    tables.forEach(function(t) { t.style.tableLayout = 'auto'; t.style.width = '100%'; });
+    clone.style.position = 'absolute';
+    clone.style.left = '-9999px';
+    clone.style.top = '0';
+    clone.style.width = '1400px';
+    clone.style.background = '#fff';
+    clone.style.padding = '30px';
+    clone.style.overflow = 'visible';
+    document.body.appendChild(clone);
+    
+    html2canvas(clone, {
+      backgroundColor: '#ffffff', scale: 2, useCORS: true, allowTaint: true, logging: false,
+      width: 1400, windowWidth: 1400, windowHeight: clone.scrollHeight, scrollX: 0, scrollY: 0
+    }).then(function(canvas) {
+      document.body.removeChild(clone);
+      const link = document.createElement('a');
+      const movilLabel = (typeof item.movil === 'string') ? item.movil : 'Movil' + item.movil;
+      link.download = 'Bitacora_' + tipo + '_' + movilLabel + '_' + fecha + '.jpeg';
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+      exportadas++;
+      if (exportadas === checkboxes.length) {
+        toast('✅ ' + exportadas + ' bitácoras JPEG exportadas', 'ok');
+      }
+    }).catch(function(e) {
+      document.body.removeChild(clone);
+      toast('Error al exportar JPEG: ' + e.message, 'err');
+    });
+  });
+  
+  cerrarModalJPEGBitacoras();
+};
+
+// =====================================================================
+// 🖨️ IMPRIMIR BITÁCORAS
+// =====================================================================
+window.abrirModalImprimirBitacoras = function(tipo) {
+  bitacoraPrintTipoActual = tipo;
+  const grid = document.getElementById('bitacoraPrintGrid');
+  if (!grid) return;
+  
+  document.getElementById('bitPrintTitulo').textContent = '🖨️ Imprimir Bitácoras ' + tipo.toUpperCase();
+  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas imprimir.';
+  
+  const bitacoras = getBitacorasDisponibles(tipo);
+  let html = '';
+  bitacoras.forEach(function(item, idx) {
+    const key = item.tipo + '_movil' + item.movil;
+    const data = bitacorasData[key];
+    const tieneDatos = data && data.filas && data.filas.length > 0;
+    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
+    const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
+    const label = movilLabel + (count > 0 ? ' (' + count + ' registros)' : '');
+    html += '<div class="bitacora-export-item">';
+    html += '<input type="checkbox" id="bitPrint_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
+    html += '<label for="bitPrint_' + idx + '">' + label + '</label>';
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+  document.getElementById('bitacoraPrintOverlay').classList.add('show');
+};
+
+window.cerrarModalImprimirBitacoras = function() {
+  document.getElementById('bitacoraPrintOverlay').classList.remove('show');
+};
+
+window.seleccionarTodasBitacorasPrint = function() {
+  const checkboxes = document.querySelectorAll('#bitacoraPrintGrid input[type="checkbox"]');
+  const allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+  checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
+};
+
+window.confirmarImprimirBitacoras = function() {
+  const checkboxes = document.querySelectorAll('#bitacoraPrintGrid input[type="checkbox"]:checked');
+  if (checkboxes.length === 0) {
+    toast('Selecciona al menos una bitácora', 'err');
+    return;
+  }
+  
+  const tipo = bitacoraPrintTipoActual;
+  const bitacoras = getBitacorasDisponibles(tipo);
+  
+  checkboxes.forEach(function(cb) {
+    const idx = parseInt(cb.id.replace('bitPrint_', ''));
+    const item = bitacoras[idx];
+    const movilId = (typeof item.movil === 'string') ? item.movil : item.movil;
+    const element = document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movilId);
+    if (!element) return;
+    
+    const printWindow = window.open('', '_blank', 'width=1200,height=900');
+    if (!printWindow) { toast('Bloqueador de popups activo', 'err'); return; }
+    const clone = element.cloneNode(true);
+    const inputs = clone.querySelectorAll('input');
+    inputs.forEach(function(inp) {
+      const span = document.createElement('span');
+      span.textContent = inp.value || '';
+      span.style.cssText = 'display:block;width:100%;padding:4px;font-family:Arial,sans-serif;font-size:11px;';
+      inp.parentNode.replaceChild(span, inp);
+    });
+    const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
+    const html = '<!DOCTYPE html><html><head><title>Bitácora ' + movilLabel + '</title><style>@page { size: letter landscape; margin: 10mm; }* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: Arial, sans-serif; padding: 10mm; background: #fff; }h2 { text-align: center; color: #1a5490; font-size: 18pt; margin-bottom: 12px; }table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11pt; background: #fff; }th { background: #1a5490; color: white; font-weight: bold; }.no-print { text-align: center; margin-top: 15px; }.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }</style></head><body><h2>Bitácora ' + movilLabel + ' - ' + tipo.toUpperCase() + '</h2>' + clone.innerHTML + '<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div></body></html>';
+    printWindow.document.write(html);
+    printWindow.document.close();
+  });
+  
+  toast('Ventanas de impresión abiertas', 'ok');
+  cerrarModalImprimirBitacoras();
+};
+
 function procesarArchivoB2C(file, lista) {
   const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
   toast('Leyendo ' + file.name + '...', 'info');
@@ -1704,10 +1906,16 @@ function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pe
 function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'ADM', pendientesADM); }
 function procesarArchivoQdm(file) { procesarArchivoTipoSeccion(file, 'QDM', pendientesQDM); }
 
-// ✅ FUNCIÓN MODIFICADA CON RUTA PM
 function procesarArchivoTipoSeccion(file, tipo, lista) {
   const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
   toast('Leyendo ' + file.name + '...','info');
+  
+  // ✅ REGLA PM: Si es antes de las 13:30, aplicar autocompletado por comuna
+  const aplicarReglaPM = (tipo === 'AMPM') && esAntesDe1330();
+  if (aplicarReglaPM) {
+    toast('🕐 Antes de 13:30 - Aplicando REGLA PM', 'info');
+  }
+  
   leerFilas(file, function(filas) { 
     try {
       if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
@@ -1725,10 +1933,6 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
       const aT = parts[0];
       const mT = parts[1];
       const nuevos = [];
-      
-      // ✅ Verificar si es AM/PM y antes de 13:30
-      const usarRutaPM = (tipo === 'AMPM') && esAntesDe1330();
-      
       for (let i=1;i<filas.length;i++){ 
         const row = filas[i]; 
         if (!row || !row.length) continue;
@@ -1750,28 +1954,16 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
           otroPalet:false, 
           tipo: tipo 
         };
-        
-        // ✅ AUTOCOMPLETADO SEGÚN HORA Y TIPO
-        if (usarRutaPM) {
-          autocompletarTransporteRutaPM(reg);
-          if (!reg.transporte) {
-            reg = autocompletarTransporteNuevo(reg);
-          }
-        } else if (tipo === 'ADM') {
-          reg = autocompletarTransporteNuevoAdm(reg);
-        } else {
-          reg = autocompletarTransporteNuevo(reg);
+        // ✅ APLICAR REGLA PM si es antes de 13:30
+        if (aplicarReglaPM) {
+          reg = autocompletarTransportePM(reg);
         }
-        
         nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
       }
       if (!nuevos.length) { toast('Sin filas con tracking','err'); return; }
       lista.push.apply(lista, nuevos); 
       paginaDesc = 1; 
-      const mensaje = usarRutaPM 
-        ? formatoEntero(nuevos.length) + ' filas cargadas con RUTA PM (antes 13:30). Revisa TRANSPORTE/RANGO y presiona GUARDAR.'
-        : formatoEntero(nuevos.length) + ' filas. Revisa TRANSPORTE/RANGO y presiona GUARDAR.';
-      toast(mensaje,'info'); 
+      toast(formatoEntero(nuevos.length) + ' filas. Revisa TRANSPORTE/RANGO y presiona GUARDAR.','info'); 
       render();
     } catch(e){ 
       toast(''+e.message,'err'); 
@@ -1783,7 +1975,6 @@ function procesarJSONAMPM(file) { procesarJSONTipoSeccion(file, 'AMPM', pendient
 function procesarJSONAdm(file) { procesarJSONTipoSeccion(file, 'ADM', pendientesADM); }
 function procesarJSONQdm(file) { procesarJSONTipoSeccion(file, 'QDM', pendientesQDM); }
 
-// ✅ FUNCIÓN MODIFICADA CON RUTA PM
 function procesarJSONTipoSeccion(file, tipo, lista) {
   const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
   const reader = new FileReader();
@@ -1796,10 +1987,6 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
       const aT = parts[0];
       const mT = parts[1];
       const nuevos = [];
-      
-      // ✅ Verificar si es AM/PM y antes de 13:30
-      const usarRutaPM = (tipo === 'AMPM') && esAntesDe1330();
-      
       arr.forEach(function(o,i) { 
         const m = {}; 
         Object.keys(o).forEach(function(k) { m[normEnc(k)] = o[k]; });
@@ -1832,28 +2019,16 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
           otroPalet:false, 
           tipo: tipo 
         };
-        
-        // ✅ AUTOCOMPLETADO SEGÚN HORA Y TIPO
-        if (usarRutaPM) {
-          autocompletarTransporteRutaPM(reg);
-          if (!reg.transporte) {
-            reg = autocompletarTransporteNuevo(reg);
-          }
-        } else if (tipo === 'ADM') {
-          reg = autocompletarTransporteNuevoAdm(reg);
-        } else {
-          reg = autocompletarTransporteNuevo(reg);
+        // ✅ APLICAR REGLA PM si es antes de 13:30
+        if (tipo === 'AMPM' && esAntesDe1330() && !reg.transporte) {
+          reg = autocompletarTransportePM(reg);
         }
-        
         nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
       });
       if (!nuevos.length) { toast('JSON sin registros válidos','err'); return; }
       lista.push.apply(lista, nuevos); 
       paginaDesc = 1; 
-      const mensaje = usarRutaPM 
-        ? formatoEntero(nuevos.length) + ' registros JSON cargados con RUTA PM (antes 13:30). Presiona GUARDAR.'
-        : formatoEntero(nuevos.length) + ' registros JSON. Presiona GUARDAR.';
-      toast(mensaje,'info'); 
+      toast(formatoEntero(nuevos.length) + ' registros JSON. Presiona GUARDAR.','info'); 
       render();
     } catch(e){ 
       toast('JSON inválido','err'); 
@@ -1911,7 +2086,7 @@ function procesarArchivoGenerico(file, tipo) {
         const mes = parts[1];
         const rango = String(gv(col.RANGO)).trim().toUpperCase(); 
         const comuna = canonComuna(gv(col.COMUNA));
-        regs.push({ 
+        let reg = { 
           anio: anio, 
           mes: mes, 
           reg: { 
@@ -1930,7 +2105,12 @@ function procesarArchivoGenerico(file, tipo) {
             creado: new Date().toISOString(), 
             importado:true 
           } 
-        }); 
+        };
+        // ✅ APLICAR REGLA PM si es antes de 13:30 y es AM/PM
+        if (tipo === 'AMPM' && esAntesDe1330() && !reg.reg.transporte) {
+          reg.reg = autocompletarTransportePM(reg.reg);
+        }
+        regs.push(reg);
       }
       if (sinF) toast(formatoEntero(sinF) + ' filas sin fecha válida','err');
       cargarPendientes(regs, tipo + ' (' + file.name + ')');
@@ -2523,7 +2703,7 @@ window.setInfTipo = function(t) {
 };
 
 // =====================================================================
-// 📒 BITÁCORAS
+// 📒 BITÁCORAS - SIEMPRE VISIBLES TODAS LAS TABLAS
 // =====================================================================
 function renderizarTodasBitacoras() {
   ['ampm','b2c','adm','qdm'].forEach(function(tipo) {
@@ -2614,273 +2794,7 @@ window.guardarBitacora = function(tipo) {
 };
 
 // =====================================================================
-// 📤 EXPORTAR BITÁCORAS EXCEL (FILTRADO POR MÓDULO)
-// =====================================================================
-window.abrirModalExportarBitacoras = function(tipo) {
-  bitacoraExportTipoActual = tipo;
-  const grid = document.getElementById('bitacoraExportGrid');
-  if (!grid) return;
-  
-  document.getElementById('bitExpTitulo').textContent = '📤 Exportar Bitácoras ' + tipo.toUpperCase() + ' a Excel';
-  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas exportar. Cada una irá en una planilla separada.';
-  
-  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
-  let html = '';
-  moviles.forEach(function(movil, idx) {
-    const key = tipo + '_movil' + movil;
-    const data = bitacorasData[key];
-    const tieneDatos = data && data.filas && data.filas.length > 0;
-    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
-    const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil;
-    const label = movilLabel + (count > 0 ? ' (' + count + ')' : '');
-    html += '<div class="bitacora-export-item">';
-    html += '<input type="checkbox" id="bitExp_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
-    html += '<label for="bitExp_' + idx + '">' + label + '</label>';
-    html += '</div>';
-  });
-  grid.innerHTML = html;
-  document.getElementById('bitacoraExportOverlay').classList.add('show');
-};
-
-window.cerrarModalExportarBitacoras = function() {
-  document.getElementById('bitacoraExportOverlay').classList.remove('show');
-};
-
-window.seleccionarTodasBitacoras = function() {
-  const checkboxes = document.querySelectorAll('#bitacoraExportGrid input[type="checkbox"]');
-  const allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
-  checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
-};
-
-window.confirmarExportarBitacoras = function() {
-  const checkboxes = document.querySelectorAll('#bitacoraExportGrid input[type="checkbox"]:checked');
-  if (checkboxes.length === 0) {
-    toast('Selecciona al menos una bitácora', 'err');
-    return;
-  }
-  
-  const tipo = bitacoraExportTipoActual;
-  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
-  const wb = XLSX.utils.book_new();
-  let exportadas = 0;
-  
-  checkboxes.forEach(function(cb) {
-    const idx = parseInt(cb.id.replace('bitExp_', ''));
-    const movil = moviles[idx];
-    const key = tipo + '_movil' + movil;
-    const data = bitacorasData[key];
-    if (!data || !data.filas || data.filas.length === 0) return;
-    
-    const filasConDatos = data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); });
-    if (filasConDatos.length === 0) return;
-    
-    const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil;
-    const wsData = [];
-    wsData.push(['Bitácora ' + movilLabel + ' - ' + tipo.toUpperCase(), '', '', '', '', '', '']);
-    wsData.push(['', '', '', '', '', '', '']);
-    wsData.push(['N°', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
-    filasConDatos.forEach(function(fila, i) {
-      wsData.push([i+1, fila.requirente||'', fila.documentos||'', fila.cliente||'', fila.direccion||'', fila.comuna||'', fila.obs||'']);
-    });
-    wsData.push(['', '', '', '', '', '', '']);
-    wsData.push(['Transporte', 'Fecha', 'Ruta', 'Responsable', 'Firma', '', '']);
-    wsData.push([data.footer.transporte||'', data.footer.fecha||'', data.footer.ruta||'', data.footer.responsable||'', data.footer.firma||'', '', '']);
-    
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
-    ws['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 18 }, { wch: 20 }];
-    const sheetName = (tipo + '_' + movilLabel).substring(0, 31);
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
-    exportadas++;
-  });
-  
-  if (exportadas === 0) {
-    toast('No hay bitácoras con datos para exportar', 'err');
-    return;
-  }
-  
-  const fecha = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, 'Bitacoras_' + tipo.toUpperCase() + '_' + fecha + '.xlsx');
-  toast('✅ ' + exportadas + ' bitácoras exportadas', 'ok');
-  cerrarModalExportarBitacoras();
-};
-
-// =====================================================================
-// 🖼️ EXPORTAR BITÁCORAS JPEG (FILTRADO POR MÓDULO)
-// =====================================================================
-window.abrirModalJPEGBitacoras = function(tipo) {
-  bitacoraJPEGTipoActual = tipo;
-  const grid = document.getElementById('bitacoraJPEGGrid');
-  if (!grid) return;
-  
-  document.getElementById('bitJpegTitulo').textContent = '️ Exportar Bitácoras ' + tipo.toUpperCase() + ' como JPEG';
-  document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas exportar como imagen.';
-  
-  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
-  let html = '';
-  moviles.forEach(function(movil, idx) {
-    const key = tipo + '_movil' + movil;
-    const data = bitacorasData[key];
-    const tieneDatos = data && data.filas && data.filas.length > 0;
-    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
-    const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil;
-    const label = movilLabel + (count > 0 ? ' (' + count + ' registros)' : '');
-    html += '<div class="bitacora-export-item">';
-    html += '<input type="checkbox" id="bitJpeg_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
-    html += '<label for="bitJpeg_' + idx + '">' + label + '</label>';
-    html += '</div>';
-  });
-  grid.innerHTML = html;
-  document.getElementById('bitacoraJPEGOverlay').classList.add('show');
-};
-
-window.cerrarModalJPEGBitacoras = function() {
-  document.getElementById('bitacoraJPEGOverlay').classList.remove('show');
-};
-
-window.seleccionarTodasBitacorasJPEG = function() {
-  const checkboxes = document.querySelectorAll('#bitacoraJPEGGrid input[type="checkbox"]');
-  const allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
-  checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
-};
-
-window.confirmarExportarJPEGBitacoras = function() {
-  const checkboxes = document.querySelectorAll('#bitacoraJPEGGrid input[type="checkbox"]:checked');
-  if (checkboxes.length === 0) {
-    toast('Selecciona al menos una bitácora', 'err');
-    return;
-  }
-  
-  const tipo = bitacoraJPEGTipoActual;
-  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
-  const fecha = new Date().toISOString().split('T')[0];
-  let exportadas = 0;
-  
-  checkboxes.forEach(function(cb) {
-    const idx = parseInt(cb.id.replace('bitJpeg_', ''));
-    const movil = moviles[idx];
-    const element = document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movil);
-    if (!element) return;
-    
-    const clone = element.cloneNode(true);
-    const inputs = clone.querySelectorAll('input');
-    inputs.forEach(function(inp) {
-      const span = document.createElement('span');
-      span.textContent = inp.value || '';
-      span.style.cssText = 'display:block;width:100%;padding:4px 6px;font-family:Arial,sans-serif;font-size:11px;color:#000;white-space:normal;word-wrap:break-word;';
-      inp.parentNode.replaceChild(span, inp);
-    });
-    const tables = clone.querySelectorAll('table');
-    tables.forEach(function(t) { t.style.tableLayout = 'auto'; t.style.width = '100%'; });
-    clone.style.position = 'absolute';
-    clone.style.left = '-9999px';
-    clone.style.top = '0';
-    clone.style.width = '1400px';
-    clone.style.background = '#fff';
-    clone.style.padding = '30px';
-    clone.style.overflow = 'visible';
-    document.body.appendChild(clone);
-    
-    html2canvas(clone, {
-      backgroundColor: '#ffffff', scale: 2, useCORS: true, allowTaint: true, logging: false,
-      width: 1400, windowWidth: 1400, windowHeight: clone.scrollHeight, scrollX: 0, scrollY: 0
-    }).then(function(canvas) {
-      document.body.removeChild(clone);
-      const link = document.createElement('a');
-      const movilLabel = (typeof movil === 'string') ? movil : 'Movil' + movil;
-      link.download = 'Bitacora_' + tipo + '_' + movilLabel + '_' + fecha + '.jpeg';
-      link.href = canvas.toDataURL('image/jpeg', 0.95);
-      link.click();
-      exportadas++;
-      if (exportadas === checkboxes.length) {
-        toast('✅ ' + exportadas + ' bitácoras JPEG exportadas', 'ok');
-      }
-    }).catch(function(e) {
-      document.body.removeChild(clone);
-      toast('Error al exportar JPEG: ' + e.message, 'err');
-    });
-  });
-  
-  cerrarModalJPEGBitacoras();
-};
-
-// =====================================================================
-// 🖨️ IMPRIMIR BITÁCORAS (FILTRADO POR MÓDULO)
-// =====================================================================
-window.abrirModalImprimirBitacoras = function(tipo) {
-  bitacoraPrintTipoActual = tipo;
-  const grid = document.getElementById('bitacoraPrintGrid');
-  if (!grid) return;
-  
-  document.getElementById('bitPrintTitulo').textContent = '🖨️ Imprimir Bitácoras ' + tipo.toUpperCase();
-  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas imprimir.';
-  
-  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
-  let html = '';
-  moviles.forEach(function(movil, idx) {
-    const key = tipo + '_movil' + movil;
-    const data = bitacorasData[key];
-    const tieneDatos = data && data.filas && data.filas.length > 0;
-    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
-    const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil;
-    const label = movilLabel + (count > 0 ? ' (' + count + ' registros)' : '');
-    html += '<div class="bitacora-export-item">';
-    html += '<input type="checkbox" id="bitPrint_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
-    html += '<label for="bitPrint_' + idx + '">' + label + '</label>';
-    html += '</div>';
-  });
-  grid.innerHTML = html;
-  document.getElementById('bitacoraPrintOverlay').classList.add('show');
-};
-
-window.cerrarModalImprimirBitacoras = function() {
-  document.getElementById('bitacoraPrintOverlay').classList.remove('show');
-};
-
-window.seleccionarTodasBitacorasPrint = function() {
-  const checkboxes = document.querySelectorAll('#bitacoraPrintGrid input[type="checkbox"]');
-  const allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
-  checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
-};
-
-window.confirmarImprimirBitacoras = function() {
-  const checkboxes = document.querySelectorAll('#bitacoraPrintGrid input[type="checkbox"]:checked');
-  if (checkboxes.length === 0) {
-    toast('Selecciona al menos una bitácora', 'err');
-    return;
-  }
-  
-  const tipo = bitacoraPrintTipoActual;
-  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
-  
-  checkboxes.forEach(function(cb) {
-    const idx = parseInt(cb.id.replace('bitPrint_', ''));
-    const movil = moviles[idx];
-    const element = document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movil);
-    if (!element) return;
-    
-    const printWindow = window.open('', '_blank', 'width=1200,height=900');
-    if (!printWindow) { toast('Bloqueador de popups activo', 'err'); return; }
-    const clone = element.cloneNode(true);
-    const inputs = clone.querySelectorAll('input');
-    inputs.forEach(function(inp) {
-      const span = document.createElement('span');
-      span.textContent = inp.value || '';
-      span.style.cssText = 'display:block;width:100%;padding:4px;font-family:Arial,sans-serif;font-size:11px;';
-      inp.parentNode.replaceChild(span, inp);
-    });
-    const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil;
-    const html = '<!DOCTYPE html><html><head><title>Bitácora ' + movilLabel + '</title><style>@page { size: letter landscape; margin: 10mm; }* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: Arial, sans-serif; padding: 10mm; background: #fff; }h2 { text-align: center; color: #1a5490; font-size: 18pt; margin-bottom: 12px; }table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11pt; background: #fff; }th { background: #1a5490; color: white; font-weight: bold; }.no-print { text-align: center; margin-top: 15px; }.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }</style></head><body><h2>Bitácora ' + movilLabel + ' - ' + tipo.toUpperCase() + '</h2>' + clone.innerHTML + '<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div></body></html>';
-    printWindow.document.write(html);
-    printWindow.document.close();
-  });
-  
-  toast('Ventanas de impresión abiertas', 'ok');
-  cerrarModalImprimirBitacoras();
-};
-
-// =====================================================================
-//  CALENDARIOS
+// 📅 CALENDARIOS
 // =====================================================================
 window.toggleCalendario = function() {
   const popup = document.getElementById('calendarioPopup');
