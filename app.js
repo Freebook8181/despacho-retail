@@ -29,7 +29,6 @@ const REGISTROS_POR_PAGINA_DESC = 30;
 const OPCIONES_TRANSPORTE = ['MOVIL 1','MOVIL 2','MOVIL 3','MOVIL 4','MOVIL 5','MOVIL 6','DON RAUL','DON JOSE','SERVICIO AM/PM','SERVICIO B2C','SERVICIO ADM','SERVICIO QDM','SPOT','SPOT 1','SPOT 2','RETIRA CLIENTE','SERVICIO 3PL','TRANSGAMBOA'];
 const OPCIONES_OBS = ['CASA CENTRAL','RETIRO','RETIRO CLIENTE','RETIRO CASA CENTRAL'];
 
-// ✅ MÓVILES POR TIPO (incluye SPOT, SPOT 1, SPOT 2)
 const MOVILES_POR_TIPO = {
   ampm: [1,2,3,4,5,6,'spot','spot1','spot2'],
   b2c: [1,2,3,4,5,6,'spot','spot1','spot2'],
@@ -37,9 +36,6 @@ const MOVILES_POR_TIPO = {
   qdm: [1,2,3,4,5,6,'spot','spot1','spot2']
 };
 
-// =====================================================================
-// 🚚 REGLA PM - Autocompletado por comuna (antes de 13:30)
-// =====================================================================
 const REGLA_PM = {
   'MOVIL 1': ['maipu','cerrillos','lo espejo','la cisterna','pedro aguirre cerda','el bosque','san bernardo','la florida','puente alto','san ramon'],
   'MOVIL 2': ['huechuraba','recoleta','quilicura','conchali','quinta normal','pudahuel','cerro navia','independencia','renca','lo prado','colina','lampa'],
@@ -236,9 +232,6 @@ window.confirmarPassword = function() {
   if (cb) cb();
 };
 
-// =====================================================================
-// 🕐 RELOJ DIGITAL
-// =====================================================================
 function actualizarReloj() {
   const ahora = new Date();
   const horas = String(ahora.getHours()).padStart(2, '0');
@@ -260,9 +253,6 @@ function actualizarReloj() {
 setInterval(actualizarReloj, 1000);
 actualizarReloj();
 
-// =====================================================================
-//  LOGIN
-// =====================================================================
 window.login = function() {
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPass').value;
@@ -346,9 +336,6 @@ function aplicarRol() {
   } 
 }
 
-// =====================================================================
-// 🧭 TIPOS Y SECCIONES
-// =====================================================================
 function tipoDeSeccion() {
   if (seccionActiva === 'ampm') return 'AMPM';
   if (seccionActiva === 'b2c') return 'B2C';
@@ -415,7 +402,6 @@ window.cambiarTabBD = function(tab) {
   renderizarBaseDatos();
 };
 
-// ✅ CAMBIO 1: cambiarTabBit renderiza todas las bitácoras del tipo
 window.cambiarTabBit = function(tab) {
   bitTabActiva = tab;
   document.querySelectorAll('.basedatos-tab[data-btab]').forEach(function(t) { t.classList.remove('active'); });
@@ -1007,6 +993,7 @@ window.irAPaginaDesc = function(p) {
   if (sv) sv.scrollTop = 0; 
 };
 
+// ✅ MODIFICADO: Sin cuadro al lado de fecha, checkbox otro palet centrado y separado
 function filaHTMLTabla(r, cf, cg, dr) {
   const b2c = (seccionActiva === 'b2c');
   const id = (r.idPedido||'').toString().trim().toUpperCase();
@@ -1027,9 +1014,11 @@ function filaHTMLTabla(r, cf, cg, dr) {
   const tieneCambioFecha = cambiosFechaLocales[r.key] !== undefined;
   if (tieneCambioFecha) clase += 'fila-fecha-modificada ';
   const bp = r.pendiente ? '<span class="badge badge-pendiente">SIN GUARDAR</span>' : '';
-  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">️</span>' : '';
+  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">✏️</span>' : '';
   const fechaMostrar = tieneCambioFecha ? cambiosFechaLocales[r.key].nuevaFecha : r.fecha;
-  const celdaFecha = '<td><div class="fecha-cell-wrap"><input type="date" value="' + (fechaMostrar||'') + '" onchange="cambiarFechaFila(\'' + r.key + '\', this.value, ' + (r.pendiente?true:false) + ')"><button type="button" class="btn-cal-fila" onclick="toggleCalFila(\'' + r.key + '\', event)"></button><div class="cal-popup-fila" id="cal_popup_' + r.key + '"></div></div> ' + bp + indicadorCambio + '</td>';
+  
+  // ✅ Sin cuadro al lado de la fecha - solo input date
+  const celdaFecha = '<td><div class="fecha-cell-wrap"><input type="date" value="' + (fechaMostrar||'') + '" onchange="cambiarFechaFila(\'' + r.key + '\', this.value, ' + (r.pendiente?true:false) + ')"></div> ' + bp + indicadorCambio + '</td>';
   const celdaSel = '<td class="td-sel"><input type="checkbox" style="width:16px;height:16px;" ' + sel + ' onchange="toggleSeleccionDesc(\'' + r.key + '\', this.checked)"></td>';
 
   if (r.key === editandoKey) {
@@ -1057,7 +1046,8 @@ function filaHTMLTabla(r, cf, cg, dr) {
     trans = '<td><div class="filtro-combo" style="margin:0;display:inline-block;vertical-align:middle"><input type="text" id="trans_input_' + r.key + '" value="' + (r.transporte||'').replace(/"/g,'&quot;') + '" style="width:120px;padding-right:22px" oninput="filtrarComboTransporte(\'' + r.key + '\', this.value)" onfocus="abrirComboTransporte(\'' + r.key + '\')"><button class="combo-arrow" onclick="toggleComboTransporte(\'' + r.key + '\')">▼</button><div class="combo-list" id="combo_trans_' + r.key + '"></div></div>' + (debeElegir ? '<div style="color:var(--accent-orange);font-size:.7em;font-weight:700">Elige: ' + cands.join(' / ') + '</div>' : '') + '</td>';
     rango = '<td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td>';
   }
-  const acc = '<td class="td-acciones"><input type="checkbox" ' + (r.otroPalet?'checked':'') + ' onchange="toggleOtroPalet(\'' + r.key + '\', ' + (r.pendiente?true:false) + ', this.checked)"><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistro(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\',' + (r.pendiente?true:false) + ')" title="Eliminar">🗑️</button></td>';
+  // ✅ Checkbox otro palet centrado y separado del basurero
+  const acc = '<td class="td-otro-palet"><input type="checkbox" ' + (r.otroPalet?'checked':'') + ' onchange="toggleOtroPalet(\'' + r.key + '\', ' + (r.pendiente?true:false) + ', this.checked)" title="Otro palet"></td><td class="td-acciones"><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistro(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\',' + (r.pendiente?true:false) + ')" title="Eliminar">🗑️</button></td>';
   const valorCelda = '<td>' + formatoMonedaAlineado(r.valor) + '</td>';
   if (b2c) {
     return '<tr class="' + clase + '">' + celdaSel + celdaFecha + '<td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + ind + '</td><td>' + (r.nombre||'') + '</td><td>' + (r.celular||'') + '</td><td>' + (r.email||'') + '</td><td>' + dirShow + (dirRep?' <span style="color:var(--accent-orange);font-size:.7em;font-weight:700">[misma dir x' + dr[dirKey] + ']</span>':'') + '</td><td>' + canonComuna(r.comuna) + '</td>' + valorCelda + obs + trans + rango + acc + '</tr>';
@@ -1262,6 +1252,7 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
   });
 };
 
+// ✅ MODIFICADO: Envío a bitácoras SPOT/SPOT1/SPOT2 según transporte
 window.enviarSeleccion = function() {
   if (seleccionadosDesc.size === 0) { toast('Selecciona al menos una fila', 'err'); return; }
   const tipoSec = tipoDeSeccion();
@@ -1291,14 +1282,27 @@ window.enviarSeleccion = function() {
       reg.fecha = cambiosFechaLocales[key].nuevaFecha;
     }
     const transporte = (reg.transporte || '').toUpperCase();
-    const match = transporte.match(/MOVIL\s+(\d)/i);
-    let movilNum = null;
-    if (match) {
-      movilNum = parseInt(match[1]);
-    } else if (tipoSec === 'B2C' || tipoSec === 'QDM' || tipoSec === 'ADM') {
-      movilNum = 1;
+    
+    // ✅ DETECTAR SPOT, SPOT 1, SPOT 2
+    let bitKey = null;
+    if (transporte === 'SPOT') {
+      bitKey = tipoBitacora + '_spot';
+    } else if (transporte === 'SPOT 1') {
+      bitKey = tipoBitacora + '_spot1';
+    } else if (transporte === 'SPOT 2') {
+      bitKey = tipoBitacora + '_spot2';
+    } else {
+      const match = transporte.match(/MOVIL\s+(\d)/i);
+      let movilNum = null;
+      if (match) {
+        movilNum = parseInt(match[1]);
+      } else if (tipoSec === 'B2C' || tipoSec === 'QDM' || tipoSec === 'ADM') {
+        movilNum = 1;
+      }
+      if (!movilNum || movilNum < 1 || movilNum > 6) { errores.push((reg.idPedido || key) + ': Transporte no válido'); return; }
+      bitKey = tipoBitacora + '_movil' + movilNum;
     }
-    if (!movilNum || movilNum < 1 || movilNum > 6) { errores.push((reg.idPedido || key) + ': Transporte no válido'); return; }
+    
     const filaBitacora = {
       requirente: reg.unidad || '',
       documentos: reg.idPedido || '',
@@ -1307,9 +1311,8 @@ window.enviarSeleccion = function() {
       comuna: reg.comuna || '',
       obs: reg.observacion || ''
     };
-    const bitKey = tipoBitacora + '_movil' + movilNum;
     if (!bitacorasData[bitKey]) {
-      bitacorasData[bitKey] = { filas: [], footer: { transporte: 'MOVIL ' + movilNum, fecha: reg.fecha || '', ruta: reg.rango || 'AM', responsable: '', firma: '' } };
+      bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || 'AM', responsable: '', firma: '' } };
     }
     let filaIdx = -1;
     for (let i = 0; i < 15; i++) {
@@ -1533,9 +1536,6 @@ window.confirmarExportar = function() {
   cerrarModalExportar();
 };
 
-// =====================================================================
-// 📤 EXPORTAR BITÁCORAS EXCEL (FILTRADO POR MÓDULO)
-// =====================================================================
 function getBitacorasDisponibles(tipo) {
   const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
   return moviles.map(function(movil) {
@@ -1631,9 +1631,6 @@ window.confirmarExportarBitacoras = function() {
   cerrarModalExportarBitacoras();
 };
 
-// =====================================================================
-// ️ EXPORTAR BITÁCORAS JPEG (FILTRADO POR MÓDULO)
-// =====================================================================
 window.abrirModalJPEGBitacoras = function(tipo) {
   bitacoraJPEGTipoActual = tipo;
   const grid = document.getElementById('bitacoraJPEGGrid');
@@ -1731,9 +1728,6 @@ window.confirmarExportarJPEGBitacoras = function() {
   cerrarModalJPEGBitacoras();
 };
 
-// =====================================================================
-// 🖨️ IMPRIMIR BITÁCORAS (FILTRADO POR MÓDULO)
-// =====================================================================
 window.abrirModalImprimirBitacoras = function(tipo) {
   bitacoraPrintTipoActual = tipo;
   const grid = document.getElementById('bitacoraPrintGrid');
@@ -1909,12 +1903,10 @@ function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pe
 function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'ADM', pendientesADM); }
 function procesarArchivoQdm(file) { procesarArchivoTipoSeccion(file, 'QDM', pendientesQDM); }
 
-// ✅ FUNCIÓN ACTUALIZADA CON REGLA PM
 function procesarArchivoTipoSeccion(file, tipo, lista) {
   const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
   toast('Leyendo ' + file.name + '...','info');
   
-  // ✅ REGLA PM: Si es antes de las 13:30 y es AM/PM, aplicar autocompletado por comuna
   const aplicarReglaPM = (tipo === 'AMPM') && esAntesDe1330();
   if (aplicarReglaPM) {
     toast('Antes de 13:30 - Aplicando REGLA PM', 'info');
@@ -1958,7 +1950,6 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
           otroPalet:false, 
           tipo: tipo 
         };
-        // ✅ APLICAR REGLA PM si es antes de 13:30
         if (aplicarReglaPM) {
           reg = autocompletarTransportePM(reg);
         }
@@ -2023,7 +2014,6 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
           otroPalet:false, 
           tipo: tipo 
         };
-        // ✅ APLICAR REGLA PM si es antes de 13:30
         if (tipo === 'AMPM' && esAntesDe1330() && !reg.transporte) {
           reg = autocompletarTransportePM(reg);
         }
@@ -2110,7 +2100,6 @@ function procesarArchivoGenerico(file, tipo) {
             importado:true 
           } 
         };
-        // ✅ APLICAR REGLA PM si es antes de 13:30 y es AM/PM
         if (tipo === 'AMPM' && esAntesDe1330() && !reg.reg.transporte) {
           reg.reg = autocompletarTransportePM(reg.reg);
         }
@@ -2706,10 +2695,6 @@ window.setInfTipo = function(t) {
   if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">Modulo de informes en desarrollo para ' + t + '</div>';
 };
 
-// =====================================================================
-// 📒 BITÁCORAS - SIEMPRE VISIBLES TODAS LAS TABLAS POR MÓDULO
-// =====================================================================
-// ✅ CAMBIO 2: renderizarTodasBitacoras y renderizarBitacorasTipo
 function renderizarTodasBitacoras() {
   ['ampm','b2c','adm','qdm'].forEach(function(tipo) {
     renderizarBitacorasTipo(tipo);
@@ -2723,7 +2708,6 @@ function renderizarBitacorasTipo(tipo) {
   });
 }
 
-// ✅ CAMBIO 3: generarHTMLBitacora sin emojis
 function generarHTMLBitacora(tipo, movil) {
   const key = tipo + '_movil' + movil;
   const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil;
@@ -2764,7 +2748,6 @@ function renderizarBitacora(tipo, movil) {
   cont.innerHTML = generarHTMLBitacora(tipo, movil);
 }
 
-// ✅ CAMBIO 4: guardarBitacora guarda todas las del tipo
 window.guardarBitacora = function(tipo) {
   const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
   let guardadas = 0;
@@ -2800,9 +2783,6 @@ window.guardarBitacora = function(tipo) {
   setTimeout(function() { toast('Bitacoras ' + tipo.toUpperCase() + ' guardadas: ' + guardadas, 'ok'); }, 500);
 };
 
-// =====================================================================
-// 📅 CALENDARIOS
-// =====================================================================
 window.toggleCalendario = function() {
   const popup = document.getElementById('calendarioPopup');
   if (!popup) return;
