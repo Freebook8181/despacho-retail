@@ -1023,7 +1023,7 @@ window.toggleCombo = function(col) {
 function abrirCombo(col) { cerrarTodosCombos(); poblarCombo(col, ''); const list = document.getElementById('combo_' + col); if (list) { list.style.display = 'block'; comboAbierto = col; } }
 
 window.elegirOpcionCombo = function(col, val) {
-  const input = document.getElementById('fDesc' + col.charAt(0).toUpperCase() + col.slice(1);
+const input = document.getElementById('fDesc' + col.charAt(0).toUpperCase() + col.slice(1));
   if (input) input.value = val;
   cerrarTodosCombos();
   render();
