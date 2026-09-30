@@ -73,22 +73,19 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .header-left h1{color:var(--accent-blue);font-size:1.3em;font-weight:700;letter-spacing:1px}
 .header-right{display:flex;align-items:center;gap:12px}
 .user-info{color:var(--text-secondary);font-size:.85em}
-
-/* ✅ RELOJ DIGITAL */
 .reloj-digital{display:flex;align-items:center;gap:8px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;padding:6px 12px;margin-right:12px;font-family:'Courier New',monospace;min-width:160px;justify-content:center}
 .reloj-fecha{color:var(--accent-orange);font-size:0.65em;font-weight:700;text-transform:uppercase;letter-spacing:1px}
 .reloj-hora{color:var(--accent-blue);font-size:1.3em;font-weight:900;letter-spacing:2px}
 .reloj-segundos{color:var(--accent-green);font-size:0.85em;font-weight:700;min-width:22px}
-
-/* ✅ BOTONES DE TEMA SIEMPRE VISIBLES */
 .theme-selector{display:flex;gap:6px;align-items:center;margin-right:12px}
 .theme-btn{width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;background:transparent!important;transition:all .3s;position:relative}
+.theme-btn::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:9px;background:inherit;filter:brightness(1.2);opacity:0.7}
+.theme-btn::after{content:'';position:absolute;top:1px;left:2px;right:2px;height:40%;border-radius:7px 7px 50% 50%;background:linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%)}
 .theme-btn[data-theme="dark"]{background:linear-gradient(135deg,#000,#141414);box-shadow:0 0 0 1px rgba(59,130,246,0.3)}
 .theme-btn[data-theme="light"]{background:linear-gradient(135deg,#e2e8f0,#fff);box-shadow:0 0 0 1px rgba(37,99,235,0.3)}
 .theme-btn[data-theme="feminino"]{background:linear-gradient(135deg,#c026d3,#fdf4ff);box-shadow:0 0 0 1px rgba(192,38,211,0.3)}
 .theme-btn.active{transform:scale(1.15);box-shadow:0 0 0 2px var(--accent-blue)}
 .theme-btn:hover{transform:scale(1.1)}
-
 .btn-logout{background:var(--accent-red);color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85em;font-weight:600}
 .btn-logout:hover{background:var(--accent-red-hover)}
 
@@ -112,7 +109,6 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .select-filtro{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;cursor:pointer;min-width:90px;height:34px}
 .select-filtro:focus{outline:none;border-color:var(--accent-blue)}
 
-/* ✅ BOTONES SERIOS - SIN FONDO, SOLO BORDES */
 .btn-bd-importar,.btn-importar-accion,.btn-exportar,.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul,.btn-bd-pdf,.btn-bitacora-jpeg,.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo,.btn-enviar,.btn-buscar,.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar,.btn-bitacora-excel,.btn-bd-pag,.btn-pag-numero,.btn-bd-pag-nav,.btn-pag-nav,.btn-acc,.btn-calendario,.btn-cal-fila,.modal-btn,.btn-exportar-confirmar,.btn-guardar-bitacora,.btn-exportar-bitacora,.btn-jpeg-bitacora,.btn-imprimir-bitacora,.bitacora-export-select-all{
   background:transparent !important;
   color:var(--text-primary) !important;
@@ -152,9 +148,8 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .basedatos-tab:hover{color:var(--accent-blue)}
 .basedatos-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
 
-.basedatos-tab-content{display:none}
-.basedatos-tab-content.show{display:block}
-.bitacora-movil-content{display:block}
+.basedatos-tab-content{display:block}
+.bitacora-movil-content{display:block;margin-bottom:20px}
 
 .bitacora-actions{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;padding:10px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border-color)}
 .bd-filtro-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
@@ -483,41 +478,73 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
       <div class="basedatos-tab-content show" id="bitContentAmpm">
         <div class="bitacora-actions">
           <button class="btn-guardar-bitacora" onclick="guardarBitacora('ampm')">💾 GUARDAR</button>
-          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('ampm')">📤 EXPORTAR EXCEL</button>
+          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('ampm')"> EXPORTAR EXCEL</button>
           <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('ampm')">🖼️ EXPORTAR JPEG</button>
           <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('ampm')">🖨️ IMPRIMIR</button>
         </div>
         <div id="bitacoraAmpmMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovilspot" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovilspot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAmpmMovilspot2" class="bitacora-movil-content"></div>
       </div>
       
       <div class="basedatos-tab-content" id="bitContentB2c">
         <div class="bitacora-actions">
           <button class="btn-guardar-bitacora" onclick="guardarBitacora('b2c')">💾 GUARDAR</button>
           <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('b2c')">📤 EXPORTAR EXCEL</button>
-          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('b2c')">️ EXPORTAR JPEG</button>
+          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('b2c')">🖼️ EXPORTAR JPEG</button>
           <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('b2c')">🖨️ IMPRIMIR</button>
         </div>
         <div id="bitacoraB2cMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovilspot" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovilspot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraB2cMovilspot2" class="bitacora-movil-content"></div>
       </div>
       
       <div class="basedatos-tab-content" id="bitContentAdm">
         <div class="bitacora-actions">
           <button class="btn-guardar-bitacora" onclick="guardarBitacora('adm')">💾 GUARDAR</button>
           <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('adm')">📤 EXPORTAR EXCEL</button>
-          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('adm')">️ EXPORTAR JPEG</button>
-          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('adm')">️ IMPRIMIR</button>
+          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('adm')">🖼️ EXPORTAR JPEG</button>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('adm')">🖨️ IMPRIMIR</button>
         </div>
         <div id="bitacoraAdmMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovilspot" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovilspot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraAdmMovilspot2" class="bitacora-movil-content"></div>
       </div>
       
       <div class="basedatos-tab-content" id="bitContentQdm">
         <div class="bitacora-actions">
           <button class="btn-guardar-bitacora" onclick="guardarBitacora('qdm')">💾 GUARDAR</button>
-          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('qdm')">📤 EXPORTAR EXCEL</button>
+          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('qdm')"> EXPORTAR EXCEL</button>
           <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('qdm')">🖼️ EXPORTAR JPEG</button>
-          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('qdm')">️ IMPRIMIR</button>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('qdm')">🖨️ IMPRIMIR</button>
         </div>
         <div id="bitacoraQdmMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovilspot" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovilspot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraQdmMovilspot2" class="bitacora-movil-content"></div>
       </div>
     </div>
 
@@ -601,7 +628,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
       </div>
       <div id="infResultado">
         <div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">
-          <h3 style="margin-bottom:15px;color:var(--accent-blue)"> Módulo de Informes Logísticos</h3>
+          <h3 style="margin-bottom:15px;color:var(--accent-blue)">📊 Módulo de Informes Logísticos</h3>
           <p>Seleccione los filtros y presione <strong>GENERAR INFORME</strong> para visualizar el análisis completo.</p>
           <p style="margin-top:10px;font-size:.85em">Datos en tiempo real desde Firebase • Análisis BI profesional</p>
         </div>
@@ -772,7 +799,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
   </div>
 </div>
 
-<!-- ✅ MODAL EXPORTAR BITÁCORAS EXCEL -->
 <div class="bitacora-export-overlay" id="bitacoraExportOverlay">
   <div class="bitacora-export-modal">
     <h3 id="bitExpTitulo">📤 Exportar Bitácoras a Excel</h3>
@@ -786,21 +812,19 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
   </div>
 </div>
 
-<!-- ✅ MODAL EXPORTAR BITÁCORAS JPEG -->
 <div class="bitacora-export-overlay" id="bitacoraJPEGOverlay">
   <div class="bitacora-export-modal">
-    <h3 id="bitJpegTitulo">️ Exportar Bitácoras como JPEG</h3>
+    <h3 id="bitJpegTitulo">🖼️ Exportar Bitácoras como JPEG</h3>
     <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitJpegSubtitulo">Selecciona las bitácoras que deseas exportar como imagen.</p>
     <button class="bitacora-export-select-all" onclick="seleccionarTodasBitacorasJPEG()">✅ Seleccionar todas</button>
     <div class="bitacora-export-grid" id="bitacoraJPEGGrid"></div>
     <div class="bitacora-export-actions">
       <button class="btn-exportar-cancelar" onclick="cerrarModalJPEGBitacoras()">Cancelar</button>
-      <button class="btn-exportar-confirmar" onclick="confirmarExportarJPEGBitacoras()">️ Exportar seleccionadas</button>
+      <button class="btn-exportar-confirmar" onclick="confirmarExportarJPEGBitacoras()">🖼️ Exportar seleccionadas</button>
     </div>
   </div>
 </div>
 
-<!-- ✅ MODAL IMPRIMIR BITÁCORAS -->
 <div class="bitacora-export-overlay" id="bitacoraPrintOverlay">
   <div class="bitacora-export-modal">
     <h3 id="bitPrintTitulo">🖨️ Imprimir Bitácoras</h3>
