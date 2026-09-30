@@ -73,16 +73,22 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .header-left h1{color:var(--accent-blue);font-size:1.3em;font-weight:700;letter-spacing:1px}
 .header-right{display:flex;align-items:center;gap:12px}
 .user-info{color:var(--text-secondary);font-size:.85em}
+
+/* ✅ RELOJ DIGITAL */
 .reloj-digital{display:flex;align-items:center;gap:8px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;padding:6px 12px;margin-right:12px;font-family:'Courier New',monospace;min-width:160px;justify-content:center}
 .reloj-fecha{color:var(--accent-orange);font-size:0.65em;font-weight:700;text-transform:uppercase;letter-spacing:1px}
 .reloj-hora{color:var(--accent-blue);font-size:1.3em;font-weight:900;letter-spacing:2px}
 .reloj-segundos{color:var(--accent-green);font-size:0.85em;font-weight:700;min-width:22px}
+
+/* ✅ BOTONES DE TEMA SIEMPRE VISIBLES */
 .theme-selector{display:flex;gap:6px;align-items:center;margin-right:12px}
-.theme-btn{width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;background:transparent!important}
-.theme-btn[data-theme="dark"]{background:linear-gradient(135deg,#000,#141414)}
-.theme-btn[data-theme="light"]{background:linear-gradient(135deg,#e2e8f0,#fff)}
-.theme-btn[data-theme="feminino"]{background:linear-gradient(135deg,#c026d3,#fdf4ff)}
+.theme-btn{width:32px;height:18px;border:none!important;border-radius:9px;cursor:pointer;background:transparent!important;transition:all .3s;position:relative}
+.theme-btn[data-theme="dark"]{background:linear-gradient(135deg,#000,#141414);box-shadow:0 0 0 1px rgba(59,130,246,0.3)}
+.theme-btn[data-theme="light"]{background:linear-gradient(135deg,#e2e8f0,#fff);box-shadow:0 0 0 1px rgba(37,99,235,0.3)}
+.theme-btn[data-theme="feminino"]{background:linear-gradient(135deg,#c026d3,#fdf4ff);box-shadow:0 0 0 1px rgba(192,38,211,0.3)}
 .theme-btn.active{transform:scale(1.15);box-shadow:0 0 0 2px var(--accent-blue)}
+.theme-btn:hover{transform:scale(1.1)}
+
 .btn-logout{background:var(--accent-red);color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85em;font-weight:600}
 .btn-logout:hover{background:var(--accent-red-hover)}
 
@@ -106,8 +112,8 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .select-filtro{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;cursor:pointer;min-width:90px;height:34px}
 .select-filtro:focus{outline:none;border-color:var(--accent-blue)}
 
-/* ✅ BOTONES SERIOS - SIN FONDO, SOLO BORDES DELGADOS */
-.btn-bd-importar,.btn-importar-accion,.btn-exportar,.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul,.btn-bd-pdf,.btn-bitacora-jpeg,.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo,.btn-enviar,.btn-buscar,.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar,.btn-bitacora-excel,.btn-bd-pag,.btn-pag-numero,.btn-bd-pag-nav,.btn-pag-nav,.btn-acc,.btn-calendario,.btn-cal-fila,.modal-btn,.btn-exportar-confirmar,.btn-exportar-bitacora,.btn-imprimir-bitacora,.btn-jpeg-bitacora,.btn-guardar-bitacora,.bitacora-export-select-all{
+/* ✅ BOTONES SERIOS - SIN FONDO, SOLO BORDES */
+.btn-bd-importar,.btn-importar-accion,.btn-exportar,.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul,.btn-bd-pdf,.btn-bitacora-jpeg,.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo,.btn-enviar,.btn-buscar,.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar,.btn-bitacora-excel,.btn-bd-pag,.btn-pag-numero,.btn-bd-pag-nav,.btn-pag-nav,.btn-acc,.btn-calendario,.btn-cal-fila,.modal-btn,.btn-exportar-confirmar,.btn-guardar-bitacora,.btn-exportar-bitacora,.btn-jpeg-bitacora,.btn-imprimir-bitacora,.bitacora-export-select-all{
   background:transparent !important;
   color:var(--text-primary) !important;
   border:1px solid var(--border-color) !important;
@@ -146,11 +152,6 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .basedatos-tab:hover{color:var(--accent-blue)}
 .basedatos-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
 
-.bitacora-movil-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color);flex-wrap:wrap}
-.bitacora-movil-tab{padding:8px 16px;cursor:pointer;font-weight:600;font-size:.8em;color:var(--text-secondary);border-bottom:3px solid transparent;text-transform:uppercase}
-.bitacora-movil-tab:hover{color:var(--accent-blue)}
-.bitacora-movil-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
-
 .basedatos-tab-content{display:none}
 .basedatos-tab-content.show{display:block}
 .bitacora-movil-content{display:block}
@@ -169,6 +170,8 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .bd-descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;margin:4px 0 8px 0;text-transform:uppercase}
 
 .basedatos-tabla-wrap{overflow:auto;max-height:500px;border:1px solid var(--border-color);border-radius:4px;margin-bottom:10px;background:var(--bg-secondary)}
+.basedatos-tabla-wrap::-webkit-scrollbar{width:8px;height:8px}
+.basedatos-tabla-wrap::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
 .basedatos-tabla{width:100%;border-collapse:collapse;font-size:.85em}
 .basedatos-tabla th{background:var(--bg-tertiary);color:var(--text-primary);padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-color);position:sticky;top:0;z-index:10;text-transform:uppercase;font-size:.8em}
 .basedatos-tabla td{padding:8px;border-bottom:1px solid var(--border-color);color:var(--text-primary)}
@@ -272,6 +275,8 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
 .modal-title{color:#fff;font-weight:700;font-size:1.1em}
 .modal-controls{display:flex;gap:6px}
 .modal-body{flex:1;overflow:auto;padding:0}
+.modal-body::-webkit-scrollbar{width:8px;height:8px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
 .modal-info{color:var(--text-primary);font-size:.9em;padding:12px 20px;background:var(--bg-tertiary);border-bottom:1px solid var(--border-color)}
 .modal-filtro{display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-wrap:wrap}
 .modal-filtro label{color:var(--text-secondary);font-weight:600;font-size:.85em}
@@ -482,84 +487,27 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
           <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('ampm')">🖼️ EXPORTAR JPEG</button>
           <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('ampm')">🖨️ IMPRIMIR</button>
         </div>
-        <div class="bitacora-movil-tabs">
-          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('ampm',1)">MOVIL 1</div>
-          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('ampm',2)">MOVIL 2</div>
-          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('ampm',3)">MOVIL 3</div>
-          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('ampm',4)">MOVIL 4</div>
-          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('ampm',5)">MOVIL 5</div>
-          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('ampm',6)">MOVIL 6</div>
-          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('ampm','spot')">SPOT</div>
-          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('ampm','spot1')">SPOT 1</div>
-          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('ampm','spot2')">SPOT 2</div>
-        </div>
         <div id="bitacoraAmpmMovil1" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovil2" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovil3" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovil4" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovil5" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovil6" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovilspot" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovilspot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraAmpmMovilspot2" class="bitacora-movil-content"></div>
       </div>
       
       <div class="basedatos-tab-content" id="bitContentB2c">
         <div class="bitacora-actions">
           <button class="btn-guardar-bitacora" onclick="guardarBitacora('b2c')">💾 GUARDAR</button>
           <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('b2c')">📤 EXPORTAR EXCEL</button>
-          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('b2c')">🖼️ EXPORTAR JPEG</button>
-          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('b2c')">️ IMPRIMIR</button>
-        </div>
-        <div class="bitacora-movil-tabs">
-          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('b2c',1)">MOVIL 1</div>
-          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('b2c',2)">MOVIL 2</div>
-          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('b2c',3)">MOVIL 3</div>
-          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('b2c',4)">MOVIL 4</div>
-          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('b2c',5)">MOVIL 5</div>
-          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('b2c',6)">MOVIL 6</div>
-          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('b2c','spot')">SPOT</div>
-          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('b2c','spot1')">SPOT 1</div>
-          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('b2c','spot2')">SPOT 2</div>
+          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('b2c')">️ EXPORTAR JPEG</button>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('b2c')">🖨️ IMPRIMIR</button>
         </div>
         <div id="bitacoraB2cMovil1" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovil2" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovil3" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovil4" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovilspot" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovilspot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraB2cMovilspot2" class="bitacora-movil-content"></div>
       </div>
       
       <div class="basedatos-tab-content" id="bitContentAdm">
         <div class="bitacora-actions">
           <button class="btn-guardar-bitacora" onclick="guardarBitacora('adm')">💾 GUARDAR</button>
           <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('adm')">📤 EXPORTAR EXCEL</button>
-          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('adm')">🖼️ EXPORTAR JPEG</button>
-          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('adm')">🖨️ IMPRIMIR</button>
-        </div>
-        <div class="bitacora-movil-tabs">
-          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('adm',1)">MOVIL 1</div>
-          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('adm',2)">MOVIL 2</div>
-          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('adm',3)">MOVIL 3</div>
-          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('adm',4)">MOVIL 4</div>
-          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('adm',5)">MOVIL 5</div>
-          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('adm',6)">MOVIL 6</div>
-          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('adm','spot')">SPOT</div>
-          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('adm','spot1')">SPOT 1</div>
-          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('adm','spot2')">SPOT 2</div>
+          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('adm')">️ EXPORTAR JPEG</button>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('adm')">️ IMPRIMIR</button>
         </div>
         <div id="bitacoraAdmMovil1" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil2" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil3" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil4" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil5" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovil6" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovilspot" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovilspot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraAdmMovilspot2" class="bitacora-movil-content"></div>
       </div>
       
       <div class="basedatos-tab-content" id="bitContentQdm">
@@ -567,28 +515,9 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
           <button class="btn-guardar-bitacora" onclick="guardarBitacora('qdm')">💾 GUARDAR</button>
           <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('qdm')">📤 EXPORTAR EXCEL</button>
           <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('qdm')">🖼️ EXPORTAR JPEG</button>
-          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('qdm')">🖨️ IMPRIMIR</button>
-        </div>
-        <div class="bitacora-movil-tabs">
-          <div class="bitacora-movil-tab active" data-movil="1" onclick="cambiarMovilBit('qdm',1)">MOVIL 1</div>
-          <div class="bitacora-movil-tab" data-movil="2" onclick="cambiarMovilBit('qdm',2)">MOVIL 2</div>
-          <div class="bitacora-movil-tab" data-movil="3" onclick="cambiarMovilBit('qdm',3)">MOVIL 3</div>
-          <div class="bitacora-movil-tab" data-movil="4" onclick="cambiarMovilBit('qdm',4)">MOVIL 4</div>
-          <div class="bitacora-movil-tab" data-movil="5" onclick="cambiarMovilBit('qdm',5)">MOVIL 5</div>
-          <div class="bitacora-movil-tab" data-movil="6" onclick="cambiarMovilBit('qdm',6)">MOVIL 6</div>
-          <div class="bitacora-movil-tab" data-movil="spot" onclick="cambiarMovilBit('qdm','spot')">SPOT</div>
-          <div class="bitacora-movil-tab" data-movil="spot1" onclick="cambiarMovilBit('qdm','spot1')">SPOT 1</div>
-          <div class="bitacora-movil-tab" data-movil="spot2" onclick="cambiarMovilBit('qdm','spot2')">SPOT 2</div>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('qdm')">️ IMPRIMIR</button>
         </div>
         <div id="bitacoraQdmMovil1" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil2" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil3" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil4" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil5" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovil6" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovilspot" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovilspot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraQdmMovilspot2" class="bitacora-movil-content"></div>
       </div>
     </div>
 
@@ -866,7 +795,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
     <div class="bitacora-export-grid" id="bitacoraJPEGGrid"></div>
     <div class="bitacora-export-actions">
       <button class="btn-exportar-cancelar" onclick="cerrarModalJPEGBitacoras()">Cancelar</button>
-      <button class="btn-exportar-confirmar" onclick="confirmarExportarJPEGBitacoras()">🖼️ Exportar seleccionadas</button>
+      <button class="btn-exportar-confirmar" onclick="confirmarExportarJPEGBitacoras()">️ Exportar seleccionadas</button>
     </div>
   </div>
 </div>
