@@ -246,6 +246,10 @@ tr.id-repetido-otro td{background:var(--id-otro-bg)!important;font-weight:600}
 td.td-acciones{white-space:nowrap;text-align:center}
 td.td-acciones input[type="checkbox"]{width:16px;height:16px}
 
+/* ✅ CHECKBOX OTRO PALET CENTRADO Y SEPARADO */
+td.td-otro-palet{text-align:center;padding:6px 12px;vertical-align:middle}
+td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--accent-blue)}
+
 .filtro-combo{position:relative;margin-top:8px}
 .filtro-combo input{width:100%;padding-right:22px}
 .combo-arrow{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:.8em}
@@ -471,7 +475,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
       </div>
     </div>
 
-    <!-- ✅ BITACORAS CON 4 PESTAÑAS INDEPENDIENTES -->
     <div class="seccion-contenido" id="seccionBitacoras">
       <h3 class="basedatos-subtitulo">BITACORAS</h3>
       <div class="basedatos-tabs">
@@ -481,7 +484,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
         <div class="basedatos-tab" data-btab="qdm" onclick="cambiarTabBit('qdm')">QDM</div>
       </div>
       
-      <!-- BITACORAS AM/PM -->
       <div class="basedatos-tab-content show" id="bitContentAmpm">
         <div class="bitacora-seccion">
           <div class="bitacora-actions">
@@ -503,7 +505,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
         </div>
       </div>
       
-      <!-- BITACORAS B2C -->
       <div class="basedatos-tab-content" id="bitContentB2c">
         <div class="bitacora-seccion">
           <div class="bitacora-actions">
@@ -525,7 +526,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
         </div>
       </div>
       
-      <!-- BITACORAS ADM -->
       <div class="basedatos-tab-content" id="bitContentAdm">
         <div class="bitacora-seccion">
           <div class="bitacora-actions">
@@ -547,7 +547,6 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
         </div>
       </div>
       
-      <!-- BITACORAS QDM -->
       <div class="basedatos-tab-content" id="bitContentQdm">
         <div class="bitacora-seccion">
           <div class="bitacora-actions">
@@ -589,7 +588,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
           <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('AMPM')">BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenAmpm"></div>
-        <div class="bd-descripcion-subtitulo">Descripción</div>
+        <div class="bd-descripcion-subtitulo">Descripcion</div>
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAmpm"></thead><tbody id="bdTbodyAmpm"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionAmpm"></div>
       </div>
@@ -604,7 +603,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
           <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('B2C')">BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenB2c"></div>
-        <div class="bd-descripcion-subtitulo">Descripción</div>
+        <div class="bd-descripcion-subtitulo">Descripcion</div>
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadB2c"></thead><tbody id="bdTbodyB2c"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionB2c"></div>
       </div>
@@ -619,7 +618,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
           <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('ADM')">BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenAdm"></div>
-        <div class="bd-descripcion-subtitulo">Descripción</div>
+        <div class="bd-descripcion-subtitulo">Descripcion</div>
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAdm"></thead><tbody id="bdTbodyAdm"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionAdm"></div>
       </div>
@@ -634,7 +633,7 @@ td.td-acciones input[type="checkbox"]{width:16px;height:16px}
           <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('QDM')">BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenQdm"></div>
-        <div class="bd-descripcion-subtitulo">Descripción</div>
+        <div class="bd-descripcion-subtitulo">Descripcion</div>
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadQdm"></thead><tbody id="bdTbodyQdm"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionQdm"></div>
       </div>
