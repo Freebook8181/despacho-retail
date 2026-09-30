@@ -183,6 +183,47 @@ function parsearFecha(raw) {
   return null;
 }
 
+// =====================================================================
+// 🚚 REGLAS RUTA PM - Autocompletado por comuna (antes de 13:30)
+// =====================================================================
+const REGLAS_RUTA_PM = {
+  'maipu': 'MOVIL 1', 'cerrillos': 'MOVIL 1', 'lo espejo': 'MOVIL 1',
+  'la cisterna': 'MOVIL 1', 'pedro aguirre cerda': 'MOVIL 1', 'el bosque': 'MOVIL 1',
+  'san bernardo': 'MOVIL 1', 'la florida': 'MOVIL 1', 'puente alto': 'MOVIL 1',
+  'san ramon': 'MOVIL 1',
+  
+  'huechuraba': 'MOVIL 2', 'recoleta': 'MOVIL 2', 'quilicura': 'MOVIL 2',
+  'conchali': 'MOVIL 2', 'quinta normal': 'MOVIL 2', 'pudahuel': 'MOVIL 2',
+  'cerro navia': 'MOVIL 2', 'independencia': 'MOVIL 2', 'renca': 'MOVIL 2',
+  'lo prado': 'MOVIL 2', 'colina': 'MOVIL 2', 'lampa': 'MOVIL 2',
+  
+  'providencia': 'MOVIL 3', 'nunoa': 'MOVIL 3', 'la reina': 'MOVIL 3',
+  'penalolen': 'MOVIL 3',
+  
+  'las condes': 'MOVIL 4', 'vitacura': 'MOVIL 4', 'lo barnechea': 'MOVIL 4',
+  
+  'santiago': 'MOVIL 5', 'estacion central': 'MOVIL 5', 'san joaquin': 'MOVIL 5',
+  'macul': 'MOVIL 5', 'san miguel': 'MOVIL 5'
+};
+
+function autocompletarTransporteRutaPM(reg) {
+  if (!reg.comuna) return reg;
+  const comunaNorm = sinTildes(reg.comuna).toLowerCase().trim();
+  const movil = REGLAS_RUTA_PM[comunaNorm];
+  if (movil) {
+    reg.transporte = movil;
+  }
+  return reg;
+}
+
+function esAntesDe1330() {
+  const ahora = new Date();
+  const horas = ahora.getHours();
+  const minutos = ahora.getMinutes();
+  const minutosTotales = horas * 60 + minutos;
+  return minutosTotales < (13 * 60 + 30); // 13:30 = 810 minutos
+}
+
 const REGLAS_MOVIL_POR_DIA = {
   1: { 'MOVIL 1': ['la reina','casa','las condes','penalolen'], 'MOVIL 2': ['maipu','norte','pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','mut','nunoa','providencia'], 'MOVIL 4': ['alc','alto las condes','pa','parque arauco','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['nunoa','egana','santiago','san miguel'] },
   2: { 'MOVIL 1': ['apmq','dom','dominicos','los dominicos','las condes','la reina','penalolen'], 'MOVIL 2': ['pudahuel','quinta normal','independencia','quilicura','renca','huechuraba','cerro navia','conchali','recoleta','lo prado'], 'MOVIL 3': ['costanera','santiago','nunoa','providencia','san miguel'], 'MOVIL 4': ['la dehesa','dehesa','las condes','vitacura','lo barnechea'], 'MOVIL 5': ['tobalaba','san bernardo','el bosque','la florida','puente alto','la cisterna','lo espejo','san ramon','pedro aguirre cerda'], 'MOVIL 6': ['alc','alto las condes','pa','parque arauco'] },
@@ -365,7 +406,7 @@ function aplicarRol() {
 }
 
 // =====================================================================
-// 🧭 TIPOS Y SECCIONES (ACTUALIZADO CON ADM Y QDM)
+// 🧭 TIPOS Y SECCIONES
 // =====================================================================
 function tipoDeSeccion() {
   if (seccionActiva === 'ampm') return 'AMPM';
@@ -1385,7 +1426,6 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
   if (!rango) { toast('Elija RANGO','err'); return; }
   const tipoSec = tipoDeSeccion();
   
-  // ✅ AUTOCOMPLETADO PARA B2C, ADM, QDM
   if (tipoSec === 'B2C') {
     const reg = { 
       fecha: fecha, 
@@ -1466,7 +1506,6 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
     return;
   }
   
-  // AMPM normal
   let reg = { 
     fecha: fecha, 
     unidad: document.getElementById('fUnidad').value, 
@@ -1665,6 +1704,7 @@ function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pe
 function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'ADM', pendientesADM); }
 function procesarArchivoQdm(file) { procesarArchivoTipoSeccion(file, 'QDM', pendientesQDM); }
 
+// ✅ FUNCIÓN MODIFICADA CON RUTA PM
 function procesarArchivoTipoSeccion(file, tipo, lista) {
   const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
   toast('Leyendo ' + file.name + '...','info');
@@ -1685,6 +1725,10 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
       const aT = parts[0];
       const mT = parts[1];
       const nuevos = [];
+      
+      // ✅ Verificar si es AM/PM y antes de 13:30
+      const usarRutaPM = (tipo === 'AMPM') && esAntesDe1330();
+      
       for (let i=1;i<filas.length;i++){ 
         const row = filas[i]; 
         if (!row || !row.length) continue;
@@ -1706,14 +1750,28 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
           otroPalet:false, 
           tipo: tipo 
         };
-        if (tipo === 'ADM') { reg = autocompletarTransporteNuevoAdm(reg); } 
-        else { reg = autocompletarTransporteNuevo(reg); }
+        
+        // ✅ AUTOCOMPLETADO SEGÚN HORA Y TIPO
+        if (usarRutaPM) {
+          autocompletarTransporteRutaPM(reg);
+          if (!reg.transporte) {
+            reg = autocompletarTransporteNuevo(reg);
+          }
+        } else if (tipo === 'ADM') {
+          reg = autocompletarTransporteNuevoAdm(reg);
+        } else {
+          reg = autocompletarTransporteNuevo(reg);
+        }
+        
         nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
       }
       if (!nuevos.length) { toast('Sin filas con tracking','err'); return; }
       lista.push.apply(lista, nuevos); 
       paginaDesc = 1; 
-      toast(formatoEntero(nuevos.length) + ' filas. Revisa TRANSPORTE/RANGO y presiona GUARDAR.','info'); 
+      const mensaje = usarRutaPM 
+        ? formatoEntero(nuevos.length) + ' filas cargadas con RUTA PM (antes 13:30). Revisa TRANSPORTE/RANGO y presiona GUARDAR.'
+        : formatoEntero(nuevos.length) + ' filas. Revisa TRANSPORTE/RANGO y presiona GUARDAR.';
+      toast(mensaje,'info'); 
       render();
     } catch(e){ 
       toast(''+e.message,'err'); 
@@ -1725,6 +1783,7 @@ function procesarJSONAMPM(file) { procesarJSONTipoSeccion(file, 'AMPM', pendient
 function procesarJSONAdm(file) { procesarJSONTipoSeccion(file, 'ADM', pendientesADM); }
 function procesarJSONQdm(file) { procesarJSONTipoSeccion(file, 'QDM', pendientesQDM); }
 
+// ✅ FUNCIÓN MODIFICADA CON RUTA PM
 function procesarJSONTipoSeccion(file, tipo, lista) {
   const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
   const reader = new FileReader();
@@ -1737,6 +1796,10 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
       const aT = parts[0];
       const mT = parts[1];
       const nuevos = [];
+      
+      // ✅ Verificar si es AM/PM y antes de 13:30
+      const usarRutaPM = (tipo === 'AMPM') && esAntesDe1330();
+      
       arr.forEach(function(o,i) { 
         const m = {}; 
         Object.keys(o).forEach(function(k) { m[normEnc(k)] = o[k]; });
@@ -1769,14 +1832,28 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
           otroPalet:false, 
           tipo: tipo 
         };
-        if (tipo === 'ADM') { reg = autocompletarTransporteNuevoAdm(reg); } 
-        else { reg = autocompletarTransporteNuevo(reg); }
+        
+        // ✅ AUTOCOMPLETADO SEGÚN HORA Y TIPO
+        if (usarRutaPM) {
+          autocompletarTransporteRutaPM(reg);
+          if (!reg.transporte) {
+            reg = autocompletarTransporteNuevo(reg);
+          }
+        } else if (tipo === 'ADM') {
+          reg = autocompletarTransporteNuevoAdm(reg);
+        } else {
+          reg = autocompletarTransporteNuevo(reg);
+        }
+        
         nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
       });
       if (!nuevos.length) { toast('JSON sin registros válidos','err'); return; }
       lista.push.apply(lista, nuevos); 
       paginaDesc = 1; 
-      toast(formatoEntero(nuevos.length) + ' registros JSON. Presiona GUARDAR.','info'); 
+      const mensaje = usarRutaPM 
+        ? formatoEntero(nuevos.length) + ' registros JSON cargados con RUTA PM (antes 13:30). Presiona GUARDAR.'
+        : formatoEntero(nuevos.length) + ' registros JSON. Presiona GUARDAR.';
+      toast(mensaje,'info'); 
       render();
     } catch(e){ 
       toast('JSON inválido','err'); 
@@ -2122,7 +2199,7 @@ function renderTabBD(tipo, filtroId, pagina) {
   const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
   tbody.innerHTML = pag.map(function(r) { 
     const claseYInd = claseYIndicadorSimple(r, cf, cg); 
-    return '<tr class="' + claseYInd.clase + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">️</button></td></tr>'; 
+    return '<tr class="' + claseYInd.clase + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">🗑️</button></td></tr>'; 
   }).join('');
   if (tp <= 1) { 
     pagDiv.innerHTML = '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(regs.length) + ' de ' + formatoEntero(regs.length) + '</div>'; 
@@ -2446,7 +2523,7 @@ window.setInfTipo = function(t) {
 };
 
 // =====================================================================
-// 📒 BITÁCORAS (CON SPOT, SPOT 1, SPOT 2 EN CADA TIPO)
+// 📒 BITÁCORAS
 // =====================================================================
 function renderizarTodasBitacoras() {
   ['ampm','b2c','adm','qdm'].forEach(function(tipo) {
@@ -2464,7 +2541,7 @@ function renderizarBitacorasTipo(tipo) {
 function generarHTMLBitacora(tipo, movil) {
   const key = tipo + '_movil' + movil;
   const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : movil;
-  const data = bitacorasData[key] || { filas: [], footer: { transporte: tipo === 'spot' ? movilLabel : 'MOVIL ' + movil, fecha: '', ruta: 'AM', responsable: '', firma: '' } };
+  const data = bitacorasData[key] || { filas: [], footer: { transporte: 'MOVIL ' + movilLabel, fecha: '', ruta: 'AM', responsable: '', firma: '' } };
   let html = '<div class="bitacora-wrapper">';
   html += '<div class="bitacora-header-info">BITÁCORA ' + movilLabel + ' - ' + tipo.toUpperCase() + '</div>';
   html += '<table class="bitacora-table">';
@@ -2555,7 +2632,7 @@ window.abrirModalExportarBitacoras = function(tipo) {
     const tieneDatos = data && data.filas && data.filas.length > 0;
     const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
     const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil;
-    const label = movilLabel + (count > 0 ? ' (' + count + ' registros)' : '');
+    const label = movilLabel + (count > 0 ? ' (' + count + ')' : '');
     html += '<div class="bitacora-export-item">';
     html += '<input type="checkbox" id="bitExp_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
     html += '<label for="bitExp_' + idx + '">' + label + '</label>';
@@ -2636,7 +2713,7 @@ window.abrirModalJPEGBitacoras = function(tipo) {
   const grid = document.getElementById('bitacoraJPEGGrid');
   if (!grid) return;
   
-  document.getElementById('bitJpegTitulo').textContent = '🖼️ Exportar Bitácoras ' + tipo.toUpperCase() + ' como JPEG';
+  document.getElementById('bitJpegTitulo').textContent = '️ Exportar Bitácoras ' + tipo.toUpperCase() + ' como JPEG';
   document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas exportar como imagen.';
   
   const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
