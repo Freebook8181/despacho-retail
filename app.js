@@ -495,9 +495,6 @@ function actualizarContadorEnviar() {
   if (b) b.textContent = seleccionadosDesc.size > 0 ? 'ENVIAR A BITACORA (' + seleccionadosDesc.size + ')' : 'ENVIAR A BITACORA'; 
 }
 
-// =====================================================================
-// ✅ MODIFICADO: Solo lee filtros de Unidad, Comuna, Transporte, Rango
-// =====================================================================
 function leerFiltrosDesc() {
   const g = function(id) { const el = document.getElementById(id); return el ? normSinTildes(el.value.trim()) : ''; };
   return { 
@@ -924,66 +921,59 @@ window.filtrarBDCombo = function(tipo, campo, val){
   renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]);
 };
 
-// =====================================================================
-// ✅ MODIFICADO: Encabezados en una fila, filtros solo en Unidad/Comuna/Transporte/Rango
-// Rango más pequeño, Acciones alineado con rowspan="2"
-// =====================================================================
+// ✅ MODIFICADO: Encabezados perfectamente alineados con rowspan="2" y filtros de tamaño medio
 function renderDescThead() {
   const thead = document.getElementById('theadDesc');
   if (!thead) return;
   const b2c = (seccionActiva === 'b2c');
   
-  const sel = '<th class="th-sel" rowspan="2"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>';
-  const acc = '<th rowspan="2" style="text-align:center;vertical-align:middle;">Acciones</th>';
-  
-  // Filtros combo (solo para estas columnas)
-  const filtroUnidad = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescUnidad" placeholder="Filtrar..." oninput="filtrarComboDesc(\'unidad\', this.value)" onfocus="abrirCombo(\'unidad\')"><button class="combo-arrow" onclick="toggleCombo(\'unidad\')">▼</button><div class="combo-list" id="combo_unidad"></div></div>';
-  const filtroComuna = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescComuna" placeholder="Filtrar..." oninput="filtrarComboDesc(\'comuna\', this.value)" onfocus="abrirCombo(\'comuna\')"><button class="combo-arrow" onclick="toggleCombo(\'comuna\')">▼</button><div class="combo-list" id="combo_comuna"></div></div>';
-  const filtroTransporte = '<div class="filtro-combo" style="margin:4px 0 0 0"><input type="text" class="th-filter" id="fDescTransporte" placeholder="Filtrar..." oninput="filtrarComboDesc(\'transporte\', this.value)" onfocus="abrirCombo(\'transporte\')"><button class="combo-arrow" onclick="toggleCombo(\'transporte\')">▼</button><div class="combo-list" id="combo_transporte"></div></div>';
-  // ✅ Filtro de Rango más pequeño
-  const filtroRango = '<div class="filtro-combo" style="margin:4px 0 0 0;max-width:80px"><input type="text" class="th-filter" id="fDescRango" placeholder="Filtrar..." oninput="filtrarComboDesc(\'rango\', this.value)" onfocus="abrirCombo(\'rango\')" style="font-size:0.75em;padding:2px 4px"><button class="combo-arrow" onclick="toggleCombo(\'rango\')" style="font-size:0.7em">▼</button><div class="combo-list" id="combo_rango"></div></div>';
+  // Filtros de tamaño medio (120px)
+  const filtroUnidad = '<input type="text" class="th-filter" id="fDescUnidad" placeholder="Filtrar..." style="width:120px" oninput="filtrarComboDesc(\'unidad\', this.value)" onfocus="abrirCombo(\'unidad\')">';
+  const filtroComuna = '<input type="text" class="th-filter" id="fDescComuna" placeholder="Filtrar..." style="width:120px" oninput="filtrarComboDesc(\'comuna\', this.value)" onfocus="abrirCombo(\'comuna\')">';
+  const filtroTransporte = '<input type="text" class="th-filter" id="fDescTransporte" placeholder="Filtrar..." style="width:120px" oninput="filtrarComboDesc(\'transporte\', this.value)" onfocus="abrirCombo(\'transporte\')">';
+  const filtroRango = '<input type="text" class="th-filter" id="fDescRango" placeholder="Filtrar..." style="width:80px" oninput="filtrarComboDesc(\'rango\', this.value)" onfocus="abrirCombo(\'rango\')">';
   
   if (b2c) {
     thead.innerHTML = '<tr>' +
-      sel +
-      '<th rowspan="2">Fecha</th>' +
-      '<th>Unidad Negocio</th>' +
-      '<th rowspan="2">ID Pedido</th>' +
-      '<th rowspan="2">Nombre Cliente</th>' +
-      '<th rowspan="2">Celular</th>' +
-      '<th rowspan="2">E-Mail</th>' +
-      '<th rowspan="2">Dirección</th>' +
-      '<th>Comuna</th>' +
-      '<th rowspan="2">Valor Producto</th>' +
-      '<th rowspan="2">Observación</th>' +
-      '<th>Transporte</th>' +
-      '<th>Rango</th>' +
-      acc +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Fecha</th>' +
+      '<th style="text-align:center;vertical-align:middle">Unidad Negocio</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">ID Pedido</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Nombre Cliente</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Celular</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">E-Mail</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Dirección</th>' +
+      '<th style="text-align:center;vertical-align:middle">Comuna</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Valor Producto</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Observación</th>' +
+      '<th style="text-align:center;vertical-align:middle">Transporte</th>' +
+      '<th style="text-align:center;vertical-align:middle">Rango</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Acciones</th>' +
       '</tr><tr>' +
-      '<td>' + filtroUnidad + '</td>' +
-      '<td>' + filtroComuna + '</td>' +
-      '<td>' + filtroTransporte + '</td>' +
-      '<td>' + filtroRango + '</td>' +
+      '<td style="text-align:center;padding:4px">' + filtroUnidad + '</td>' +
+      '<td style="text-align:center;padding:4px">' + filtroComuna + '</td>' +
+      '<td style="text-align:center;padding:4px">' + filtroTransporte + '</td>' +
+      '<td style="text-align:center;padding:4px">' + filtroRango + '</td>' +
       '</tr>';
   } else {
     thead.innerHTML = '<tr>' +
-      sel +
-      '<th rowspan="2">Fecha</th>' +
-      '<th>Unidad Negocio</th>' +
-      '<th rowspan="2">ID Pedido</th>' +
-      '<th rowspan="2">Nombre Cliente</th>' +
-      '<th rowspan="2">Dirección</th>' +
-      '<th>Comuna</th>' +
-      '<th rowspan="2">Valor</th>' +
-      '<th rowspan="2">Observación</th>' +
-      '<th>Transporte</th>' +
-      '<th>Rango</th>' +
-      acc +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Fecha</th>' +
+      '<th style="text-align:center;vertical-align:middle">Unidad Negocio</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">ID Pedido</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Nombre Cliente</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Dirección</th>' +
+      '<th style="text-align:center;vertical-align:middle">Comuna</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Valor</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Observación</th>' +
+      '<th style="text-align:center;vertical-align:middle">Transporte</th>' +
+      '<th style="text-align:center;vertical-align:middle">Rango</th>' +
+      '<th rowspan="2" style="text-align:center;vertical-align:middle">Acciones</th>' +
       '</tr><tr>' +
-      '<td>' + filtroUnidad + '</td>' +
-      '<td>' + filtroComuna + '</td>' +
-      '<td>' + filtroTransporte + '</td>' +
-      '<td>' + filtroRango + '</td>' +
+      '<td style="text-align:center;padding:4px">' + filtroUnidad + '</td>' +
+      '<td style="text-align:center;padding:4px">' + filtroComuna + '</td>' +
+      '<td style="text-align:center;padding:4px">' + filtroTransporte + '</td>' +
+      '<td style="text-align:center;padding:4px">' + filtroRango + '</td>' +
       '</tr>';
   }
 }
@@ -1024,7 +1014,6 @@ function render() {
     regs.push(reg); 
   });
   
-  // ✅ Solo aplicar filtros de Unidad, Comuna, Transporte, Rango
   const fd = leerFiltrosDesc();
   if (fd.unidad) regs = regs.filter(function(r) { return normSinTildes(r.unidad||'').includes(fd.unidad); });
   if (fd.comuna) regs = regs.filter(function(r) { return normSinTildes(canonComuna(r.comuna)||'').includes(fd.comuna); });
@@ -2431,14 +2420,35 @@ function claseYIndicadorSimple(r, cf, cg) {
   return { clase:c, ind:i }; 
 }
 
+// ✅ MODIFICADO: Base de datos con encabezados alineados y filtros de tamaño medio
 function renderBDThead(tipo) {
   const suf = sufBD(tipo);
   const thead = document.getElementById('thead'+suf);
   if (!thead) return;
-  const bdCombo = function(campo, label) { 
-    return '<th>' + label + '<div class="filtro-combo"><input type="text" class="th-filter" id="fBD' + suf + '_' + campo + '" placeholder="Filtrar..." oninput="filtrarBDCombo(\'' + tipo + '\',\'' + campo + '\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'' + campo + '\')"><button class="combo-arrow" onclick="toggleComboBD(\'' + tipo + '\',\'' + campo + '\')">▼</button><div class="combo-list" id="comboBD_' + suf + '_' + campo + '"></div></div></th>'; 
-  };
-  thead.innerHTML = '<tr><th>Fecha</th>' + bdCombo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Direccion</th>' + bdCombo('comuna','Comuna') + '<th>Valor</th><th>Observacion</th>' + bdCombo('transporte','Transporte') + bdCombo('rango','Rango') + '<th>Acciones</th></tr>';
+  
+  const filtroUnidad = '<input type="text" class="th-filter" id="fBD' + suf + '_unidad" placeholder="Filtrar..." style="width:120px" oninput="filtrarBDCombo(\'' + tipo + '\',\'unidad\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'unidad\')">';
+  const filtroComuna = '<input type="text" class="th-filter" id="fBD' + suf + '_comuna" placeholder="Filtrar..." style="width:120px" oninput="filtrarBDCombo(\'' + tipo + '\',\'comuna\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'comuna\')">';
+  const filtroTransporte = '<input type="text" class="th-filter" id="fBD' + suf + '_transporte" placeholder="Filtrar..." style="width:120px" oninput="filtrarBDCombo(\'' + tipo + '\',\'transporte\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'transporte\')">';
+  const filtroRango = '<input type="text" class="th-filter" id="fBD' + suf + '_rango" placeholder="Filtrar..." style="width:80px" oninput="filtrarBDCombo(\'' + tipo + '\',\'rango\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'rango\')">';
+  
+  thead.innerHTML = '<tr>' +
+    '<th rowspan="2" style="text-align:center;vertical-align:middle">Fecha</th>' +
+    '<th style="text-align:center;vertical-align:middle">Unidad Negocio</th>' +
+    '<th rowspan="2" style="text-align:center;vertical-align:middle">ID Pedido</th>' +
+    '<th rowspan="2" style="text-align:center;vertical-align:middle">Nombre Cliente</th>' +
+    '<th rowspan="2" style="text-align:center;vertical-align:middle">Direccion</th>' +
+    '<th style="text-align:center;vertical-align:middle">Comuna</th>' +
+    '<th rowspan="2" style="text-align:center;vertical-align:middle">Valor</th>' +
+    '<th rowspan="2" style="text-align:center;vertical-align:middle">Observacion</th>' +
+    '<th style="text-align:center;vertical-align:middle">Transporte</th>' +
+    '<th style="text-align:center;vertical-align:middle">Rango</th>' +
+    '<th rowspan="2" style="text-align:center;vertical-align:middle">Acciones</th>' +
+    '</tr><tr>' +
+    '<td style="text-align:center;padding:4px">' + filtroUnidad + '</td>' +
+    '<td style="text-align:center;padding:4px">' + filtroComuna + '</td>' +
+    '<td style="text-align:center;padding:4px">' + filtroTransporte + '</td>' +
+    '<td style="text-align:center;padding:4px">' + filtroRango + '</td>' +
+    '</tr>';
 }
 
 function renderTabBD(tipo, filtroId, pagina) {
@@ -3145,7 +3155,7 @@ function renderInformes() {
   else if (seccionInicial === 'informes') document.title = 'DR-INFORMES';
   else if (seccionInicial === 'bitacoras') document.title = 'DR-BITACORAS';
   const st = document.createElement('style');
-  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;} #theadDesc th{vertical-align:middle !important;text-align:center !important;} #theadDesc tr:first-child th{padding:8px 6px !important;border-bottom:1px solid var(--border-color) !important;} #theadDesc tr:last-child td{padding:4px 6px !important;border-top:none !important;} #theadDesc .th-filter{font-size:0.75em !important;padding:3px 6px !important;margin:0 !important;} #fDescRango{max-width:70px !important;font-size:0.75em !important;padding:2px 4px !important;}';
+  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;}';
   document.head.appendChild(st);
   const bp = document.getElementById('btnPegarSel'); 
   if (bp) bp.remove();
