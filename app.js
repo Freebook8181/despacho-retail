@@ -38,7 +38,7 @@ const MOVILES_POR_TIPO = {
 };
 
 // =====================================================================
-// 🚚 REGLA PM - Autocompletado por comuna (según imagen)
+// 🚚 REGLA PM - Autocompletado por comuna (antes de 13:30)
 // =====================================================================
 const REGLA_PM = {
   'MOVIL 1': ['maipu','cerrillos','lo espejo','la cisterna','pedro aguirre cerda','el bosque','san bernardo','la florida','puente alto','san ramon'],
@@ -68,7 +68,7 @@ function esAntesDe1330() {
   const horas = ahora.getHours();
   const minutos = ahora.getMinutes();
   const totalMinutos = horas * 60 + minutos;
-  return totalMinutos < (13 * 60 + 30); // antes de 13:30
+  return totalMinutos < (13 * 60 + 30);
 }
 
 function esAdmin(email) { return ADMIN_EMAILS.includes((email || '').toLowerCase().trim()); }
@@ -261,7 +261,7 @@ setInterval(actualizarReloj, 1000);
 actualizarReloj();
 
 // =====================================================================
-// 🔐 LOGIN
+//  LOGIN
 // =====================================================================
 window.login = function() {
   const email = document.getElementById('loginEmail').value.trim();
@@ -415,6 +415,7 @@ window.cambiarTabBD = function(tab) {
   renderizarBaseDatos();
 };
 
+// ✅ CAMBIO 1: cambiarTabBit renderiza todas las bitácoras del tipo
 window.cambiarTabBit = function(tab) {
   bitTabActiva = tab;
   document.querySelectorAll('.basedatos-tab[data-btab]').forEach(function(t) { t.classList.remove('active'); });
@@ -422,7 +423,9 @@ window.cambiarTabBit = function(tab) {
   if (b) b.classList.add('active');
   document.querySelectorAll('#seccionBitacoras .basedatos-tab-content').forEach(function(c) { c.classList.remove('show'); });
   const map = { ampm: 'bitContentAmpm', b2c: 'bitContentB2c', adm: 'bitContentAdm', qdm: 'bitContentQdm' };
-  document.getElementById(map[tab] || 'bitContentAmpm').classList.add('show');
+  const cont = document.getElementById(map[tab] || 'bitContentAmpm');
+  if (cont) cont.classList.add('show');
+  renderizarBitacorasTipo(tab);
 };
 
 window.cambiarTema = function(t) { 
@@ -878,14 +881,14 @@ function renderDescThead() {
   if (!thead) return;
   const b2c = (seccionActiva === 'b2c');
   const combo = function(col, label) { 
-    return '<th>' + label + '<div class="filtro-combo"><input type="text" class="th-filter" id="fDesc' + col.charAt(0).toUpperCase() + col.slice(1) + '" placeholder="Filtrar…" oninput="filtrarComboDesc(\'' + col + '\', this.value)" onfocus="abrirCombo(\'' + col + '\')"><button class="combo-arrow" onclick="toggleCombo(\'' + col + '\')">▼</button><div class="combo-list" id="combo_' + col + '"></div></div></th>'; 
+    return '<th>' + label + '<div class="filtro-combo"><input type="text" class="th-filter" id="fDesc' + col.charAt(0).toUpperCase() + col.slice(1) + '" placeholder="Filtrar..." oninput="filtrarComboDesc(\'' + col + '\', this.value)" onfocus="abrirCombo(\'' + col + '\')"><button class="combo-arrow" onclick="toggleCombo(\'' + col + '\')">▼</button><div class="combo-list" id="combo_' + col + '"></div></div></th>'; 
   };
   const sel = '<th class="th-sel"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>';
   let h;
   if (b2c) {
-    h = sel + '<th>Fecha</th>' + combo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Celular</th><th>E-Mail</th><th>Dirección</th>' + combo('comuna','Comuna') + '<th>Valor Producto</th><th>Observación</th>' + combo('transporte','Transporte') + combo('rango','Rango') + '<th>Acciones</th>';
+    h = sel + '<th>Fecha</th>' + combo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Celular</th><th>E-Mail</th><th>Direccion</th>' + combo('comuna','Comuna') + '<th>Valor Producto</th><th>Observacion</th>' + combo('transporte','Transporte') + combo('rango','Rango') + '<th>Acciones</th>';
   } else {
-    h = sel + '<th>Fecha</th>' + combo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Dirección</th>' + combo('comuna','Comuna') + '<th>Valor</th><th>Observación</th>' + combo('transporte','Transporte') + combo('rango','Rango') + '<th>Acciones</th>';
+    h = sel + '<th>Fecha</th>' + combo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Direccion</th>' + combo('comuna','Comuna') + '<th>Valor</th><th>Observacion</th>' + combo('transporte','Transporte') + combo('rango','Rango') + '<th>Acciones</th>';
   }
   thead.innerHTML = '<tr>' + h + '</tr>';
 }
@@ -939,7 +942,7 @@ function render() {
   if (regs.length === 0) { 
     tbody.innerHTML = ''; 
     empty.style.display = 'block'; 
-    empty.textContent = busq ? 'No se encontraron resultados' : 'No hay registros para el día ' + fmtFechaConDia(fechaTrabajo); 
+    empty.textContent = busq ? 'No se encontraron resultados' : 'No hay registros para el dia ' + fmtFechaConDia(fechaTrabajo); 
     keysVisiblesDesc = []; 
     renderPaginacionDesc(0,0,0); 
     sincronizarSelTodos(); 
@@ -987,7 +990,7 @@ function renderPaginacionDesc(tp, total, pag) {
     return; 
   }
   const ini = (pag-1)*REGISTROS_POR_PAGINA_DESC, fin = Math.min(ini+REGISTROS_POR_PAGINA_DESC, total);
-  let h = '<div class="bd-paginacion-info">Página ' + pag + ' de ' + tp + ' | ' + formatoEntero(ini+1) + '-' + formatoEntero(fin) + ' de ' + formatoEntero(total) + ' registros</div>';
+  let h = '<div class="bd-paginacion-info">Pagina ' + pag + ' de ' + tp + ' | ' + formatoEntero(ini+1) + '-' + formatoEntero(fin) + ' de ' + formatoEntero(total) + ' registros</div>';
   h += pag>1 ? '<button class="btn-bd-pag-nav" onclick="irAPaginaDesc(' + (pag-1) + ')">‹ Anterior</button>' : '<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>';
   const pI = Math.max(1,pag-2), pF = Math.min(tp,pag+2);
   if (pI>1){ h += '<button class="btn-bd-pag" onclick="irAPaginaDesc(1)">1</button>'; if(pI>2) h += '<span style="color:var(--text-muted);padding:0 4px">...</span>'; }
@@ -1024,7 +1027,7 @@ function filaHTMLTabla(r, cf, cg, dr) {
   const tieneCambioFecha = cambiosFechaLocales[r.key] !== undefined;
   if (tieneCambioFecha) clase += 'fila-fecha-modificada ';
   const bp = r.pendiente ? '<span class="badge badge-pendiente">SIN GUARDAR</span>' : '';
-  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">✏️</span>' : '';
+  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">️</span>' : '';
   const fechaMostrar = tieneCambioFecha ? cambiosFechaLocales[r.key].nuevaFecha : r.fecha;
   const celdaFecha = '<td><div class="fecha-cell-wrap"><input type="date" value="' + (fechaMostrar||'') + '" onchange="cambiarFechaFila(\'' + r.key + '\', this.value, ' + (r.pendiente?true:false) + ')"><button type="button" class="btn-cal-fila" onclick="toggleCalFila(\'' + r.key + '\', event)"></button><div class="cal-popup-fila" id="cal_popup_' + r.key + '"></div></div> ' + bp + indicadorCambio + '</td>';
   const celdaSel = '<td class="td-sel"><input type="checkbox" style="width:16px;height:16px;" ' + sel + ' onchange="toggleSeleccionDesc(\'' + r.key + '\', this.checked)"></td>';
@@ -1499,10 +1502,10 @@ window.confirmarExportar = function() {
     {id:'expNombre',key:'nombre',label:'Nombre Cliente'},
     {id:'expCelular',key:'celular',label:'Celular'},
     {id:'expEmail',key:'email',label:'E-Mail'},
-    {id:'expDireccion',key:'direccion',label:'Dirección'},
+    {id:'expDireccion',key:'direccion',label:'Direccion'},
     {id:'expComuna',key:'comuna',label:'Comuna'},
     {id:'expValor',key:'valor',label:'Valor'},
-    {id:'expObservacion',key:'observacion',label:'Observación'},
+    {id:'expObservacion',key:'observacion',label:'Observacion'},
     {id:'expTransporte',key:'transporte',label:'Transporte'},
     {id:'expRango',key:'rango',label:'Rango'}
   ].filter(function(c) { return document.getElementById(c.id).checked; });
@@ -1531,7 +1534,7 @@ window.confirmarExportar = function() {
 };
 
 // =====================================================================
-// 📤 EXPORTAR BITÁCORAS - MODAL CON SELECCIÓN (FILTRADO POR MÓDULO)
+// 📤 EXPORTAR BITÁCORAS EXCEL (FILTRADO POR MÓDULO)
 // =====================================================================
 function getBitacorasDisponibles(tipo) {
   const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
@@ -1545,8 +1548,8 @@ window.abrirModalExportarBitacoras = function(tipo) {
   const grid = document.getElementById('bitacoraExportGrid');
   if (!grid) return;
   
-  document.getElementById('bitExpTitulo').textContent = '📤 Exportar Bitácoras ' + tipo.toUpperCase() + ' a Excel';
-  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas exportar. Cada una irá en una planilla separada.';
+  document.getElementById('bitExpTitulo').textContent = 'Exportar Bitacoras ' + tipo.toUpperCase() + ' a Excel';
+  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitacoras de ' + tipo.toUpperCase() + ' que deseas exportar. Cada una ira en una planilla separada.';
   
   const bitacoras = getBitacorasDisponibles(tipo);
   let html = '';
@@ -1578,7 +1581,7 @@ window.seleccionarTodasBitacoras = function() {
 window.confirmarExportarBitacoras = function() {
   const checkboxes = document.querySelectorAll('#bitacoraExportGrid input[type="checkbox"]:checked');
   if (checkboxes.length === 0) {
-    toast('Selecciona al menos una bitácora', 'err');
+    toast('Selecciona al menos una bitacora', 'err');
     return;
   }
   
@@ -1599,9 +1602,9 @@ window.confirmarExportarBitacoras = function() {
     
     const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
     const wsData = [];
-    wsData.push(['Bitácora ' + movilLabel + ' - ' + item.tipo.toUpperCase(), '', '', '', '', '', '']);
+    wsData.push(['Bitacora ' + movilLabel + ' - ' + item.tipo.toUpperCase(), '', '', '', '', '', '']);
     wsData.push(['', '', '', '', '', '', '']);
-    wsData.push(['N°', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
+    wsData.push(['N', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
     filasConDatos.forEach(function(fila, i) {
       wsData.push([i+1, fila.requirente||'', fila.documentos||'', fila.cliente||'', fila.direccion||'', fila.comuna||'', fila.obs||'']);
     });
@@ -1618,26 +1621,26 @@ window.confirmarExportarBitacoras = function() {
   });
   
   if (exportadas === 0) {
-    toast('No hay bitácoras con datos para exportar', 'err');
+    toast('No hay bitacoras con datos para exportar', 'err');
     return;
   }
   
   const fecha = new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb, 'Bitacoras_' + tipo.toUpperCase() + '_' + fecha + '.xlsx');
-  toast('✅ ' + exportadas + ' bitácoras exportadas', 'ok');
+  toast(exportadas + ' bitacoras exportadas', 'ok');
   cerrarModalExportarBitacoras();
 };
 
 // =====================================================================
-// 🖼️ EXPORTAR BITÁCORAS JPEG
+// ️ EXPORTAR BITÁCORAS JPEG (FILTRADO POR MÓDULO)
 // =====================================================================
 window.abrirModalJPEGBitacoras = function(tipo) {
   bitacoraJPEGTipoActual = tipo;
   const grid = document.getElementById('bitacoraJPEGGrid');
   if (!grid) return;
   
-  document.getElementById('bitJpegTitulo').textContent = '🖼️ Exportar Bitácoras ' + tipo.toUpperCase() + ' como JPEG';
-  document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas exportar como imagen.';
+  document.getElementById('bitJpegTitulo').textContent = 'Exportar Bitacoras ' + tipo.toUpperCase() + ' como JPEG';
+  document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitacoras de ' + tipo.toUpperCase() + ' que deseas exportar como imagen.';
   
   const bitacoras = getBitacorasDisponibles(tipo);
   let html = '';
@@ -1670,7 +1673,7 @@ window.seleccionarTodasBitacorasJPEG = function() {
 window.confirmarExportarJPEGBitacoras = function() {
   const checkboxes = document.querySelectorAll('#bitacoraJPEGGrid input[type="checkbox"]:checked');
   if (checkboxes.length === 0) {
-    toast('Selecciona al menos una bitácora', 'err');
+    toast('Selecciona al menos una bitacora', 'err');
     return;
   }
   
@@ -1717,7 +1720,7 @@ window.confirmarExportarJPEGBitacoras = function() {
       link.click();
       exportadas++;
       if (exportadas === checkboxes.length) {
-        toast('✅ ' + exportadas + ' bitácoras JPEG exportadas', 'ok');
+        toast(exportadas + ' bitacoras JPEG exportadas', 'ok');
       }
     }).catch(function(e) {
       document.body.removeChild(clone);
@@ -1729,15 +1732,15 @@ window.confirmarExportarJPEGBitacoras = function() {
 };
 
 // =====================================================================
-// 🖨️ IMPRIMIR BITÁCORAS
+// 🖨️ IMPRIMIR BITÁCORAS (FILTRADO POR MÓDULO)
 // =====================================================================
 window.abrirModalImprimirBitacoras = function(tipo) {
   bitacoraPrintTipoActual = tipo;
   const grid = document.getElementById('bitacoraPrintGrid');
   if (!grid) return;
   
-  document.getElementById('bitPrintTitulo').textContent = '🖨️ Imprimir Bitácoras ' + tipo.toUpperCase();
-  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitácoras de ' + tipo.toUpperCase() + ' que deseas imprimir.';
+  document.getElementById('bitPrintTitulo').textContent = 'Imprimir Bitacoras ' + tipo.toUpperCase();
+  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitacoras de ' + tipo.toUpperCase() + ' que deseas imprimir.';
   
   const bitacoras = getBitacorasDisponibles(tipo);
   let html = '';
@@ -1770,7 +1773,7 @@ window.seleccionarTodasBitacorasPrint = function() {
 window.confirmarImprimirBitacoras = function() {
   const checkboxes = document.querySelectorAll('#bitacoraPrintGrid input[type="checkbox"]:checked');
   if (checkboxes.length === 0) {
-    toast('Selecciona al menos una bitácora', 'err');
+    toast('Selecciona al menos una bitacora', 'err');
     return;
   }
   
@@ -1795,12 +1798,12 @@ window.confirmarImprimirBitacoras = function() {
       inp.parentNode.replaceChild(span, inp);
     });
     const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
-    const html = '<!DOCTYPE html><html><head><title>Bitácora ' + movilLabel + '</title><style>@page { size: letter landscape; margin: 10mm; }* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: Arial, sans-serif; padding: 10mm; background: #fff; }h2 { text-align: center; color: #1a5490; font-size: 18pt; margin-bottom: 12px; }table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11pt; background: #fff; }th { background: #1a5490; color: white; font-weight: bold; }.no-print { text-align: center; margin-top: 15px; }.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }</style></head><body><h2>Bitácora ' + movilLabel + ' - ' + tipo.toUpperCase() + '</h2>' + clone.innerHTML + '<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div></body></html>';
+    const html = '<!DOCTYPE html><html><head><title>Bitacora ' + movilLabel + '</title><style>@page { size: letter landscape; margin: 10mm; }* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: Arial, sans-serif; padding: 10mm; background: #fff; }h2 { text-align: center; color: #1a5490; font-size: 18pt; margin-bottom: 12px; }table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11pt; background: #fff; }th { background: #1a5490; color: white; font-weight: bold; }.no-print { text-align: center; margin-top: 15px; }.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }</style></head><body><h2>Bitacora ' + movilLabel + ' - ' + tipo.toUpperCase() + '</h2>' + clone.innerHTML + '<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div></body></html>';
     printWindow.document.write(html);
     printWindow.document.close();
   });
   
-  toast('Ventanas de impresión abiertas', 'ok');
+  toast('Ventanas de impresion abiertas', 'ok');
   cerrarModalImprimirBitacoras();
 };
 
@@ -1906,14 +1909,15 @@ function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pe
 function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'ADM', pendientesADM); }
 function procesarArchivoQdm(file) { procesarArchivoTipoSeccion(file, 'QDM', pendientesQDM); }
 
+// ✅ FUNCIÓN ACTUALIZADA CON REGLA PM
 function procesarArchivoTipoSeccion(file, tipo, lista) {
   const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
   toast('Leyendo ' + file.name + '...','info');
   
-  // ✅ REGLA PM: Si es antes de las 13:30, aplicar autocompletado por comuna
+  // ✅ REGLA PM: Si es antes de las 13:30 y es AM/PM, aplicar autocompletado por comuna
   const aplicarReglaPM = (tipo === 'AMPM') && esAntesDe1330();
   if (aplicarReglaPM) {
-    toast('🕐 Antes de 13:30 - Aplicando REGLA PM', 'info');
+    toast('Antes de 13:30 - Aplicando REGLA PM', 'info');
   }
   
   leerFilas(file, function(filas) { 
@@ -2338,9 +2342,9 @@ function renderBDThead(tipo) {
   const thead = document.getElementById('thead'+suf);
   if (!thead) return;
   const bdCombo = function(campo, label) { 
-    return '<th>' + label + '<div class="filtro-combo"><input type="text" class="th-filter" id="fBD' + suf + '_' + campo + '" placeholder="Filtrar…" oninput="filtrarBDCombo(\'' + tipo + '\',\'' + campo + '\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'' + campo + '\')"><button class="combo-arrow" onclick="toggleComboBD(\'' + tipo + '\',\'' + campo + '\')">▼</button><div class="combo-list" id="comboBD_' + suf + '_' + campo + '"></div></div></th>'; 
+    return '<th>' + label + '<div class="filtro-combo"><input type="text" class="th-filter" id="fBD' + suf + '_' + campo + '" placeholder="Filtrar..." oninput="filtrarBDCombo(\'' + tipo + '\',\'' + campo + '\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'' + campo + '\')"><button class="combo-arrow" onclick="toggleComboBD(\'' + tipo + '\',\'' + campo + '\')">▼</button><div class="combo-list" id="comboBD_' + suf + '_' + campo + '"></div></div></th>'; 
   };
-  thead.innerHTML = '<tr><th>Fecha</th>' + bdCombo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Dirección</th>' + bdCombo('comuna','Comuna') + '<th>Valor</th><th>Observación</th>' + bdCombo('transporte','Transporte') + bdCombo('rango','Rango') + '<th>Acciones</th></tr>';
+  thead.innerHTML = '<tr><th>Fecha</th>' + bdCombo('unidad','Unidad Negocio') + '<th>ID Pedido</th><th>Nombre Cliente</th><th>Direccion</th>' + bdCombo('comuna','Comuna') + '<th>Valor</th><th>Observacion</th>' + bdCombo('transporte','Transporte') + bdCombo('rango','Rango') + '<th>Acciones</th></tr>';
 }
 
 function renderTabBD(tipo, filtroId, pagina) {
@@ -2385,7 +2389,7 @@ function renderTabBD(tipo, filtroId, pagina) {
     pagDiv.innerHTML = '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(regs.length) + ' de ' + formatoEntero(regs.length) + '</div>'; 
     return; 
   }
-  let h = '<div class="bd-paginacion-info">Página ' + pagina + ' de ' + tp + ' | ' + formatoEntero(ini+1) + '-' + formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_BD, regs.length)) + ' de ' + formatoEntero(regs.length) + '</div>';
+  let h = '<div class="bd-paginacion-info">Pagina ' + pagina + ' de ' + tp + ' | ' + formatoEntero(ini+1) + '-' + formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_BD, regs.length)) + ' de ' + formatoEntero(regs.length) + '</div>';
   h += pagina>1 ? '<button class="btn-bd-pag-nav" onclick="irPaginaBD(\'' + tipo + '\',' + (pagina-1) + ')">‹ Anterior</button>' : '<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>';
   const pI = Math.max(1,pagina-2), pF = Math.min(tp,pagina+2);
   if (pI>1){ h += '<button class="btn-bd-pag" onclick="irPaginaBD(\'' + tipo + '\',1)">1</button>'; if(pI>2) h += '<span style="color:var(--text-muted)">...</span>'; }
@@ -2498,7 +2502,7 @@ window.confirmarBorrarMes = function() {
   if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
   const keys = Object.keys((cache[a] && cache[a][m]) ? cache[a][m] : {}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; });
   if (!keys.length) { toast('No hay registros que borrar','info'); return; }
-  if (!confirm('Se BORRARÁN PERMANENTEMENTE ' + formatoEntero(keys.length) + ' registros ' + tipoBorrarMes + ' de ' + MESES_NOM[parseInt(m)-1] + ' ' + a + '.\nNo se puede deshacer.\n¿Confirmas?')) return;
+  if (!confirm('Se BORRARAN PERMANENTEMENTE ' + formatoEntero(keys.length) + ' registros ' + tipoBorrarMes + ' de ' + MESES_NOM[parseInt(m)-1] + ' ' + a + '.\nNo se puede deshacer.\n¿Confirmas?')) return;
   toast('Borrando permanentemente...','info');
   Promise.all(keys.map(function(k) { return remove(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + k)); }))
     .then(function(){ 
@@ -2624,7 +2628,7 @@ function renderizarModal() {
   const ini = (paginaModalActual-1)*REGISTROS_POR_PAGINA_MODAL; 
   const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_MODAL);
   const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
-  document.getElementById('filtroInfo').textContent = formatoEntero(datosModalTotales) + ' totales | Mostrando ' + (regs.length?formatoEntero(ini+1):0) + '-' + formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_MODAL, regs.length)) + ' (pág ' + paginaModalActual + '/' + tp + ') | IDs repetidos: ' + formatoEntero(Object.values(cg).filter(function(c){return c>1;}).length);
+  document.getElementById('filtroInfo').textContent = formatoEntero(datosModalTotales) + ' totales | Mostrando ' + (regs.length?formatoEntero(ini+1):0) + '-' + formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_MODAL, regs.length)) + ' (pag ' + paginaModalActual + '/' + tp + ') | IDs repetidos: ' + formatoEntero(Object.values(cg).filter(function(c){return c>1;}).length);
   const tbody = document.getElementById('modalTbody');
   if (!pag.length) { 
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:60px;color:var(--text-muted)">No hay registros</td></tr>'; 
@@ -2635,7 +2639,7 @@ function renderizarModal() {
     const claseYInd = claseYIndicadorSimple(r, cf, cg); 
     return '<tr class="' + claseYInd.clase + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td></tr>'; 
   }).join('');
-  let h = '<div class="modal-paginacion-info">Página ' + paginaModalActual + ' de ' + tp + '</div>';
+  let h = '<div class="modal-paginacion-info">Pagina ' + paginaModalActual + ' de ' + tp + '</div>';
   h += paginaModalActual>1 ? '<button class="btn-pag-nav" onclick="irAPaginaModal(' + (paginaModalActual-1) + ')">‹ Anterior</button>' : '<button class="btn-pag-nav" disabled>‹ Anterior</button>';
   const pI = Math.max(1,paginaModalActual-2), pF = Math.min(tp,paginaModalActual+2);
   for (let i=pI;i<=pF;i++) h += i===paginaModalActual ? '<button class="btn-pag-numero activa">' + i + '</button>' : '<button class="btn-pag-numero" onclick="irAPaginaModal(' + i + ')">' + i + '</button>';
@@ -2699,12 +2703,13 @@ window.setInfTipo = function(t) {
   infTipo = t;
   document.querySelectorAll('.basedatos-tab[data-inftipo]').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-inftipo') === t); });
   const cont = document.getElementById('infResultado');
-  if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">Módulo de informes en desarrollo para ' + t + '</div>';
+  if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">Modulo de informes en desarrollo para ' + t + '</div>';
 };
 
 // =====================================================================
-// 📒 BITÁCORAS - SIEMPRE VISIBLES TODAS LAS TABLAS
+// 📒 BITÁCORAS - SIEMPRE VISIBLES TODAS LAS TABLAS POR MÓDULO
 // =====================================================================
+// ✅ CAMBIO 2: renderizarTodasBitacoras y renderizarBitacorasTipo
 function renderizarTodasBitacoras() {
   ['ampm','b2c','adm','qdm'].forEach(function(tipo) {
     renderizarBitacorasTipo(tipo);
@@ -2718,15 +2723,16 @@ function renderizarBitacorasTipo(tipo) {
   });
 }
 
+// ✅ CAMBIO 3: generarHTMLBitacora sin emojis
 function generarHTMLBitacora(tipo, movil) {
   const key = tipo + '_movil' + movil;
-  const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : movil;
-  const data = bitacorasData[key] || { filas: [], footer: { transporte: 'MOVIL ' + movilLabel, fecha: '', ruta: 'AM', responsable: '', firma: '' } };
+  const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil;
+  const data = bitacorasData[key] || { filas: [], footer: { transporte: movilLabel, fecha: '', ruta: 'AM', responsable: '', firma: '' } };
   let html = '<div class="bitacora-wrapper">';
-  html += '<div class="bitacora-header-info">BITÁCORA ' + movilLabel + ' - ' + tipo.toUpperCase() + '</div>';
+  html += '<div class="bitacora-header-info">BITACORA ' + movilLabel + ' - ' + tipo.toUpperCase() + '</div>';
   html += '<table class="bitacora-table">';
   html += '<thead><tr>';
-  html += '<th style="width:40px;">N°</th><th>REQUIRENTE</th><th>DOCUMENTOS</th><th>CLIENTE</th><th>DIRECCION</th><th>COMUNA</th><th>OBS</th>';
+  html += '<th style="width:40px;">N</th><th>REQUIRENTE</th><th>DOCUMENTOS</th><th>CLIENTE</th><th>DIRECCION</th><th>COMUNA</th><th>OBS</th>';
   html += '</tr></thead><tbody>';
   const maxFilas = 15;
   for (let i = 0; i < maxFilas; i++) {
@@ -2758,6 +2764,7 @@ function renderizarBitacora(tipo, movil) {
   cont.innerHTML = generarHTMLBitacora(tipo, movil);
 }
 
+// ✅ CAMBIO 4: guardarBitacora guarda todas las del tipo
 window.guardarBitacora = function(tipo) {
   const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
   let guardadas = 0;
@@ -2790,7 +2797,7 @@ window.guardarBitacora = function(tipo) {
       .then(function() { guardadas++; })
       .catch(function(e) { toast('Error al guardar ' + key + ': ' + e.message, 'err'); });
   });
-  setTimeout(function() { toast('Bitácoras ' + tipo.toUpperCase() + ' guardadas: ' + guardadas, 'ok'); }, 500);
+  setTimeout(function() { toast('Bitacoras ' + tipo.toUpperCase() + ' guardadas: ' + guardadas, 'ok'); }, 500);
 };
 
 // =====================================================================
@@ -3045,7 +3052,7 @@ async function cargarBitacoras() {
 function renderInformes() {
   const cont = document.getElementById('infResultado');
   if (!cont) return;
-  cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;"><h3 style="margin-bottom:15px;color:var(--accent-blue)">Módulo de Informes Logísticos</h3><p>Seleccione los filtros y presione <strong>GENERAR INFORME</strong> para visualizar el análisis completo.</p><p style="margin-top:10px;font-size:.85em">Datos en tiempo real desde Firebase • Análisis BI profesional</p></div>';
+  cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;"><h3 style="margin-bottom:15px;color:var(--accent-blue)">Modulo de Informes Logisticos</h3><p>Seleccione los filtros y presione <strong>GENERAR INFORME</strong> para visualizar el analisis completo.</p><p style="margin-top:10px;font-size:.85em">Datos en tiempo real desde Firebase - Analisis BI profesional</p></div>';
 }
 
 (function init(){
