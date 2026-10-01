@@ -1107,10 +1107,11 @@ window.toggleComboBD = function(tipo, campo){
   else { cerrarCombosBD(); poblarComboBD(tipo,campo,''); list.style.display='block'; comboBDAbierto=id; }
 };
 
+// ✅ CORREGIDO: Se cerró el paréntesis correctamente
 function abrirComboBD(tipo, campo){ 
   cerrarCombosBD(); 
   poblarComboBD(tipo,campo,''); 
-  const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo; 
+  const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
   if(list){ list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } 
 }
 
@@ -1918,7 +1919,6 @@ window.guardarTodasBitacoras = function() {
   registrarActividad('GUARDADO', 'Guardadas ' + guardadas + ' bitácoras', 'BITACORAS');
 };
 
-// ✅ BORRAR TODAS LAS BITACORAS
 window.abrirModalBorrarBitacoraTodo = function() {
   if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
   let totalFilas = 0;
@@ -1960,7 +1960,6 @@ window.confirmarBorrarBitacoraTodo = function() {
   });
 };
 
-// ✅ BORRAR SOLO BITACORAS ADMIN
 window.abrirModalBorrarBitacoraAdmin = function() {
   if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
   let totalAdmin = 0;
@@ -2011,7 +2010,7 @@ window.abrirModalExportarBitacoras = function() {
   const grid = document.getElementById('bitacoraExportGrid');
   if (!grid) return;
   document.getElementById('bitExpTitulo').textContent = 'Exportar Bitacoras a Excel';
-  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitacoras que deseas exportar. Cada una ira en una planilla separada.';
+  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitacoras que deseas exportar.';
   let html = '';
   BITACORAS_UNIFICADAS.forEach(function(bit, idx) {
     const data = bitacorasData[bit.key];
@@ -2361,7 +2360,6 @@ function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pe
 function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'ADM', pendientesADM); }
 function procesarArchivoQdm(file) { procesarArchivoTipoSeccion(file, 'QDM', pendientesQDM); }
 
-// ✅ CORREGIDO: Aplicar reglas AM/PM también a ADM y QDM
 function procesarArchivoTipoSeccion(file, tipo, lista) {
   const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
   toast('Leyendo ' + file.name + '...','info');
@@ -2416,7 +2414,6 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
           creado: new Date().toISOString(),
           importado: true
         };
-        // ✅ Aplicar reglas AM/PM a todos los tipos (AMPM, ADM, QDM)
         if (aplicarReglaPM) {
           reg = autocompletarTransportePM(reg);
         } else if (aplicarReglaAM) {
@@ -2976,7 +2973,6 @@ window.pedirBorrarRegistroBD = function(key, anio, mes) {
   });
 };
 
-// ✅ BORRAR DESCRIPCION ACTUAL (AM/PM, B2C, ADM o QDM)
 window.abrirModalBorrarDescripcion = function(tipo) {
   if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
   document.getElementById('bdTipoDesc').textContent = tipo || tipoDeSeccion();
@@ -3048,12 +3044,10 @@ window.confirmarBorrarDesc = function() {
   });
 };
 
-// ✅ BORRAR DESCRIPCION ACTUAL (desde el botón en Descripción)
 window.abrirModalBorrarDescripcionActual = function() {
   abrirModalBorrarDescripcion(tipoDeSeccion());
 };
 
-// ✅ ELIMINAR SOLO REGISTROS ADMIN
 window.abrirModalEliminarAdmin = function() {
   if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
   let totalAdmin = 0;
