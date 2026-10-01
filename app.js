@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getDatabase, ref, get, push, remove, update, set, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { getDatabase, ref, get, push, remove, update, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -208,14 +208,11 @@ let actividadData = [];
 let usuariosOnline = {};
 let heartbeatInterval = null;
 
-// =====================================================================
-// ✅ SISTEMA DE REGISTRO DE ACTIVIDAD
-// =====================================================================
 function registrarActividad(accion, detalle, modulo) {
-  if (rolActual !== 'admin' && !emailUsuarioActual) return;
+  if (!emailUsuarioActual) return;
   const ahora = new Date();
   const registro = {
-    usuario: emailUsuarioActual || 'desconocido',
+    usuario: emailUsuarioActual,
     esAdmin: rolActual === 'admin',
     accion: accion,
     detalle: detalle,
@@ -223,16 +220,11 @@ function registrarActividad(accion, detalle, modulo) {
     fecha: ahora.toISOString(),
     timestamp: ahora.getTime()
   };
-  push(ref(db, RUTA_ACTIVIDAD), registro)
-    .then(function() {
-      console.log('Actividad registrada:', accion);
-    })
-    .catch(function(e) {
-      console.error('Error registrando actividad:', e);
-    });
+  push(ref(db, RUTA_ACTIVIDAD), registro).catch(function(e) {
+    console.error('Error registrando actividad:', e);
+  });
 }
 
-// ✅ HEARTBEAT - Mantener usuario como "online"
 function iniciarHeartbeat() {
   if (!emailUsuarioActual) return;
   const userId = emailUsuarioActual.replace(/[@.]/g, '_');
@@ -249,9 +241,8 @@ function iniciarHeartbeat() {
   }
   
   actualizarOnline();
-  heartbeatInterval = setInterval(actualizarOnline, 30000); // cada 30 segundos
+  heartbeatInterval = setInterval(actualizarOnline, 30000);
   
-  // Limpiar al cerrar
   window.addEventListener('beforeunload', function() {
     remove(ref(db, RUTA_USUARIOS_ONLINE + '/' + userId));
   });
@@ -267,7 +258,6 @@ function detenerHeartbeat() {
   }
 }
 
-// ✅ Escuchar usuarios online en tiempo real
 function escucharUsuariosOnline() {
   onValue(ref(db, RUTA_USUARIOS_ONLINE), function(snapshot) {
     const data = snapshot.val() || {};
@@ -305,7 +295,6 @@ function actualizarDisplayUsuariosOnline(count) {
   }
 }
 
-// ✅ Escuchar actividad en tiempo real
 function escucharActividad() {
   onValue(ref(db, RUTA_ACTIVIDAD), function(snapshot) {
     const data = snapshot.val() || {};
@@ -324,14 +313,12 @@ function renderizarActividad() {
   
   if (totalEl) totalEl.textContent = formatoEntero(actividadData.length);
   
-  // Calcular acciones de hoy
   const hoy = new Date().toDateString();
   const hoyCount = actividadData.filter(function(a) {
     return new Date(a.fecha).toDateString() === hoy;
   }).length;
   if (hoyEl) hoyEl.textContent = formatoEntero(hoyCount);
   
-  // Total de registros en cache
   let totalRegs = 0;
   Object.keys(cache).forEach(function(a) { 
     Object.keys(cache[a]||{}).forEach(function(m) { 
@@ -354,13 +341,14 @@ function renderizarActividad() {
     'ENVIO_BITACORA': '📋',
     'CAMBIO_FECHA': '',
     'REGISTRO_NUEVO': '➕',
-    'LOGIN': '🔑',
+    'LOGIN': '',
     'BORRADO_MASIVO': '⚠️',
-    'EXPORTACION': '📊'
+    'EXPORTACION': '📊',
+    'EDICION': '✏️'
   };
   
   lista.innerHTML = actividadData.slice(0, 100).map(function(a) {
-    const icono = iconos[a.accion] || '📝';
+    const icono = iconos[a.accion] || '';
     const fecha = new Date(a.fecha);
     const fechaStr = fecha.toLocaleDateString('es-CL') + ' ' + fecha.toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'});
     const adminTag = a.esAdmin ? '<span class="badge badge-admin">ADMIN</span>' : '';
@@ -418,6 +406,7 @@ function getTipoRegistro(reg) {
   if (reg.rango === 'QDM') return 'QDM';
   return 'AMPM'; 
 }
+
 function sumaValores(regs) { return regs.reduce(function(s,r) { return s + (((r.valor||0) === 1) ? 0 : (r.valor||0)); }, 0); }
 function conteoUnPeso(regs) { return regs.filter(function(r) { return (r.valor||0) === 1; }).length; }
 function sinTildes(s) { return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
@@ -582,7 +571,6 @@ onAuthStateChanged(auth, function(user) {
     document.getElementById('appSection').style.display = 'flex';
     document.getElementById('userEmail').textContent = user.email + (rolActual === 'admin' ? '  (ADMIN)' : '');
     aplicarRol();
-    // ✅ Iniciar heartbeat y escuchar actividad si es admin
     iniciarHeartbeat();
     if (rolActual === 'admin') {
       escucharUsuariosOnline();
@@ -594,7 +582,6 @@ onAuthStateChanged(auth, function(user) {
         seccionInicial = '';
       }
     });
-    // ✅ Registrar login
     registrarActividad('LOGIN', 'Usuario inició sesión', 'SISTEMA');
   } else {
     rolActual = 'operador';
@@ -610,15 +597,21 @@ function aplicarRol() {
   const t = document.querySelector('.seccion-tab[data-seccion="basedatos"]'); 
   const t2 = document.querySelector('.seccion-tab[data-seccion="informes"]');
   const t3 = document.getElementById('tabActividad');
+  const btnEA = document.getElementById('btnEliminarAdmin');
+  const btnBBA = document.getElementById('btnBorrarBitacoraAdmin');
   if (!t) return; 
   if (rolActual === 'admin') {
     t.style.display = '';
     if (t2) t2.style.display = '';
     if (t3) t3.style.display = '';
+    if (btnEA) btnEA.style.display = 'inline-block';
+    if (btnBBA) btnBBA.style.display = 'inline-block';
   } else { 
     t.style.display = 'none'; 
     if (t2) t2.style.display = 'none';
     if (t3) t3.style.display = 'none';
+    if (btnEA) btnEA.style.display = 'none';
+    if (btnBBA) btnBBA.style.display = 'none';
     if (seccionActiva === 'basedatos' || seccionActiva === 'informes' || seccionActiva === 'actividad') cambiarSeccion('ampm'); 
   } 
 }
@@ -1117,7 +1110,7 @@ window.toggleComboBD = function(tipo, campo){
 function abrirComboBD(tipo, campo){ 
   cerrarCombosBD(); 
   poblarComboBD(tipo,campo,''); 
-  const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); 
+  const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo; 
   if(list){ list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } 
 }
 
@@ -1337,7 +1330,7 @@ function filaHTMLTabla(r, cf, cg, dr) {
   if (r.esAdmin) clase += 'fila-admin ';
   const bp = r.pendiente ? '<span class="badge badge-pendiente">SIN GUARDAR</span>' : '';
   const badgeAdmin = r.esAdmin ? '<span class="badge badge-admin">ADMIN</span>' : '';
-  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">️</span>' : '';
+  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">✏️</span>' : '';
   const fechaMostrar = tieneCambioFecha ? cambiosFechaLocales[r.key].nuevaFecha : r.fecha;
   const celdaFecha = '<td><div class="fecha-cell-wrap"><input type="date" value="' + (fechaMostrar||'') + '" onchange="cambiarFechaFila(\'' + r.key + '\', this.value, ' + (r.pendiente?true:false) + ')"></div> ' + bp + indicadorCambio + badgeAdmin + '</td>';
   const celdaSel = '<td class="td-sel"><input type="checkbox" style="width:16px;height:16px;" ' + sel + ' onchange="toggleSeleccionDesc(\'' + r.key + '\', this.checked)"></td>';
@@ -1532,7 +1525,6 @@ window.guardarPendientesSeccion = function() {
     })).then(function(){ li++; setTimeout(proc,100); }); 
   };
   proc();
-  // ✅ Registrar actividad
   registrarActividad('GUARDADO', formatoEntero(lista.length) + ' registros guardados en ' + tipoDeSeccion(), tipoDeSeccion());
 };
 
@@ -1567,12 +1559,10 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
     remove(ref(db, RUTA_BASE + '/' + anio + '/' + mes + '/' + key))
       .then(function() { toast('Eliminado de plataforma y Firebase','ok'); render(); renderizarBaseDatos(); })
       .catch(function(e) { toast('Error al borrar: ' + e.message, 'err'); if (!cache[anio]) cache[anio] = {}; if (!cache[anio][mes]) cache[anio][mes] = {}; cache[anio][mes][key] = existeEnCache; render(); });
-    // ✅ Registrar actividad
     registrarActividad('ELIMINACION', 'Registro eliminado: ' + key, tipoDeSeccion());
   });
 };
 
-// ✅ MODIFICADO: Envío a bitácoras unificadas
 window.enviarSeleccion = function() {
   if (seleccionadosDesc.size === 0) { toast('Selecciona al menos una fila', 'err'); return; }
   let enviados = 0;
@@ -1611,7 +1601,7 @@ window.enviarSeleccion = function() {
       esAdmin: reg.esAdmin || false
     };
     if (!bitacorasData[bitKey]) {
-      bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || 'AM', responsable: '', firma: '' } };
+      bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || '', responsable: '', firma: '' } };
     }
     let filaIdx = -1;
     for (let i = 0; i < 15; i++) {
@@ -1642,8 +1632,7 @@ window.enviarSeleccion = function() {
         render();
       })
       .catch(function(e) { toast('Error al guardar bitácoras: ' + e.message, 'err'); console.error('Error detallado:', e); });
-    // ✅ Registrar actividad
-    registrarActividad('ENVIO_BITACORA', formatoEntero(enviados) + ' registros enviados a bitácoras', tipoDeSeccion());
+    registrarActividad('ENVIO_BITACORA', formatoEntero(enviados) + ' registros enviados a bitácoras', 'BITACORAS');
   } else {
     toast('No se pudo enviar', 'err');
     if (errores.length > 0) setTimeout(function() { toast('Errores: ' + errores.slice(0,3).join('; '), 'err'); }, 1000);
@@ -1701,7 +1690,7 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
       comuna: canonComuna(document.getElementById('fComuna').value), 
       valor: parseFloat(document.getElementById('fValor').value)||0, 
       observacion: document.getElementById('fObs').value.toUpperCase(), 
-      transporte:'SERVICIO ADM', 
+      transporte: document.getElementById('fTransporte').value || 'SERVICIO ADM',
       rango:rango, 
       tipo:'ADM', 
       otroPalet:false,
@@ -1728,7 +1717,7 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
       comuna: canonComuna(document.getElementById('fComuna').value), 
       valor: parseFloat(document.getElementById('fValor').value)||0, 
       observacion: document.getElementById('fObs').value.toUpperCase(), 
-      transporte:'SERVICIO QDM', 
+      transporte: document.getElementById('fTransporte').value || 'SERVICIO QDM',
       rango:rango, 
       tipo:'QDM', 
       otroPalet:false,
@@ -1847,7 +1836,6 @@ window.confirmarExportar = function() {
   XLSX.writeFile(wb, 'DespachoRetail_' + tipo + '_' + new Date().toISOString().split('T')[0] + '.xlsx');
   toast('Exportados ' + formatoEntero(regs.length) + ' registros','ok'); 
   cerrarModalExportar();
-  // ✅ Registrar actividad
   registrarActividad('EXPORTACION', 'Exportó ' + formatoEntero(regs.length) + ' registros a Excel', tipo);
 };
 
@@ -1927,8 +1915,96 @@ window.guardarTodasBitacoras = function() {
       .catch(function(e) { toast('Error al guardar ' + key + ': ' + e.message, 'err'); });
   });
   setTimeout(function() { toast('Todas las bitacoras guardadas: ' + guardadas, 'ok'); }, 500);
-  // ✅ Registrar actividad
   registrarActividad('GUARDADO', 'Guardadas ' + guardadas + ' bitácoras', 'BITACORAS');
+};
+
+// ✅ BORRAR TODAS LAS BITACORAS
+window.abrirModalBorrarBitacoraTodo = function() {
+  if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
+  let totalFilas = 0;
+  BITACORAS_UNIFICADAS.forEach(function(bit) {
+    const data = bitacorasData[bit.key];
+    if (data && data.filas) {
+      totalFilas += data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length;
+    }
+  });
+  document.getElementById('bbtInfoRegistros').textContent = 'Total de filas en bitácoras a eliminar: ' + formatoEntero(totalFilas);
+  document.getElementById('bbtPassword').value = '';
+  document.getElementById('borrarBitacoraTodoOverlay').classList.add('show');
+};
+
+window.cerrarModalBorrarBitacoraTodo = function() { 
+  document.getElementById('borrarBitacoraTodoOverlay').classList.remove('show'); 
+};
+
+window.confirmarBorrarBitacoraTodo = function() {
+  const p = document.getElementById('bbtPassword').value;
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  if (!confirm('¿Eliminar TODA la información de las 9 bitácoras?\nEsta acción es IRREVERSIBLE.')) return;
+  
+  toast('Eliminando todas las bitácoras...','info');
+  
+  const promesas = [];
+  BITACORAS_UNIFICADAS.forEach(function(bit) {
+    promesas.push(remove(ref(db, RUTA_BITACORAS + '/' + bit.key)).catch(function(){}));
+    bitacorasData[bit.key] = { filas: [], footer: { transporte: bit.label, fecha: '', ruta: '', responsable: '', firma: '' } };
+  });
+  
+  Promise.all(promesas).then(function() {
+    toast('Todas las bitácoras eliminadas','ok');
+    cerrarModalBorrarBitacoraTodo();
+    renderizarTodasBitacoras();
+    registrarActividad('BORRADO_MASIVO', 'Eliminó todas las bitácoras (' + BITACORAS_UNIFICADAS.length + ' bitácoras)', 'BITACORAS');
+  }).catch(function(e) {
+    toast('Error al eliminar: ' + e.message, 'err');
+  });
+};
+
+// ✅ BORRAR SOLO BITACORAS ADMIN
+window.abrirModalBorrarBitacoraAdmin = function() {
+  if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
+  let totalAdmin = 0;
+  BITACORAS_UNIFICADAS.forEach(function(bit) {
+    const data = bitacorasData[bit.key];
+    if (data && data.filas) {
+      totalAdmin += data.filas.filter(function(f) { return f && f.esAdmin; }).length;
+    }
+  });
+  document.getElementById('bbaInfoRegistros').textContent = 'Total de filas ADMIN (verde) en bitácoras a eliminar: ' + formatoEntero(totalAdmin);
+  document.getElementById('bbaPassword').value = '';
+  document.getElementById('borrarBitacoraAdminOverlay').classList.add('show');
+};
+
+window.cerrarModalBorrarBitacoraAdmin = function() { 
+  document.getElementById('borrarBitacoraAdminOverlay').classList.remove('show'); 
+};
+
+window.confirmarBorrarBitacoraAdmin = function() {
+  const p = document.getElementById('bbaPassword').value;
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  if (!confirm('¿Eliminar SOLO los registros ADMIN (verde) de todas las bitácoras?')) return;
+  
+  toast('Eliminando registros admin de bitácoras...','info');
+  
+  let totalEliminados = 0;
+  BITACORAS_UNIFICADAS.forEach(function(bit) {
+    const data = bitacorasData[bit.key];
+    if (data && data.filas) {
+      data.filas = data.filas.filter(function(f) { 
+        if (f && f.esAdmin) {
+          totalEliminados++;
+          return false;
+        }
+        return true;
+      });
+      update(ref(db, RUTA_BITACORAS + '/' + bit.key), { filas: data.filas, footer: data.footer }).catch(function(){});
+    }
+  });
+  
+  toast(formatoEntero(totalEliminados) + ' registros admin eliminados de bitácoras','ok');
+  cerrarModalBorrarBitacoraAdmin();
+  renderizarTodasBitacoras();
+  registrarActividad('BORRADO_MASIVO', 'Eliminó ' + formatoEntero(totalEliminados) + ' registros ADMIN de bitácoras', 'BITACORAS');
 };
 
 window.abrirModalExportarBitacoras = function() {
@@ -2001,7 +2077,6 @@ window.confirmarExportarBitacoras = function() {
   XLSX.writeFile(wb, 'Bitacoras_Unificadas_' + fecha + '.xlsx');
   toast(exportadas + ' bitacoras exportadas', 'ok');
   cerrarModalExportarBitacoras();
-  // ✅ Registrar actividad
   registrarActividad('EXPORTACION', 'Exportó ' + exportadas + ' bitácoras a Excel', 'BITACORAS');
 };
 
@@ -2086,7 +2161,6 @@ window.confirmarExportarJPEGBitacoras = function() {
     });
   });
   cerrarModalJPEGBitacoras();
-  // ✅ Registrar actividad
   registrarActividad('EXPORTACION', 'Exportó ' + checkboxes.length + ' bitácoras como JPEG', 'BITACORAS');
 };
 
@@ -2094,7 +2168,7 @@ window.abrirModalImprimirBitacoras = function() {
   const grid = document.getElementById('bitacoraPrintGrid');
   if (!grid) return;
   document.getElementById('bitPrintTitulo').textContent = 'Imprimir Bitacoras';
-  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitacoras que deseas imprimir. Se imprimirán todas en una sola ventana.';
+  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitacoras que deseas imprimir.';
   let html = '';
   BITACORAS_UNIFICADAS.forEach(function(bit, idx) {
     const data = bitacorasData[bit.key];
@@ -2179,7 +2253,6 @@ window.confirmarImprimirBitacoras = function() {
   
   toast(checkboxes.length + ' bitacora(s) lista(s) para imprimir', 'ok');
   cerrarModalImprimirBitacoras();
-  // ✅ Registrar actividad
   registrarActividad('EXPORTACION', 'Imprimió ' + checkboxes.length + ' bitácoras', 'BITACORAS');
 };
 
@@ -2244,7 +2317,6 @@ function procesarArchivoB2C(file, lista) {
         render(); 
       }
       else cargarPendientes(regs, 'B2C (' + file.name + ')');
-      // ✅ Registrar actividad
       registrarActividad('SUBIDA_ARCHIVO', 'Subió archivo B2C: ' + file.name + ' (' + formatoEntero(regs.length) + ' registros)', 'B2C');
     } catch(e){ 
       toast(''+e.message,'err'); 
@@ -2289,11 +2361,12 @@ function procesarArchivoAMPM(file) { procesarArchivoTipoSeccion(file, 'AMPM', pe
 function procesarArchivoAdm(file) { procesarArchivoTipoSeccion(file, 'ADM', pendientesADM); }
 function procesarArchivoQdm(file) { procesarArchivoTipoSeccion(file, 'QDM', pendientesQDM); }
 
+// ✅ CORREGIDO: Aplicar reglas AM/PM también a ADM y QDM
 function procesarArchivoTipoSeccion(file, tipo, lista) {
   const ft = document.getElementById('fFecha').value || new Date().toISOString().split('T')[0];
   toast('Leyendo ' + file.name + '...','info');
-  const aplicarReglaPM = (tipo === 'AMPM') && esAntesDe1400();
-  const aplicarReglaAM = (tipo === 'AMPM') && esDespuesDe1401();
+  const aplicarReglaPM = esAntesDe1400();
+  const aplicarReglaAM = esDespuesDe1401();
   if (aplicarReglaPM) {
     toast('Antes de 14:00 - Aplicando REGLA PM', 'info');
   } else if (aplicarReglaAM) {
@@ -2343,6 +2416,7 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
           creado: new Date().toISOString(),
           importado: true
         };
+        // ✅ Aplicar reglas AM/PM a todos los tipos (AMPM, ADM, QDM)
         if (aplicarReglaPM) {
           reg = autocompletarTransportePM(reg);
         } else if (aplicarReglaAM) {
@@ -2356,7 +2430,6 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
       paginaDesc = 1; 
       toast(formatoEntero(nuevos.length) + ' filas. Revisa TRANSPORTE/RANGO y presiona GUARDAR.','info'); 
       render();
-      // ✅ Registrar actividad
       registrarActividad('SUBIDA_ARCHIVO', 'Subió archivo ' + tipo + ': ' + file.name + ' (' + formatoEntero(nuevos.length) + ' registros)', tipo);
     } catch(e){ 
       toast(''+e.message,'err'); 
@@ -2380,8 +2453,8 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
       const aT = parts[0];
       const mT = parts[1];
       const nuevos = [];
-      const aplicarReglaPM = (tipo === 'AMPM') && esAntesDe1400();
-      const aplicarReglaAM = (tipo === 'AMPM') && esDespuesDe1401();
+      const aplicarReglaPM = esAntesDe1400();
+      const aplicarReglaAM = esDespuesDe1401();
       arr.forEach(function(o,i) { 
         const m = {}; 
         Object.keys(o).forEach(function(k) { m[normEnc(k)] = o[k]; });
@@ -2431,7 +2504,6 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
       paginaDesc = 1; 
       toast(formatoEntero(nuevos.length) + ' registros JSON. Presiona GUARDAR.','info'); 
       render();
-      // ✅ Registrar actividad
       registrarActividad('SUBIDA_ARCHIVO', 'Subió JSON ' + tipo + ': ' + file.name + ' (' + formatoEntero(nuevos.length) + ' registros)', tipo);
     } catch(e){ 
       toast('JSON inválido','err'); 
@@ -2446,8 +2518,8 @@ function procesarArchivoGenerico(file, tipo) {
   const mA = mesAnio.mes;
   const aA = mesAnio.anio;
   toast('Leyendo ' + file.name + '...','info');
-  const aplicarReglaPM = (tipo === 'AMPM') && esAntesDe1400();
-  const aplicarReglaAM = (tipo === 'AMPM') && esDespuesDe1401();
+  const aplicarReglaPM = esAntesDe1400();
+  const aplicarReglaAM = esDespuesDe1401();
   leerFilas(file, function(filas) { 
     try {
       if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
@@ -2523,7 +2595,6 @@ function procesarArchivoGenerico(file, tipo) {
       }
       if (sinF) toast(formatoEntero(sinF) + ' filas sin fecha válida','err');
       cargarPendientes(regs, tipo + ' (' + file.name + ')');
-      // ✅ Registrar actividad
       registrarActividad('SUBIDA_ARCHIVO', 'Subió archivo genérico ' + tipo + ': ' + file.name, tipo);
     } catch(e){ 
       toast(''+e.message,'err'); 
@@ -2885,7 +2956,6 @@ window.guardarEdicionInline = function(key, anio, mes, esPend) {
   toast('Registro actualizado','ok');
   render();
   renderizarBaseDatos();
-  // ✅ Registrar actividad
   registrarActividad('EDICION', 'Editó registro ' + key, tipoDeSeccion());
 };
 
@@ -2902,31 +2972,26 @@ window.pedirBorrarRegistroBD = function(key, anio, mes) {
       render();
       renderizarBaseDatos();
     }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
-    // ✅ Registrar actividad
     registrarActividad('ELIMINACION', 'Eliminó registro ' + key + ' de BD', tipoDeSeccion());
   });
 };
 
-// =====================================================================
-// ✅ NUEVO: BORRAR DESCRIPCION ACTUAL (mantiene bitácoras)
-// =====================================================================
-window.abrirModalBorrarDescripcion = function() {
+// ✅ BORRAR DESCRIPCION ACTUAL (AM/PM, B2C, ADM o QDM)
+window.abrirModalBorrarDescripcion = function(tipo) {
   if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
-  const tipo = tipoDeSeccion();
-  document.getElementById('bdTipoDesc').textContent = tipo;
+  document.getElementById('bdTipoDesc').textContent = tipo || tipoDeSeccion();
   
-  // Contar registros de este tipo
   let total = 0;
+  const tipoBusqueda = tipo || tipoDeSeccion();
   Object.keys(cache).forEach(function(a) { 
     Object.keys(cache[a]||{}).forEach(function(m) { 
       Object.keys(cache[a][m]||{}).forEach(function(k) {
-        if (getTipoRegistro(cache[a][m][k]) === tipo) total++;
+        if (getTipoRegistro(cache[a][m][k]) === tipoBusqueda) total++;
       });
     }); 
   });
-  total += pendientesDeSeccion().length;
   
-  document.getElementById('bdInfoRegistros').textContent = 'Registros de ' + tipo + ' a eliminar: ' + formatoEntero(total);
+  document.getElementById('bdInfoRegistros').textContent = 'Registros de ' + tipoBusqueda + ' a eliminar: ' + formatoEntero(total);
   document.getElementById('bdPassword').value = '';
   document.getElementById('borrarDescOverlay').classList.add('show');
 };
@@ -2938,7 +3003,7 @@ window.cerrarModalBorrarDesc = function() {
 window.confirmarBorrarDesc = function() {
   const p = document.getElementById('bdPassword').value;
   if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
-  const tipo = tipoDeSeccion();
+  const tipo = document.getElementById('bdTipoDesc').textContent;
   
   if (!confirm('¿Eliminar TODOS los registros de ' + tipo + '?\nLas BITACORAS NO serán afectadas.')) return;
   
@@ -2961,74 +3026,31 @@ window.confirmarBorrarDesc = function() {
     promesas.push(remove(ref(db, RUTA_BASE + '/' + item.anio + '/' + item.mes + '/' + item.key)).catch(function(){}));
   });
   
-  // Eliminar de cache
   keysAEliminar.forEach(function(item) {
     if (cache[item.anio] && cache[item.anio][item.mes]) {
       delete cache[item.anio][item.mes][item.key];
     }
   });
   
-  // Limpiar pendientes de este tipo
   if (tipo === 'AMPM') pendientesAMPM = [];
   else if (tipo === 'ADM') pendientesADM = [];
   else if (tipo === 'QDM') pendientesQDM = [];
   else if (tipo === 'B2C') pendientesB2C = [];
   
   Promise.all(promesas).then(function() {
-    toast(formatoEntero(keysAEliminar.length) + ' registros de ' + tipo + ' eliminados. Bitácoras intactas.','ok');
+    toast(formatoEntero(keysAEliminar.length) + ' registros de ' + tipo + ' eliminados','ok');
     cerrarModalBorrarDesc();
     render();
     renderizarBaseDatos();
-    // ✅ Registrar actividad
     registrarActividad('BORRADO_MASIVO', 'Eliminó toda la descripción ' + tipo + ' (' + formatoEntero(keysAEliminar.length) + ' registros)', tipo);
   }).catch(function(e) {
     toast('Error: ' + e.message, 'err');
   });
 };
 
-window.abrirBorrarMes = function(t) { 
-  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
-  tipoBorrarMes = t; 
-  document.getElementById('bmTipo').value = t; 
-  document.getElementById('bmMes').value = ''; 
-  document.getElementById('bmPassword').value = ''; 
-  document.getElementById('bmInfoRegistros').textContent = 'Selecciona mes y año para ver cantidad'; 
-  document.getElementById('borrarMesOverlay').classList.add('show'); 
-};
-
-window.cerrarBorrarMes = function() { document.getElementById('borrarMesOverlay').classList.remove('show'); };
-
-function actualizarInfoBorrarMes() { 
-  const m = document.getElementById('bmMes').value;
-  const a = document.getElementById('bmAnio').value;
-  const d = document.getElementById('bmInfoRegistros'); 
-  if (!m) { d.textContent = 'Selecciona mes y año para ver cantidad'; return; } 
-  const c = Object.keys((cache[a] && cache[a][m]) ? cache[a][m] : {}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; }).length; 
-  d.textContent = c === 0 ? 'Sin registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a : formatoEntero(c) + ' registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a; 
-}
-
-window.confirmarBorrarMes = function() {
-  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; }
-  const m = document.getElementById('bmMes').value;
-  const a = document.getElementById('bmAnio').value;
-  const p = document.getElementById('bmPassword').value;
-  if (!m) { toast('Primero elige el mes','err'); return; }
-  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
-  const keys = Object.keys((cache[a] && cache[a][m]) ? cache[a][m] : {}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; });
-  if (!keys.length) { toast('No hay registros que borrar','info'); return; }
-  if (!confirm('Se BORRARAN PERMANENTEMENTE ' + formatoEntero(keys.length) + ' registros ' + tipoBorrarMes + ' de ' + MESES_NOM[parseInt(m)-1] + ' ' + a + '.\nNo se puede deshacer.\n¿Confirmas?')) return;
-  toast('Borrando permanentemente...','info');
-  Promise.all(keys.map(function(k) { return remove(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + k)); }))
-    .then(function(){ 
-      keys.forEach(function(k) { if (cache[a] && cache[a][m]) delete cache[a][m][k]; });
-      toast('Mes borrado permanentemente','ok');
-      cerrarBorrarMes(); 
-      renderizarBaseDatos(); 
-      render(); 
-      // ✅ Registrar actividad
-      registrarActividad('BORRADO_MASIVO', 'Borró mes ' + MESES_NOM[parseInt(m)-1] + ' ' + a + ' de ' + tipoBorrarMes + ' (' + formatoEntero(keys.length) + ' registros)', tipoBorrarMes);
-    })
-    .catch(function(e) { toast(''+e.message,'err'); });
+// ✅ BORRAR DESCRIPCION ACTUAL (desde el botón en Descripción)
+window.abrirModalBorrarDescripcionActual = function() {
+  abrirModalBorrarDescripcion(tipoDeSeccion());
 };
 
 // ✅ ELIMINAR SOLO REGISTROS ADMIN
@@ -3099,9 +3121,54 @@ window.confirmarEliminarAdmin = function() {
     cerrarModalEliminarAdmin();
     render();
     renderizarBaseDatos();
-    // ✅ Registrar actividad
     registrarActividad('BORRADO_MASIVO', 'Eliminó ' + formatoEntero(keysAEliminar.length) + ' registros ADMIN', 'SISTEMA');
-  }).catch(function(e) { toast(''+e.message,'err'); });
+  }).catch(function(e) {
+    toast('Error al eliminar: ' + e.message, 'err');
+  });
+};
+
+window.abrirBorrarMes = function(t) { 
+  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } 
+  tipoBorrarMes = t; 
+  document.getElementById('bmTipo').value = t; 
+  document.getElementById('bmMes').value = ''; 
+  document.getElementById('bmPassword').value = ''; 
+  document.getElementById('bmInfoRegistros').textContent = 'Selecciona mes y año para ver cantidad'; 
+  document.getElementById('borrarMesOverlay').classList.add('show'); 
+};
+
+window.cerrarBorrarMes = function() { document.getElementById('borrarMesOverlay').classList.remove('show'); };
+
+function actualizarInfoBorrarMes() { 
+  const m = document.getElementById('bmMes').value;
+  const a = document.getElementById('bmAnio').value;
+  const d = document.getElementById('bmInfoRegistros'); 
+  if (!m) { d.textContent = 'Selecciona mes y año para ver cantidad'; return; } 
+  const c = Object.keys((cache[a] && cache[a][m]) ? cache[a][m] : {}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; }).length; 
+  d.textContent = c === 0 ? 'Sin registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a : formatoEntero(c) + ' registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a; 
+}
+
+window.confirmarBorrarMes = function() {
+  if (rolActual !== 'admin') { toast('Sin permiso','err'); return; }
+  const m = document.getElementById('bmMes').value;
+  const a = document.getElementById('bmAnio').value;
+  const p = document.getElementById('bmPassword').value;
+  if (!m) { toast('Primero elige el mes','err'); return; }
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  const keys = Object.keys((cache[a] && cache[a][m]) ? cache[a][m] : {}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; });
+  if (!keys.length) { toast('No hay registros que borrar','info'); return; }
+  if (!confirm('Se BORRARAN PERMANENTEMENTE ' + formatoEntero(keys.length) + ' registros ' + tipoBorrarMes + ' de ' + MESES_NOM[parseInt(m)-1] + ' ' + a + '.\nNo se puede deshacer.\n¿Confirmas?')) return;
+  toast('Borrando permanentemente...','info');
+  Promise.all(keys.map(function(k) { return remove(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + k)); }))
+    .then(function(){ 
+      keys.forEach(function(k) { if (cache[a] && cache[a][m]) delete cache[a][m][k]; });
+      toast('Mes borrado permanentemente','ok');
+      cerrarBorrarMes(); 
+      renderizarBaseDatos(); 
+      render(); 
+      registrarActividad('BORRADO_MASIVO', 'Borró mes ' + MESES_NOM[parseInt(m)-1] + ' ' + a + ' de ' + tipoBorrarMes + ' (' + formatoEntero(keys.length) + ' registros)', tipoBorrarMes);
+    })
+    .catch(function(e) { toast(''+e.message,'err'); });
 };
 
 window.buscarFiltrosAMPM = function() { buscarFiltros('AMPM'); };
@@ -3602,6 +3669,8 @@ function renderInformes() {
       else if (document.getElementById('bitacoraPrintOverlay').classList.contains('show')) cerrarModalImprimirBitacoras();
       else if (document.getElementById('borrarDescOverlay').classList.contains('show')) cerrarModalBorrarDesc();
       else if (document.getElementById('eliminarAdminOverlay').classList.contains('show')) cerrarModalEliminarAdmin();
+      else if (document.getElementById('borrarBitacoraTodoOverlay').classList.contains('show')) cerrarModalBorrarBitacoraTodo();
+      else if (document.getElementById('borrarBitacoraAdminOverlay').classList.contains('show')) cerrarModalBorrarBitacoraAdmin();
       else if (document.getElementById('borrarMesOverlay').classList.contains('show')) cerrarBorrarMes();
       else if (document.getElementById('verFechaOverlay').classList.contains('show')) cerrarModalVerFecha();
       else if (calendarioAbierto) { calendarioAbierto = false; const p = document.getElementById('calendarioPopup'); if (p) p.classList.remove('show'); }
