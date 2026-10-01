@@ -145,7 +145,6 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .btn-imprimir-bitacora:hover{border-color:var(--accent-orange) !important;color:var(--accent-orange) !important;background:var(--accent-orange-pastel) !important}
 .bitacora-export-select-all:hover{border-color:var(--accent-green) !important;color:var(--accent-green) !important;background:var(--accent-green-pastel) !important}
 
-/* ✅ BOTÓN BASURERO CON BORDE ROJO EN TODOS LOS TEMAS */
 .btn-acc.btn-borrar{
   border:1px solid var(--accent-red) !important;
   color:var(--accent-red) !important;
@@ -484,97 +483,28 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
       </div>
     </div>
 
+    <!-- ✅ BITACORAS UNIFICADAS: Sin pestañas, todas visibles -->
     <div class="seccion-contenido" id="seccionBitacoras">
-      <h3 class="basedatos-subtitulo">BITACORAS</h3>
-      <div class="basedatos-tabs">
-        <div class="basedatos-tab active" data-btab="ampm" onclick="cambiarTabBit('ampm')">AM/PM</div>
-        <div class="basedatos-tab" data-btab="b2c" onclick="cambiarTabBit('b2c')">B2C</div>
-        <div class="basedatos-tab" data-btab="adm" onclick="cambiarTabBit('adm')">ADM</div>
-        <div class="basedatos-tab" data-btab="qdm" onclick="cambiarTabBit('qdm')">QDM</div>
-      </div>
-      
-      <div class="basedatos-tab-content show" id="bitContentAmpm">
-        <div class="bitacora-seccion">
-          <div class="bitacora-actions">
-            <button class="btn-guardar-bitacora" onclick="guardarBitacora('ampm')">GUARDAR</button>
-            <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('ampm')">EXPORTAR EXCEL</button>
-            <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('ampm')">EXPORTAR JPEG</button>
-            <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('ampm')">IMPRIMIR</button>
-          </div>
-          <div class="bitacora-seccion-titulo">BITACORAS AM/PM</div>
-          <div id="bitacoraAmpmMovil1" class="bitacora-movil-content"></div>
-          <div id="bitacoraAmpmMovil2" class="bitacora-movil-content"></div>
-          <div id="bitacoraAmpmMovil3" class="bitacora-movil-content"></div>
-          <div id="bitacoraAmpmMovil4" class="bitacora-movil-content"></div>
-          <div id="bitacoraAmpmMovil5" class="bitacora-movil-content"></div>
-          <div id="bitacoraAmpmMovil6" class="bitacora-movil-content"></div>
-          <div id="bitacoraAmpmMovilspot" class="bitacora-movil-content"></div>
-          <div id="bitacoraAmpmMovilspot1" class="bitacora-movil-content"></div>
-          <div id="bitacoraAmpmMovilspot2" class="bitacora-movil-content"></div>
+      <h3 class="basedatos-subtitulo">BITACORAS UNIFICADAS</h3>
+      <div class="bitacora-seccion">
+        <div class="bitacora-actions">
+          <button class="btn-guardar-bitacora" onclick="guardarTodasBitacoras()">GUARDAR TODO</button>
+          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras()">EXPORTAR EXCEL</button>
+          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras()">EXPORTAR JPEG</button>
+          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras()">IMPRIMIR</button>
         </div>
-      </div>
-      
-      <div class="basedatos-tab-content" id="bitContentB2c">
-        <div class="bitacora-seccion">
-          <div class="bitacora-actions">
-            <button class="btn-guardar-bitacora" onclick="guardarBitacora('b2c')">GUARDAR</button>
-            <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('b2c')">EXPORTAR EXCEL</button>
-            <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('b2c')">EXPORTAR JPEG</button>
-            <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('b2c')">IMPRIMIR</button>
-          </div>
-          <div class="bitacora-seccion-titulo">BITACORAS B2C</div>
-          <div id="bitacoraB2cMovil1" class="bitacora-movil-content"></div>
-          <div id="bitacoraB2cMovil2" class="bitacora-movil-content"></div>
-          <div id="bitacoraB2cMovil3" class="bitacora-movil-content"></div>
-          <div id="bitacoraB2cMovil4" class="bitacora-movil-content"></div>
-          <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
-          <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
-          <div id="bitacoraB2cMovilspot" class="bitacora-movil-content"></div>
-          <div id="bitacoraB2cMovilspot1" class="bitacora-movil-content"></div>
-          <div id="bitacoraB2cMovilspot2" class="bitacora-movil-content"></div>
-        </div>
-      </div>
-      
-      <div class="basedatos-tab-content" id="bitContentAdm">
-        <div class="bitacora-seccion">
-          <div class="bitacora-actions">
-            <button class="btn-guardar-bitacora" onclick="guardarBitacora('adm')">GUARDAR</button>
-            <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('adm')">EXPORTAR EXCEL</button>
-            <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('adm')">EXPORTAR JPEG</button>
-            <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('adm')">IMPRIMIR</button>
-          </div>
-          <div class="bitacora-seccion-titulo">BITACORAS ADM</div>
-          <div id="bitacoraAdmMovil1" class="bitacora-movil-content"></div>
-          <div id="bitacoraAdmMovil2" class="bitacora-movil-content"></div>
-          <div id="bitacoraAdmMovil3" class="bitacora-movil-content"></div>
-          <div id="bitacoraAdmMovil4" class="bitacora-movil-content"></div>
-          <div id="bitacoraAdmMovil5" class="bitacora-movil-content"></div>
-          <div id="bitacoraAdmMovil6" class="bitacora-movil-content"></div>
-          <div id="bitacoraAdmMovilspot" class="bitacora-movil-content"></div>
-          <div id="bitacoraAdmMovilspot1" class="bitacora-movil-content"></div>
-          <div id="bitacoraAdmMovilspot2" class="bitacora-movil-content"></div>
-        </div>
-      </div>
-      
-      <div class="basedatos-tab-content" id="bitContentQdm">
-        <div class="bitacora-seccion">
-          <div class="bitacora-actions">
-            <button class="btn-guardar-bitacora" onclick="guardarBitacora('qdm')">GUARDAR</button>
-            <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('qdm')">EXPORTAR EXCEL</button>
-            <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('qdm')">EXPORTAR JPEG</button>
-            <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('qdm')">IMPRIMIR</button>
-          </div>
-          <div class="bitacora-seccion-titulo">BITACORAS QDM</div>
-          <div id="bitacoraQdmMovil1" class="bitacora-movil-content"></div>
-          <div id="bitacoraQdmMovil2" class="bitacora-movil-content"></div>
-          <div id="bitacoraQdmMovil3" class="bitacora-movil-content"></div>
-          <div id="bitacoraQdmMovil4" class="bitacora-movil-content"></div>
-          <div id="bitacoraQdmMovil5" class="bitacora-movil-content"></div>
-          <div id="bitacoraQdmMovil6" class="bitacora-movil-content"></div>
-          <div id="bitacoraQdmMovilspot" class="bitacora-movil-content"></div>
-          <div id="bitacoraQdmMovilspot1" class="bitacora-movil-content"></div>
-          <div id="bitacoraQdmMovilspot2" class="bitacora-movil-content"></div>
-        </div>
+        <div id="bitacoraMovil1" class="bitacora-movil-content"></div>
+        <div id="bitacoraMovil2" class="bitacora-movil-content"></div>
+        <div id="bitacoraMovil3" class="bitacora-movil-content"></div>
+        <div id="bitacoraMovil4" class="bitacora-movil-content"></div>
+        <div id="bitacoraMovil5" class="bitacora-movil-content"></div>
+        <div id="bitacoraMovil6" class="bitacora-movil-content"></div>
+        <div id="bitacoraSpot" class="bitacora-movil-content"></div>
+        <div id="bitacoraSpot1" class="bitacora-movil-content"></div>
+        <div id="bitacoraSpot2" class="bitacora-movil-content"></div>
+        <div id="bitacoraServicioAmpm" class="bitacora-movil-content"></div>
+        <div id="bitacoraServicioAdm" class="bitacora-movil-content"></div>
+        <div id="bitacoraServicioQdm" class="bitacora-movil-content"></div>
       </div>
     </div>
 
@@ -858,7 +788,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 <div class="bitacora-export-overlay" id="bitacoraPrintOverlay">
   <div class="bitacora-export-modal">
     <h3 id="bitPrintTitulo">Imprimir Bitacoras</h3>
-    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitPrintSubtitulo">Selecciona las bitacoras que deseas imprimir.</p>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitPrintSubtitulo">Selecciona las bitacoras que deseas imprimir. Se abrirán todas en una sola ventana.</p>
     <button class="bitacora-export-select-all" onclick="seleccionarTodasBitacorasPrint()">Seleccionar todas</button>
     <div class="bitacora-export-grid" id="bitacoraPrintGrid"></div>
     <div class="bitacora-export-actions">
