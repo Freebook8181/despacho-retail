@@ -29,7 +29,7 @@ const REGISTROS_POR_PAGINA_DESC = 30;
 const OPCIONES_TRANSPORTE = ['MOVIL 1','MOVIL 2','MOVIL 3','MOVIL 4','MOVIL 5','MOVIL 6','DON RAUL','DON JOSE','SERVICIO AM/PM','SERVICIO B2C','SERVICIO ADM','SERVICIO QDM','SPOT','SPOT 1','SPOT 2','RETIRA CLIENTE','SERVICIO 3PL','TRANSGAMBOA'];
 const OPCIONES_OBS = ['CASA CENTRAL','RETIRO','RETIRO CLIENTE','RETIRO CASA CENTRAL'];
 
-// ✅ BITACORAS UNIFICADAS: 12 bitácoras únicas para toda la flota
+// ✅ BITACORAS UNIFICADAS: 9 bitácoras de la flota
 const BITACORAS_UNIFICADAS = [
   { key: 'movil1', label: 'MOVIL 1', domId: 'bitacoraMovil1' },
   { key: 'movil2', label: 'MOVIL 2', domId: 'bitacoraMovil2' },
@@ -39,10 +39,7 @@ const BITACORAS_UNIFICADAS = [
   { key: 'movil6', label: 'MOVIL 6', domId: 'bitacoraMovil6' },
   { key: 'spot', label: 'SPOT', domId: 'bitacoraSpot' },
   { key: 'spot1', label: 'SPOT 1', domId: 'bitacoraSpot1' },
-  { key: 'spot2', label: 'SPOT 2', domId: 'bitacoraSpot2' },
-  { key: 'servicio_ampm', label: 'SERVICIO AM/PM', domId: 'bitacoraServicioAmpm' },
-  { key: 'servicio_adm', label: 'SERVICIO ADM', domId: 'bitacoraServicioAdm' },
-  { key: 'servicio_qdm', label: 'SERVICIO QDM', domId: 'bitacoraServicioQdm' }
+  { key: 'spot2', label: 'SPOT 2', domId: 'bitacoraSpot2' }
 ];
 
 const REGLA_PM = {
@@ -150,27 +147,9 @@ function obtenerDiaSemanaManana() {
   return manana.getDay();
 }
 
-// ✅ Determina la clave unificada de bitácora según el transporte
-function obtenerClaveBitacora(transporte) {
-  const t = (transporte || '').toUpperCase().trim();
-  if (t === 'MOVIL 1') return 'movil1';
-  if (t === 'MOVIL 2') return 'movil2';
-  if (t === 'MOVIL 3') return 'movil3';
-  if (t === 'MOVIL 4') return 'movil4';
-  if (t === 'MOVIL 5') return 'movil5';
-  if (t === 'MOVIL 6') return 'movil6';
-  if (t === 'SPOT') return 'spot';
-  if (t === 'SPOT 1') return 'spot1';
-  if (t === 'SPOT 2') return 'spot2';
-  if (t === 'SERVICIO AM/PM') return 'servicio_ampm';
-  if (t === 'SERVICIO ADM') return 'servicio_adm';
-  if (t === 'SERVICIO QDM') return 'servicio_qdm';
-  if (t === 'SERVICIO B2C') return 'servicio_b2c';
-  return null;
-}
-
 function esAdmin(email) { return ADMIN_EMAILS.includes((email || '').toLowerCase().trim()); }
 let rolActual = 'operador';
+let emailUsuarioActual = '';
 const mSec = (location.hash || '').match(/sec=([a-z]+)/);
 let seccionInicial = mSec ? mSec[1] : '';
 
@@ -236,12 +215,24 @@ function formatoMonedaAlineado(v) {
 }
 function formatoEntero(v) { return Math.round(Number(v)||0).toLocaleString('es-CL'); }
 function formatoPorcentaje(v) { return (Number(v)||0).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %'; }
+
+// ✅ CORREGIDO: getTipoRegistro ahora detecta correctamente ADM y QDM
 function getTipoRegistro(reg) { 
+  if (!reg) return 'AMPM';
+  // Primero revisar el campo tipo explícito
+  if (reg.tipo) {
+    if (reg.tipo === 'B2C') return 'B2C';
+    if (reg.tipo === 'ADM') return 'ADM';
+    if (reg.tipo === 'QDM') return 'QDM';
+    if (reg.tipo === 'AMPM') return 'AMPM';
+  }
+  // Luego revisar el rango
   if (reg.rango === 'B2C') return 'B2C';
   if (reg.rango === 'ADM') return 'ADM';
   if (reg.rango === 'QDM') return 'QDM';
   return 'AMPM'; 
 }
+
 function sumaValores(regs) { return regs.reduce(function(s,r) { return s + (((r.valor||0) === 1) ? 0 : (r.valor||0)); }, 0); }
 function conteoUnPeso(regs) { return regs.filter(function(r) { return (r.valor||0) === 1; }).length; }
 function sinTildes(s) { return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
@@ -308,6 +299,23 @@ function parsearFecha(raw) {
   if (raw instanceof Date) { if (isNaN(raw.getTime())) return null; return raw.getFullYear() + '-' + String(raw.getMonth()+1).padStart(2,'0') + '-' + String(raw.getDate()).padStart(2,'0'); }
   if (typeof raw === 'number') { const d = new Date(Math.round((raw - 25569) * 86400 * 1000)); if (isNaN(d.getTime())) return null; return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0'); }
   if (typeof raw === 'string') { let s = raw.trim().replace(/[T\s]+\d{1,2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/i, '').trim(); let m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/); if (m) return m[1] + '-' + m[2].padStart(2,'0') + '-' + m[3].padStart(2,'0'); m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/); if (m) return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0'); m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2})$/); if (m) { const a = parseInt(m[3]) > 50 ? '19' + m[3] : '20' + m[3]; return a + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0'); } const d = new Date(s); if (!isNaN(d.getTime())) return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  return null;
+}
+
+// ✅ Determina la clave unificada de bitácora según el transporte
+function obtenerClaveBitacora(transporte) {
+  const t = (transporte || '').toUpperCase().trim();
+  if (t === 'MOVIL 1') return 'movil1';
+  if (t === 'MOVIL 2') return 'movil2';
+  if (t === 'MOVIL 3') return 'movil3';
+  if (t === 'MOVIL 4') return 'movil4';
+  if (t === 'MOVIL 5') return 'movil5';
+  if (t === 'MOVIL 6') return 'movil6';
+  if (t === 'SPOT') return 'spot';
+  if (t === 'SPOT 1') return 'spot1';
+  if (t === 'SPOT 2') return 'spot2';
+  // SERVICIO AM/PM, ADM, QDM, B2C van a SPOT por defecto (o se puede cambiar)
+  if (t === 'SERVICIO AM/PM' || t === 'SERVICIO ADM' || t === 'SERVICIO QDM' || t === 'SERVICIO B2C') return 'spot';
   return null;
 }
 
@@ -383,10 +391,14 @@ window.logout = function() { signOut(auth); };
 onAuthStateChanged(auth, function(user) {
   if (user) {
     rolActual = esAdmin(user.email) ? 'admin' : 'operador';
+    emailUsuarioActual = user.email || '';
     document.getElementById('loginSection').style.display = 'none';
     document.getElementById('appSection').style.display = 'flex';
     document.getElementById('userEmail').textContent = user.email + (rolActual === 'admin' ? '  (ADMIN)' : '');
     aplicarRol();
+    // ✅ Mostrar/ocultar botón ELIMINAR ADMIN según rol
+    const btnEA = document.getElementById('btnEliminarAdmin');
+    if (btnEA) btnEA.style.display = (rolActual === 'admin') ? 'inline-block' : 'none';
     cargarDatos().then(function() {
       if (seccionInicial === 'basedatos' || seccionInicial === 'informes' || seccionInicial === 'bitacoras') {
         cambiarSeccion(seccionInicial);
@@ -395,6 +407,7 @@ onAuthStateChanged(auth, function(user) {
     });
   } else {
     rolActual = 'operador';
+    emailUsuarioActual = '';
     document.getElementById('loginSection').style.display = 'flex';
     document.getElementById('appSection').style.display = 'none';
   }
@@ -1099,6 +1112,7 @@ window.irAPaginaDesc = function(p) {
   if (sv) sv.scrollTop = 0; 
 };
 
+// ✅ MODIFICADO: filaHTMLTabla con línea verde para admin
 function filaHTMLTabla(r, cf, cg, dr) {
   const b2c = (seccionActiva === 'b2c');
   const id = (r.idPedido||'').toString().trim().toUpperCase();
@@ -1118,10 +1132,13 @@ function filaHTMLTabla(r, cf, cg, dr) {
   if (debeElegir) clase += 'fila-elegir-movil ';
   const tieneCambioFecha = cambiosFechaLocales[r.key] !== undefined;
   if (tieneCambioFecha) clase += 'fila-fecha-modificada ';
+  // ✅ Línea verde si es registro del admin
+  if (r.esAdmin) clase += 'fila-admin ';
   const bp = r.pendiente ? '<span class="badge badge-pendiente">SIN GUARDAR</span>' : '';
-  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">️</span>' : '';
+  const badgeAdmin = r.esAdmin ? '<span class="badge badge-admin">ADMIN</span>' : '';
+  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">✏️</span>' : '';
   const fechaMostrar = tieneCambioFecha ? cambiosFechaLocales[r.key].nuevaFecha : r.fecha;
-  const celdaFecha = '<td><div class="fecha-cell-wrap"><input type="date" value="' + (fechaMostrar||'') + '" onchange="cambiarFechaFila(\'' + r.key + '\', this.value, ' + (r.pendiente?true:false) + ')"></div> ' + bp + indicadorCambio + '</td>';
+  const celdaFecha = '<td><div class="fecha-cell-wrap"><input type="date" value="' + (fechaMostrar||'') + '" onchange="cambiarFechaFila(\'' + r.key + '\', this.value, ' + (r.pendiente?true:false) + ')"></div> ' + bp + indicadorCambio + badgeAdmin + '</td>';
   const celdaSel = '<td class="td-sel"><input type="checkbox" style="width:16px;height:16px;" ' + sel + ' onchange="toggleSeleccionDesc(\'' + r.key + '\', this.checked)"></td>';
 
   if (r.key === editandoKey) {
@@ -1227,6 +1244,7 @@ function actualizarBotonGuardar() {
   }
 }
 
+// ✅ CORREGIDO: guardarPendientesSeccion mantiene los registros en descripción
 window.guardarPendientesSeccion = function() {
   const lista = pendientesDeSeccion();
   const numCambiosFecha = Object.keys(cambiosFechaLocales).length;
@@ -1282,40 +1300,44 @@ window.guardarPendientesSeccion = function() {
   let li = 0;
   const lotes = [];
   for (let i=0;i<lista.length;i+=50) lotes.push(lista.slice(i,i+50));
-  const proc = function() {
-    if (li >= lotes.length) {
+  const proc = function() { 
+    if (li >= lotes.length) { 
       lotes.flat().forEach(function(p) {
         const l = Object.assign({}, p.reg);
         delete l.pendiente;
         delete l._candidatos;
+        // ✅ Mantener en cache para que siga visible en descripción
         if (!cache[p.anio]) cache[p.anio] = {};
         if (!cache[p.anio][p.mes]) cache[p.anio][p.mes] = {};
         cache[p.anio][p.mes]['local_' + p.key] = l;
       });
-      if (seccionActiva==='ampm') pendientesAMPM=[];
-      else if (seccionActiva==='adm') pendientesADM=[];
-      else if (seccionActiva==='qdm') pendientesQDM=[];
-      else if (seccionActiva==='b2c') pendientesB2C=[];
+      // ✅ NO vaciar los pendientes hasta que se recarguen desde Firebase
+      if (seccionActiva==='ampm') {
+        // pendientesAMPM se mantienen hasta que se recarguen
+      } else if (seccionActiva==='adm') {
+        // pendientesADM se mantienen
+      } else if (seccionActiva==='qdm') {
+        // pendientesQDM se mantienen
+      } else if (seccionActiva==='b2c') {
+        // pendientesB2C se mantienen
+      }
       Promise.all(promesasFecha)
         .then(function() {
           actualizarBotonGuardar();
           render();
-          cargarDatos();
+          // ✅ Recargar datos para sincronizar con Firebase
+          setTimeout(function() { cargarDatos(); }, 500);
         })
         .catch(function(e) {
           toast('Error al guardar cambios de fecha: ' + e.message, 'err');
           actualizarBotonGuardar();
           render();
         });
-      return;
+      return; 
     }
-    Promise.all(lotes[li].map(function(p) {
-      const l = Object.assign({}, p.reg);
-      delete l.pendiente;
-      delete l._candidatos;
-      return push(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes), l).then(function(){g++;});
-    }))
-    .then(function(){ li++; setTimeout(proc,100); });
+    Promise.all(lotes[li].map(function(p) { 
+      return push(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes), p.reg).then(function(){g++;}).catch(function(e){f++;}); 
+    })).then(function(){ li++; setTimeout(proc,100); }); 
   };
   proc();
 };
@@ -1354,7 +1376,7 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
   });
 };
 
-// ✅ MODIFICADO: Envío a bitácoras unificadas
+// ✅ MODIFICADO: Envío a bitácoras unificadas (9 bitácoras de la flota)
 window.enviarSeleccion = function() {
   if (seleccionadosDesc.size === 0) { toast('Selecciona al menos una fila', 'err'); return; }
   let enviados = 0;
@@ -1389,10 +1411,11 @@ window.enviarSeleccion = function() {
       comuna: reg.comuna || '',
       obs: reg.observacion || '',
       rango: reg.rango || '',
-      tipo: reg.tipo || ''
+      tipo: reg.tipo || '',
+      esAdmin: reg.esAdmin || false
     };
     if (!bitacorasData[bitKey]) {
-      bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || 'AM', responsable: '', firma: '' } };
+      bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || '', responsable: '', firma: '' } };
     }
     let filaIdx = -1;
     for (let i = 0; i < 15; i++) {
@@ -1429,6 +1452,7 @@ window.enviarSeleccion = function() {
   }
 };
 
+// ✅ MODIFICADO: Formulario de registro marca esAdmin=true si es admin
 document.getElementById('formReg').addEventListener('submit', function(e) {
   e.preventDefault();
   const fecha = document.getElementById('fFecha').value; 
@@ -1439,6 +1463,7 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
   const rango = document.getElementById('fRango').value; 
   if (!rango) { toast('Elija RANGO','err'); return; }
   const tipoSec = tipoDeSeccion();
+  const esAdm = rolActual === 'admin';
   
   if (tipoSec === 'B2C') {
     const reg = { 
@@ -1455,9 +1480,10 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
       transporte:'SERVICIO B2C', 
       rango:'B2C', 
       tipo:'B2C', 
-      otroPalet:false, 
-      creado: new Date().toISOString(), 
-      usuario: auth.currentUser ? auth.currentUser.email : '' 
+      otroPalet:false,
+      esAdmin: esAdm,
+      usuario: emailUsuarioActual,
+      creado: new Date().toISOString()
     };
     pendientesB2C.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
     toast('Agregado. Presiona GUARDAR.','info'); 
@@ -1481,9 +1507,10 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
       transporte:'SERVICIO ADM', 
       rango:rango, 
       tipo:'ADM', 
-      otroPalet:false, 
-      creado: new Date().toISOString(), 
-      usuario: auth.currentUser ? auth.currentUser.email : '' 
+      otroPalet:false,
+      esAdmin: esAdm,
+      usuario: emailUsuarioActual,
+      creado: new Date().toISOString()
     };
     pendientesADM.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
     toast('Agregado. Presiona GUARDAR.','info'); 
@@ -1507,9 +1534,10 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
       transporte:'SERVICIO QDM', 
       rango:rango, 
       tipo:'QDM', 
-      otroPalet:false, 
-      creado: new Date().toISOString(), 
-      usuario: auth.currentUser ? auth.currentUser.email : '' 
+      otroPalet:false,
+      esAdmin: esAdm,
+      usuario: emailUsuarioActual,
+      creado: new Date().toISOString()
     };
     pendientesQDM.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
     toast('Agregado. Presiona GUARDAR.','info'); 
@@ -1532,9 +1560,10 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
     transporte: document.getElementById('fTransporte').value, 
     rango: rango, 
     tipo: 'AMPM', 
-    otroPalet:false, 
-    creado: new Date().toISOString(), 
-    usuario: auth.currentUser ? auth.currentUser.email : '' 
+    otroPalet:false,
+    esAdmin: esAdm,
+    usuario: emailUsuarioActual,
+    creado: new Date().toISOString()
   };
   if (!reg.transporte) {
     if (esAntesDe1400()) {
@@ -1623,7 +1652,7 @@ window.confirmarExportar = function() {
   cerrarModalExportar();
 };
 
-// ✅ BITACORAS UNIFICADAS: Funciones para las 12 bitácoras únicas
+// ✅ BITACORAS UNIFICADAS: Funciones para las 9 bitácoras de la flota
 function renderizarTodasBitacoras() {
   BITACORAS_UNIFICADAS.forEach(function(bit) {
     renderizarBitacora(bit.key, bit.label, bit.domId);
@@ -1646,8 +1675,9 @@ function generarHTMLBitacora(key, label) {
   html += '</tr></thead><tbody>';
   const maxFilas = 15;
   for (let i = 0; i < maxFilas; i++) {
-    const fila = data.filas[i] || { requirente: '', documentos: '', cliente: '', direccion: '', comuna: '', obs: '' };
-    html += '<tr><td class="num-col">' + (i+1) + '</td>';
+    const fila = data.filas[i] || { requirente: '', documentos: '', cliente: '', direccion: '', comuna: '', obs: '', esAdmin: false };
+    const filaClass = fila.esAdmin ? ' class="fila-admin-bit"' : '';
+    html += '<tr' + filaClass + '><td class="num-col">' + (i+1) + '</td>';
     html += '<td><input type="text" id="bit_' + key + '_' + i + '_requirente" value="' + (fila.requirente||'').replace(/"/g,'&quot;') + '"></td>';
     html += '<td><input type="text" id="bit_' + key + '_' + i + '_documentos" value="' + (fila.documentos||'').replace(/"/g,'&quot;') + '"></td>';
     html += '<td><input type="text" id="bit_' + key + '_' + i + '_cliente" value="' + (fila.cliente||'').replace(/"/g,'&quot;') + '"></td>';
@@ -1894,7 +1924,6 @@ window.confirmarImprimirBitacoras = function() {
     return;
   }
   
-  // Construir un solo HTML con todas las bitácoras seleccionadas
   let contenidoImpresion = '';
   const fecha = new Date().toLocaleDateString('es-CL');
   
@@ -1920,7 +1949,7 @@ window.confirmarImprimirBitacoras = function() {
   });
   
   const printWindow = window.open('', '_blank', 'width=1200,height=900');
-  if (!printWindow) { toast('Bloqueador de popups activo. Permite popups para este sitio.', 'err'); return; }
+  if (!printWindow) { toast('Bloqueador de popups activo', 'err'); return; }
   
   const html = '<!DOCTYPE html><html><head><title>Bitacoras Unificadas</title><style>' +
     '@page { size: letter landscape; margin: 10mm; }' +
@@ -1928,6 +1957,7 @@ window.confirmarImprimirBitacoras = function() {
     'body { font-family: Arial, sans-serif; padding: 10mm; background: #fff; }' +
     '.bitacora-print-page { page-break-after: always; margin-bottom: 20mm; }' +
     '.bitacora-print-page:last-child { page-break-after: auto; }' +
+    'h1 { text-align:center;color:#1a5490;margin-bottom:20px; }' +
     'h2 { text-align: center; color: #1a5490; font-size: 18pt; margin-bottom: 12px; }' +
     'table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }' +
     'th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11pt; background: #fff; }' +
@@ -1936,7 +1966,7 @@ window.confirmarImprimirBitacoras = function() {
     '.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }' +
     '@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }' +
     '</style></head><body>' +
-    '<h1 style="text-align:center;color:#1a5490;margin-bottom:20px;">BITACORAS UNIFICADAS - ' + fecha + '</h1>' +
+    '<h1>BITACORAS UNIFICADAS - ' + fecha + '</h1>' +
     contenidoImpresion +
     '<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div>' +
     '</body></html>';
@@ -1946,6 +1976,149 @@ window.confirmarImprimirBitacoras = function() {
   
   toast(checkboxes.length + ' bitacora(s) lista(s) para imprimir', 'ok');
   cerrarModalImprimirBitacoras();
+};
+
+// =====================================================================
+// ✅ NUEVO: BORRAR TODO
+// =====================================================================
+window.abrirModalBorrarTodo = function() {
+  if (rolActual !== 'admin') { toast('Solo el administrador puede usar esta función', 'err'); return; }
+  // Calcular total de registros
+  let total = 0;
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      total += Object.keys(cache[a][m]||{}).length; 
+    }); 
+  });
+  total += pendientesAMPM.length + pendientesADM.length + pendientesQDM.length + pendientesB2C.length;
+  document.getElementById('btInfoRegistros').textContent = 'Total de registros a eliminar: ' + formatoEntero(total);
+  document.getElementById('btPassword').value = '';
+  document.getElementById('borrarTodoOverlay').classList.add('show');
+};
+
+window.cerrarModalBorrarTodo = function() { 
+  document.getElementById('borrarTodoOverlay').classList.remove('show'); 
+};
+
+window.confirmarBorrarTodo = function() {
+  const p = document.getElementById('btPassword').value;
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  if (!confirm('¿Estás SEGURO de que quieres BORRAR TODO?\nEsta acción es IRREVERSIBLE.')) return;
+  
+  toast('Borrando todo...','info');
+  
+  const promesas = [];
+  // Borrar todos los años/meses de Firebase
+  const anios = [2026,2027,2028,2029,2030];
+  anios.forEach(function(anio) {
+    for (let mes = 1; mes <= 12; mes++) {
+      const ms = String(mes).padStart(2,'0');
+      promesas.push(remove(ref(db, RUTA_BASE + '/' + anio + '/' + ms)).catch(function(){}));
+    }
+  });
+  // Borrar todas las bitácoras
+  BITACORAS_UNIFICADAS.forEach(function(bit) {
+    promesas.push(remove(ref(db, RUTA_BITACORAS + '/' + bit.key)).catch(function(){}));
+  });
+  
+  Promise.all(promesas).then(function() {
+    cache = {};
+    pendientesAMPM = [];
+    pendientesADM = [];
+    pendientesQDM = [];
+    pendientesB2C = [];
+    pendientes = [];
+    bitacorasData = {};
+    cambiosFechaLocales = {};
+    toast('TODO eliminado correctamente','ok');
+    cerrarModalBorrarTodo();
+    render();
+    renderizarBaseDatos();
+    renderizarTodasBitacoras();
+  }).catch(function(e) {
+    toast('Error al borrar: ' + e.message, 'err');
+  });
+};
+
+// =====================================================================
+// ✅ NUEVO: ELIMINAR SOLO REGISTROS ADMIN (línea verde)
+// =====================================================================
+window.abrirModalEliminarAdmin = function() {
+  if (rolActual !== 'admin') { toast('Solo el administrador puede usar esta función', 'err'); return; }
+  // Contar registros admin
+  let totalAdmin = 0;
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      Object.keys(cache[a][m]||{}).forEach(function(k) {
+        if (cache[a][m][k] && cache[a][m][k].esAdmin) totalAdmin++;
+      });
+    }); 
+  });
+  // Contar pendientes admin
+  [pendientesAMPM, pendientesADM, pendientesQDM, pendientesB2C].forEach(function(lista) {
+    lista.forEach(function(p) {
+      if (p.reg && p.reg.esAdmin) totalAdmin++;
+    });
+  });
+  document.getElementById('eaInfoRegistros').textContent = 'Total de registros ADMIN (verde) a eliminar: ' + formatoEntero(totalAdmin);
+  document.getElementById('eaPassword').value = '';
+  document.getElementById('eliminarAdminOverlay').classList.add('show');
+};
+
+window.cerrarModalEliminarAdmin = function() { 
+  document.getElementById('eliminarAdminOverlay').classList.remove('show'); 
+};
+
+window.confirmarEliminarAdmin = function() {
+  const p = document.getElementById('eaPassword').value;
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  if (!confirm('¿Eliminar SOLO los registros del ADMIN (línea verde)?\nLos registros de otros usuarios NO serán afectados.')) return;
+  
+  toast('Eliminando registros admin...','info');
+  
+  const promesas = [];
+  const keysAEliminar = [];
+  
+  // Recorrer cache y marcar keys admin
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      Object.keys(cache[a][m]||{}).forEach(function(k) {
+        if (cache[a][m][k] && cache[a][m][k].esAdmin) {
+          keysAEliminar.push({ anio: a, mes: m, key: k });
+        }
+      });
+    }); 
+  });
+  
+  // Eliminar de Firebase
+  keysAEliminar.forEach(function(item) {
+    promesas.push(remove(ref(db, RUTA_BASE + '/' + item.anio + '/' + item.mes + '/' + item.key)).catch(function(){}));
+  });
+  
+  // Eliminar de cache local
+  keysAEliminar.forEach(function(item) {
+    if (cache[item.anio] && cache[item.anio][item.mes]) {
+      delete cache[item.anio][item.mes][item.key];
+    }
+  });
+  
+  // Eliminar pendientes admin
+  [pendientesAMPM, pendientesADM, pendientesQDM, pendientesB2C].forEach(function(lista) {
+    for (let i = lista.length - 1; i >= 0; i--) {
+      if (lista[i].reg && lista[i].reg.esAdmin) {
+        lista.splice(i, 1);
+      }
+    }
+  });
+  
+  Promise.all(promesas).then(function() {
+    toast(formatoEntero(keysAEliminar.length) + ' registros admin eliminados','ok');
+    cerrarModalEliminarAdmin();
+    render();
+    renderizarBaseDatos();
+  }).catch(function(e) {
+    toast('Error al eliminar: ' + e.message, 'err');
+  });
 };
 
 function procesarArchivoB2C(file, lista) {
@@ -1993,7 +2166,9 @@ function procesarArchivoB2C(file, lista) {
             transporte: 'SERVICIO B2C', 
             rango: 'B2C', 
             otroPalet: false, 
-            tipo: 'B2C', 
+            tipo: 'B2C',
+            esAdmin: rolActual === 'admin',
+            usuario: emailUsuarioActual,
             creado: new Date().toISOString(), 
             importado: true 
           } 
@@ -2098,7 +2273,11 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
           transporte:'', 
           rango:'', 
           otroPalet:false, 
-          tipo: tipo 
+          tipo: tipo,
+          esAdmin: rolActual === 'admin',
+          usuario: emailUsuarioActual,
+          creado: new Date().toISOString(),
+          importado: true
         };
         if (aplicarReglaPM) {
           reg = autocompletarTransportePM(reg);
@@ -2167,7 +2346,11 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
           transporte: gi('TRANSPORTE'), 
           rango: (gi('RANGO')||'').toUpperCase(), 
           otroPalet:false, 
-          tipo: tipo 
+          tipo: tipo,
+          esAdmin: rolActual === 'admin',
+          usuario: emailUsuarioActual,
+          creado: new Date().toISOString(),
+          importado: true
         };
         if (aplicarReglaPM && !reg.transporte) {
           reg = autocompletarTransportePM(reg);
@@ -2255,9 +2438,11 @@ function procesarArchivoGenerico(file, tipo) {
             transporte: String(gv(col.TRANSPORTE)).trim(), 
             rango: rango || (tipo==='B2C'?'B2C':(tipo==='ADM'?'ADM':(tipo==='QDM'?'QDM':'AM'))), 
             otroPalet:false, 
-            tipo: tipo, 
-            creado: new Date().toISOString(), 
-            importado:true 
+            tipo: tipo,
+            esAdmin: rolActual === 'admin',
+            usuario: emailUsuarioActual,
+            creado: new Date().toISOString(),
+            importado:true
           } 
         };
         if (aplicarReglaPM && !reg.reg.transporte) {
@@ -2336,6 +2521,11 @@ function cargarPendientes(regs, origen) {
     if (!reg.tipo) reg.tipo = tipoImportacionActual; 
     if (!reg.rango) reg.rango = tipoImportacionActual==='B2C'?'B2C':(tipoImportacionActual==='ADM'?'ADM':(tipoImportacionActual==='QDM'?'QDM':'AM')); 
     if (reg.comuna) reg.comuna = canonComuna(reg.comuna);
+    // ✅ Marcar como admin si el usuario actual es admin
+    if (rolActual === 'admin') {
+      reg.esAdmin = true;
+      reg.usuario = emailUsuarioActual;
+    }
     if (!cache[anio]) cache[anio] = {}; 
     if (!cache[anio][mes]) cache[anio][mes] = {}; 
     const tk = 'pend_'+Date.now()+'_'+Math.random().toString(36).substr(2,9); 
@@ -2553,9 +2743,12 @@ function renderTabBD(tipo, filtroId, pagina) {
   const ini = (pagina-1)*REGISTROS_POR_PAGINA_BD; 
   const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_BD);
   const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
+  // ✅ MODIFICADO: Mostrar línea verde en base de datos también
   tbody.innerHTML = pag.map(function(r) { 
-    const claseYInd = claseYIndicadorSimple(r, cf, cg); 
-    return '<tr class="' + claseYInd.clase + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">🗑️</button></td></tr>'; 
+    const claseYInd = claseYIndicadorSimple(r, cf, cg);
+    const claseAdmin = r.esAdmin ? ' fila-admin' : '';
+    const badgeAdmin = r.esAdmin ? ' <span class="badge badge-admin">ADMIN</span>' : '';
+    return '<tr class="' + claseYInd.clase + claseAdmin + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + badgeAdmin + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">🗑️</button></td></tr>'; 
   }).join('');
   if (tp <= 1) { 
     pagDiv.innerHTML = '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(regs.length) + ' de ' + formatoEntero(regs.length) + '</div>'; 
@@ -2610,6 +2803,9 @@ window.guardarEdicionInline = function(key, anio, mes, esPend) {
   const nA = parts[0];
   const nM = parts[1];
   if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
+    // ✅ Mantener el campo esAdmin al editar
+    nuevo.esAdmin = cache[anio][mes][key].esAdmin;
+    nuevo.usuario = cache[anio][mes][key].usuario;
     cache[anio][mes][key] = Object.assign({}, cache[anio][mes][key], nuevo);
   }
   if (nA && nM && (nA!==anio || nM!==mes)) {
@@ -3178,6 +3374,8 @@ function renderInformes() {
       else if (document.getElementById('bitacoraExportOverlay').classList.contains('show')) cerrarModalExportarBitacoras();
       else if (document.getElementById('bitacoraJPEGOverlay').classList.contains('show')) cerrarModalJPEGBitacoras();
       else if (document.getElementById('bitacoraPrintOverlay').classList.contains('show')) cerrarModalImprimirBitacoras();
+      else if (document.getElementById('borrarTodoOverlay').classList.contains('show')) cerrarModalBorrarTodo();
+      else if (document.getElementById('eliminarAdminOverlay').classList.contains('show')) cerrarModalEliminarAdmin();
       else if (document.getElementById('borrarMesOverlay').classList.contains('show')) cerrarBorrarMes();
       else if (document.getElementById('verFechaOverlay').classList.contains('show')) cerrarModalVerFecha();
       else if (calendarioAbierto) { calendarioAbierto = false; const p = document.getElementById('calendarioPopup'); if (p) p.classList.remove('show'); }
