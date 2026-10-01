@@ -145,21 +145,11 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .btn-imprimir-bitacora:hover{border-color:var(--accent-orange) !important;color:var(--accent-orange) !important;background:var(--accent-orange-pastel) !important}
 .bitacora-export-select-all:hover{border-color:var(--accent-green) !important;color:var(--accent-green) !important;background:var(--accent-green-pastel) !important}
 
-.btn-acc.btn-borrar{
-  border:1px solid var(--accent-red) !important;
-  color:var(--accent-red) !important;
-  background:transparent !important;
-}
-.btn-acc.btn-borrar:hover{
-  background:var(--accent-red) !important;
-  color:#fff !important;
-}
-
-.btn-borrar-todo,.btn-borrar-desc,.btn-borrar-bitacora-todo{
+.btn-acc.btn-borrar,.btn-borrar-todo,.btn-borrar-desc,.btn-borrar-bitacora-todo{
   border:1px solid var(--accent-red) !important;
   color:var(--accent-red) !important;
 }
-.btn-borrar-todo:hover,.btn-borrar-desc:hover,.btn-borrar-bitacora-todo:hover{
+.btn-acc.btn-borrar:hover,.btn-borrar-todo:hover,.btn-borrar-desc:hover,.btn-borrar-bitacora-todo:hover{
   background:var(--accent-red) !important;
   color:#fff !important;
 }
@@ -182,6 +172,13 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .basedatos-tab-content{display:none}
 .basedatos-tab-content.show{display:block}
 .bitacora-movil-content{display:block}
+
+.bitacora-tabs{display:flex;gap:0;margin-bottom:15px;border-bottom:2px solid var(--border-color)}
+.bitacora-tab{padding:10px 20px;cursor:pointer;font-weight:600;font-size:.85em;color:var(--text-secondary);border-bottom:3px solid transparent;text-transform:uppercase}
+.bitacora-tab:hover{color:var(--accent-blue)}
+.bitacora-tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
+.bitacora-tab-content{display:none}
+.bitacora-tab-content.show{display:block}
 
 .bitacora-actions{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;padding:10px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border-color)}
 .bitacora-seccion{margin-bottom:30px;padding:15px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px}
@@ -256,13 +253,8 @@ th.th-sel,td.td-sel{text-align:center;width:34px}
 td{padding:6px;border-bottom:1px solid var(--border-color);color:var(--text-primary)}
 tr:hover td{background:var(--row-hover)}
 
-tr.fila-admin td{
-  border-left:4px solid #10b981 !important;
-  background:rgba(16,185,129,0.08) !important;
-}
-tr.fila-admin:hover td{
-  background:rgba(16,185,129,0.15) !important;
-}
+tr.fila-admin td{border-left:4px solid #10b981 !important;background:rgba(16,185,129,0.08) !important;}
+tr.fila-admin:hover td{background:rgba(16,185,129,0.15) !important;}
 
 .badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:.75em;font-weight:600}
 .badge-am{background:var(--accent-orange);color:#fff}
@@ -411,6 +403,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 .bitacora-footer-table thead th{background:#1a5490 !important;color:#ffffff !important;padding:10px 8px;font-size:12px;font-weight:bold;border:1px solid #0f3d6e}
 .bitacora-footer-table tbody td{border:1px solid #999 !important;padding:8px;font-size:11px;text-align:center;background:#ffffff !important;color:#000000 !important}
 .bitacora-footer-table input{border:none !important;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;text-align:center}
+.bitacora-table tbody tr.fila-admin-bit td{background:#d1fae5 !important;color:#000 !important}
 
 .actividad-container{padding:20px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;margin-top:15px}
 .actividad-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--accent-blue)}
@@ -536,29 +529,57 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
     </div>
 
     <div class="seccion-contenido" id="seccionBitacoras">
-      <h3 class="basedatos-subtitulo">
-        <span>BITACORAS UNIFICADAS</span>
-        <span style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn-borrar-bitacora-todo" onclick="abrirModalBorrarBitacoraTodo()">BORRAR TODO</button>
-          <button class="btn-borrar-bitacora-admin" id="btnBorrarBitacoraAdmin" onclick="abrirModalBorrarBitacoraAdmin()" style="display:none">BORRAR ADMIN</button>
-        </span>
-      </h3>
-      <div class="bitacora-seccion">
-        <div class="bitacora-actions">
-          <button class="btn-guardar-bitacora" onclick="guardarTodasBitacoras()">GUARDAR TODO</button>
-          <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras()">EXPORTAR EXCEL</button>
-          <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras()">EXPORTAR JPEG</button>
-          <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras()">IMPRIMIR</button>
+      <h3 class="basedatos-subtitulo">BITACORAS</h3>
+      
+      <div class="bitacora-tabs">
+        <div class="bitacora-tab active" data-btab="unificadas" onclick="cambiarTabBitacora('unificadas')">AM/PM - ADM - QDM</div>
+        <div class="bitacora-tab" data-btab="b2c" onclick="cambiarTabBitacora('b2c')">B2C</div>
+      </div>
+
+      <div class="bitacora-tab-content show" id="bitContentUnificadas">
+        <div class="bitacora-seccion">
+          <div class="bitacora-actions">
+            <button class="btn-guardar-bitacora" onclick="guardarTodasBitacoras('unificadas')">GUARDAR TODO</button>
+            <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('unificadas')">EXPORTAR EXCEL</button>
+            <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('unificadas')">EXPORTAR JPEG</button>
+            <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('unificadas')">IMPRIMIR</button>
+            <button class="btn-borrar-bitacora-todo" onclick="abrirModalBorrarBitacoraTodo('unificadas')">BORRAR TODO</button>
+            <button class="btn-borrar-bitacora-admin" id="btnBorrarBitacoraAdminU" onclick="abrirModalBorrarBitacoraAdmin('unificadas')" style="display:none">BORRAR ADMIN</button>
+          </div>
+          <div class="bitacora-seccion-titulo">BITACORAS AM/PM - ADM - QDM</div>
+          <div id="bitacoraMovil1" class="bitacora-movil-content"></div>
+          <div id="bitacoraMovil2" class="bitacora-movil-content"></div>
+          <div id="bitacoraMovil3" class="bitacora-movil-content"></div>
+          <div id="bitacoraMovil4" class="bitacora-movil-content"></div>
+          <div id="bitacoraMovil5" class="bitacora-movil-content"></div>
+          <div id="bitacoraMovil6" class="bitacora-movil-content"></div>
+          <div id="bitacoraSpot" class="bitacora-movil-content"></div>
+          <div id="bitacoraSpot1" class="bitacora-movil-content"></div>
+          <div id="bitacoraSpot2" class="bitacora-movil-content"></div>
         </div>
-        <div id="bitacoraMovil1" class="bitacora-movil-content"></div>
-        <div id="bitacoraMovil2" class="bitacora-movil-content"></div>
-        <div id="bitacoraMovil3" class="bitacora-movil-content"></div>
-        <div id="bitacoraMovil4" class="bitacora-movil-content"></div>
-        <div id="bitacoraMovil5" class="bitacora-movil-content"></div>
-        <div id="bitacoraMovil6" class="bitacora-movil-content"></div>
-        <div id="bitacoraSpot" class="bitacora-movil-content"></div>
-        <div id="bitacoraSpot1" class="bitacora-movil-content"></div>
-        <div id="bitacoraSpot2" class="bitacora-movil-content"></div>
+      </div>
+
+      <div class="bitacora-tab-content" id="bitContentB2c">
+        <div class="bitacora-seccion">
+          <div class="bitacora-actions">
+            <button class="btn-guardar-bitacora" onclick="guardarTodasBitacoras('b2c')">GUARDAR TODO</button>
+            <button class="btn-exportar-bitacora" onclick="abrirModalExportarBitacoras('b2c')">EXPORTAR EXCEL</button>
+            <button class="btn-jpeg-bitacora" onclick="abrirModalJPEGBitacoras('b2c')">EXPORTAR JPEG</button>
+            <button class="btn-imprimir-bitacora" onclick="abrirModalImprimirBitacoras('b2c')">IMPRIMIR</button>
+            <button class="btn-borrar-bitacora-todo" onclick="abrirModalBorrarBitacoraTodo('b2c')">BORRAR TODO</button>
+            <button class="btn-borrar-bitacora-admin" id="btnBorrarBitacoraAdminB" onclick="abrirModalBorrarBitacoraAdmin('b2c')" style="display:none">BORRAR ADMIN</button>
+          </div>
+          <div class="bitacora-seccion-titulo">BITACORAS B2C</div>
+          <div id="bitacoraB2cMovil1" class="bitacora-movil-content"></div>
+          <div id="bitacoraB2cMovil2" class="bitacora-movil-content"></div>
+          <div id="bitacoraB2cMovil3" class="bitacora-movil-content"></div>
+          <div id="bitacoraB2cMovil4" class="bitacora-movil-content"></div>
+          <div id="bitacoraB2cMovil5" class="bitacora-movil-content"></div>
+          <div id="bitacoraB2cMovil6" class="bitacora-movil-content"></div>
+          <div id="bitacoraB2cSpot" class="bitacora-movil-content"></div>
+          <div id="bitacoraB2cSpot1" class="bitacora-movil-content"></div>
+          <div id="bitacoraB2cSpot2" class="bitacora-movil-content"></div>
+        </div>
       </div>
     </div>
 
@@ -650,36 +671,17 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
           <h3> REGISTRO DE ACTIVIDAD</h3>
           <button class="btn-borrar-todo" onclick="limpiarActividadAntigua()">LIMPIAR ANTIGUAS (>30 días)</button>
         </div>
-        
         <div class="actividad-stats">
-          <div class="actividad-stat online">
-            <div class="stat-num" id="actUsuariosOnline">0</div>
-            <div class="stat-label">Usuarios en línea</div>
-          </div>
-          <div class="actividad-stat">
-            <div class="stat-num" id="actTotalRegistros">0</div>
-            <div class="stat-label">Registros totales</div>
-          </div>
-          <div class="actividad-stat">
-            <div class="stat-num" id="actHoy">0</div>
-            <div class="stat-label">Acciones hoy</div>
-          </div>
-          <div class="actividad-stat">
-            <div class="stat-num" id="actTotalAcciones">0</div>
-            <div class="stat-label">Total acciones</div>
-          </div>
+          <div class="actividad-stat online"><div class="stat-num" id="actUsuariosOnline">0</div><div class="stat-label">Usuarios en línea</div></div>
+          <div class="actividad-stat"><div class="stat-num" id="actTotalRegistros">0</div><div class="stat-label">Registros totales</div></div>
+          <div class="actividad-stat"><div class="stat-num" id="actHoy">0</div><div class="stat-label">Acciones hoy</div></div>
+          <div class="actividad-stat"><div class="stat-num" id="actTotalAcciones">0</div><div class="stat-label">Total acciones</div></div>
         </div>
-
         <div style="margin-bottom:15px">
           <strong style="color:var(--accent-blue);font-size:.9em">USUARIOS ACTIVOS AHORA:</strong>
-          <div id="actUsuariosActivos" style="margin-top:8px;min-height:30px">
-            <span style="color:var(--text-muted);font-size:.85em">Cargando...</span>
-          </div>
+          <div id="actUsuariosActivos" style="margin-top:8px;min-height:30px"><span style="color:var(--text-muted);font-size:.85em">Cargando...</span></div>
         </div>
-
-        <div class="actividad-list" id="actividadList">
-          <div class="actividad-empty">Cargando actividad...</div>
-        </div>
+        <div class="actividad-list" id="actividadList"><div class="actividad-empty">Cargando actividad...</div></div>
       </div>
     </div>
 
@@ -791,7 +793,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
           <th>Valor</th>
           <th>Observacion<div class="filtro-combo"><input type="text" class="th-filter" id="fModObservacion" placeholder="Filtrar..." oninput="filtrarComboModal('observacion', this.value)" onfocus="abrirComboModal('observacion')"><button class="combo-arrow" onclick="toggleComboModal('observacion')">▼</button><div class="combo-list" id="comboModal_observacion"></div></div></th>
           <th>Transporte<div class="filtro-combo"><input type="text" class="th-filter" id="fModTransporte" placeholder="Filtrar..." oninput="filtrarComboModal('transporte', this.value)" onfocus="abrirComboModal('transporte')"><button class="combo-arrow" onclick="toggleComboModal('transporte')">▼</button><div class="combo-list" id="comboModal_transporte"></div></div></th>
-          <th>Rango<div class="filtro-combo"><input type="text" class="th-filter" id="fModRango" placeholder="Filtrar..." oninput="filtrarComboModal('rango', this.value)" onfocus="abrirComboModal('rango')">▼</button><div class="combo-list" id="comboModal_rango"></div></div></th>
+          <th>Rango<div class="filtro-combo"><input type="text" class="th-filter" id="fModRango" placeholder="Filtrar..." oninput="filtrarComboModal('rango', this.value)" onfocus="abrirComboModal('rango')"><button class="combo-arrow" onclick="toggleComboModal('rango')">▼</button><div class="combo-list" id="comboModal_rango"></div></div></th>
         </tr></thead>
         <tbody id="modalTbody"></tbody>
       </table>
@@ -868,8 +870,8 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 
 <div class="overlay-centro" id="borrarBitacoraTodoOverlay">
   <div class="modal-caja roja" style="max-width:450px">
-    <h3>BORRAR TODAS LAS BITACORAS</h3>
-    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará TODA la información de las 9 bitácoras (MOVIL 1-6, SPOT, SPOT 1, SPOT 2) de Firebase. Esta acción es IRREVERSIBLE.</p>
+    <h3 id="bbtTitulo">BORRAR TODAS LAS BITACORAS</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bbtDescripcion">Esta acción eliminará TODA la información de las 9 bitácoras. Esta acción es IRREVERSIBLE.</p>
     <div class="info-registros" id="bbtInfoRegistros">Calculando...</div>
     <div class="form-group"><label>Contraseña de administrador:</label><input type="password" id="bbtPassword" placeholder="••••" maxlength="10"></div>
     <div class="modal-caja-buttons">
@@ -881,8 +883,8 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 
 <div class="overlay-centro" id="borrarBitacoraAdminOverlay">
   <div class="modal-caja verde" style="max-width:450px">
-    <h3>BORRAR BITACORAS ADMIN</h3>
-    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará SOLO los registros marcados en VERDE (creados por el administrador) de todas las bitácoras.</p>
+    <h3 id="bbaTitulo">BORRAR BITACORAS ADMIN</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bbaDescripcion">Esta acción eliminará SOLO los registros marcados en VERDE (creados por el administrador) de todas las bitácoras.</p>
     <div class="info-registros" id="bbaInfoRegistros">Calculando...</div>
     <div class="form-group"><label>Contraseña de administrador:</label><input type="password" id="bbaPassword" placeholder="••••" maxlength="10"></div>
     <div class="modal-caja-buttons">
@@ -925,7 +927,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 <div class="bitacora-export-overlay" id="bitacoraExportOverlay">
   <div class="bitacora-export-modal">
     <h3 id="bitExpTitulo">Exportar Bitacoras a Excel</h3>
-    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitExpSubtitulo">Selecciona las bitacoras que deseas exportar. Cada una ira en una planilla separada.</p>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitExpSubtitulo">Selecciona las bitacoras que deseas exportar.</p>
     <button class="bitacora-export-select-all" onclick="seleccionarTodasBitacoras()">Seleccionar todas</button>
     <div class="bitacora-export-grid" id="bitacoraExportGrid"></div>
     <div class="bitacora-export-actions">
