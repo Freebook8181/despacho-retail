@@ -32,7 +32,6 @@ const REGISTROS_POR_PAGINA_DESC = 30;
 const OPCIONES_TRANSPORTE = ['MOVIL 1','MOVIL 2','MOVIL 3','MOVIL 4','MOVIL 5','MOVIL 6','DON RAUL','DON JOSE','SERVICIO AM/PM','SERVICIO B2C','SERVICIO ADM','SERVICIO QDM','SPOT','SPOT 1','SPOT 2','RETIRA CLIENTE','SERVICIO 3PL','TRANSGAMBOA'];
 const OPCIONES_OBS = ['CASA CENTRAL','RETIRO','RETIRO CLIENTE','RETIRO CASA CENTRAL'];
 
-// ✅ REGLA BITACORAS AM/PM: AM/PM + ADM + QDM comparten las mismas 9 bitácoras
 const BITACORAS_UNIFICADAS = [
   { key: 'movil1', label: 'MOVIL 1', domId: 'bitacoraMovil1' },
   { key: 'movil2', label: 'MOVIL 2', domId: 'bitacoraMovil2' },
@@ -45,7 +44,6 @@ const BITACORAS_UNIFICADAS = [
   { key: 'spot2', label: 'SPOT 2', domId: 'bitacoraSpot2' }
 ];
 
-// ✅ B2C tiene sus propias 9 bitácoras separadas
 const BITACORAS_B2C = [
   { key: 'b2c_movil1', label: 'MOVIL 1', domId: 'bitacoraB2cMovil1' },
   { key: 'b2c_movil2', label: 'MOVIL 2', domId: 'bitacoraB2cMovil2' },
@@ -108,8 +106,10 @@ const REGLA_AM = {
   }
 };
 
+// ✅ MODIFICADO: Respeta transporteManual
 function autocompletarTransportePM(reg) {
   if (!reg || !reg.comuna) return reg;
+  if (reg.transporteManual) return reg; // ✅ Si es manual, no aplicar regla
   const comunaNorm = normSinTildes(reg.comuna);
   for (const movil in REGLA_PM) {
     const comunas = REGLA_PM[movil];
@@ -123,8 +123,10 @@ function autocompletarTransportePM(reg) {
   return reg;
 }
 
+// ✅ MODIFICADO: Respeta transporteManual
 function autocompletarTransporteAM(reg, diaSemana) {
   if (!reg || !reg.comuna) return reg;
+  if (reg.transporteManual) return reg; // ✅ Si es manual, no aplicar regla
   const reglas = REGLA_AM[diaSemana];
   if (!reglas) return reg;
   const comunaNorm = normSinTildes(reg.comuna);
@@ -165,7 +167,6 @@ function obtenerClaveBitacora(transporte, tipoRegistro) {
   const esB2C = (tipoRegistro === 'B2C');
   const prefijo = esB2C ? 'b2c_' : '';
   
-  // MOVIL 1-6, SPOT, SPOT 1, SPOT 2 → van a su bitácora correspondiente
   if (t === 'MOVIL 1') return prefijo + 'movil1';
   if (t === 'MOVIL 2') return prefijo + 'movil2';
   if (t === 'MOVIL 3') return prefijo + 'movil3';
@@ -356,7 +357,7 @@ function renderizarActividad() {
   if (registrosEl) registrosEl.textContent = formatoEntero(totalRegs);
   if (!lista) return;
   if (actividadData.length === 0) { lista.innerHTML = '<div class="actividad-empty">No hay actividad registrada</div>'; return; }
-  const iconos = { 'SUBIDA_ARCHIVO': '📤', 'GUARDADO': '💾', 'ELIMINACION': '🗑️', 'ENVIO_BITACORA': '📋', 'CAMBIO_FECHA': '📅', 'REGISTRO_NUEVO': '➕', 'LOGIN': '🔑', 'BORRADO_MASIVO': '⚠️', 'EXPORTACION': '📊', 'EDICION': '️' };
+  const iconos = { 'SUBIDA_ARCHIVO': '📤', 'GUARDADO': '💾', 'ELIMINACION': '🗑️', 'ENVIO_BITACORA': '📋', 'CAMBIO_FECHA': '📅', 'REGISTRO_NUEVO': '➕', 'LOGIN': '🔑', 'BORRADO_MASIVO': '⚠️', 'EXPORTACION': '', 'EDICION': '✏️' };
   lista.innerHTML = actividadData.slice(0, 100).map(function(a) {
     const icono = iconos[a.accion] || '📝';
     const fecha = new Date(a.fecha);
@@ -799,6 +800,7 @@ window.filtrarComboDesc = function(col, val) {
   render();
 };
 
+// ✅ MODIFICADO: Marca transporteManual al cambiar transporte
 window.abrirComboTransporte = function(key) {
   const list = document.getElementById('combo_trans_' + key);
   if (!list) return;
@@ -837,26 +839,42 @@ window.elegirOpcionTransporte = function(key, val) {
   actualizarTransporteRegistro(key, val);
 };
 
+// ✅ MODIFICADO: Marca transporteManual = true cuando el usuario cambia el transporte
 function actualizarTransporteRegistro(key, nuevoTransporte) {
-  let p = pendientesAMPM.find(function(p) { return p.key===key; }) || pendientesADM.find(function(p) { return p.key===key; }) || pendientesQDM.find(function(p) { return p.key===key; }) || pendientesB2C.find(function(p) { return p.key===key; });
+  let p = pendientesAMPM.find(function(p) { return p.key===key; }) || 
+          pendientesADM.find(function(p) { return p.key===key; }) || 
+          pendientesQDM.find(function(p) { return p.key===key; }) || 
+          pendientesB2C.find(function(p) { return p.key===key; });
+  
   if (p) {
     if (p.reg.transporte !== nuevoTransporte) {
       p.reg.transporte = nuevoTransporte;
+      p.reg.transporteManual = true; // ✅ Marcar como manual
       delete p.reg._candidatos;
       if (cache[p.anio] && cache[p.anio][p.mes] && cache[p.anio][p.mes][key]) {
-        update(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes + '/' + key), { transporte: nuevoTransporte }).then(function() { toast('Transporte actualizado', 'ok'); }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
+        update(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes + '/' + key), { 
+          transporte: nuevoTransporte,
+          transporteManual: true 
+        }).then(function() { toast('Transporte actualizado', 'ok'); })
+          .catch(function(e) { toast('Error: ' + e.message, 'err'); });
       }
       render();
     }
     return;
   }
+  
   outer: for (const a of Object.keys(cache)) {
     for (const m of Object.keys(cache[a]||{})) {
       if (cache[a][m] && cache[a][m][key]) {
         if (cache[a][m][key].transporte !== nuevoTransporte) {
           cache[a][m][key].transporte = nuevoTransporte;
+          cache[a][m][key].transporteManual = true; // ✅ Marcar como manual
           delete cache[a][m][key]._candidatos;
-          update(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + key), { transporte: nuevoTransporte }).then(function() { toast('Transporte actualizado', 'ok'); }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
+          update(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + key), { 
+            transporte: nuevoTransporte,
+            transporteManual: true 
+          }).then(function() { toast('Transporte actualizado', 'ok'); })
+            .catch(function(e) { toast('Error: ' + e.message, 'err'); });
         }
         break outer;
       }
@@ -1480,25 +1498,26 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
   const tipoSec = tipoDeSeccion();
   const esAdm = rolActual === 'admin';
   if (tipoSec === 'B2C') {
-    const reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), celular:'', email:'', direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte:'SERVICIO B2C', rango:'B2C', tipo:'B2C', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString() };
+    const reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), celular:'', email:'', direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte:'SERVICIO B2C', rango:'B2C', tipo:'B2C', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString(), transporteManual: true };
     pendientesB2C.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
     toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar();
     return;
   }
   if (tipoSec === 'ADM') {
-    const reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value || 'SERVICIO ADM', rango:rango, tipo:'ADM', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString() };
+    const reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value || 'SERVICIO ADM', rango:rango, tipo:'ADM', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString(), transporteManual: true };
     pendientesADM.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
     toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar();
     return;
   }
   if (tipoSec === 'QDM') {
-    const reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value || 'SERVICIO QDM', rango:rango, tipo:'QDM', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString() };
+    const reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value || 'SERVICIO QDM', rango:rango, tipo:'QDM', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString(), transporteManual: true };
     pendientesQDM.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
     toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar();
     return;
   }
-  let reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value, rango: rango, tipo: 'AMPM', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString() };
+  let reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value, rango: rango, tipo: 'AMPM', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString(), transporteManual: true };
   if (!reg.transporte) {
+    reg.transporteManual = false; // ✅ No es manual, aplicar reglas
     if (esAntesDe1400()) { reg = autocompletarTransportePM(reg); } 
     else if (esDespuesDe1401()) { const diaManana = obtenerDiaSemanaManana(); reg = autocompletarTransporteAM(reg, diaManana); }
   }
@@ -1873,15 +1892,14 @@ function procesarArchivoB2C(file, lista) {
       if (!filas || filas.length < 2) { toast('Archivo vacío','err'); return; }
       const enc = filas[0].map(normEnc);
       const col = { TRACKING: enc.findIndex(function(h) { return h.includes('TRACKING'); }), EMPRESA: enc.findIndex(function(h) { return h.includes('EMPRESA'); }), NOMBRE: enc.findIndex(function(h) { return h.includes('NOMBRE'); }), CELULAR: enc.findIndex(function(h) { return h.includes('CELULAR'); }), EMAIL: enc.findIndex(function(h) { return h.includes('EMAIL') || h.includes('MAIL'); }), DIRECCION: enc.findIndex(function(h) { return h.includes('DIRECCION'); }), COMUNA: enc.findIndex(function(h) { return h.includes('COMUNA'); }), VALOR: enc.findIndex(function(h) { return h.includes('VALOR'); }) };
-      const parts = ft.split('-');
-      const aT = parts[0]; const mT = parts[1];
+      const parts = ft.split('-'); const aT = parts[0]; const mT = parts[1];
       const regs = [];
       for (let i = 1; i < filas.length; i++) {
         const row = filas[i]; if (!row || !row.length) continue;
         const gv = function(idx) { return (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]); };
         const tr = String(gv(col.TRACKING)).trim(); if (!tr) continue;
         const comuna = canonComuna(gv(col.COMUNA));
-        regs.push({ anio:aT, mes:mT, reg: { fecha: ft, unidad: String(gv(col.EMPRESA)).trim(), idPedido: tr, nombre: String(gv(col.NOMBRE)).trim(), celular: String(gv(col.CELULAR)).trim(), email: String(gv(col.EMAIL)).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna: comuna, valor: parsearValor(gv(col.VALOR)), observacion: '', transporte: 'SERVICIO B2C', rango: 'B2C', otroPalet: false, tipo: 'B2C', esAdmin: rolActual === 'admin', usuario: emailUsuarioActual, creado: new Date().toISOString(), importado: true } });
+        regs.push({ anio:aT, mes:mT, reg: { fecha: ft, unidad: String(gv(col.EMPRESA)).trim(), idPedido: tr, nombre: String(gv(col.NOMBRE)).trim(), celular: String(gv(col.CELULAR)).trim(), email: String(gv(col.EMAIL)).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna: comuna, valor: parsearValor(gv(col.VALOR)), observacion: '', transporte: 'SERVICIO B2C', rango: 'B2C', otroPalet: false, tipo: 'B2C', esAdmin: rolActual === 'admin', usuario: emailUsuarioActual, creado: new Date().toISOString(), importado: true, transporteManual: false } });
       }
       if (!regs.length) { toast('Sin filas con N° de tracking','err'); return; }
       if (lista) { lista.push.apply(lista, regs); paginaDesc = 1; toast(formatoEntero(regs.length) + ' filas B2C cargadas. Presiona GUARDAR.','info'); render(); }
@@ -1931,7 +1949,7 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
         const gv = function(idx) { return (idx<0||idx>=row.length) ? '' : (row[idx]==null ? '' : row[idx]); };
         const tr = String(gv(col.TRACKING)).trim(); if (!tr) continue; 
         const comuna = canonComuna(gv(col.COMUNA));
-        let reg = { fecha: ft, unidad: String(gv(col.EMPRESA)).trim(), idPedido: tr, nombre: String(gv(col.NOMBRE)).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna: comuna, valor: parsearValor(gv(col.VALOR)), observacion: String(gv(col.OBS)).trim().toUpperCase(), transporte:'', rango:'', otroPalet:false, tipo: tipo, esAdmin: rolActual === 'admin', usuario: emailUsuarioActual, creado: new Date().toISOString(), importado: true };
+        let reg = { fecha: ft, unidad: String(gv(col.EMPRESA)).trim(), idPedido: tr, nombre: String(gv(col.NOMBRE)).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna: comuna, valor: parsearValor(gv(col.VALOR)), observacion: String(gv(col.OBS)).trim().toUpperCase(), transporte:'', rango:'', otroPalet:false, tipo: tipo, esAdmin: rolActual === 'admin', usuario: emailUsuarioActual, creado: new Date().toISOString(), importado: true, transporteManual: false };
         if (aplicarReglaPM) { reg = autocompletarTransportePM(reg); } 
         else if (aplicarReglaAM) { const diaManana = obtenerDiaSemanaManana(); reg = autocompletarTransporteAM(reg, diaManana); }
         nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
@@ -1966,7 +1984,7 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
         const gi = function() { const subs = Array.from(arguments); for (const k of Object.keys(m)) { for (const s of subs) { if (k.includes(s)) { const v = m[k]; if (v!=null && String(v).trim()!=='') return String(v); } } } return ''; };
         const tr = gi('TRACKING','ID PEDIDO','IDPEDIDO'); if (!tr) return; 
         const comuna = canonComuna(gi('COMUNA'));
-        let reg = { fecha: ft, unidad: gi('EMPRESA','UNIDAD'), idPedido: tr, nombre: gi('NOMBRE'), direccion: limpiarDireccion(gi('DIRECCION'), comuna), comuna: comuna, valor: parsearValor(gi('VALOR')), observacion: gi('OBSERVACION').toUpperCase(), transporte: gi('TRANSPORTE'), rango: (gi('RANGO')||'').toUpperCase(), otroPalet:false, tipo: tipo, esAdmin: rolActual === 'admin', usuario: emailUsuarioActual, creado: new Date().toISOString(), importado: true };
+        let reg = { fecha: ft, unidad: gi('EMPRESA','UNIDAD'), idPedido: tr, nombre: gi('NOMBRE'), direccion: limpiarDireccion(gi('DIRECCION'), comuna), comuna: comuna, valor: parsearValor(gi('VALOR')), observacion: gi('OBSERVACION').toUpperCase(), transporte: gi('TRANSPORTE'), rango: (gi('RANGO')||'').toUpperCase(), otroPalet:false, tipo: tipo, esAdmin: rolActual === 'admin', usuario: emailUsuarioActual, creado: new Date().toISOString(), importado: true, transporteManual: false };
         if (aplicarReglaPM && !reg.transporte) { reg = autocompletarTransportePM(reg); } 
         else if (aplicarReglaAM && !reg.transporte) { const diaManana = obtenerDiaSemanaManana(); reg = autocompletarTransporteAM(reg, diaManana); }
         nuevos.push({ anio:aT, mes:mT, key:'pend_'+Date.now()+'_'+i+'_'+Math.random().toString(36).substr(2,5), reg: reg }); 
@@ -2007,7 +2025,7 @@ function procesarArchivoGenerico(file, tipo) {
         const parts = fecha.split('-'); const anio = parts[0]; const mes = parts[1];
         const rango = String(gv(col.RANGO)).trim().toUpperCase(); 
         const comuna = canonComuna(gv(col.COMUNA));
-        let reg = { anio: anio, mes: mes, reg: { fecha: fecha, unidad: String(gv(col.UNIDAD)).trim(), idPedido: String(gv(col.ID)).trim(), nombre: String(gv(col.NOMBRE)).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna: comuna, valor: parsearValor(gv(col.VALOR)), observacion: String(gv(col.OBS)).trim(), transporte: String(gv(col.TRANSPORTE)).trim(), rango: rango || (tipo==='B2C'?'B2C':(tipo==='ADM'?'ADM':(tipo==='QDM'?'QDM':'AM'))), otroPalet:false, tipo: tipo, esAdmin: rolActual === 'admin', usuario: emailUsuarioActual, creado: new Date().toISOString(), importado:true } };
+        let reg = { anio: anio, mes: mes, reg: { fecha: fecha, unidad: String(gv(col.UNIDAD)).trim(), idPedido: String(gv(col.ID)).trim(), nombre: String(gv(col.NOMBRE)).trim(), direccion: limpiarDireccion(gv(col.DIRECCION), comuna), comuna: comuna, valor: parsearValor(gv(col.VALOR)), observacion: String(gv(col.OBS)).trim(), transporte: String(gv(col.TRANSPORTE)).trim(), rango: rango || (tipo==='B2C'?'B2C':(tipo==='ADM'?'ADM':(tipo==='QDM'?'QDM':'AM'))), otroPalet:false, tipo: tipo, esAdmin: rolActual === 'admin', usuario: emailUsuarioActual, creado: new Date().toISOString(), importado:true, transporteManual: false } };
         if (aplicarReglaPM && !reg.reg.transporte) { reg.reg = autocompletarTransportePM(reg.reg); } 
         else if (aplicarReglaAM && !reg.reg.transporte) { const diaManana = obtenerDiaSemanaManana(); reg.reg = autocompletarTransporteAM(reg.reg, diaManana); }
         regs.push(reg);
@@ -2163,6 +2181,7 @@ window.irPaginaBD = function(t,p) { if (rolActual !== 'admin') return; const pag
 window.filtrarBD = function(t) { if (rolActual !== 'admin') return; const pagMap = { AMPM: 'paginaBDAmpm', B2C: 'paginaBDB2c', ADM: 'paginaBDAdm', QDM: 'paginaBDQdm' }; if (pagMap[t]) window[pagMap[t]] = 1; renderizarBaseDatos(); };
 window.pedirEditarRegistroBD = function(key, anio, mes) { pedirClave(function() { editandoKey = key; render(); renderizarBaseDatos(); }); };
 
+// ✅ MODIFICADO: Preserva transporteManual al editar
 window.guardarEdicionInline = function(key, anio, mes, esPend) {
   const gv = function(id) { const el = document.getElementById(id); return el ? el.value : ''; };
   const nuevo = { fecha: gv('edi_fecha'), unidad: gv('edi_unidad'), idPedido: gv('edi_id'), nombre: gv('edi_nombre'), direccion: gv('edi_direccion'), comuna: canonComuna(gv('edi_comuna')), valor: parseFloat(gv('edi_valor'))||0, observacion: gv('edi_obs'), transporte: gv('edi_transporte'), rango: gv('edi_rango') };
@@ -2170,7 +2189,19 @@ window.guardarEdicionInline = function(key, anio, mes, esPend) {
   if (document.getElementById('edi_celular')) nuevo.celular = gv('edi_celular');
   if (document.getElementById('edi_email')) nuevo.email = gv('edi_email');
   const parts = (nuevo.fecha||'').split('-'); const nA = parts[0]; const nM = parts[1];
-  if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) { nuevo.esAdmin = cache[anio][mes][key].esAdmin; nuevo.usuario = cache[anio][mes][key].usuario; cache[anio][mes][key] = Object.assign({}, cache[anio][mes][key], nuevo); }
+  if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
+    // ✅ Preservar transporteManual si el usuario cambió el transporte
+    const transporteAnterior = cache[anio][mes][key].transporte;
+    const esManual = cache[anio][mes][key].transporteManual;
+    if (nuevo.transporte !== transporteAnterior) {
+      nuevo.transporteManual = true; // ✅ Si cambió, marcar como manual
+    } else {
+      nuevo.transporteManual = esManual; // ✅ Mantener estado anterior
+    }
+    nuevo.esAdmin = cache[anio][mes][key].esAdmin;
+    nuevo.usuario = cache[anio][mes][key].usuario;
+    cache[anio][mes][key] = Object.assign({}, cache[anio][mes][key], nuevo);
+  }
   if (nA && nM && (nA!==anio || nM!==mes)) {
     if (cache[anio] && cache[anio][mes]) delete cache[anio][mes][key];
     if (!cache[nA]) cache[nA] = {}; if (!cache[nA][nM]) cache[nA][nM] = {};
