@@ -29,12 +29,21 @@ const REGISTROS_POR_PAGINA_DESC = 30;
 const OPCIONES_TRANSPORTE = ['MOVIL 1','MOVIL 2','MOVIL 3','MOVIL 4','MOVIL 5','MOVIL 6','DON RAUL','DON JOSE','SERVICIO AM/PM','SERVICIO B2C','SERVICIO ADM','SERVICIO QDM','SPOT','SPOT 1','SPOT 2','RETIRA CLIENTE','SERVICIO 3PL','TRANSGAMBOA'];
 const OPCIONES_OBS = ['CASA CENTRAL','RETIRO','RETIRO CLIENTE','RETIRO CASA CENTRAL'];
 
-const MOVILES_POR_TIPO = {
-  ampm: [1,2,3,4,5,6,'spot','spot1','spot2'],
-  b2c: [1,2,3,4,5,6,'spot','spot1','spot2'],
-  adm: [1,2,3,4,5,6,'spot','spot1','spot2'],
-  qdm: [1,2,3,4,5,6,'spot','spot1','spot2']
-};
+// ✅ BITACORAS UNIFICADAS: 12 bitácoras únicas para toda la flota
+const BITACORAS_UNIFICADAS = [
+  { key: 'movil1', label: 'MOVIL 1', domId: 'bitacoraMovil1' },
+  { key: 'movil2', label: 'MOVIL 2', domId: 'bitacoraMovil2' },
+  { key: 'movil3', label: 'MOVIL 3', domId: 'bitacoraMovil3' },
+  { key: 'movil4', label: 'MOVIL 4', domId: 'bitacoraMovil4' },
+  { key: 'movil5', label: 'MOVIL 5', domId: 'bitacoraMovil5' },
+  { key: 'movil6', label: 'MOVIL 6', domId: 'bitacoraMovil6' },
+  { key: 'spot', label: 'SPOT', domId: 'bitacoraSpot' },
+  { key: 'spot1', label: 'SPOT 1', domId: 'bitacoraSpot1' },
+  { key: 'spot2', label: 'SPOT 2', domId: 'bitacoraSpot2' },
+  { key: 'servicio_ampm', label: 'SERVICIO AM/PM', domId: 'bitacoraServicioAmpm' },
+  { key: 'servicio_adm', label: 'SERVICIO ADM', domId: 'bitacoraServicioAdm' },
+  { key: 'servicio_qdm', label: 'SERVICIO QDM', domId: 'bitacoraServicioQdm' }
+];
 
 const REGLA_PM = {
   'MOVIL 1': ['maipu','cerrillos','lo espejo','la cisterna','pedro aguirre cerda','el bosque','san bernardo','la florida','puente alto','san ramon'],
@@ -141,6 +150,25 @@ function obtenerDiaSemanaManana() {
   return manana.getDay();
 }
 
+// ✅ Determina la clave unificada de bitácora según el transporte
+function obtenerClaveBitacora(transporte) {
+  const t = (transporte || '').toUpperCase().trim();
+  if (t === 'MOVIL 1') return 'movil1';
+  if (t === 'MOVIL 2') return 'movil2';
+  if (t === 'MOVIL 3') return 'movil3';
+  if (t === 'MOVIL 4') return 'movil4';
+  if (t === 'MOVIL 5') return 'movil5';
+  if (t === 'MOVIL 6') return 'movil6';
+  if (t === 'SPOT') return 'spot';
+  if (t === 'SPOT 1') return 'spot1';
+  if (t === 'SPOT 2') return 'spot2';
+  if (t === 'SERVICIO AM/PM') return 'servicio_ampm';
+  if (t === 'SERVICIO ADM') return 'servicio_adm';
+  if (t === 'SERVICIO QDM') return 'servicio_qdm';
+  if (t === 'SERVICIO B2C') return 'servicio_b2c';
+  return null;
+}
+
 function esAdmin(email) { return ADMIN_EMAILS.includes((email || '').toLowerCase().trim()); }
 let rolActual = 'operador';
 const mSec = (location.hash || '').match(/sec=([a-z]+)/);
@@ -155,7 +183,6 @@ let pendientesB2C = [];
 let modoImportActual = '';
 let seccionActiva = 'ampm';
 let tabBdActiva = 'ampm';
-let bitTabActiva = 'ampm';
 let tipoBusquedaActual = 'AMPM';
 let tipoImportacionActual = 'AMPM';
 let tipoVerFechaActual = 'AMPM';
@@ -196,9 +223,6 @@ let calFilaMes = null;
 let calFilaAnio = null;
 let cambiosFechaLocales = {};
 let bitacorasData = {};
-let bitacoraExportTipoActual = 'ampm';
-let bitacoraJPEGTipoActual = 'ampm';
-let bitacoraPrintTipoActual = 'ampm';
 
 function toast(msg, tipo) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show ' + tipo; setTimeout(function() { t.className = 'toast'; }, 3000); }
 function fmtFecha(f) { if (!f) return ''; const p = f.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
@@ -398,14 +422,6 @@ function tipoDeSeccion() {
   return 'AMPM';
 }
 
-function getBitacoraTipo() {
-  if (seccionActiva === 'ampm') return 'ampm';
-  if (seccionActiva === 'b2c') return 'b2c';
-  if (seccionActiva === 'adm') return 'adm';
-  if (seccionActiva === 'qdm') return 'qdm';
-  return 'ampm';
-}
-
 function pendientesDeSeccion() {
   if (seccionActiva === 'ampm') return pendientesAMPM;
   if (seccionActiva === 'adm') return pendientesADM;
@@ -454,18 +470,6 @@ window.cambiarTabBD = function(tab) {
   const map = { ampm: 'tabContentAmpm', b2c: 'tabContentB2c', adm: 'tabContentAdm', qdm: 'tabContentQdm' };
   document.getElementById(map[tab] || 'tabContentAmpm').classList.add('show'); 
   renderizarBaseDatos();
-};
-
-window.cambiarTabBit = function(tab) {
-  bitTabActiva = tab;
-  document.querySelectorAll('.basedatos-tab[data-btab]').forEach(function(t) { t.classList.remove('active'); });
-  const b = document.querySelector('.basedatos-tab[data-btab="' + tab + '"]'); 
-  if (b) b.classList.add('active');
-  document.querySelectorAll('#seccionBitacoras .basedatos-tab-content').forEach(function(c) { c.classList.remove('show'); });
-  const map = { ampm: 'bitContentAmpm', b2c: 'bitContentB2c', adm: 'bitContentAdm', qdm: 'bitContentQdm' };
-  const cont = document.getElementById(map[tab] || 'bitContentAmpm');
-  if (cont) cont.classList.add('show');
-  renderizarBitacorasTipo(tab);
 };
 
 window.cambiarTema = function(t) { 
@@ -921,21 +925,22 @@ window.filtrarBDCombo = function(tipo, campo, val){
   renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]);
 };
 
-// ✅ MODIFICADO: Encabezados perfectamente alineados con rowspan="2" y filtros de tamaño medio
 function renderDescThead() {
   const thead = document.getElementById('theadDesc');
   if (!thead) return;
   const b2c = (seccionActiva === 'b2c');
   
-  // Filtros de tamaño medio (120px)
-  const filtroUnidad = '<input type="text" class="th-filter" id="fDescUnidad" placeholder="Filtrar..." style="width:120px" oninput="filtrarComboDesc(\'unidad\', this.value)" onfocus="abrirCombo(\'unidad\')">';
-  const filtroComuna = '<input type="text" class="th-filter" id="fDescComuna" placeholder="Filtrar..." style="width:120px" oninput="filtrarComboDesc(\'comuna\', this.value)" onfocus="abrirCombo(\'comuna\')">';
-  const filtroTransporte = '<input type="text" class="th-filter" id="fDescTransporte" placeholder="Filtrar..." style="width:120px" oninput="filtrarComboDesc(\'transporte\', this.value)" onfocus="abrirCombo(\'transporte\')">';
+  const sel = '<th rowspan="2" style="text-align:center;vertical-align:middle"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>';
+  const acc = '<th rowspan="2" style="text-align:center;vertical-align:middle">Acciones</th>';
+  
+  const filtroUnidad = '<input type="text" class="th-filter" id="fDescUnidad" placeholder="Filtrar..." style="width:100px" oninput="filtrarComboDesc(\'unidad\', this.value)" onfocus="abrirCombo(\'unidad\')">';
+  const filtroComuna = '<input type="text" class="th-filter" id="fDescComuna" placeholder="Filtrar..." style="width:100px" oninput="filtrarComboDesc(\'comuna\', this.value)" onfocus="abrirCombo(\'comuna\')">';
+  const filtroTransporte = '<input type="text" class="th-filter" id="fDescTransporte" placeholder="Filtrar..." style="width:100px" oninput="filtrarComboDesc(\'transporte\', this.value)" onfocus="abrirCombo(\'transporte\')">';
   const filtroRango = '<input type="text" class="th-filter" id="fDescRango" placeholder="Filtrar..." style="width:80px" oninput="filtrarComboDesc(\'rango\', this.value)" onfocus="abrirCombo(\'rango\')">';
   
   if (b2c) {
     thead.innerHTML = '<tr>' +
-      '<th rowspan="2" style="text-align:center;vertical-align:middle"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>' +
+      sel +
       '<th rowspan="2" style="text-align:center;vertical-align:middle">Fecha</th>' +
       '<th style="text-align:center;vertical-align:middle">Unidad Negocio</th>' +
       '<th rowspan="2" style="text-align:center;vertical-align:middle">ID Pedido</th>' +
@@ -948,7 +953,7 @@ function renderDescThead() {
       '<th rowspan="2" style="text-align:center;vertical-align:middle">Observación</th>' +
       '<th style="text-align:center;vertical-align:middle">Transporte</th>' +
       '<th style="text-align:center;vertical-align:middle">Rango</th>' +
-      '<th rowspan="2" style="text-align:center;vertical-align:middle">Acciones</th>' +
+      acc +
       '</tr><tr>' +
       '<td style="text-align:center;padding:4px">' + filtroUnidad + '</td>' +
       '<td style="text-align:center;padding:4px">' + filtroComuna + '</td>' +
@@ -957,7 +962,7 @@ function renderDescThead() {
       '</tr>';
   } else {
     thead.innerHTML = '<tr>' +
-      '<th rowspan="2" style="text-align:center;vertical-align:middle"><input type="checkbox" id="selTodosDesc" style="width:16px;height:16px;" onchange="toggleSeleccionarTodo(this.checked)" title="Seleccionar todo"></th>' +
+      sel +
       '<th rowspan="2" style="text-align:center;vertical-align:middle">Fecha</th>' +
       '<th style="text-align:center;vertical-align:middle">Unidad Negocio</th>' +
       '<th rowspan="2" style="text-align:center;vertical-align:middle">ID Pedido</th>' +
@@ -968,7 +973,7 @@ function renderDescThead() {
       '<th rowspan="2" style="text-align:center;vertical-align:middle">Observación</th>' +
       '<th style="text-align:center;vertical-align:middle">Transporte</th>' +
       '<th style="text-align:center;vertical-align:middle">Rango</th>' +
-      '<th rowspan="2" style="text-align:center;vertical-align:middle">Acciones</th>' +
+      acc +
       '</tr><tr>' +
       '<td style="text-align:center;padding:4px">' + filtroUnidad + '</td>' +
       '<td style="text-align:center;padding:4px">' + filtroComuna + '</td>' +
@@ -1114,7 +1119,7 @@ function filaHTMLTabla(r, cf, cg, dr) {
   const tieneCambioFecha = cambiosFechaLocales[r.key] !== undefined;
   if (tieneCambioFecha) clase += 'fila-fecha-modificada ';
   const bp = r.pendiente ? '<span class="badge badge-pendiente">SIN GUARDAR</span>' : '';
-  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">✏️</span>' : '';
+  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">️</span>' : '';
   const fechaMostrar = tieneCambioFecha ? cambiosFechaLocales[r.key].nuevaFecha : r.fecha;
   const celdaFecha = '<td><div class="fecha-cell-wrap"><input type="date" value="' + (fechaMostrar||'') + '" onchange="cambiarFechaFila(\'' + r.key + '\', this.value, ' + (r.pendiente?true:false) + ')"></div> ' + bp + indicadorCambio + '</td>';
   const celdaSel = '<td class="td-sel"><input type="checkbox" style="width:16px;height:16px;" ' + sel + ' onchange="toggleSeleccionDesc(\'' + r.key + '\', this.checked)"></td>';
@@ -1349,60 +1354,42 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
   });
 };
 
+// ✅ MODIFICADO: Envío a bitácoras unificadas
 window.enviarSeleccion = function() {
   if (seleccionadosDesc.size === 0) { toast('Selecciona al menos una fila', 'err'); return; }
-  const tipoSec = tipoDeSeccion();
-  const tipoBitacora = getBitacoraTipo();
   let enviados = 0;
   let errores = [];
   const bitacorasModificadas = new Set();
   seleccionadosDesc.forEach(function(key) {
     let reg = null;
-    let anio = '', mes = '';
     outer: for (const a of Object.keys(cache)) {
       for (const m of Object.keys(cache[a]||{})) {
         if (cache[a][m] && cache[a][m][key]) { 
           reg = Object.assign({}, cache[a][m][key]); 
-          anio = a; 
-          mes = m; 
           break outer; 
         }
       }
     }
     if (!reg) {
       const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
-      if (p) { reg = Object.assign({}, p.reg); anio = p.anio; mes = p.mes; }
+      if (p) { reg = Object.assign({}, p.reg); }
     }
     if (!reg) { errores.push('Registro ' + key + ' no encontrado'); return; }
     if (cambiosFechaLocales[key]) {
       reg.fecha = cambiosFechaLocales[key].nuevaFecha;
     }
     const transporte = (reg.transporte || '').toUpperCase();
-    let bitKey = null;
-    if (transporte === 'SPOT') {
-      bitKey = tipoBitacora + '_spot';
-    } else if (transporte === 'SPOT 1') {
-      bitKey = tipoBitacora + '_spot1';
-    } else if (transporte === 'SPOT 2') {
-      bitKey = tipoBitacora + '_spot2';
-    } else {
-      const match = transporte.match(/MOVIL\s+(\d)/i);
-      let movilNum = null;
-      if (match) {
-        movilNum = parseInt(match[1]);
-      } else if (tipoSec === 'B2C' || tipoSec === 'QDM' || tipoSec === 'ADM') {
-        movilNum = 1;
-      }
-      if (!movilNum || movilNum < 1 || movilNum > 6) { errores.push((reg.idPedido || key) + ': Transporte no válido'); return; }
-      bitKey = tipoBitacora + '_movil' + movilNum;
-    }
+    const bitKey = obtenerClaveBitacora(transporte);
+    if (!bitKey) { errores.push((reg.idPedido || key) + ': Transporte no reconocido (' + transporte + ')'); return; }
     const filaBitacora = {
       requirente: reg.unidad || '',
       documentos: reg.idPedido || '',
       cliente: reg.nombre || '',
       direccion: reg.direccion || '',
       comuna: reg.comuna || '',
-      obs: reg.observacion || ''
+      obs: reg.observacion || '',
+      rango: reg.rango || '',
+      tipo: reg.tipo || ''
     };
     if (!bitacorasData[bitKey]) {
       bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || 'AM', responsable: '', firma: '' } };
@@ -1429,7 +1416,7 @@ window.enviarSeleccion = function() {
     });
     Promise.all(promesas)
       .then(function() {
-        toast(enviados + ' registro(s) enviado(s) a BITACORAS', 'ok');
+        toast(enviados + ' registro(s) enviado(s) a BITACORAS UNIFICADAS', 'ok');
         if (errores.length > 0) setTimeout(function() { toast(errores.length + ' error(es): ' + errores.slice(0,2).join(', '), 'err'); }, 1000);
         renderizarTodasBitacoras();
         seleccionadosDesc.clear();
@@ -1636,27 +1623,95 @@ window.confirmarExportar = function() {
   cerrarModalExportar();
 };
 
-function getBitacorasDisponibles(tipo) {
-  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
-  return moviles.map(function(movil) {
-    return { tipo: tipo, movil: movil, label: tipo.toUpperCase() + ' - ' + ((typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil) };
+// ✅ BITACORAS UNIFICADAS: Funciones para las 12 bitácoras únicas
+function renderizarTodasBitacoras() {
+  BITACORAS_UNIFICADAS.forEach(function(bit) {
+    renderizarBitacora(bit.key, bit.label, bit.domId);
   });
 }
 
-window.abrirModalExportarBitacoras = function(tipo) {
-  bitacoraExportTipoActual = tipo;
+function renderizarBitacora(key, label, domId) {
+  const cont = document.getElementById(domId);
+  if (!cont) return;
+  cont.innerHTML = generarHTMLBitacora(key, label);
+}
+
+function generarHTMLBitacora(key, label) {
+  const data = bitacorasData[key] || { filas: [], footer: { transporte: label, fecha: '', ruta: '', responsable: '', firma: '' } };
+  let html = '<div class="bitacora-wrapper">';
+  html += '<div class="bitacora-header-info">BITACORA ' + label + '</div>';
+  html += '<table class="bitacora-table">';
+  html += '<thead><tr>';
+  html += '<th style="width:40px;">N</th><th>REQUIRENTE</th><th>DOCUMENTOS</th><th>CLIENTE</th><th>DIRECCION</th><th>COMUNA</th><th>OBS</th>';
+  html += '</tr></thead><tbody>';
+  const maxFilas = 15;
+  for (let i = 0; i < maxFilas; i++) {
+    const fila = data.filas[i] || { requirente: '', documentos: '', cliente: '', direccion: '', comuna: '', obs: '' };
+    html += '<tr><td class="num-col">' + (i+1) + '</td>';
+    html += '<td><input type="text" id="bit_' + key + '_' + i + '_requirente" value="' + (fila.requirente||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + key + '_' + i + '_documentos" value="' + (fila.documentos||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + key + '_' + i + '_cliente" value="' + (fila.cliente||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + key + '_' + i + '_direccion" value="' + (fila.direccion||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + key + '_' + i + '_comuna" value="' + (fila.comuna||'').replace(/"/g,'&quot;') + '"></td>';
+    html += '<td><input type="text" id="bit_' + key + '_' + i + '_obs" value="' + (fila.obs||'').replace(/"/g,'&quot;') + '"></td></tr>';
+  }
+  html += '</tbody></table>';
+  html += '<table class="bitacora-footer-table">';
+  html += '<thead><tr><th>TRANSPORTE</th><th>FECHA</th><th>RUTA</th><th>RESPONSABLE</th><th>FIRMA</th></tr></thead><tbody><tr>';
+  html += '<td style="background:#fff"><input type="text" id="bit_' + key + '_footer_transporte" value="' + (data.footer.transporte||'').replace(/"/g,'&quot;') + '"></td>';
+  html += '<td style="background:#fff"><input type="date" id="bit_' + key + '_footer_fecha" value="' + (data.footer.fecha||'') + '"></td>';
+  html += '<td style="background:#fff"><input type="text" id="bit_' + key + '_footer_ruta" value="' + (data.footer.ruta||'').replace(/"/g,'&quot;') + '"></td>';
+  html += '<td style="background:#fff"><input type="text" id="bit_' + key + '_footer_responsable" value="' + (data.footer.responsable||'').replace(/"/g,'&quot;') + '"></td>';
+  html += '<td style="background:#fff"><input type="text" id="bit_' + key + '_footer_firma" value="' + (data.footer.firma||'').replace(/"/g,'&quot;') + '"></td>';
+  html += '</tr></tbody></table></div>';
+  return html;
+}
+
+window.guardarTodasBitacoras = function() {
+  let guardadas = 0;
+  BITACORAS_UNIFICADAS.forEach(function(bit) {
+    const key = bit.key;
+    const filas = [];
+    for (let i = 0; i < 15; i++) {
+      const requirenteEl = document.getElementById('bit_' + key + '_' + i + '_requirente');
+      if (requirenteEl) {
+        const fila = {
+          requirente: requirenteEl.value || '',
+          documentos: document.getElementById('bit_' + key + '_' + i + '_documentos') ? document.getElementById('bit_' + key + '_' + i + '_documentos').value : '',
+          cliente: document.getElementById('bit_' + key + '_' + i + '_cliente') ? document.getElementById('bit_' + key + '_' + i + '_cliente').value : '',
+          direccion: document.getElementById('bit_' + key + '_' + i + '_direccion') ? document.getElementById('bit_' + key + '_' + i + '_direccion').value : '',
+          comuna: document.getElementById('bit_' + key + '_' + i + '_comuna') ? document.getElementById('bit_' + key + '_' + i + '_comuna').value : '',
+          obs: document.getElementById('bit_' + key + '_' + i + '_obs') ? document.getElementById('bit_' + key + '_' + i + '_obs').value : ''
+        };
+        if (fila.requirente || fila.documentos || fila.cliente) filas.push(fila);
+      }
+    }
+    const footer = {
+      transporte: document.getElementById('bit_' + key + '_footer_transporte') ? document.getElementById('bit_' + key + '_footer_transporte').value : '',
+      fecha: document.getElementById('bit_' + key + '_footer_fecha') ? document.getElementById('bit_' + key + '_footer_fecha').value : '',
+      ruta: document.getElementById('bit_' + key + '_footer_ruta') ? document.getElementById('bit_' + key + '_footer_ruta').value : '',
+      responsable: document.getElementById('bit_' + key + '_footer_responsable') ? document.getElementById('bit_' + key + '_footer_responsable').value : '',
+      firma: document.getElementById('bit_' + key + '_footer_firma') ? document.getElementById('bit_' + key + '_footer_firma').value : ''
+    };
+    bitacorasData[key] = { filas: filas, footer: footer };
+    update(ref(db, RUTA_BITACORAS + '/' + key), { filas: filas, footer: footer })
+      .then(function() { guardadas++; })
+      .catch(function(e) { toast('Error al guardar ' + key + ': ' + e.message, 'err'); });
+  });
+  setTimeout(function() { toast('Todas las bitacoras guardadas: ' + guardadas, 'ok'); }, 500);
+};
+
+window.abrirModalExportarBitacoras = function() {
   const grid = document.getElementById('bitacoraExportGrid');
   if (!grid) return;
-  document.getElementById('bitExpTitulo').textContent = 'Exportar Bitacoras ' + tipo.toUpperCase() + ' a Excel';
-  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitacoras de ' + tipo.toUpperCase() + ' que deseas exportar. Cada una ira en una planilla separada.';
-  const bitacoras = getBitacorasDisponibles(tipo);
+  document.getElementById('bitExpTitulo').textContent = 'Exportar Bitacoras a Excel';
+  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitacoras que deseas exportar. Cada una ira en una planilla separada.';
   let html = '';
-  bitacoras.forEach(function(item, idx) {
-    const key = item.tipo + '_movil' + item.movil;
-    const data = bitacorasData[key];
+  BITACORAS_UNIFICADAS.forEach(function(bit, idx) {
+    const data = bitacorasData[bit.key];
     const tieneDatos = data && data.filas && data.filas.length > 0;
     const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
-    const label = item.label + (count > 0 ? ' (' + count + ')' : '');
+    const label = bit.label + (count > 0 ? ' (' + count + ')' : '');
     html += '<div class="bitacora-export-item">';
     html += '<input type="checkbox" id="bitExp_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
     html += '<label for="bitExp_' + idx + '">' + label + '</label>';
@@ -1682,21 +1737,17 @@ window.confirmarExportarBitacoras = function() {
     toast('Selecciona al menos una bitacora', 'err');
     return;
   }
-  const tipo = bitacoraExportTipoActual;
-  const bitacoras = getBitacorasDisponibles(tipo);
   const wb = XLSX.utils.book_new();
   let exportadas = 0;
   checkboxes.forEach(function(cb) {
     const idx = parseInt(cb.id.replace('bitExp_', ''));
-    const item = bitacoras[idx];
-    const key = item.tipo + '_movil' + item.movil;
-    const data = bitacorasData[key];
+    const bit = BITACORAS_UNIFICADAS[idx];
+    const data = bitacorasData[bit.key];
     if (!data || !data.filas || data.filas.length === 0) return;
     const filasConDatos = data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); });
     if (filasConDatos.length === 0) return;
-    const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
     const wsData = [];
-    wsData.push(['Bitacora ' + movilLabel + ' - ' + item.tipo.toUpperCase(), '', '', '', '', '', '']);
+    wsData.push(['Bitacora ' + bit.label, '', '', '', '', '', '']);
     wsData.push(['', '', '', '', '', '', '']);
     wsData.push(['N', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
     filasConDatos.forEach(function(fila, i) {
@@ -1708,7 +1759,7 @@ window.confirmarExportarBitacoras = function() {
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
     ws['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 18 }, { wch: 20 }];
-    const sheetName = (item.tipo + '_' + movilLabel).substring(0, 31);
+    const sheetName = bit.label.substring(0, 31);
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
     exportadas++;
   });
@@ -1717,26 +1768,22 @@ window.confirmarExportarBitacoras = function() {
     return;
   }
   const fecha = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, 'Bitacoras_' + tipo.toUpperCase() + '_' + fecha + '.xlsx');
+  XLSX.writeFile(wb, 'Bitacoras_Unificadas_' + fecha + '.xlsx');
   toast(exportadas + ' bitacoras exportadas', 'ok');
   cerrarModalExportarBitacoras();
 };
 
-window.abrirModalJPEGBitacoras = function(tipo) {
-  bitacoraJPEGTipoActual = tipo;
+window.abrirModalJPEGBitacoras = function() {
   const grid = document.getElementById('bitacoraJPEGGrid');
   if (!grid) return;
-  document.getElementById('bitJpegTitulo').textContent = 'Exportar Bitacoras ' + tipo.toUpperCase() + ' como JPEG';
-  document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitacoras de ' + tipo.toUpperCase() + ' que deseas exportar como imagen.';
-  const bitacoras = getBitacorasDisponibles(tipo);
+  document.getElementById('bitJpegTitulo').textContent = 'Exportar Bitacoras como JPEG';
+  document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitacoras que deseas exportar como imagen.';
   let html = '';
-  bitacoras.forEach(function(item, idx) {
-    const key = item.tipo + '_movil' + item.movil;
-    const data = bitacorasData[key];
+  BITACORAS_UNIFICADAS.forEach(function(bit, idx) {
+    const data = bitacorasData[bit.key];
     const tieneDatos = data && data.filas && data.filas.length > 0;
     const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
-    const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
-    const label = movilLabel + (count > 0 ? ' (' + count + ' registros)' : '');
+    const label = bit.label + (count > 0 ? ' (' + count + ' registros)' : '');
     html += '<div class="bitacora-export-item">';
     html += '<input type="checkbox" id="bitJpeg_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
     html += '<label for="bitJpeg_' + idx + '">' + label + '</label>';
@@ -1762,15 +1809,13 @@ window.confirmarExportarJPEGBitacoras = function() {
     toast('Selecciona al menos una bitacora', 'err');
     return;
   }
-  const tipo = bitacoraJPEGTipoActual;
-  const bitacoras = getBitacorasDisponibles(tipo);
   const fecha = new Date().toISOString().split('T')[0];
   let exportadas = 0;
+  const total = checkboxes.length;
   checkboxes.forEach(function(cb) {
     const idx = parseInt(cb.id.replace('bitJpeg_', ''));
-    const item = bitacoras[idx];
-    const movilId = (typeof item.movil === 'string') ? item.movil : item.movil;
-    const element = document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movilId);
+    const bit = BITACORAS_UNIFICADAS[idx];
+    const element = document.getElementById(bit.domId);
     if (!element) return;
     const clone = element.cloneNode(true);
     const inputs = clone.querySelectorAll('input');
@@ -1796,12 +1841,11 @@ window.confirmarExportarJPEGBitacoras = function() {
     }).then(function(canvas) {
       document.body.removeChild(clone);
       const link = document.createElement('a');
-      const movilLabel = (typeof item.movil === 'string') ? item.movil : 'Movil' + item.movil;
-      link.download = 'Bitacora_' + tipo + '_' + movilLabel + '_' + fecha + '.jpeg';
+      link.download = 'Bitacora_' + bit.key + '_' + fecha + '.jpeg';
       link.href = canvas.toDataURL('image/jpeg', 0.95);
       link.click();
       exportadas++;
-      if (exportadas === checkboxes.length) {
+      if (exportadas === total) {
         toast(exportadas + ' bitacoras JPEG exportadas', 'ok');
       }
     }).catch(function(e) {
@@ -1812,21 +1856,17 @@ window.confirmarExportarJPEGBitacoras = function() {
   cerrarModalJPEGBitacoras();
 };
 
-window.abrirModalImprimirBitacoras = function(tipo) {
-  bitacoraPrintTipoActual = tipo;
+window.abrirModalImprimirBitacoras = function() {
   const grid = document.getElementById('bitacoraPrintGrid');
   if (!grid) return;
-  document.getElementById('bitPrintTitulo').textContent = 'Imprimir Bitacoras ' + tipo.toUpperCase();
-  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitacoras de ' + tipo.toUpperCase() + ' que deseas imprimir.';
-  const bitacoras = getBitacorasDisponibles(tipo);
+  document.getElementById('bitPrintTitulo').textContent = 'Imprimir Bitacoras';
+  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitacoras que deseas imprimir. Se imprimirán todas en una sola ventana.';
   let html = '';
-  bitacoras.forEach(function(item, idx) {
-    const key = item.tipo + '_movil' + item.movil;
-    const data = bitacorasData[key];
+  BITACORAS_UNIFICADAS.forEach(function(bit, idx) {
+    const data = bitacorasData[bit.key];
     const tieneDatos = data && data.filas && data.filas.length > 0;
     const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
-    const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
-    const label = movilLabel + (count > 0 ? ' (' + count + ' registros)' : '');
+    const label = bit.label + (count > 0 ? ' (' + count + ' registros)' : '');
     html += '<div class="bitacora-export-item">';
     html += '<input type="checkbox" id="bitPrint_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '>';
     html += '<label for="bitPrint_' + idx + '">' + label + '</label>';
@@ -1846,22 +1886,24 @@ window.seleccionarTodasBitacorasPrint = function() {
   checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
 };
 
+// ✅ CORREGIDO: Imprime TODAS las bitácoras seleccionadas en una sola ventana
 window.confirmarImprimirBitacoras = function() {
   const checkboxes = document.querySelectorAll('#bitacoraPrintGrid input[type="checkbox"]:checked');
   if (checkboxes.length === 0) {
     toast('Selecciona al menos una bitacora', 'err');
     return;
   }
-  const tipo = bitacoraPrintTipoActual;
-  const bitacoras = getBitacorasDisponibles(tipo);
+  
+  // Construir un solo HTML con todas las bitácoras seleccionadas
+  let contenidoImpresion = '';
+  const fecha = new Date().toLocaleDateString('es-CL');
+  
   checkboxes.forEach(function(cb) {
     const idx = parseInt(cb.id.replace('bitPrint_', ''));
-    const item = bitacoras[idx];
-    const movilId = (typeof item.movil === 'string') ? item.movil : item.movil;
-    const element = document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movilId);
+    const bit = BITACORAS_UNIFICADAS[idx];
+    const element = document.getElementById(bit.domId);
     if (!element) return;
-    const printWindow = window.open('', '_blank', 'width=1200,height=900');
-    if (!printWindow) { toast('Bloqueador de popups activo', 'err'); return; }
+    
     const clone = element.cloneNode(true);
     const inputs = clone.querySelectorAll('input');
     inputs.forEach(function(inp) {
@@ -1870,12 +1912,39 @@ window.confirmarImprimirBitacoras = function() {
       span.style.cssText = 'display:block;width:100%;padding:4px;font-family:Arial,sans-serif;font-size:11px;';
       inp.parentNode.replaceChild(span, inp);
     });
-    const movilLabel = (typeof item.movil === 'string') ? item.movil.toUpperCase() : 'MOVIL ' + item.movil;
-    const html = '<!DOCTYPE html><html><head><title>Bitacora ' + movilLabel + '</title><style>@page { size: letter landscape; margin: 10mm; }* { margin: 0; padding: 0; box-sizing: border-box; }body { font-family: Arial, sans-serif; padding: 10mm; background: #fff; }h2 { text-align: center; color: #1a5490; font-size: 18pt; margin-bottom: 12px; }table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11pt; background: #fff; }th { background: #1a5490; color: white; font-weight: bold; }.no-print { text-align: center; margin-top: 15px; }.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }</style></head><body><h2>Bitacora ' + movilLabel + ' - ' + tipo.toUpperCase() + '</h2>' + clone.innerHTML + '<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div></body></html>';
-    printWindow.document.write(html);
-    printWindow.document.close();
+    
+    contenidoImpresion += '<div class="bitacora-print-page">';
+    contenidoImpresion += '<h2>Bitacora ' + bit.label + ' - Fecha: ' + fecha + '</h2>';
+    contenidoImpresion += clone.innerHTML;
+    contenidoImpresion += '</div>';
   });
-  toast('Ventanas de impresion abiertas', 'ok');
+  
+  const printWindow = window.open('', '_blank', 'width=1200,height=900');
+  if (!printWindow) { toast('Bloqueador de popups activo. Permite popups para este sitio.', 'err'); return; }
+  
+  const html = '<!DOCTYPE html><html><head><title>Bitacoras Unificadas</title><style>' +
+    '@page { size: letter landscape; margin: 10mm; }' +
+    '* { margin: 0; padding: 0; box-sizing: border-box; }' +
+    'body { font-family: Arial, sans-serif; padding: 10mm; background: #fff; }' +
+    '.bitacora-print-page { page-break-after: always; margin-bottom: 20mm; }' +
+    '.bitacora-print-page:last-child { page-break-after: auto; }' +
+    'h2 { text-align: center; color: #1a5490; font-size: 18pt; margin-bottom: 12px; }' +
+    'table { width: 100%; border-collapse: collapse; margin-bottom: 12px; table-layout: auto; }' +
+    'th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11pt; background: #fff; }' +
+    'th { background: #1a5490; color: white; font-weight: bold; }' +
+    '.no-print { text-align: center; margin-top: 15px; }' +
+    '.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }' +
+    '@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }' +
+    '</style></head><body>' +
+    '<h1 style="text-align:center;color:#1a5490;margin-bottom:20px;">BITACORAS UNIFICADAS - ' + fecha + '</h1>' +
+    contenidoImpresion +
+    '<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div>' +
+    '</body></html>';
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  
+  toast(checkboxes.length + ' bitacora(s) lista(s) para imprimir', 'ok');
   cerrarModalImprimirBitacoras();
 };
 
@@ -2420,15 +2489,14 @@ function claseYIndicadorSimple(r, cf, cg) {
   return { clase:c, ind:i }; 
 }
 
-// ✅ MODIFICADO: Base de datos con encabezados alineados y filtros de tamaño medio
 function renderBDThead(tipo) {
   const suf = sufBD(tipo);
   const thead = document.getElementById('thead'+suf);
   if (!thead) return;
   
-  const filtroUnidad = '<input type="text" class="th-filter" id="fBD' + suf + '_unidad" placeholder="Filtrar..." style="width:120px" oninput="filtrarBDCombo(\'' + tipo + '\',\'unidad\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'unidad\')">';
-  const filtroComuna = '<input type="text" class="th-filter" id="fBD' + suf + '_comuna" placeholder="Filtrar..." style="width:120px" oninput="filtrarBDCombo(\'' + tipo + '\',\'comuna\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'comuna\')">';
-  const filtroTransporte = '<input type="text" class="th-filter" id="fBD' + suf + '_transporte" placeholder="Filtrar..." style="width:120px" oninput="filtrarBDCombo(\'' + tipo + '\',\'transporte\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'transporte\')">';
+  const filtroUnidad = '<input type="text" class="th-filter" id="fBD' + suf + '_unidad" placeholder="Filtrar..." style="width:100px" oninput="filtrarBDCombo(\'' + tipo + '\',\'unidad\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'unidad\')">';
+  const filtroComuna = '<input type="text" class="th-filter" id="fBD' + suf + '_comuna" placeholder="Filtrar..." style="width:100px" oninput="filtrarBDCombo(\'' + tipo + '\',\'comuna\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'comuna\')">';
+  const filtroTransporte = '<input type="text" class="th-filter" id="fBD' + suf + '_transporte" placeholder="Filtrar..." style="width:100px" oninput="filtrarBDCombo(\'' + tipo + '\',\'transporte\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'transporte\')">';
   const filtroRango = '<input type="text" class="th-filter" id="fBD' + suf + '_rango" placeholder="Filtrar..." style="width:80px" oninput="filtrarBDCombo(\'' + tipo + '\',\'rango\', this.value)" onfocus="abrirComboBD(\'' + tipo + '\',\'rango\')">';
   
   thead.innerHTML = '<tr>' +
@@ -2810,94 +2878,6 @@ window.setInfTipo = function(t) {
   if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic;">Modulo de informes en desarrollo para ' + t + '</div>';
 };
 
-function renderizarTodasBitacoras() {
-  ['ampm','b2c','adm','qdm'].forEach(function(tipo) {
-    renderizarBitacorasTipo(tipo);
-  });
-}
-
-function renderizarBitacorasTipo(tipo) {
-  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
-  moviles.forEach(function(movil) {
-    renderizarBitacora(tipo, movil);
-  });
-}
-
-function generarHTMLBitacora(tipo, movil) {
-  const key = tipo + '_movil' + movil;
-  const movilLabel = (typeof movil === 'string') ? movil.toUpperCase() : 'MOVIL ' + movil;
-  const data = bitacorasData[key] || { filas: [], footer: { transporte: movilLabel, fecha: '', ruta: 'AM', responsable: '', firma: '' } };
-  let html = '<div class="bitacora-wrapper">';
-  html += '<div class="bitacora-header-info">BITACORA ' + movilLabel + ' - ' + tipo.toUpperCase() + '</div>';
-  html += '<table class="bitacora-table">';
-  html += '<thead><tr>';
-  html += '<th style="width:40px;">N</th><th>REQUIRENTE</th><th>DOCUMENTOS</th><th>CLIENTE</th><th>DIRECCION</th><th>COMUNA</th><th>OBS</th>';
-  html += '</tr></thead><tbody>';
-  const maxFilas = 15;
-  for (let i = 0; i < maxFilas; i++) {
-    const fila = data.filas[i] || { requirente: '', documentos: '', cliente: '', direccion: '', comuna: '', obs: '' };
-    html += '<tr><td class="num-col">' + (i+1) + '</td>';
-    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_requirente" value="' + (fila.requirente||'').replace(/"/g,'&quot;') + '"></td>';
-    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_documentos" value="' + (fila.documentos||'').replace(/"/g,'&quot;') + '"></td>';
-    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_cliente" value="' + (fila.cliente||'').replace(/"/g,'&quot;') + '"></td>';
-    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_direccion" value="' + (fila.direccion||'').replace(/"/g,'&quot;') + '"></td>';
-    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_comuna" value="' + (fila.comuna||'').replace(/"/g,'&quot;') + '"></td>';
-    html += '<td><input type="text" id="bit_' + tipo + '_' + movil + '_' + i + '_obs" value="' + (fila.obs||'').replace(/"/g,'&quot;') + '"></td></tr>';
-  }
-  html += '</tbody></table>';
-  html += '<table class="bitacora-footer-table">';
-  html += '<thead><tr><th>TRANSPORTE</th><th>FECHA</th><th>RUTA</th><th>RESPONSABLE</th><th>FIRMA</th></tr></thead><tbody><tr>';
-  html += '<td style="background:#fff"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_transporte" value="' + (data.footer.transporte||'').replace(/"/g,'&quot;') + '"></td>';
-  html += '<td style="background:#fff"><input type="date" id="bit_' + tipo + '_' + movil + '_footer_fecha" value="' + (data.footer.fecha||'') + '"></td>';
-  html += '<td style="background:#fff"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_ruta" value="' + (data.footer.ruta||'AM').replace(/"/g,'&quot;') + '"></td>';
-  html += '<td style="background:#fff"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_responsable" value="' + (data.footer.responsable||'').replace(/"/g,'&quot;') + '"></td>';
-  html += '<td style="background:#fff"><input type="text" id="bit_' + tipo + '_' + movil + '_footer_firma" value="' + (data.footer.firma||'').replace(/"/g,'&quot;') + '"></td>';
-  html += '</tr></tbody></table></div>';
-  return html;
-}
-
-function renderizarBitacora(tipo, movil) {
-  const movilId = (typeof movil === 'string') ? movil : movil;
-  const cont = document.getElementById('bitacora' + tipo.charAt(0).toUpperCase() + tipo.slice(1) + 'Movil' + movilId);
-  if (!cont) return;
-  cont.innerHTML = generarHTMLBitacora(tipo, movil);
-}
-
-window.guardarBitacora = function(tipo) {
-  const moviles = MOVILES_POR_TIPO[tipo] || [1,2,3,4,5,6,'spot','spot1','spot2'];
-  let guardadas = 0;
-  moviles.forEach(function(movil) {
-    const key = tipo + '_movil' + movil;
-    const filas = [];
-    for (let i = 0; i < 15; i++) {
-      const requirenteEl = document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_requirente');
-      if (requirenteEl) {
-        const fila = {
-          requirente: requirenteEl.value || '',
-          documentos: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_documentos') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_documentos').value : '',
-          cliente: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_cliente') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_cliente').value : '',
-          direccion: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_direccion') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_direccion').value : '',
-          comuna: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_comuna') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_comuna').value : '',
-          obs: document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_obs') ? document.getElementById('bit_' + tipo + '_' + movil + '_' + i + '_obs').value : ''
-        };
-        if (fila.requirente || fila.documentos || fila.cliente) filas.push(fila);
-      }
-    }
-    const footer = {
-      transporte: document.getElementById('bit_' + tipo + '_' + movil + '_footer_transporte') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_transporte').value : '',
-      fecha: document.getElementById('bit_' + tipo + '_' + movil + '_footer_fecha') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_fecha').value : '',
-      ruta: document.getElementById('bit_' + tipo + '_' + movil + '_footer_ruta') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_ruta').value : '',
-      responsable: document.getElementById('bit_' + tipo + '_' + movil + '_footer_responsable') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_responsable').value : '',
-      firma: document.getElementById('bit_' + tipo + '_' + movil + '_footer_firma') ? document.getElementById('bit_' + tipo + '_' + movil + '_footer_firma').value : ''
-    };
-    bitacorasData[key] = { filas: filas, footer: footer };
-    update(ref(db, RUTA_BITACORAS + '/' + key), { filas: filas, footer: footer })
-      .then(function() { guardadas++; })
-      .catch(function(e) { toast('Error al guardar ' + key + ': ' + e.message, 'err'); });
-  });
-  setTimeout(function() { toast('Bitacoras ' + tipo.toUpperCase() + ' guardadas: ' + guardadas, 'ok'); }, 500);
-};
-
 window.toggleCalendario = function() {
   const popup = document.getElementById('calendarioPopup');
   if (!popup) return;
@@ -3155,7 +3135,7 @@ function renderInformes() {
   else if (seccionInicial === 'informes') document.title = 'DR-INFORMES';
   else if (seccionInicial === 'bitacoras') document.title = 'DR-BITACORAS';
   const st = document.createElement('style');
-  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;}';
+  st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;} #theadDesc th, #theadAmpm th, #theadB2c th, #theadAdm th, #theadQdm th {vertical-align:middle !important;text-align:center !important;} #theadDesc tr:first-child th, #theadAmpm tr:first-child th, #theadB2c tr:first-child th, #theadAdm tr:first-child th, #theadQdm tr:first-child th {padding:8px 6px !important;border-bottom:1px solid var(--border-color) !important;} #theadDesc tr:last-child td, #theadAmpm tr:last-child td, #theadB2c tr:last-child td, #theadAdm tr:last-child td, #theadQdm tr:last-child td {padding:4px 6px !important;border-top:none !important;} .th-filter{font-size:0.8em !important;padding:3px 6px !important;margin:0 !important;}';
   document.head.appendChild(st);
   const bp = document.getElementById('btnPegarSel'); 
   if (bp) bp.remove();
