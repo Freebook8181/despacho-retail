@@ -112,7 +112,7 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .select-filtro{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;cursor:pointer;min-width:90px;height:34px}
 .select-filtro:focus{outline:none;border-color:var(--accent-blue)}
 
-.btn-bd-importar,.btn-importar-accion,.btn-exportar,.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul,.btn-bd-pdf,.btn-bitacora-jpeg,.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo,.btn-enviar,.btn-buscar,.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar,.btn-bitacora-excel,.btn-bd-pag,.btn-pag-numero,.btn-bd-pag-nav,.btn-pag-nav,.btn-acc,.btn-calendario,.btn-cal-fila,.modal-btn,.btn-exportar-confirmar,.btn-guardar-bitacora,.btn-exportar-bitacora,.btn-jpeg-bitacora,.btn-imprimir-bitacora,.bitacora-export-select-all,.btn-borrar-todo,.btn-eliminar-admin,.btn-borrar-desc{
+.btn-bd-importar,.btn-importar-accion,.btn-exportar,.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul,.btn-bd-pdf,.btn-bitacora-jpeg,.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo,.btn-enviar,.btn-buscar,.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar,.btn-bitacora-excel,.btn-bd-pag,.btn-pag-numero,.btn-bd-pag-nav,.btn-pag-nav,.btn-acc,.btn-calendario,.btn-cal-fila,.modal-btn,.btn-exportar-confirmar,.btn-guardar-bitacora,.btn-exportar-bitacora,.btn-jpeg-bitacora,.btn-imprimir-bitacora,.bitacora-export-select-all,.btn-borrar-todo,.btn-eliminar-admin,.btn-borrar-desc,.btn-borrar-bitacora-todo,.btn-borrar-bitacora-admin{
   background:transparent !important;
   color:var(--text-primary) !important;
   border:1px solid var(--border-color) !important;
@@ -129,7 +129,7 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .btn-exportar:hover,.btn-bitacora-excel:hover,.btn-exportar-bitacora:hover{border-color:var(--accent-blue) !important;color:var(--accent-blue) !important;background:var(--accent-blue-pastel) !important}
 .btn-bd-guardar:hover,.btn-guardar:hover,.btn-bitacora-guardar:hover,.btn-registrar:hover,.btn-mc-azul:hover,.btn-guardar-bitacora:hover{border-color:var(--accent-blue) !important;color:var(--accent-blue) !important;background:var(--accent-blue-pastel) !important}
 .btn-bd-pdf:hover,.btn-bitacora-jpeg:hover,.btn-jpeg-bitacora:hover{border-color:var(--accent-purple) !important;color:var(--accent-purple) !important;background:var(--accent-purple-pastel) !important}
-.btn-bd-borrar-mes:hover,.btn-acc.btn-borrar:hover,.btn-mc-rojo:hover,.btn-borrar-todo:hover,.btn-borrar-desc:hover{border-color:var(--accent-red) !important;color:var(--accent-red) !important;background:var(--accent-red-pastel) !important}
+.btn-bd-borrar-mes:hover,.btn-acc.btn-borrar:hover,.btn-mc-rojo:hover,.btn-borrar-todo:hover,.btn-borrar-desc:hover,.btn-borrar-bitacora-todo:hover{border-color:var(--accent-red) !important;color:var(--accent-red) !important;background:var(--accent-red-pastel) !important}
 .btn-enviar:hover{border-color:var(--accent-orange) !important;color:var(--accent-orange) !important;background:var(--accent-orange-pastel) !important}
 .btn-buscar:hover{border-color:var(--accent-blue) !important;color:var(--accent-blue) !important;background:var(--accent-blue-pastel) !important}
 .btn-limpiar:hover,.btn-mc-cancelar:hover,.btn-exportar-cancelar:hover{border-color:var(--border-hover) !important;background:var(--bg-tertiary) !important}
@@ -155,29 +155,20 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
   color:#fff !important;
 }
 
-.btn-borrar-todo{
+.btn-borrar-todo,.btn-borrar-desc,.btn-borrar-bitacora-todo{
   border:1px solid var(--accent-red) !important;
   color:var(--accent-red) !important;
 }
-.btn-borrar-todo:hover{
+.btn-borrar-todo:hover,.btn-borrar-desc:hover,.btn-borrar-bitacora-todo:hover{
   background:var(--accent-red) !important;
   color:#fff !important;
 }
 
-.btn-borrar-desc{
-  border:1px solid var(--accent-red) !important;
-  color:var(--accent-red) !important;
-}
-.btn-borrar-desc:hover{
-  background:var(--accent-red) !important;
-  color:#fff !important;
-}
-
-.btn-eliminar-admin{
+.btn-eliminar-admin,.btn-borrar-bitacora-admin{
   border:1px solid var(--accent-green) !important;
   color:var(--accent-green) !important;
 }
-.btn-eliminar-admin:hover{
+.btn-eliminar-admin:hover,.btn-borrar-bitacora-admin:hover{
   background:var(--accent-green) !important;
   color:#fff !important;
 }
@@ -194,7 +185,7 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 
 .bitacora-actions{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;padding:10px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border-color)}
 .bitacora-seccion{margin-bottom:30px;padding:15px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px}
-.bitacora-seccion-titulo{color:var(--accent-blue);font-size:1em;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid var(--accent-blue);padding-bottom:6px}
+.bitacora-seccion-titulo{color:var(--accent-blue);font-size:1em;font-weight:700;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid var(--accent-blue);padding-bottom:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .bd-filtro-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .bd-filtro-row label{color:var(--text-secondary);font-weight:600;font-size:.85em}
 .bd-filtro-input{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:200px}
@@ -421,7 +412,6 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 .bitacora-footer-table tbody td{border:1px solid #999 !important;padding:8px;font-size:11px;text-align:center;background:#ffffff !important;color:#000000 !important}
 .bitacora-footer-table input{border:none !important;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;text-align:center}
 
-/* ✅ PESTAÑA ACTIVIDAD */
 .actividad-container{padding:20px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;margin-top:15px}
 .actividad-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--accent-blue)}
 .actividad-header h3{color:var(--accent-blue);font-size:1.2em;font-weight:700}
@@ -485,7 +475,6 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
       <div class="seccion-tab" data-seccion="qdm" onclick="cambiarSeccion('qdm')">QDM</div>
       <div class="seccion-tab" data-seccion="bitacoras" onclick="cambiarSeccion('bitacoras')">BITACORAS</div>
       <div class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')" style="display:none">BASE DE DATOS</div>
-      <!-- ✅ NUEVA PESTAÑA ACTIVIDAD - Solo admin -->
       <div class="seccion-tab" data-seccion="actividad" onclick="cambiarSeccion('actividad')" style="display:none" id="tabActividad">ACTIVIDAD</div>
       <div class="seccion-tab" data-seccion="informes" onclick="cambiarSeccion('informes')" style="display:none">INFORMES</div>
     </div>
@@ -547,7 +536,13 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
     </div>
 
     <div class="seccion-contenido" id="seccionBitacoras">
-      <h3 class="basedatos-subtitulo">BITACORAS UNIFICADAS</h3>
+      <h3 class="basedatos-subtitulo">
+        <span>BITACORAS UNIFICADAS</span>
+        <span style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-borrar-bitacora-todo" onclick="abrirModalBorrarBitacoraTodo()">BORRAR TODO</button>
+          <button class="btn-borrar-bitacora-admin" id="btnBorrarBitacoraAdmin" onclick="abrirModalBorrarBitacoraAdmin()" style="display:none">BORRAR ADMIN</button>
+        </span>
+      </h3>
       <div class="bitacora-seccion">
         <div class="bitacora-actions">
           <button class="btn-guardar-bitacora" onclick="guardarTodasBitacoras()">GUARDAR TODO</button>
@@ -586,7 +581,10 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
           <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('AMPM')">BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenAmpm"></div>
-        <div class="bd-descripcion-subtitulo">Descripcion</div>
+        <div class="bd-descripcion-subtitulo">
+          <span>Descripcion</span>
+          <button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion('AMPM')">BORRAR DESCRIPCION AMPM</button>
+        </div>
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAmpm"></thead><tbody id="bdTbodyAmpm"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionAmpm"></div>
       </div>
@@ -601,7 +599,10 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
           <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('B2C')">BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenB2c"></div>
-        <div class="bd-descripcion-subtitulo">Descripcion</div>
+        <div class="bd-descripcion-subtitulo">
+          <span>Descripcion</span>
+          <button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion('B2C')">BORRAR DESCRIPCION B2C</button>
+        </div>
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadB2c"></thead><tbody id="bdTbodyB2c"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionB2c"></div>
       </div>
@@ -616,7 +617,10 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
           <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('ADM')">BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenAdm"></div>
-        <div class="bd-descripcion-subtitulo">Descripcion</div>
+        <div class="bd-descripcion-subtitulo">
+          <span>Descripcion</span>
+          <button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion('ADM')">BORRAR DESCRIPCION ADM</button>
+        </div>
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAdm"></thead><tbody id="bdTbodyAdm"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionAdm"></div>
       </div>
@@ -631,17 +635,19 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
           <button class="btn-bd-borrar-mes" onclick="abrirBorrarMes('QDM')">BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenQdm"></div>
-        <div class="bd-descripcion-subtitulo">Descripcion</div>
+        <div class="bd-descripcion-subtitulo">
+          <span>Descripcion</span>
+          <button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion('QDM')">BORRAR DESCRIPCION QDM</button>
+        </div>
         <div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadQdm"></thead><tbody id="bdTbodyQdm"></tbody></table></div>
         <div class="bd-paginacion" id="bdPaginacionQdm"></div>
       </div>
     </div>
 
-    <!-- ✅ NUEVA SECCIÓN ACTIVIDAD - Solo admin -->
     <div class="seccion-contenido" id="seccionActividad">
       <div class="actividad-container">
         <div class="actividad-header">
-          <h3>📊 REGISTRO DE ACTIVIDAD</h3>
+          <h3> REGISTRO DE ACTIVIDAD</h3>
           <button class="btn-borrar-todo" onclick="limpiarActividadAntigua()">LIMPIAR ANTIGUAS (>30 días)</button>
         </div>
         
@@ -665,7 +671,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
         </div>
 
         <div style="margin-bottom:15px">
-          <strong style="color:var(--accent-blue);font-size:.9em"> USUARIOS ACTIVOS AHORA:</strong>
+          <strong style="color:var(--accent-blue);font-size:.9em">USUARIOS ACTIVOS AHORA:</strong>
           <div id="actUsuariosActivos" style="margin-top:8px;min-height:30px">
             <span style="color:var(--text-muted);font-size:.85em">Cargando...</span>
           </div>
@@ -735,7 +741,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
     <div class="descripcion-subtitulo">
       <span>Descripcion</span>
       <span style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion()">BORRAR DESCRIPCION</button>
+        <button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcionActual()">BORRAR DESCRIPCION</button>
         <button class="btn-eliminar-admin" id="btnEliminarAdmin" onclick="abrirModalEliminarAdmin()" style="display:none">ELIMINAR ADMIN</button>
       </span>
     </div>
@@ -834,11 +840,10 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
   </div>
 </div>
 
-<!-- ✅ MODAL BORRAR DESCRIPCION ACTUAL -->
 <div class="overlay-centro" id="borrarDescOverlay">
   <div class="modal-caja roja" style="max-width:450px">
-    <h3>BORRAR DESCRIPCION ACTUAL</h3>
-    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará TODOS los registros de la descripción actual (<strong id="bdTipoDesc">AM/PM</strong>) de la plataforma y Firebase. Las BITACORAS NO serán afectadas.</p>
+    <h3>BORRAR DESCRIPCION</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará TODOS los registros de la descripción <strong id="bdTipoDesc">AM/PM</strong> de la plataforma y Firebase. Las BITACORAS NO serán afectadas.</p>
     <div class="info-registros" id="bdInfoRegistros">Calculando...</div>
     <div class="form-group"><label>Contraseña de administrador:</label><input type="password" id="bdPassword" placeholder="••••" maxlength="10"></div>
     <div class="modal-caja-buttons">
@@ -848,7 +853,6 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
   </div>
 </div>
 
-<!-- ✅ MODAL ELIMINAR SOLO REGISTROS ADMIN -->
 <div class="overlay-centro" id="eliminarAdminOverlay">
   <div class="modal-caja verde" style="max-width:450px">
     <h3>ELIMINAR REGISTROS ADMIN</h3>
@@ -858,6 +862,32 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
     <div class="modal-caja-buttons">
       <button class="btn-mc-cancelar" onclick="cerrarModalEliminarAdmin()">Cancelar</button>
       <button class="btn-mc-rojo" onclick="confirmarEliminarAdmin()">ELIMINAR SOLO ADMIN</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay-centro" id="borrarBitacoraTodoOverlay">
+  <div class="modal-caja roja" style="max-width:450px">
+    <h3>BORRAR TODAS LAS BITACORAS</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará TODA la información de las 9 bitácoras (MOVIL 1-6, SPOT, SPOT 1, SPOT 2) de Firebase. Esta acción es IRREVERSIBLE.</p>
+    <div class="info-registros" id="bbtInfoRegistros">Calculando...</div>
+    <div class="form-group"><label>Contraseña de administrador:</label><input type="password" id="bbtPassword" placeholder="••••" maxlength="10"></div>
+    <div class="modal-caja-buttons">
+      <button class="btn-mc-cancelar" onclick="cerrarModalBorrarBitacoraTodo()">Cancelar</button>
+      <button class="btn-mc-rojo" onclick="confirmarBorrarBitacoraTodo()">ELIMINAR TODO</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay-centro" id="borrarBitacoraAdminOverlay">
+  <div class="modal-caja verde" style="max-width:450px">
+    <h3>BORRAR BITACORAS ADMIN</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará SOLO los registros marcados en VERDE (creados por el administrador) de todas las bitácoras.</p>
+    <div class="info-registros" id="bbaInfoRegistros">Calculando...</div>
+    <div class="form-group"><label>Contraseña de administrador:</label><input type="password" id="bbaPassword" placeholder="••••" maxlength="10"></div>
+    <div class="modal-caja-buttons">
+      <button class="btn-mc-cancelar" onclick="cerrarModalBorrarBitacoraAdmin()">Cancelar</button>
+      <button class="btn-mc-rojo" onclick="confirmarBorrarBitacoraAdmin()">ELIMINAR SOLO ADMIN</button>
     </div>
   </div>
 </div>
