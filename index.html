@@ -113,10 +113,10 @@
     .btn-registro:hover { opacity: 0.9; }
     .btn-limpiar { padding: 8px 16px; background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: var(--radius); cursor: pointer; font-size: 0.9em; height: 36px; }
     
-    /* FECHA WRAP CORREGIDO */
-    .fecha-wrap { position: relative; display: inline-flex; align-items: center; }
-    .fecha-wrap input[type="date"] { width: 140px; }
-    .fecha-wrap .btn-calendario { margin-left: 4px; background: none; border: none; cursor: pointer; font-size: 1.1em; padding: 4px; }
+    /* ✅ FECHA WRAP CORREGIDO - Botón calendario contenido dentro del campo */
+    .fecha-wrap{position:relative;display:inline-flex;align-items:center;overflow:hidden}
+    .fecha-wrap input[type="date"]{width:140px;padding-right:30px}
+    .fecha-wrap .btn-calendario{position:absolute;right:2px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1em;padding:2px 4px;z-index:1}
     
     /* CALENDARIO POPUP */
     .calendario-popup { display: none; position: absolute; top: 100%; left: 0; z-index: 1000; margin-top: 4px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: 16px; min-width: 280px; }
@@ -309,7 +309,7 @@
   <!-- LOGIN -->
   <div id="loginSection">
     <div class="login-container">
-      <h1> Despacho Retail</h1>
+      <h1>🚚 Despacho Retail</h1>
       <p class="subtitle">Sistema de Gestión Logística</p>
       <input type="email" id="loginEmail" placeholder="Email" autocomplete="email">
       <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
@@ -331,7 +331,7 @@
         <span class="user-info" id="userEmail"></span>
         <div class="theme-buttons">
           <button class="theme-btn active" data-theme="light" onclick="cambiarTema('light')">☀️</button>
-          <button class="theme-btn" data-theme="dark" onclick="cambiarTema('dark')"></button>
+          <button class="theme-btn" data-theme="dark" onclick="cambiarTema('dark')">🌙</button>
         </div>
         <button class="btn-logout" onclick="logout()">Salir</button>
       </div>
@@ -344,9 +344,9 @@
       <button class="seccion-tab" data-seccion="adm" onclick="cambiarSeccion('adm')">📝 ADM</button>
       <button class="seccion-tab" data-seccion="qdm" onclick="cambiarSeccion('qdm')">📄 QDM</button>
       <button class="seccion-tab" data-seccion="bitacoras" onclick="cambiarSeccion('bitacoras')">📋 BITÁCORAS</button>
-      <button class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')" style="display:none">️ BASE DE DATOS</button>
-      <button class="seccion-tab" data-seccion="informes" onclick="cambiarSeccion('informes')" style="display:none">📊 INFORMES</button>
-      <button class="seccion-tab" data-seccion="actividad" id="tabActividad" onclick="cambiarSeccion('actividad')" style="display:none">📈 ACTIVIDAD</button>
+      <button class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')" style="display:none">🗄️ BASE DE DATOS</button>
+      <button class="seccion-tab" data-seccion="informes" onclick="cambiarSeccion('informes')" style="display:none"> INFORMES</button>
+      <button class="seccion-tab" data-seccion="actividad" id="tabActividad" onclick="cambiarSeccion('actividad')" style="display:none"> ACTIVIDAD</button>
     </div>
     
     <!-- SECCION PRINCIPAL (AM/PM, B2C, ADM, QDM) -->
@@ -431,11 +431,11 @@
       
       <!-- IMPORTAR / ACCIONES -->
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-        <button class="btn-accion btn-primary" onclick="importarExcelSegunSeccion()"> Importar Excel</button>
+        <button class="btn-accion btn-primary" onclick="importarExcelSegunSeccion()">📥 Importar Excel</button>
         <button class="btn-accion btn-success" id="btnGuardarAmpm" onclick="guardarPendientesSeccion()">💾 GUARDAR</button>
-        <button class="btn-accion btn-warning" id="btnEnviar" onclick="enviarSeleccion()"> ENVIAR A BITACORA</button>
+        <button class="btn-accion btn-warning" id="btnEnviar" onclick="enviarSeleccion()">📤 ENVIAR A BITACORA</button>
         <button class="btn-accion btn-secondary" onclick="abrirModalExportar()">📊 Exportar Excel</button>
-        <button class="btn-accion btn-danger" id="btnBorrarDesc" onclick="abrirModalBorrarDescripcionActual()" style="display:none">🗑️ BORRAR DESCRIPCION</button>
+        <button class="btn-accion btn-danger" id="btnBorrarDesc" onclick="abrirModalBorrarDescripcionActual()" style="display:none">️ BORRAR DESCRIPCION</button>
       </div>
       
       <!-- DESCRIPCION -->
@@ -480,12 +480,12 @@
       
       <div class="basedatos-tab-content show" id="tabContentAmpm">
         <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="filtroIdAmpm" placeholder=" Filtrar por ID..." oninput="filtrarBD('AMPM')" style="padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);min-width:200px">
+          <input type="text" id="filtroIdAmpm" placeholder="🔍 Filtrar por ID..." oninput="filtrarBD('AMPM')" style="padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);min-width:200px">
           <button class="btn-accion btn-primary" onclick="abrirModalVerFecha('AMPM')">📅 Ver Fecha</button>
           <button class="btn-accion btn-success" onclick="exportarPDFBD()">📄 Exportar PDF</button>
           <button class="btn-accion btn-danger" onclick="abrirModalBorrarDescripcion('AMPM')">🗑️ BORRAR DESCRIPCION</button>
           <button class="btn-accion btn-danger" id="btnEliminarAdmin" onclick="abrirModalEliminarAdmin()" style="display:none">🗑️ BORRAR ADMIN</button>
-          <button class="btn-accion btn-danger" onclick="abrirBorrarMes('AMPM')">🗑️ BORRAR MES</button>
+          <button class="btn-accion btn-danger" onclick="abrirBorrarMes('AMPM')">️ BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenAmpm"></div>
         <div class="tabla-wrapper">
@@ -503,9 +503,9 @@
         <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
           <input type="text" id="filtroIdB2c" placeholder="🔍 Filtrar por ID..." oninput="filtrarBD('B2C')" style="padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);min-width:200px">
           <button class="btn-accion btn-primary" onclick="abrirModalVerFecha('B2C')">📅 Ver Fecha</button>
-          <button class="btn-accion btn-success" onclick="exportarPDFBD()"> Exportar PDF</button>
+          <button class="btn-accion btn-success" onclick="exportarPDFBD()">📄 Exportar PDF</button>
           <button class="btn-accion btn-danger" onclick="abrirModalBorrarDescripcion('B2C')">🗑️ BORRAR DESCRIPCION</button>
-          <button class="btn-accion btn-danger" onclick="abrirBorrarMes('B2C')">️ BORRAR MES</button>
+          <button class="btn-accion btn-danger" onclick="abrirBorrarMes('B2C')">🗑️ BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenB2c"></div>
         <div class="tabla-wrapper">
@@ -536,7 +536,7 @@
           <input type="text" id="filtroIdQdm" placeholder="🔍 Filtrar por ID..." oninput="filtrarBD('QDM')" style="padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);min-width:200px">
           <button class="btn-accion btn-primary" onclick="abrirModalVerFecha('QDM')">📅 Ver Fecha</button>
           <button class="btn-accion btn-success" onclick="exportarPDFBD()">📄 Exportar PDF</button>
-          <button class="btn-accion btn-danger" onclick="abrirModalBorrarDescripcion('QDM')">🗑️ BORRAR DESCRIPCION</button>
+          <button class="btn-accion btn-danger" onclick="abrirModalBorrarDescripcion('QDM')">️ BORRAR DESCRIPCION</button>
           <button class="btn-accion btn-danger" onclick="abrirBorrarMes('QDM')">🗑️ BORRAR MES</button>
         </div>
         <div class="bd-resumen" id="bdResumenQdm"></div>
@@ -552,15 +552,15 @@
     <div class="seccion-contenido" id="seccionBitacoras">
       <div class="bitacora-tabs">
         <button class="bitacora-tab active" data-btab="unificadas" onclick="cambiarTabBitacora('unificadas')">📋 AM/PM-ADM-QDM</button>
-        <button class="bitacora-tab" data-btab="b2c" onclick="cambiarTabBitacora('b2c')">📦 B2C</button>
+        <button class="bitacora-tab" data-btab="b2c" onclick="cambiarTabBitacora('b2c')"> B2C</button>
       </div>
       
       <div class="bitacora-tab-content show" id="bitContentUnificadas">
         <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
           <button class="btn-accion btn-success" onclick="guardarTodasBitacoras('unificadas')">💾 GUARDAR BITACORAS</button>
-          <button class="btn-accion btn-primary" onclick="abrirModalExportarBitacoras('unificadas')">📊 Exportar Excel</button>
-          <button class="btn-accion btn-secondary" onclick="abrirModalJPEGBitacoras('unificadas')">️ Exportar JPEG</button>
-          <button class="btn-accion btn-secondary" onclick="abrirModalImprimirBitacoras('unificadas')">️ Imprimir</button>
+          <button class="btn-accion btn-primary" onclick="abrirModalExportarBitacoras('unificadas')"> Exportar Excel</button>
+          <button class="btn-accion btn-secondary" onclick="abrirModalJPEGBitacoras('unificadas')">🖼️ Exportar JPEG</button>
+          <button class="btn-accion btn-secondary" onclick="abrirModalImprimirBitacoras('unificadas')">🖨️ Imprimir</button>
           <button class="btn-accion btn-danger" id="btnBorrarBitacoraAdminU" onclick="abrirModalBorrarBitacoraAdmin('unificadas')" style="display:none">🗑️ BORRAR ADMIN</button>
           <button class="btn-accion btn-danger" id="btnBorrarBitacoraTodoU" onclick="abrirModalBorrarBitacoraTodo('unificadas')" style="display:none">🗑️ BORRAR TODO</button>
         </div>
@@ -583,7 +583,7 @@
           <button class="btn-accion btn-primary" onclick="abrirModalExportarBitacoras('b2c')">📊 Exportar Excel</button>
           <button class="btn-accion btn-secondary" onclick="abrirModalJPEGBitacoras('b2c')">🖼️ Exportar JPEG</button>
           <button class="btn-accion btn-secondary" onclick="abrirModalImprimirBitacoras('b2c')">🖨️ Imprimir</button>
-          <button class="btn-accion btn-danger" id="btnBorrarBitacoraAdminB" onclick="abrirModalBorrarBitacoraAdmin('b2c')" style="display:none">🗑️ BORRAR ADMIN</button>
+          <button class="btn-accion btn-danger" id="btnBorrarBitacoraAdminB" onclick="abrirModalBorrarBitacoraAdmin('b2c')" style="display:none">️ BORRAR ADMIN</button>
           <button class="btn-accion btn-danger" id="btnBorrarBitacoraTodoB" onclick="abrirModalBorrarBitacoraTodo('b2c')" style="display:none">🗑️ BORRAR TODO</button>
         </div>
         <div class="bitacora-grid">
@@ -630,7 +630,7 @@
         <div id="actUsuariosActivos"></div>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button class="btn-accion btn-danger" onclick="limpiarActividadAntigua()">️ Limpiar Actividad Antigua</button>
+        <button class="btn-accion btn-danger" onclick="limpiarActividadAntigua()">🗑️ Limpiar Actividad Antigua</button>
       </div>
       <h4 style="margin-bottom:12px;color:var(--accent-blue)">Historial de Actividad</h4>
       <div class="actividad-list" id="actividadList"></div>
@@ -678,7 +678,7 @@
       <div class="modal-body">
         <div id="modalInfo" style="margin-bottom:12px;font-size:0.9em"></div>
         <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-          <input type="text" id="filtroIdModal" placeholder="🔍 Filtrar por ID..." oninput="aplicarFiltroIdModal()" style="padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);min-width:200px">
+          <input type="text" id="filtroIdModal" placeholder=" Filtrar por ID..." oninput="aplicarFiltroIdModal()" style="padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);min-width:200px">
           <input type="text" id="fModFecha" placeholder="Fecha..." oninput="filtrarComboModal('fecha',this.value)" onfocus="abrirComboModal('fecha')" style="padding:8px;border:1px solid var(--border-color);border-radius:var(--radius)">
           <input type="text" id="fModUnidad" placeholder="Unidad..." oninput="filtrarComboModal('unidad',this.value)" onfocus="abrirComboModal('unidad')" style="padding:8px;border:1px solid var(--border-color);border-radius:var(--radius)">
           <input type="text" id="fModComuna" placeholder="Comuna..." oninput="filtrarComboModal('comuna',this.value)" onfocus="abrirComboModal('comuna')" style="padding:8px;border:1px solid var(--border-color);border-radius:var(--radius)">
@@ -801,7 +801,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-accion btn-secondary" onclick="cerrarModalBorrarBitacoraTodo()">Cancelar</button>
-        <button class="btn-accion btn-danger" onclick="confirmarBorrarBitacoraTodo()">🗑️ Confirmar</button>
+        <button class="btn-accion btn-danger" onclick="confirmarBorrarBitacoraTodo()">️ Confirmar</button>
       </div>
     </div>
   </div>
@@ -858,7 +858,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn-accion btn-secondary" onclick="cerrarModalJPEGBitacoras()">Cancelar</button>
-        <button class="btn-accion btn-success" onclick="confirmarExportarJPEGBitacoras()">️ Exportar JPEG</button>
+        <button class="btn-accion btn-success" onclick="confirmarExportarJPEGBitacoras()">🖼️ Exportar JPEG</button>
       </div>
     </div>
   </div>
