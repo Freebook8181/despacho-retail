@@ -112,7 +112,7 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .select-filtro{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 10px;border-radius:4px;font-size:.85em;cursor:pointer;min-width:90px;height:34px}
 .select-filtro:focus{outline:none;border-color:var(--accent-blue)}
 
-.btn-bd-importar,.btn-importar-accion,.btn-exportar,.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul,.btn-bd-pdf,.btn-bitacora-jpeg,.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo,.btn-enviar,.btn-buscar,.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar,.btn-bitacora-excel,.btn-bd-pag,.btn-pag-numero,.btn-bd-pag-nav,.btn-pag-nav,.btn-acc,.btn-calendario,.btn-cal-fila,.modal-btn,.btn-exportar-confirmar,.btn-guardar-bitacora,.btn-exportar-bitacora,.btn-jpeg-bitacora,.btn-imprimir-bitacora,.bitacora-export-select-all,.btn-borrar-todo,.btn-eliminar-admin{
+.btn-bd-importar,.btn-importar-accion,.btn-exportar,.btn-bd-guardar,.btn-guardar,.btn-bitacora-guardar,.btn-registrar,.btn-mc-azul,.btn-bd-pdf,.btn-bitacora-jpeg,.btn-bd-borrar-mes,.btn-acc.btn-borrar,.btn-mc-rojo,.btn-enviar,.btn-buscar,.btn-limpiar,.btn-mc-cancelar,.btn-exportar-cancelar,.btn-bitacora-excel,.btn-bd-pag,.btn-pag-numero,.btn-bd-pag-nav,.btn-pag-nav,.btn-acc,.btn-calendario,.btn-cal-fila,.modal-btn,.btn-exportar-confirmar,.btn-guardar-bitacora,.btn-exportar-bitacora,.btn-jpeg-bitacora,.btn-imprimir-bitacora,.bitacora-export-select-all,.btn-borrar-todo,.btn-eliminar-admin,.btn-borrar-desc{
   background:transparent !important;
   color:var(--text-primary) !important;
   border:1px solid var(--border-color) !important;
@@ -129,7 +129,7 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .btn-exportar:hover,.btn-bitacora-excel:hover,.btn-exportar-bitacora:hover{border-color:var(--accent-blue) !important;color:var(--accent-blue) !important;background:var(--accent-blue-pastel) !important}
 .btn-bd-guardar:hover,.btn-guardar:hover,.btn-bitacora-guardar:hover,.btn-registrar:hover,.btn-mc-azul:hover,.btn-guardar-bitacora:hover{border-color:var(--accent-blue) !important;color:var(--accent-blue) !important;background:var(--accent-blue-pastel) !important}
 .btn-bd-pdf:hover,.btn-bitacora-jpeg:hover,.btn-jpeg-bitacora:hover{border-color:var(--accent-purple) !important;color:var(--accent-purple) !important;background:var(--accent-purple-pastel) !important}
-.btn-bd-borrar-mes:hover,.btn-acc.btn-borrar:hover,.btn-mc-rojo:hover{border-color:var(--accent-red) !important;color:var(--accent-red) !important;background:var(--accent-red-pastel) !important}
+.btn-bd-borrar-mes:hover,.btn-acc.btn-borrar:hover,.btn-mc-rojo:hover,.btn-borrar-todo:hover,.btn-borrar-desc:hover{border-color:var(--accent-red) !important;color:var(--accent-red) !important;background:var(--accent-red-pastel) !important}
 .btn-enviar:hover{border-color:var(--accent-orange) !important;color:var(--accent-orange) !important;background:var(--accent-orange-pastel) !important}
 .btn-buscar:hover{border-color:var(--accent-blue) !important;color:var(--accent-blue) !important;background:var(--accent-blue-pastel) !important}
 .btn-limpiar:hover,.btn-mc-cancelar:hover,.btn-exportar-cancelar:hover{border-color:var(--border-hover) !important;background:var(--bg-tertiary) !important}
@@ -155,7 +155,6 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
   color:#fff !important;
 }
 
-/* ✅ Botón BORRAR TODO con borde rojo */
 .btn-borrar-todo{
   border:1px solid var(--accent-red) !important;
   color:var(--accent-red) !important;
@@ -165,7 +164,15 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
   color:#fff !important;
 }
 
-/* ✅ Botón ELIMINAR ADMIN con borde verde */
+.btn-borrar-desc{
+  border:1px solid var(--accent-red) !important;
+  color:var(--accent-red) !important;
+}
+.btn-borrar-desc:hover{
+  background:var(--accent-red) !important;
+  color:#fff !important;
+}
+
 .btn-eliminar-admin{
   border:1px solid var(--accent-green) !important;
   color:var(--accent-green) !important;
@@ -258,7 +265,6 @@ th.th-sel,td.td-sel{text-align:center;width:34px}
 td{padding:6px;border-bottom:1px solid var(--border-color);color:var(--text-primary)}
 tr:hover td{background:var(--row-hover)}
 
-/* ✅ FILA VERDE PARA REGISTROS DEL ADMIN */
 tr.fila-admin td{
   border-left:4px solid #10b981 !important;
   background:rgba(16,185,129,0.08) !important;
@@ -415,11 +421,28 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 .bitacora-footer-table tbody td{border:1px solid #999 !important;padding:8px;font-size:11px;text-align:center;background:#ffffff !important;color:#000000 !important}
 .bitacora-footer-table input{border:none !important;width:100%;padding:4px;background:transparent !important;outline:none;font-family:Arial,sans-serif;font-size:11px;color:#000000 !important;text-align:center}
 
-/* ✅ Fila verde en bitácoras para registros del admin */
-.bitacora-table tbody tr.fila-admin-bit td{
-  background:#d1fae5 !important;
-  color:#000 !important;
-}
+/* ✅ PESTAÑA ACTIVIDAD */
+.actividad-container{padding:20px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;margin-top:15px}
+.actividad-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--accent-blue)}
+.actividad-header h3{color:var(--accent-blue);font-size:1.2em;font-weight:700}
+.actividad-stats{display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.actividad-stat{background:var(--bg-tertiary);padding:12px 20px;border-radius:6px;border-left:4px solid var(--accent-blue);min-width:150px}
+.actividad-stat .stat-num{font-size:1.8em;font-weight:700;color:var(--accent-blue)}
+.actividad-stat .stat-label{font-size:.8em;color:var(--text-secondary);text-transform:uppercase}
+.actividad-stat.online{border-left-color:var(--accent-green)}
+.actividad-stat.online .stat-num{color:var(--accent-green)}
+.actividad-list{max-height:500px;overflow-y:auto}
+.actividad-item{padding:12px 15px;border-bottom:1px solid var(--border-color);display:flex;align-items:flex-start;gap:12px}
+.actividad-item:hover{background:var(--bg-tertiary)}
+.actividad-icon{font-size:1.5em;min-width:30px;text-align:center}
+.actividad-content{flex:1}
+.actividad-user{font-weight:700;color:var(--accent-blue);font-size:.9em}
+.actividad-action{color:var(--text-primary);font-size:.85em;margin:2px 0}
+.actividad-time{color:var(--text-muted);font-size:.75em}
+.actividad-empty{text-align:center;padding:40px;color:var(--text-muted);font-style:italic}
+.usuario-activo{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--accent-green-pastel);border:1px solid var(--accent-green);border-radius:12px;font-size:.8em;color:var(--accent-green);margin:3px}
+.usuario-activo .pulse{width:8px;height:8px;background:var(--accent-green);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -462,6 +485,8 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
       <div class="seccion-tab" data-seccion="qdm" onclick="cambiarSeccion('qdm')">QDM</div>
       <div class="seccion-tab" data-seccion="bitacoras" onclick="cambiarSeccion('bitacoras')">BITACORAS</div>
       <div class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')" style="display:none">BASE DE DATOS</div>
+      <!-- ✅ NUEVA PESTAÑA ACTIVIDAD - Solo admin -->
+      <div class="seccion-tab" data-seccion="actividad" onclick="cambiarSeccion('actividad')" style="display:none" id="tabActividad">ACTIVIDAD</div>
       <div class="seccion-tab" data-seccion="informes" onclick="cambiarSeccion('informes')" style="display:none">INFORMES</div>
     </div>
 
@@ -521,7 +546,6 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
       </div>
     </div>
 
-    <!-- ✅ BITACORAS UNIFICADAS: Siempre visibles las 9 de la flota -->
     <div class="seccion-contenido" id="seccionBitacoras">
       <h3 class="basedatos-subtitulo">BITACORAS UNIFICADAS</h3>
       <div class="bitacora-seccion">
@@ -613,6 +637,46 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
       </div>
     </div>
 
+    <!-- ✅ NUEVA SECCIÓN ACTIVIDAD - Solo admin -->
+    <div class="seccion-contenido" id="seccionActividad">
+      <div class="actividad-container">
+        <div class="actividad-header">
+          <h3>📊 REGISTRO DE ACTIVIDAD</h3>
+          <button class="btn-borrar-todo" onclick="limpiarActividadAntigua()">LIMPIAR ANTIGUAS (>30 días)</button>
+        </div>
+        
+        <div class="actividad-stats">
+          <div class="actividad-stat online">
+            <div class="stat-num" id="actUsuariosOnline">0</div>
+            <div class="stat-label">Usuarios en línea</div>
+          </div>
+          <div class="actividad-stat">
+            <div class="stat-num" id="actTotalRegistros">0</div>
+            <div class="stat-label">Registros totales</div>
+          </div>
+          <div class="actividad-stat">
+            <div class="stat-num" id="actHoy">0</div>
+            <div class="stat-label">Acciones hoy</div>
+          </div>
+          <div class="actividad-stat">
+            <div class="stat-num" id="actTotalAcciones">0</div>
+            <div class="stat-label">Total acciones</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:15px">
+          <strong style="color:var(--accent-blue);font-size:.9em"> USUARIOS ACTIVOS AHORA:</strong>
+          <div id="actUsuariosActivos" style="margin-top:8px;min-height:30px">
+            <span style="color:var(--text-muted);font-size:.85em">Cargando...</span>
+          </div>
+        </div>
+
+        <div class="actividad-list" id="actividadList">
+          <div class="actividad-empty">Cargando actividad...</div>
+        </div>
+      </div>
+    </div>
+
     <div class="seccion-contenido" id="seccionInformes">
       <h3 class="basedatos-subtitulo">INFORMES LOGISTICOS - BUSINESS INTELLIGENCE</h3>
       <div class="basedatos-tabs">
@@ -668,11 +732,10 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
   </div>
 
   <div class="tabla-section">
-    <!-- ✅ Encabezado con botones BORRAR TODO y ELIMINAR ADMIN -->
     <div class="descripcion-subtitulo">
       <span>Descripcion</span>
       <span style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-borrar-todo" onclick="abrirModalBorrarTodo()">BORRAR TODO</button>
+        <button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion()">BORRAR DESCRIPCION</button>
         <button class="btn-eliminar-admin" id="btnEliminarAdmin" onclick="abrirModalEliminarAdmin()" style="display:none">ELIMINAR ADMIN</button>
       </span>
     </div>
@@ -771,16 +834,16 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
   </div>
 </div>
 
-<!-- ✅ MODAL BORRAR TODO -->
-<div class="overlay-centro" id="borrarTodoOverlay">
+<!-- ✅ MODAL BORRAR DESCRIPCION ACTUAL -->
+<div class="overlay-centro" id="borrarDescOverlay">
   <div class="modal-caja roja" style="max-width:450px">
-    <h3>BORRAR TODO</h3>
-    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará TODOS los registros de la DESCRIPCION, BASE DE DATOS y FIREBASE de forma permanente.</p>
-    <div class="info-registros" id="btInfoRegistros">Calculando cantidad de registros...</div>
-    <div class="form-group"><label>Contraseña de administrador:</label><input type="password" id="btPassword" placeholder="••••" maxlength="10"></div>
+    <h3>BORRAR DESCRIPCION ACTUAL</h3>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará TODOS los registros de la descripción actual (<strong id="bdTipoDesc">AM/PM</strong>) de la plataforma y Firebase. Las BITACORAS NO serán afectadas.</p>
+    <div class="info-registros" id="bdInfoRegistros">Calculando...</div>
+    <div class="form-group"><label>Contraseña de administrador:</label><input type="password" id="bdPassword" placeholder="••••" maxlength="10"></div>
     <div class="modal-caja-buttons">
-      <button class="btn-mc-cancelar" onclick="cerrarModalBorrarTodo()">Cancelar</button>
-      <button class="btn-mc-rojo" onclick="confirmarBorrarTodo()">ELIMINAR TODO</button>
+      <button class="btn-mc-cancelar" onclick="cerrarModalBorrarDesc()">Cancelar</button>
+      <button class="btn-mc-rojo" onclick="confirmarBorrarDesc()">ELIMINAR DESCRIPCION</button>
     </div>
   </div>
 </div>
@@ -789,8 +852,8 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 <div class="overlay-centro" id="eliminarAdminOverlay">
   <div class="modal-caja verde" style="max-width:450px">
     <h3>ELIMINAR REGISTROS ADMIN</h3>
-    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará SOLO los registros marcados en VERDE (creados por el administrador) de la DESCRIPCION, BASE DE DATOS y FIREBASE.</p>
-    <div class="info-registros" id="eaInfoRegistros">Calculando cantidad de registros admin...</div>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em">Esta acción eliminará SOLO los registros marcados en VERDE (creados por el administrador).</p>
+    <div class="info-registros" id="eaInfoRegistros">Calculando...</div>
     <div class="form-group"><label>Contraseña de administrador:</label><input type="password" id="eaPassword" placeholder="••••" maxlength="10"></div>
     <div class="modal-caja-buttons">
       <button class="btn-mc-cancelar" onclick="cerrarModalEliminarAdmin()">Cancelar</button>
@@ -858,7 +921,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 <div class="bitacora-export-overlay" id="bitacoraPrintOverlay">
   <div class="bitacora-export-modal">
     <h3 id="bitPrintTitulo">Imprimir Bitacoras</h3>
-    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitPrintSubtitulo">Selecciona las bitacoras que deseas imprimir. Se imprimirán todas en una sola ventana.</p>
+    <p style="color:var(--text-secondary);text-align:center;margin-bottom:15px;font-size:.9em" id="bitPrintSubtitulo">Selecciona las bitacoras que deseas imprimir.</p>
     <button class="bitacora-export-select-all" onclick="seleccionarTodasBitacorasPrint()">Seleccionar todas</button>
     <div class="bitacora-export-grid" id="bitacoraPrintGrid"></div>
     <div class="bitacora-export-actions">
