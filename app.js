@@ -31,6 +31,7 @@ const REGISTROS_POR_PAGINA_DESC = 30;
 const OPCIONES_TRANSPORTE = ['MOVIL 1','MOVIL 2','MOVIL 3','MOVIL 4','MOVIL 5','MOVIL 6','DON RAUL','DON JOSE','SERVICIO AM/PM','SERVICIO B2C','SERVICIO ADM','SERVICIO QDM','SPOT','SPOT 1','SPOT 2','RETIRA CLIENTE','SERVICIO 3PL','TRANSGAMBOA'];
 const OPCIONES_OBS = ['CASA CENTRAL','RETIRO','RETIRO CLIENTE','RETIRO CASA CENTRAL'];
 
+// ✅ DOS CONJUNTOS DE BITACORAS: Unificadas (AM/PM, ADM, QDM) y B2C
 const BITACORAS_UNIFICADAS = [
   { key: 'movil1', label: 'MOVIL 1', domId: 'bitacoraMovil1' },
   { key: 'movil2', label: 'MOVIL 2', domId: 'bitacoraMovil2' },
@@ -41,6 +42,18 @@ const BITACORAS_UNIFICADAS = [
   { key: 'spot', label: 'SPOT', domId: 'bitacoraSpot' },
   { key: 'spot1', label: 'SPOT 1', domId: 'bitacoraSpot1' },
   { key: 'spot2', label: 'SPOT 2', domId: 'bitacoraSpot2' }
+];
+
+const BITACORAS_B2C = [
+  { key: 'b2c_movil1', label: 'MOVIL 1', domId: 'bitacoraB2cMovil1' },
+  { key: 'b2c_movil2', label: 'MOVIL 2', domId: 'bitacoraB2cMovil2' },
+  { key: 'b2c_movil3', label: 'MOVIL 3', domId: 'bitacoraB2cMovil3' },
+  { key: 'b2c_movil4', label: 'MOVIL 4', domId: 'bitacoraB2cMovil4' },
+  { key: 'b2c_movil5', label: 'MOVIL 5', domId: 'bitacoraB2cMovil5' },
+  { key: 'b2c_movil6', label: 'MOVIL 6', domId: 'bitacoraB2cMovil6' },
+  { key: 'b2c_spot', label: 'SPOT', domId: 'bitacoraB2cSpot' },
+  { key: 'b2c_spot1', label: 'SPOT 1', domId: 'bitacoraB2cSpot1' },
+  { key: 'b2c_spot2', label: 'SPOT 2', domId: 'bitacoraB2cSpot2' }
 ];
 
 const REGLA_PM = {
@@ -148,6 +161,31 @@ function obtenerDiaSemanaManana() {
   return manana.getDay();
 }
 
+// ✅ Determina la clave de bitácora según transporte Y tipo de registro
+function obtenerClaveBitacora(transporte, tipoRegistro) {
+  const t = (transporte || '').toUpperCase().trim();
+  const esB2C = (tipoRegistro === 'B2C');
+  const prefijo = esB2C ? 'b2c_' : '';
+  
+  if (t === 'MOVIL 1') return prefijo + 'movil1';
+  if (t === 'MOVIL 2') return prefijo + 'movil2';
+  if (t === 'MOVIL 3') return prefijo + 'movil3';
+  if (t === 'MOVIL 4') return prefijo + 'movil4';
+  if (t === 'MOVIL 5') return prefijo + 'movil5';
+  if (t === 'MOVIL 6') return prefijo + 'movil6';
+  if (t === 'SPOT') return prefijo + 'spot';
+  if (t === 'SPOT 1') return prefijo + 'spot1';
+  if (t === 'SPOT 2') return prefijo + 'spot2';
+  // SERVICIO AM/PM, ADM, QDM van a SPOT de unificadas; SERVICIO B2C va a SPOT de B2C
+  if (t === 'SERVICIO AM/PM' || t === 'SERVICIO ADM' || t === 'SERVICIO QDM') return 'spot';
+  if (t === 'SERVICIO B2C') return 'b2c_spot';
+  return null;
+}
+
+function obtenerBitacorasPorTipo(tipoBitacora) {
+  return tipoBitacora === 'b2c' ? BITACORAS_B2C : BITACORAS_UNIFICADAS;
+}
+
 function esAdmin(email) { return ADMIN_EMAILS.includes((email || '').toLowerCase().trim()); }
 let rolActual = 'operador';
 let emailUsuarioActual = '';
@@ -164,6 +202,7 @@ let pendientesB2C = [];
 let modoImportActual = '';
 let seccionActiva = 'ampm';
 let tabBdActiva = 'ampm';
+let bitTabActiva = 'unificadas'; // ✅ Pestaña activa de bitácoras
 let tipoBusquedaActual = 'AMPM';
 let tipoImportacionActual = 'AMPM';
 let tipoVerFechaActual = 'AMPM';
@@ -338,17 +377,17 @@ function renderizarActividad() {
     'SUBIDA_ARCHIVO': '📤',
     'GUARDADO': '💾',
     'ELIMINACION': '🗑️',
-    'ENVIO_BITACORA': '📋',
-    'CAMBIO_FECHA': '',
+    'ENVIO_BITACORA': '',
+    'CAMBIO_FECHA': '📅',
     'REGISTRO_NUEVO': '➕',
-    'LOGIN': '',
+    'LOGIN': '🔑',
     'BORRADO_MASIVO': '⚠️',
     'EXPORTACION': '📊',
     'EDICION': '✏️'
   };
   
   lista.innerHTML = actividadData.slice(0, 100).map(function(a) {
-    const icono = iconos[a.accion] || '';
+    const icono = iconos[a.accion] || '📝';
     const fecha = new Date(a.fecha);
     const fechaStr = fecha.toLocaleDateString('es-CL') + ' ' + fecha.toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'});
     const adminTag = a.esAdmin ? '<span class="badge badge-admin">ADMIN</span>' : '';
@@ -476,21 +515,6 @@ function parsearFecha(raw) {
   return null;
 }
 
-function obtenerClaveBitacora(transporte) {
-  const t = (transporte || '').toUpperCase().trim();
-  if (t === 'MOVIL 1') return 'movil1';
-  if (t === 'MOVIL 2') return 'movil2';
-  if (t === 'MOVIL 3') return 'movil3';
-  if (t === 'MOVIL 4') return 'movil4';
-  if (t === 'MOVIL 5') return 'movil5';
-  if (t === 'MOVIL 6') return 'movil6';
-  if (t === 'SPOT') return 'spot';
-  if (t === 'SPOT 1') return 'spot1';
-  if (t === 'SPOT 2') return 'spot2';
-  if (t === 'SERVICIO AM/PM' || t === 'SERVICIO ADM' || t === 'SERVICIO QDM' || t === 'SERVICIO B2C') return 'spot';
-  return null;
-}
-
 function pedirClave(onOk) {
   pwCallback = onOk;
   const inp = document.getElementById('pwInput');
@@ -598,20 +622,23 @@ function aplicarRol() {
   const t2 = document.querySelector('.seccion-tab[data-seccion="informes"]');
   const t3 = document.getElementById('tabActividad');
   const btnEA = document.getElementById('btnEliminarAdmin');
-  const btnBBA = document.getElementById('btnBorrarBitacoraAdmin');
+  const btnBBAU = document.getElementById('btnBorrarBitacoraAdminU');
+  const btnBBAB = document.getElementById('btnBorrarBitacoraAdminB');
   if (!t) return; 
   if (rolActual === 'admin') {
     t.style.display = '';
     if (t2) t2.style.display = '';
     if (t3) t3.style.display = '';
     if (btnEA) btnEA.style.display = 'inline-block';
-    if (btnBBA) btnBBA.style.display = 'inline-block';
+    if (btnBBAU) btnBBAU.style.display = 'inline-block';
+    if (btnBBAB) btnBBAB.style.display = 'inline-block';
   } else { 
     t.style.display = 'none'; 
     if (t2) t2.style.display = 'none';
     if (t3) t3.style.display = 'none';
     if (btnEA) btnEA.style.display = 'none';
-    if (btnBBA) btnBBA.style.display = 'none';
+    if (btnBBAU) btnBBAU.style.display = 'none';
+    if (btnBBAB) btnBBAB.style.display = 'none';
     if (seccionActiva === 'basedatos' || seccionActiva === 'informes' || seccionActiva === 'actividad') cambiarSeccion('ampm'); 
   } 
 }
@@ -658,6 +685,19 @@ window.cambiarSeccion = function(sec) {
     }
   }
   actualizarBotonGuardar();
+};
+
+// ✅ CAMBIO DE PESTAÑA EN BITACORAS
+window.cambiarTabBitacora = function(tab) {
+  bitTabActiva = tab;
+  document.querySelectorAll('.bitacora-tab').forEach(function(t) { t.classList.remove('active'); });
+  const tabBtn = document.querySelector('.bitacora-tab[data-btab="' + tab + '"]');
+  if (tabBtn) tabBtn.classList.add('active');
+  document.querySelectorAll('#seccionBitacoras .bitacora-tab-content').forEach(function(c) { c.classList.remove('show'); });
+  const map = { unificadas: 'bitContentUnificadas', b2c: 'bitContentB2c' };
+  const cont = document.getElementById(map[tab] || 'bitContentUnificadas');
+  if (cont) cont.classList.add('show');
+  renderizarTodasBitacoras();
 };
 
 window.toggleSeccion = function(s) { 
@@ -1107,7 +1147,6 @@ window.toggleComboBD = function(tipo, campo){
   else { cerrarCombosBD(); poblarComboBD(tipo,campo,''); list.style.display='block'; comboBDAbierto=id; }
 };
 
-// ✅ CORREGIDO: Se cerró el paréntesis correctamente
 function abrirComboBD(tipo, campo){ 
   cerrarCombosBD(); 
   poblarComboBD(tipo,campo,''); 
@@ -1564,6 +1603,7 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
   });
 };
 
+// ✅ MODIFICADO: Envío a bitácoras según tipo de registro (unificadas o B2C)
 window.enviarSeleccion = function() {
   if (seleccionadosDesc.size === 0) { toast('Selecciona al menos una fila', 'err'); return; }
   let enviados = 0;
@@ -1588,7 +1628,8 @@ window.enviarSeleccion = function() {
       reg.fecha = cambiosFechaLocales[key].nuevaFecha;
     }
     const transporte = (reg.transporte || '').toUpperCase();
-    const bitKey = obtenerClaveBitacora(transporte);
+    const tipoRegistro = getTipoRegistro(reg);
+    const bitKey = obtenerClaveBitacora(transporte, tipoRegistro);
     if (!bitKey) { errores.push((reg.idPedido || key) + ': Transporte no reconocido (' + transporte + ')'); return; }
     const filaBitacora = {
       requirente: reg.unidad || '',
@@ -1602,7 +1643,7 @@ window.enviarSeleccion = function() {
       esAdmin: reg.esAdmin || false
     };
     if (!bitacorasData[bitKey]) {
-      bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || '', responsable: '', firma: '' } };
+      bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || 'AM', responsable: '', firma: '' } };
     }
     let filaIdx = -1;
     for (let i = 0; i < 15; i++) {
@@ -1626,7 +1667,7 @@ window.enviarSeleccion = function() {
     });
     Promise.all(promesas)
       .then(function() {
-        toast(enviados + ' registro(s) enviado(s) a BITACORAS UNIFICADAS', 'ok');
+        toast(enviados + ' registro(s) enviado(s) a BITACORAS', 'ok');
         if (errores.length > 0) setTimeout(function() { toast(errores.length + ' error(es): ' + errores.slice(0,2).join(', '), 'err'); }, 1000);
         renderizarTodasBitacoras();
         seleccionadosDesc.clear();
@@ -1840,8 +1881,12 @@ window.confirmarExportar = function() {
   registrarActividad('EXPORTACION', 'Exportó ' + formatoEntero(regs.length) + ' registros a Excel', tipo);
 };
 
+// ✅ RENDERIZAR AMBAS PESTAÑAS DE BITACORAS
 function renderizarTodasBitacoras() {
   BITACORAS_UNIFICADAS.forEach(function(bit) {
+    renderizarBitacora(bit.key, bit.label, bit.domId);
+  });
+  BITACORAS_B2C.forEach(function(bit) {
     renderizarBitacora(bit.key, bit.label, bit.domId);
   });
 }
@@ -1884,9 +1929,11 @@ function generarHTMLBitacora(key, label) {
   return html;
 }
 
-window.guardarTodasBitacoras = function() {
+// ✅ GUARDAR BITACORAS DE UNA PESTAÑA ESPECÍFICA
+window.guardarTodasBitacoras = function(tipoBitacora) {
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
   let guardadas = 0;
-  BITACORAS_UNIFICADAS.forEach(function(bit) {
+  bitacoras.forEach(function(bit) {
     const key = bit.key;
     const filas = [];
     for (let i = 0; i < 15; i++) {
@@ -1915,104 +1962,22 @@ window.guardarTodasBitacoras = function() {
       .then(function() { guardadas++; })
       .catch(function(e) { toast('Error al guardar ' + key + ': ' + e.message, 'err'); });
   });
-  setTimeout(function() { toast('Todas las bitacoras guardadas: ' + guardadas, 'ok'); }, 500);
-  registrarActividad('GUARDADO', 'Guardadas ' + guardadas + ' bitácoras', 'BITACORAS');
+  setTimeout(function() { toast('Bitácoras ' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM') + ' guardadas: ' + guardadas, 'ok'); }, 500);
+  registrarActividad('GUARDADO', 'Guardadas ' + guardadas + ' bitácoras ' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM'), 'BITACORAS');
 };
 
-window.abrirModalBorrarBitacoraTodo = function() {
-  if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
-  let totalFilas = 0;
-  BITACORAS_UNIFICADAS.forEach(function(bit) {
-    const data = bitacorasData[bit.key];
-    if (data && data.filas) {
-      totalFilas += data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length;
-    }
-  });
-  document.getElementById('bbtInfoRegistros').textContent = 'Total de filas en bitácoras a eliminar: ' + formatoEntero(totalFilas);
-  document.getElementById('bbtPassword').value = '';
-  document.getElementById('borrarBitacoraTodoOverlay').classList.add('show');
-};
+function obtenerBitacorasPorTipo(tipoBitacora) {
+  return tipoBitacora === 'b2c' ? BITACORAS_B2C : BITACORAS_UNIFICADAS;
+}
 
-window.cerrarModalBorrarBitacoraTodo = function() { 
-  document.getElementById('borrarBitacoraTodoOverlay').classList.remove('show'); 
-};
-
-window.confirmarBorrarBitacoraTodo = function() {
-  const p = document.getElementById('bbtPassword').value;
-  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
-  if (!confirm('¿Eliminar TODA la información de las 9 bitácoras?\nEsta acción es IRREVERSIBLE.')) return;
-  
-  toast('Eliminando todas las bitácoras...','info');
-  
-  const promesas = [];
-  BITACORAS_UNIFICADAS.forEach(function(bit) {
-    promesas.push(remove(ref(db, RUTA_BITACORAS + '/' + bit.key)).catch(function(){}));
-    bitacorasData[bit.key] = { filas: [], footer: { transporte: bit.label, fecha: '', ruta: '', responsable: '', firma: '' } };
-  });
-  
-  Promise.all(promesas).then(function() {
-    toast('Todas las bitácoras eliminadas','ok');
-    cerrarModalBorrarBitacoraTodo();
-    renderizarTodasBitacoras();
-    registrarActividad('BORRADO_MASIVO', 'Eliminó todas las bitácoras (' + BITACORAS_UNIFICADAS.length + ' bitácoras)', 'BITACORAS');
-  }).catch(function(e) {
-    toast('Error al eliminar: ' + e.message, 'err');
-  });
-};
-
-window.abrirModalBorrarBitacoraAdmin = function() {
-  if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
-  let totalAdmin = 0;
-  BITACORAS_UNIFICADAS.forEach(function(bit) {
-    const data = bitacorasData[bit.key];
-    if (data && data.filas) {
-      totalAdmin += data.filas.filter(function(f) { return f && f.esAdmin; }).length;
-    }
-  });
-  document.getElementById('bbaInfoRegistros').textContent = 'Total de filas ADMIN (verde) en bitácoras a eliminar: ' + formatoEntero(totalAdmin);
-  document.getElementById('bbaPassword').value = '';
-  document.getElementById('borrarBitacoraAdminOverlay').classList.add('show');
-};
-
-window.cerrarModalBorrarBitacoraAdmin = function() { 
-  document.getElementById('borrarBitacoraAdminOverlay').classList.remove('show'); 
-};
-
-window.confirmarBorrarBitacoraAdmin = function() {
-  const p = document.getElementById('bbaPassword').value;
-  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
-  if (!confirm('¿Eliminar SOLO los registros ADMIN (verde) de todas las bitácoras?')) return;
-  
-  toast('Eliminando registros admin de bitácoras...','info');
-  
-  let totalEliminados = 0;
-  BITACORAS_UNIFICADAS.forEach(function(bit) {
-    const data = bitacorasData[bit.key];
-    if (data && data.filas) {
-      data.filas = data.filas.filter(function(f) { 
-        if (f && f.esAdmin) {
-          totalEliminados++;
-          return false;
-        }
-        return true;
-      });
-      update(ref(db, RUTA_BITACORAS + '/' + bit.key), { filas: data.filas, footer: data.footer }).catch(function(){});
-    }
-  });
-  
-  toast(formatoEntero(totalEliminados) + ' registros admin eliminados de bitácoras','ok');
-  cerrarModalBorrarBitacoraAdmin();
-  renderizarTodasBitacoras();
-  registrarActividad('BORRADO_MASIVO', 'Eliminó ' + formatoEntero(totalEliminados) + ' registros ADMIN de bitácoras', 'BITACORAS');
-};
-
-window.abrirModalExportarBitacoras = function() {
+window.abrirModalExportarBitacoras = function(tipoBitacora) {
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
   const grid = document.getElementById('bitacoraExportGrid');
   if (!grid) return;
-  document.getElementById('bitExpTitulo').textContent = 'Exportar Bitacoras a Excel';
-  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitacoras que deseas exportar.';
+  document.getElementById('bitExpTitulo').textContent = 'Exportar Bitácoras ' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM') + ' a Excel';
+  document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitácoras que deseas exportar.';
   let html = '';
-  BITACORAS_UNIFICADAS.forEach(function(bit, idx) {
+  bitacoras.forEach(function(bit, idx) {
     const data = bitacorasData[bit.key];
     const tieneDatos = data && data.filas && data.filas.length > 0;
     const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
@@ -2023,6 +1988,7 @@ window.abrirModalExportarBitacoras = function() {
     html += '</div>';
   });
   grid.innerHTML = html;
+  grid.dataset.tipoBitacora = tipoBitacora;
   document.getElementById('bitacoraExportOverlay').classList.add('show');
 };
 
@@ -2037,22 +2003,25 @@ window.seleccionarTodasBitacoras = function() {
 };
 
 window.confirmarExportarBitacoras = function() {
+  const grid = document.getElementById('bitacoraExportGrid');
+  const tipoBitacora = grid.dataset.tipoBitacora || 'unificadas';
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
   const checkboxes = document.querySelectorAll('#bitacoraExportGrid input[type="checkbox"]:checked');
   if (checkboxes.length === 0) {
-    toast('Selecciona al menos una bitacora', 'err');
+    toast('Selecciona al menos una bitácora', 'err');
     return;
   }
   const wb = XLSX.utils.book_new();
   let exportadas = 0;
   checkboxes.forEach(function(cb) {
     const idx = parseInt(cb.id.replace('bitExp_', ''));
-    const bit = BITACORAS_UNIFICADAS[idx];
+    const bit = bitacoras[idx];
     const data = bitacorasData[bit.key];
     if (!data || !data.filas || data.filas.length === 0) return;
     const filasConDatos = data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); });
     if (filasConDatos.length === 0) return;
     const wsData = [];
-    wsData.push(['Bitacora ' + bit.label, '', '', '', '', '', '']);
+    wsData.push(['Bitácora ' + bit.label + ' (' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM') + ')', '', '', '', '', '', '']);
     wsData.push(['', '', '', '', '', '', '']);
     wsData.push(['N', 'Requirente', 'Documentos', 'Cliente', 'Direccion', 'Comuna', 'OBS']);
     filasConDatos.forEach(function(fila, i) {
@@ -2064,28 +2033,30 @@ window.confirmarExportarBitacoras = function() {
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }];
     ws['!cols'] = [{ wch: 6 }, { wch: 20 }, { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 18 }, { wch: 20 }];
-    const sheetName = bit.label.substring(0, 31);
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    const sheetName = (tipoBitacora === 'b2c' ? 'B2C_' : '') + bit.label;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
     exportadas++;
   });
   if (exportadas === 0) {
-    toast('No hay bitacoras con datos para exportar', 'err');
+    toast('No hay bitácoras con datos para exportar', 'err');
     return;
   }
   const fecha = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, 'Bitacoras_Unificadas_' + fecha + '.xlsx');
-  toast(exportadas + ' bitacoras exportadas', 'ok');
+  const sufijo = tipoBitacora === 'b2c' ? 'B2C' : 'Unificadas';
+  XLSX.writeFile(wb, 'Bitacoras_' + sufijo + '_' + fecha + '.xlsx');
+  toast(exportadas + ' bitácoras exportadas', 'ok');
   cerrarModalExportarBitacoras();
-  registrarActividad('EXPORTACION', 'Exportó ' + exportadas + ' bitácoras a Excel', 'BITACORAS');
+  registrarActividad('EXPORTACION', 'Exportó ' + exportadas + ' bitácoras ' + sufijo + ' a Excel', 'BITACORAS');
 };
 
-window.abrirModalJPEGBitacoras = function() {
+window.abrirModalJPEGBitacoras = function(tipoBitacora) {
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
   const grid = document.getElementById('bitacoraJPEGGrid');
   if (!grid) return;
-  document.getElementById('bitJpegTitulo').textContent = 'Exportar Bitacoras como JPEG';
-  document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitacoras que deseas exportar como imagen.';
+  document.getElementById('bitJpegTitulo').textContent = 'Exportar Bitácoras ' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM') + ' como JPEG';
+  document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitácoras que deseas exportar como imagen.';
   let html = '';
-  BITACORAS_UNIFICADAS.forEach(function(bit, idx) {
+  bitacoras.forEach(function(bit, idx) {
     const data = bitacorasData[bit.key];
     const tieneDatos = data && data.filas && data.filas.length > 0;
     const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
@@ -2096,6 +2067,7 @@ window.abrirModalJPEGBitacoras = function() {
     html += '</div>';
   });
   grid.innerHTML = html;
+  grid.dataset.tipoBitacora = tipoBitacora;
   document.getElementById('bitacoraJPEGOverlay').classList.add('show');
 };
 
@@ -2110,9 +2082,12 @@ window.seleccionarTodasBitacorasJPEG = function() {
 };
 
 window.confirmarExportarJPEGBitacoras = function() {
+  const grid = document.getElementById('bitacoraJPEGGrid');
+  const tipoBitacora = grid.dataset.tipoBitacora || 'unificadas';
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
   const checkboxes = document.querySelectorAll('#bitacoraJPEGGrid input[type="checkbox"]:checked');
   if (checkboxes.length === 0) {
-    toast('Selecciona al menos una bitacora', 'err');
+    toast('Selecciona al menos una bitácora', 'err');
     return;
   }
   const fecha = new Date().toISOString().split('T')[0];
@@ -2120,7 +2095,7 @@ window.confirmarExportarJPEGBitacoras = function() {
   const total = checkboxes.length;
   checkboxes.forEach(function(cb) {
     const idx = parseInt(cb.id.replace('bitJpeg_', ''));
-    const bit = BITACORAS_UNIFICADAS[idx];
+    const bit = bitacoras[idx];
     const element = document.getElementById(bit.domId);
     if (!element) return;
     const clone = element.cloneNode(true);
@@ -2147,12 +2122,13 @@ window.confirmarExportarJPEGBitacoras = function() {
     }).then(function(canvas) {
       document.body.removeChild(clone);
       const link = document.createElement('a');
-      link.download = 'Bitacora_' + bit.key + '_' + fecha + '.jpeg';
+      const sufijo = tipoBitacora === 'b2c' ? 'B2C_' : '';
+      link.download = 'Bitacora_' + sufijo + bit.key + '_' + fecha + '.jpeg';
       link.href = canvas.toDataURL('image/jpeg', 0.95);
       link.click();
       exportadas++;
       if (exportadas === total) {
-        toast(exportadas + ' bitacoras JPEG exportadas', 'ok');
+        toast(exportadas + ' bitácoras JPEG exportadas', 'ok');
       }
     }).catch(function(e) {
       document.body.removeChild(clone);
@@ -2160,16 +2136,17 @@ window.confirmarExportarJPEGBitacoras = function() {
     });
   });
   cerrarModalJPEGBitacoras();
-  registrarActividad('EXPORTACION', 'Exportó ' + checkboxes.length + ' bitácoras como JPEG', 'BITACORAS');
+  registrarActividad('EXPORTACION', 'Exportó ' + checkboxes.length + ' bitácoras ' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM') + ' como JPEG', 'BITACORAS');
 };
 
-window.abrirModalImprimirBitacoras = function() {
+window.abrirModalImprimirBitacoras = function(tipoBitacora) {
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
   const grid = document.getElementById('bitacoraPrintGrid');
   if (!grid) return;
-  document.getElementById('bitPrintTitulo').textContent = 'Imprimir Bitacoras';
-  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitacoras que deseas imprimir.';
+  document.getElementById('bitPrintTitulo').textContent = 'Imprimir Bitácoras ' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM');
+  document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitácoras que deseas imprimir.';
   let html = '';
-  BITACORAS_UNIFICADAS.forEach(function(bit, idx) {
+  bitacoras.forEach(function(bit, idx) {
     const data = bitacorasData[bit.key];
     const tieneDatos = data && data.filas && data.filas.length > 0;
     const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
@@ -2180,6 +2157,7 @@ window.abrirModalImprimirBitacoras = function() {
     html += '</div>';
   });
   grid.innerHTML = html;
+  grid.dataset.tipoBitacora = tipoBitacora;
   document.getElementById('bitacoraPrintOverlay').classList.add('show');
 };
 
@@ -2194,18 +2172,22 @@ window.seleccionarTodasBitacorasPrint = function() {
 };
 
 window.confirmarImprimirBitacoras = function() {
+  const grid = document.getElementById('bitacoraPrintGrid');
+  const tipoBitacora = grid.dataset.tipoBitacora || 'unificadas';
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
   const checkboxes = document.querySelectorAll('#bitacoraPrintGrid input[type="checkbox"]:checked');
   if (checkboxes.length === 0) {
-    toast('Selecciona al menos una bitacora', 'err');
+    toast('Selecciona al menos una bitácora', 'err');
     return;
   }
   
   let contenidoImpresion = '';
   const fecha = new Date().toLocaleDateString('es-CL');
+  const tipoLabel = tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM';
   
   checkboxes.forEach(function(cb) {
     const idx = parseInt(cb.id.replace('bitPrint_', ''));
-    const bit = BITACORAS_UNIFICADAS[idx];
+    const bit = bitacoras[idx];
     const element = document.getElementById(bit.domId);
     if (!element) return;
     
@@ -2219,7 +2201,7 @@ window.confirmarImprimirBitacoras = function() {
     });
     
     contenidoImpresion += '<div class="bitacora-print-page">';
-    contenidoImpresion += '<h2>Bitacora ' + bit.label + ' - Fecha: ' + fecha + '</h2>';
+    contenidoImpresion += '<h2>Bitácora ' + bit.label + ' (' + tipoLabel + ') - Fecha: ' + fecha + '</h2>';
     contenidoImpresion += clone.innerHTML;
     contenidoImpresion += '</div>';
   });
@@ -2227,7 +2209,7 @@ window.confirmarImprimirBitacoras = function() {
   const printWindow = window.open('', '_blank', 'width=1200,height=900');
   if (!printWindow) { toast('Bloqueador de popups activo', 'err'); return; }
   
-  const html = '<!DOCTYPE html><html><head><title>Bitacoras Unificadas</title><style>' +
+  const html = '<!DOCTYPE html><html><head><title>Bitácoras ' + tipoLabel + '</title><style>' +
     '@page { size: letter landscape; margin: 10mm; }' +
     '* { margin: 0; padding: 0; box-sizing: border-box; }' +
     'body { font-family: Arial, sans-serif; padding: 10mm; background: #fff; }' +
@@ -2242,7 +2224,7 @@ window.confirmarImprimirBitacoras = function() {
     '.no-print button { padding: 8px 16px; font-size: 12pt; cursor: pointer; margin: 0 5px; border: 1px solid #ccc; background: #f0f0f0; border-radius: 3px; }' +
     '@media print { body { padding: 0; } .no-print { display: none; } table { page-break-inside: avoid; } }' +
     '</style></head><body>' +
-    '<h1>BITACORAS UNIFICADAS - ' + fecha + '</h1>' +
+    '<h1>BITÁCORAS ' + tipoLabel + ' - ' + fecha + '</h1>' +
     contenidoImpresion +
     '<div class="no-print"><button onclick="window.print()">Imprimir</button><button onclick="window.close()">Cerrar</button></div>' +
     '</body></html>';
@@ -2250,9 +2232,118 @@ window.confirmarImprimirBitacoras = function() {
   printWindow.document.write(html);
   printWindow.document.close();
   
-  toast(checkboxes.length + ' bitacora(s) lista(s) para imprimir', 'ok');
+  toast(checkboxes.length + ' bitácora(s) lista(s) para imprimir', 'ok');
   cerrarModalImprimirBitacoras();
-  registrarActividad('EXPORTACION', 'Imprimió ' + checkboxes.length + ' bitácoras', 'BITACORAS');
+  registrarActividad('EXPORTACION', 'Imprimió ' + checkboxes.length + ' bitácoras ' + tipoLabel, 'BITACORAS');
+};
+
+// ✅ BORRAR TODO BITACORAS (de una pestaña específica)
+window.abrirModalBorrarBitacoraTodo = function(tipoBitacora) {
+  if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
+  let totalFilas = 0;
+  bitacoras.forEach(function(bit) {
+    const data = bitacorasData[bit.key];
+    if (data && data.filas) {
+      totalFilas += data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length;
+    }
+  });
+  const tipoLabel = tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM';
+  document.getElementById('bbtTitulo').textContent = 'BORRAR BITÁCORAS ' + tipoLabel;
+  document.getElementById('bbtDescripcion').textContent = 'Esta acción eliminará TODA la información de las 9 bitácoras ' + tipoLabel + '. Esta acción es IRREVERSIBLE.';
+  document.getElementById('bbtInfoRegistros').textContent = 'Total de filas en bitácoras ' + tipoLabel + ' a eliminar: ' + formatoEntero(totalFilas);
+  document.getElementById('bbtPassword').value = '';
+  document.getElementById('borrarBitacoraTodoOverlay').dataset.tipoBitacora = tipoBitacora;
+  document.getElementById('borrarBitacoraTodoOverlay').classList.add('show');
+};
+
+window.cerrarModalBorrarBitacoraTodo = function() { 
+  document.getElementById('borrarBitacoraTodoOverlay').classList.remove('show'); 
+};
+
+window.confirmarBorrarBitacoraTodo = function() {
+  const p = document.getElementById('bbtPassword').value;
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  const overlay = document.getElementById('borrarBitacoraTodoOverlay');
+  const tipoBitacora = overlay.dataset.tipoBitacora || 'unificadas';
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
+  const tipoLabel = tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM';
+  
+  if (!confirm('¿Eliminar TODA la información de las bitácoras ' + tipoLabel + '?\nEsta acción es IRREVERSIBLE.')) return;
+  
+  toast('Eliminando bitácoras ' + tipoLabel + '...','info');
+  
+  const promesas = [];
+  bitacoras.forEach(function(bit) {
+    promesas.push(remove(ref(db, RUTA_BITACORAS + '/' + bit.key)).catch(function(){}));
+    bitacorasData[bit.key] = { filas: [], footer: { transporte: bit.label, fecha: '', ruta: '', responsable: '', firma: '' } };
+  });
+  
+  Promise.all(promesas).then(function() {
+    toast('Todas las bitácoras ' + tipoLabel + ' eliminadas','ok');
+    cerrarModalBorrarBitacoraTodo();
+    renderizarTodasBitacoras();
+    registrarActividad('BORRADO_MASIVO', 'Eliminó todas las bitácoras ' + tipoLabel + ' (' + bitacoras.length + ' bitácoras)', 'BITACORAS');
+  }).catch(function(e) {
+    toast('Error al eliminar: ' + e.message, 'err');
+  });
+};
+
+// ✅ BORRAR SOLO BITACORAS ADMIN (de una pestaña específica)
+window.abrirModalBorrarBitacoraAdmin = function(tipoBitacora) {
+  if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
+  let totalAdmin = 0;
+  bitacoras.forEach(function(bit) {
+    const data = bitacorasData[bit.key];
+    if (data && data.filas) {
+      totalAdmin += data.filas.filter(function(f) { return f && f.esAdmin; }).length;
+    }
+  });
+  const tipoLabel = tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM';
+  document.getElementById('bbaTitulo').textContent = 'BORRAR BITÁCORAS ADMIN ' + tipoLabel;
+  document.getElementById('bbaDescripcion').textContent = 'Esta acción eliminará SOLO los registros marcados en VERDE (creados por el administrador) de las bitácoras ' + tipoLabel + '.';
+  document.getElementById('bbaInfoRegistros').textContent = 'Total de filas ADMIN (verde) en bitácoras ' + tipoLabel + ' a eliminar: ' + formatoEntero(totalAdmin);
+  document.getElementById('bbaPassword').value = '';
+  document.getElementById('borrarBitacoraAdminOverlay').dataset.tipoBitacora = tipoBitacora;
+  document.getElementById('borrarBitacoraAdminOverlay').classList.add('show');
+};
+
+window.cerrarModalBorrarBitacoraAdmin = function() { 
+  document.getElementById('borrarBitacoraAdminOverlay').classList.remove('show'); 
+};
+
+window.confirmarBorrarBitacoraAdmin = function() {
+  const p = document.getElementById('bbaPassword').value;
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  const overlay = document.getElementById('borrarBitacoraAdminOverlay');
+  const tipoBitacora = overlay.dataset.tipoBitacora || 'unificadas';
+  const bitacoras = obtenerBitacorasPorTipo(tipoBitacora);
+  const tipoLabel = tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM';
+  
+  if (!confirm('¿Eliminar SOLO los registros ADMIN (verde) de las bitácoras ' + tipoLabel + '?')) return;
+  
+  toast('Eliminando registros admin de bitácoras ' + tipoLabel + '...','info');
+  
+  let totalEliminados = 0;
+  bitacoras.forEach(function(bit) {
+    const data = bitacorasData[bit.key];
+    if (data && data.filas) {
+      data.filas = data.filas.filter(function(f) { 
+        if (f && f.esAdmin) {
+          totalEliminados++;
+          return false;
+        }
+        return true;
+      });
+      update(ref(db, RUTA_BITACORAS + '/' + bit.key), { filas: data.filas, footer: data.footer }).catch(function(){});
+    }
+  });
+  
+  toast(formatoEntero(totalEliminados) + ' registros admin eliminados de bitácoras ' + tipoLabel,'ok');
+  cerrarModalBorrarBitacoraAdmin();
+  renderizarTodasBitacoras();
+  registrarActividad('BORRADO_MASIVO', 'Eliminó ' + formatoEntero(totalEliminados) + ' registros ADMIN de bitácoras ' + tipoLabel, 'BITACORAS');
 };
 
 function procesarArchivoB2C(file, lista) {
@@ -2880,7 +2971,7 @@ function renderTabBD(tipo, filtroId, pagina) {
     const claseYInd = claseYIndicadorSimple(r, cf, cg);
     const claseAdmin = r.esAdmin ? ' fila-admin' : '';
     const badgeAdmin = r.esAdmin ? ' <span class="badge badge-admin">ADMIN</span>' : '';
-    return '<tr class="' + claseYInd.clase + claseAdmin + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + badgeAdmin + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">🗑️</button></td></tr>'; 
+    return '<tr class="' + claseYInd.clase + claseAdmin + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + badgeAdmin + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">🗑️</button></td></tr>'; 
   }).join('');
   if (tp <= 1) { 
     pagDiv.innerHTML = '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(regs.length) + ' de ' + formatoEntero(regs.length) + '</div>'; 
@@ -3034,7 +3125,7 @@ window.confirmarBorrarDesc = function() {
   else if (tipo === 'B2C') pendientesB2C = [];
   
   Promise.all(promesas).then(function() {
-    toast(formatoEntero(keysAEliminar.length) + ' registros de ' + tipo + ' eliminados','ok');
+    toast(formatoEntero(keysAEliminar.length) + ' registros de ' + tipo + ' eliminados. Bitácoras intactas.','ok');
     cerrarModalBorrarDesc();
     render();
     renderizarBaseDatos();
