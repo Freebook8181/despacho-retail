@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getDatabase, ref, get, push, remove, update, set } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+import { getDatabase, ref, get, push, remove, update, set, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -17,6 +17,8 @@ const auth = getAuth(app);
 
 const RUTA_BASE = 'despachos';
 const RUTA_BITACORAS = 'bitacoras';
+const RUTA_ACTIVIDAD = 'actividad';
+const RUTA_USUARIOS_ONLINE = 'usuarios_online';
 const CLAVE_ACCIONES = '1234';
 const ADMIN_EMAILS = ['eduardo.donoso@ext.quintec.cl'];
 
@@ -29,7 +31,6 @@ const REGISTROS_POR_PAGINA_DESC = 30;
 const OPCIONES_TRANSPORTE = ['MOVIL 1','MOVIL 2','MOVIL 3','MOVIL 4','MOVIL 5','MOVIL 6','DON RAUL','DON JOSE','SERVICIO AM/PM','SERVICIO B2C','SERVICIO ADM','SERVICIO QDM','SPOT','SPOT 1','SPOT 2','RETIRA CLIENTE','SERVICIO 3PL','TRANSGAMBOA'];
 const OPCIONES_OBS = ['CASA CENTRAL','RETIRO','RETIRO CLIENTE','RETIRO CASA CENTRAL'];
 
-// ✅ BITACORAS UNIFICADAS: 9 bitácoras de la flota
 const BITACORAS_UNIFICADAS = [
   { key: 'movil1', label: 'MOVIL 1', domId: 'bitacoraMovil1' },
   { key: 'movil2', label: 'MOVIL 2', domId: 'bitacoraMovil2' },
@@ -150,6 +151,7 @@ function obtenerDiaSemanaManana() {
 function esAdmin(email) { return ADMIN_EMAILS.includes((email || '').toLowerCase().trim()); }
 let rolActual = 'operador';
 let emailUsuarioActual = '';
+let userIdActual = '';
 const mSec = (location.hash || '').match(/sec=([a-z]+)/);
 let seccionInicial = mSec ? mSec[1] : '';
 
@@ -202,6 +204,193 @@ let calFilaMes = null;
 let calFilaAnio = null;
 let cambiosFechaLocales = {};
 let bitacorasData = {};
+let actividadData = [];
+let usuariosOnline = {};
+let heartbeatInterval = null;
+
+// =====================================================================
+// ✅ SISTEMA DE REGISTRO DE ACTIVIDAD
+// =====================================================================
+function registrarActividad(accion, detalle, modulo) {
+  if (rolActual !== 'admin' && !emailUsuarioActual) return;
+  const ahora = new Date();
+  const registro = {
+    usuario: emailUsuarioActual || 'desconocido',
+    esAdmin: rolActual === 'admin',
+    accion: accion,
+    detalle: detalle,
+    modulo: modulo || tipoDeSeccion(),
+    fecha: ahora.toISOString(),
+    timestamp: ahora.getTime()
+  };
+  push(ref(db, RUTA_ACTIVIDAD), registro)
+    .then(function() {
+      console.log('Actividad registrada:', accion);
+    })
+    .catch(function(e) {
+      console.error('Error registrando actividad:', e);
+    });
+}
+
+// ✅ HEARTBEAT - Mantener usuario como "online"
+function iniciarHeartbeat() {
+  if (!emailUsuarioActual) return;
+  const userId = emailUsuarioActual.replace(/[@.]/g, '_');
+  userIdActual = userId;
+  
+  function actualizarOnline() {
+    const ahora = Date.now();
+    set(ref(db, RUTA_USUARIOS_ONLINE + '/' + userId), {
+      email: emailUsuarioActual,
+      esAdmin: rolActual === 'admin',
+      ultimoVisto: ahora,
+      seccion: seccionActiva
+    });
+  }
+  
+  actualizarOnline();
+  heartbeatInterval = setInterval(actualizarOnline, 30000); // cada 30 segundos
+  
+  // Limpiar al cerrar
+  window.addEventListener('beforeunload', function() {
+    remove(ref(db, RUTA_USUARIOS_ONLINE + '/' + userId));
+  });
+}
+
+function detenerHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+  if (userIdActual) {
+    remove(ref(db, RUTA_USUARIOS_ONLINE + '/' + userIdActual));
+  }
+}
+
+// ✅ Escuchar usuarios online en tiempo real
+function escucharUsuariosOnline() {
+  onValue(ref(db, RUTA_USUARIOS_ONLINE), function(snapshot) {
+    const data = snapshot.val() || {};
+    const ahora = Date.now();
+    const hace5Min = ahora - (5 * 60 * 1000);
+    usuariosOnline = {};
+    let count = 0;
+    Object.keys(data).forEach(function(key) {
+      const u = data[key];
+      if (u.ultimoVisto && u.ultimoVisto > hace5Min) {
+        usuariosOnline[key] = u;
+        count++;
+      }
+    });
+    actualizarDisplayUsuariosOnline(count);
+  });
+}
+
+function actualizarDisplayUsuariosOnline(count) {
+  const el = document.getElementById('actUsuariosOnline');
+  const lista = document.getElementById('actUsuariosActivos');
+  if (el) el.textContent = count;
+  if (lista) {
+    const keys = Object.keys(usuariosOnline);
+    if (keys.length === 0) {
+      lista.innerHTML = '<span style="color:var(--text-muted);font-size:.85em">Sin usuarios activos</span>';
+    } else {
+      lista.innerHTML = keys.map(function(k) {
+        const u = usuariosOnline[k];
+        const adminBadge = u.esAdmin ? ' (ADMIN)' : '';
+        const seccion = u.seccion ? ' - ' + u.seccion.toUpperCase() : '';
+        return '<span class="usuario-activo"><span class="pulse"></span>' + u.email + adminBadge + seccion + '</span>';
+      }).join('');
+    }
+  }
+}
+
+// ✅ Escuchar actividad en tiempo real
+function escucharActividad() {
+  onValue(ref(db, RUTA_ACTIVIDAD), function(snapshot) {
+    const data = snapshot.val() || {};
+    actividadData = Object.keys(data).map(function(k) {
+      return Object.assign({ id: k }, data[k]);
+    }).sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+    renderizarActividad();
+  });
+}
+
+function renderizarActividad() {
+  const lista = document.getElementById('actividadList');
+  const totalEl = document.getElementById('actTotalAcciones');
+  const hoyEl = document.getElementById('actHoy');
+  const registrosEl = document.getElementById('actTotalRegistros');
+  
+  if (totalEl) totalEl.textContent = formatoEntero(actividadData.length);
+  
+  // Calcular acciones de hoy
+  const hoy = new Date().toDateString();
+  const hoyCount = actividadData.filter(function(a) {
+    return new Date(a.fecha).toDateString() === hoy;
+  }).length;
+  if (hoyEl) hoyEl.textContent = formatoEntero(hoyCount);
+  
+  // Total de registros en cache
+  let totalRegs = 0;
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      totalRegs += Object.keys(cache[a][m]||{}).length; 
+    }); 
+  });
+  if (registrosEl) registrosEl.textContent = formatoEntero(totalRegs);
+  
+  if (!lista) return;
+  
+  if (actividadData.length === 0) {
+    lista.innerHTML = '<div class="actividad-empty">No hay actividad registrada</div>';
+    return;
+  }
+  
+  const iconos = {
+    'SUBIDA_ARCHIVO': '📤',
+    'GUARDADO': '💾',
+    'ELIMINACION': '🗑️',
+    'ENVIO_BITACORA': '📋',
+    'CAMBIO_FECHA': '',
+    'REGISTRO_NUEVO': '➕',
+    'LOGIN': '🔑',
+    'BORRADO_MASIVO': '⚠️',
+    'EXPORTACION': '📊'
+  };
+  
+  lista.innerHTML = actividadData.slice(0, 100).map(function(a) {
+    const icono = iconos[a.accion] || '📝';
+    const fecha = new Date(a.fecha);
+    const fechaStr = fecha.toLocaleDateString('es-CL') + ' ' + fecha.toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'});
+    const adminTag = a.esAdmin ? '<span class="badge badge-admin">ADMIN</span>' : '';
+    return '<div class="actividad-item">' +
+      '<div class="actividad-icon">' + icono + '</div>' +
+      '<div class="actividad-content">' +
+        '<div class="actividad-user">' + a.usuario + ' ' + adminTag + ' <span style="color:var(--accent-blue);font-size:.8em">[' + (a.modulo||'-') + ']</span></div>' +
+        '<div class="actividad-action">' + a.detalle + '</div>' +
+        '<div class="actividad-time">' + fechaStr + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+window.limpiarActividadAntigua = function() {
+  if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
+  pedirClave(function() {
+    const hace30Dias = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const antiguas = actividadData.filter(function(a) { return a.timestamp < hace30Dias; });
+    if (antiguas.length === 0) { toast('No hay actividad antigua', 'info'); return; }
+    if (!confirm('¿Eliminar ' + antiguas.length + ' registros de actividad antiguos?')) return;
+    let eliminados = 0;
+    const promesas = antiguas.map(function(a) {
+      return remove(ref(db, RUTA_ACTIVIDAD + '/' + a.id)).then(function() { eliminados++; });
+    });
+    Promise.all(promesas).then(function() {
+      toast(eliminados + ' registros de actividad eliminados', 'ok');
+    });
+  });
+};
 
 function toast(msg, tipo) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show ' + tipo; setTimeout(function() { t.className = 'toast'; }, 3000); }
 function fmtFecha(f) { if (!f) return ''; const p = f.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
@@ -216,23 +405,19 @@ function formatoMonedaAlineado(v) {
 function formatoEntero(v) { return Math.round(Number(v)||0).toLocaleString('es-CL'); }
 function formatoPorcentaje(v) { return (Number(v)||0).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %'; }
 
-// ✅ CORREGIDO: getTipoRegistro ahora detecta correctamente ADM y QDM
 function getTipoRegistro(reg) { 
   if (!reg) return 'AMPM';
-  // Primero revisar el campo tipo explícito
   if (reg.tipo) {
     if (reg.tipo === 'B2C') return 'B2C';
     if (reg.tipo === 'ADM') return 'ADM';
     if (reg.tipo === 'QDM') return 'QDM';
     if (reg.tipo === 'AMPM') return 'AMPM';
   }
-  // Luego revisar el rango
   if (reg.rango === 'B2C') return 'B2C';
   if (reg.rango === 'ADM') return 'ADM';
   if (reg.rango === 'QDM') return 'QDM';
   return 'AMPM'; 
 }
-
 function sumaValores(regs) { return regs.reduce(function(s,r) { return s + (((r.valor||0) === 1) ? 0 : (r.valor||0)); }, 0); }
 function conteoUnPeso(regs) { return regs.filter(function(r) { return (r.valor||0) === 1; }).length; }
 function sinTildes(s) { return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
@@ -302,7 +487,6 @@ function parsearFecha(raw) {
   return null;
 }
 
-// ✅ Determina la clave unificada de bitácora según el transporte
 function obtenerClaveBitacora(transporte) {
   const t = (transporte || '').toUpperCase().trim();
   if (t === 'MOVIL 1') return 'movil1';
@@ -314,7 +498,6 @@ function obtenerClaveBitacora(transporte) {
   if (t === 'SPOT') return 'spot';
   if (t === 'SPOT 1') return 'spot1';
   if (t === 'SPOT 2') return 'spot2';
-  // SERVICIO AM/PM, ADM, QDM, B2C van a SPOT por defecto (o se puede cambiar)
   if (t === 'SERVICIO AM/PM' || t === 'SERVICIO ADM' || t === 'SERVICIO QDM' || t === 'SERVICIO B2C') return 'spot';
   return null;
 }
@@ -386,7 +569,10 @@ window.login = function() {
   });
 };
 
-window.logout = function() { signOut(auth); };
+window.logout = function() { 
+  detenerHeartbeat();
+  signOut(auth); 
+};
 
 onAuthStateChanged(auth, function(user) {
   if (user) {
@@ -396,18 +582,25 @@ onAuthStateChanged(auth, function(user) {
     document.getElementById('appSection').style.display = 'flex';
     document.getElementById('userEmail').textContent = user.email + (rolActual === 'admin' ? '  (ADMIN)' : '');
     aplicarRol();
-    // ✅ Mostrar/ocultar botón ELIMINAR ADMIN según rol
-    const btnEA = document.getElementById('btnEliminarAdmin');
-    if (btnEA) btnEA.style.display = (rolActual === 'admin') ? 'inline-block' : 'none';
+    // ✅ Iniciar heartbeat y escuchar actividad si es admin
+    iniciarHeartbeat();
+    if (rolActual === 'admin') {
+      escucharUsuariosOnline();
+      escucharActividad();
+    }
     cargarDatos().then(function() {
-      if (seccionInicial === 'basedatos' || seccionInicial === 'informes' || seccionInicial === 'bitacoras') {
+      if (seccionInicial === 'basedatos' || seccionInicial === 'informes' || seccionInicial === 'bitacoras' || seccionInicial === 'actividad') {
         cambiarSeccion(seccionInicial);
         seccionInicial = '';
       }
     });
+    // ✅ Registrar login
+    registrarActividad('LOGIN', 'Usuario inició sesión', 'SISTEMA');
   } else {
     rolActual = 'operador';
     emailUsuarioActual = '';
+    userIdActual = '';
+    detenerHeartbeat();
     document.getElementById('loginSection').style.display = 'flex';
     document.getElementById('appSection').style.display = 'none';
   }
@@ -416,14 +609,17 @@ onAuthStateChanged(auth, function(user) {
 function aplicarRol() { 
   const t = document.querySelector('.seccion-tab[data-seccion="basedatos"]'); 
   const t2 = document.querySelector('.seccion-tab[data-seccion="informes"]');
+  const t3 = document.getElementById('tabActividad');
   if (!t) return; 
   if (rolActual === 'admin') {
     t.style.display = '';
     if (t2) t2.style.display = '';
+    if (t3) t3.style.display = '';
   } else { 
     t.style.display = 'none'; 
     if (t2) t2.style.display = 'none';
-    if (seccionActiva === 'basedatos' || seccionActiva === 'informes') cambiarSeccion('ampm'); 
+    if (t3) t3.style.display = 'none';
+    if (seccionActiva === 'basedatos' || seccionActiva === 'informes' || seccionActiva === 'actividad') cambiarSeccion('ampm'); 
   } 
 }
 
@@ -446,6 +642,7 @@ function pendientesDeSeccion() {
 window.cambiarSeccion = function(sec) {
   if (sec === 'basedatos' && rolActual !== 'admin') { toast('Sin permiso para BASE DE DATOS', 'err'); return; }
   if (sec === 'informes' && rolActual !== 'admin') { toast('Sin permiso para INFORMES', 'err'); return; }
+  if (sec === 'actividad' && rolActual !== 'admin') { toast('Sin permiso para ACTIVIDAD', 'err'); return; }
   seccionActiva = sec;
   editandoKey = null;
   seleccionadosDesc.clear();
@@ -455,12 +652,18 @@ window.cambiarSeccion = function(sec) {
   document.querySelectorAll('.secciones-bar > .seccion-contenido').forEach(function(c) { c.classList.remove('show'); });
   const cont = document.getElementById('seccion' + sec.charAt(0).toUpperCase() + sec.slice(1)); 
   if (cont) cont.classList.add('show');
-  document.body.classList.toggle('oculta-principal', (sec === 'basedatos' || sec === 'bitacoras' || sec === 'informes'));
+  document.body.classList.toggle('oculta-principal', (sec === 'basedatos' || sec === 'bitacoras' || sec === 'informes' || sec === 'actividad'));
   paginaDesc = 1; 
   render();
   if (sec === 'basedatos') renderizarBaseDatos();
   if (sec === 'informes') renderInformes();
   if (sec === 'bitacoras') renderizarTodasBitacoras();
+  if (sec === 'actividad') {
+    if (rolActual === 'admin') {
+      escucharActividad();
+      renderizarActividad();
+    }
+  }
   actualizarBotonGuardar();
 };
 
@@ -1112,7 +1315,6 @@ window.irAPaginaDesc = function(p) {
   if (sv) sv.scrollTop = 0; 
 };
 
-// ✅ MODIFICADO: filaHTMLTabla con línea verde para admin
 function filaHTMLTabla(r, cf, cg, dr) {
   const b2c = (seccionActiva === 'b2c');
   const id = (r.idPedido||'').toString().trim().toUpperCase();
@@ -1132,11 +1334,10 @@ function filaHTMLTabla(r, cf, cg, dr) {
   if (debeElegir) clase += 'fila-elegir-movil ';
   const tieneCambioFecha = cambiosFechaLocales[r.key] !== undefined;
   if (tieneCambioFecha) clase += 'fila-fecha-modificada ';
-  // ✅ Línea verde si es registro del admin
   if (r.esAdmin) clase += 'fila-admin ';
   const bp = r.pendiente ? '<span class="badge badge-pendiente">SIN GUARDAR</span>' : '';
   const badgeAdmin = r.esAdmin ? '<span class="badge badge-admin">ADMIN</span>' : '';
-  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">✏️</span>' : '';
+  const indicadorCambio = tieneCambioFecha ? '<span style="color:var(--accent-orange);font-size:.7em;font-weight:700;margin-left:4px" title="Fecha modificada (pendiente de guardar)">️</span>' : '';
   const fechaMostrar = tieneCambioFecha ? cambiosFechaLocales[r.key].nuevaFecha : r.fecha;
   const celdaFecha = '<td><div class="fecha-cell-wrap"><input type="date" value="' + (fechaMostrar||'') + '" onchange="cambiarFechaFila(\'' + r.key + '\', this.value, ' + (r.pendiente?true:false) + ')"></div> ' + bp + indicadorCambio + badgeAdmin + '</td>';
   const celdaSel = '<td class="td-sel"><input type="checkbox" style="width:16px;height:16px;" ' + sel + ' onchange="toggleSeleccionDesc(\'' + r.key + '\', this.checked)"></td>';
@@ -1244,7 +1445,6 @@ function actualizarBotonGuardar() {
   }
 }
 
-// ✅ CORREGIDO: guardarPendientesSeccion mantiene los registros en descripción
 window.guardarPendientesSeccion = function() {
   const lista = pendientesDeSeccion();
   const numCambiosFecha = Object.keys(cambiosFechaLocales).length;
@@ -1306,27 +1506,19 @@ window.guardarPendientesSeccion = function() {
         const l = Object.assign({}, p.reg);
         delete l.pendiente;
         delete l._candidatos;
-        // ✅ Mantener en cache para que siga visible en descripción
         if (!cache[p.anio]) cache[p.anio] = {};
         if (!cache[p.anio][p.mes]) cache[p.anio][p.mes] = {};
         cache[p.anio][p.mes]['local_' + p.key] = l;
       });
-      // ✅ NO vaciar los pendientes hasta que se recarguen desde Firebase
-      if (seccionActiva==='ampm') {
-        // pendientesAMPM se mantienen hasta que se recarguen
-      } else if (seccionActiva==='adm') {
-        // pendientesADM se mantienen
-      } else if (seccionActiva==='qdm') {
-        // pendientesQDM se mantienen
-      } else if (seccionActiva==='b2c') {
-        // pendientesB2C se mantienen
-      }
+      if (seccionActiva==='ampm') pendientesAMPM=[];
+      else if (seccionActiva==='adm') pendientesADM=[];
+      else if (seccionActiva==='qdm') pendientesQDM=[];
+      else if (seccionActiva==='b2c') pendientesB2C=[];
       Promise.all(promesasFecha)
         .then(function() {
           actualizarBotonGuardar();
           render();
-          // ✅ Recargar datos para sincronizar con Firebase
-          setTimeout(function() { cargarDatos(); }, 500);
+          cargarDatos();
         })
         .catch(function(e) {
           toast('Error al guardar cambios de fecha: ' + e.message, 'err');
@@ -1336,10 +1528,12 @@ window.guardarPendientesSeccion = function() {
       return; 
     }
     Promise.all(lotes[li].map(function(p) { 
-      return push(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes), p.reg).then(function(){g++;}).catch(function(e){f++;}); 
+      return push(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes), p.reg).then(function(){g++;}).catch(function(e){}); 
     })).then(function(){ li++; setTimeout(proc,100); }); 
   };
   proc();
+  // ✅ Registrar actividad
+  registrarActividad('GUARDADO', formatoEntero(lista.length) + ' registros guardados en ' + tipoDeSeccion(), tipoDeSeccion());
 };
 
 window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
@@ -1373,10 +1567,12 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
     remove(ref(db, RUTA_BASE + '/' + anio + '/' + mes + '/' + key))
       .then(function() { toast('Eliminado de plataforma y Firebase','ok'); render(); renderizarBaseDatos(); })
       .catch(function(e) { toast('Error al borrar: ' + e.message, 'err'); if (!cache[anio]) cache[anio] = {}; if (!cache[anio][mes]) cache[anio][mes] = {}; cache[anio][mes][key] = existeEnCache; render(); });
+    // ✅ Registrar actividad
+    registrarActividad('ELIMINACION', 'Registro eliminado: ' + key, tipoDeSeccion());
   });
 };
 
-// ✅ MODIFICADO: Envío a bitácoras unificadas (9 bitácoras de la flota)
+// ✅ MODIFICADO: Envío a bitácoras unificadas
 window.enviarSeleccion = function() {
   if (seleccionadosDesc.size === 0) { toast('Selecciona al menos una fila', 'err'); return; }
   let enviados = 0;
@@ -1415,7 +1611,7 @@ window.enviarSeleccion = function() {
       esAdmin: reg.esAdmin || false
     };
     if (!bitacorasData[bitKey]) {
-      bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || '', responsable: '', firma: '' } };
+      bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || 'AM', responsable: '', firma: '' } };
     }
     let filaIdx = -1;
     for (let i = 0; i < 15; i++) {
@@ -1446,13 +1642,14 @@ window.enviarSeleccion = function() {
         render();
       })
       .catch(function(e) { toast('Error al guardar bitácoras: ' + e.message, 'err'); console.error('Error detallado:', e); });
+    // ✅ Registrar actividad
+    registrarActividad('ENVIO_BITACORA', formatoEntero(enviados) + ' registros enviados a bitácoras', tipoDeSeccion());
   } else {
     toast('No se pudo enviar', 'err');
     if (errores.length > 0) setTimeout(function() { toast('Errores: ' + errores.slice(0,3).join('; '), 'err'); }, 1000);
   }
 };
 
-// ✅ MODIFICADO: Formulario de registro marca esAdmin=true si es admin
 document.getElementById('formReg').addEventListener('submit', function(e) {
   e.preventDefault();
   const fecha = document.getElementById('fFecha').value; 
@@ -1650,9 +1847,10 @@ window.confirmarExportar = function() {
   XLSX.writeFile(wb, 'DespachoRetail_' + tipo + '_' + new Date().toISOString().split('T')[0] + '.xlsx');
   toast('Exportados ' + formatoEntero(regs.length) + ' registros','ok'); 
   cerrarModalExportar();
+  // ✅ Registrar actividad
+  registrarActividad('EXPORTACION', 'Exportó ' + formatoEntero(regs.length) + ' registros a Excel', tipo);
 };
 
-// ✅ BITACORAS UNIFICADAS: Funciones para las 9 bitácoras de la flota
 function renderizarTodasBitacoras() {
   BITACORAS_UNIFICADAS.forEach(function(bit) {
     renderizarBitacora(bit.key, bit.label, bit.domId);
@@ -1729,6 +1927,8 @@ window.guardarTodasBitacoras = function() {
       .catch(function(e) { toast('Error al guardar ' + key + ': ' + e.message, 'err'); });
   });
   setTimeout(function() { toast('Todas las bitacoras guardadas: ' + guardadas, 'ok'); }, 500);
+  // ✅ Registrar actividad
+  registrarActividad('GUARDADO', 'Guardadas ' + guardadas + ' bitácoras', 'BITACORAS');
 };
 
 window.abrirModalExportarBitacoras = function() {
@@ -1801,6 +2001,8 @@ window.confirmarExportarBitacoras = function() {
   XLSX.writeFile(wb, 'Bitacoras_Unificadas_' + fecha + '.xlsx');
   toast(exportadas + ' bitacoras exportadas', 'ok');
   cerrarModalExportarBitacoras();
+  // ✅ Registrar actividad
+  registrarActividad('EXPORTACION', 'Exportó ' + exportadas + ' bitácoras a Excel', 'BITACORAS');
 };
 
 window.abrirModalJPEGBitacoras = function() {
@@ -1884,6 +2086,8 @@ window.confirmarExportarJPEGBitacoras = function() {
     });
   });
   cerrarModalJPEGBitacoras();
+  // ✅ Registrar actividad
+  registrarActividad('EXPORTACION', 'Exportó ' + checkboxes.length + ' bitácoras como JPEG', 'BITACORAS');
 };
 
 window.abrirModalImprimirBitacoras = function() {
@@ -1916,7 +2120,6 @@ window.seleccionarTodasBitacorasPrint = function() {
   checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
 };
 
-// ✅ CORREGIDO: Imprime TODAS las bitácoras seleccionadas en una sola ventana
 window.confirmarImprimirBitacoras = function() {
   const checkboxes = document.querySelectorAll('#bitacoraPrintGrid input[type="checkbox"]:checked');
   if (checkboxes.length === 0) {
@@ -1976,149 +2179,8 @@ window.confirmarImprimirBitacoras = function() {
   
   toast(checkboxes.length + ' bitacora(s) lista(s) para imprimir', 'ok');
   cerrarModalImprimirBitacoras();
-};
-
-// =====================================================================
-// ✅ NUEVO: BORRAR TODO
-// =====================================================================
-window.abrirModalBorrarTodo = function() {
-  if (rolActual !== 'admin') { toast('Solo el administrador puede usar esta función', 'err'); return; }
-  // Calcular total de registros
-  let total = 0;
-  Object.keys(cache).forEach(function(a) { 
-    Object.keys(cache[a]||{}).forEach(function(m) { 
-      total += Object.keys(cache[a][m]||{}).length; 
-    }); 
-  });
-  total += pendientesAMPM.length + pendientesADM.length + pendientesQDM.length + pendientesB2C.length;
-  document.getElementById('btInfoRegistros').textContent = 'Total de registros a eliminar: ' + formatoEntero(total);
-  document.getElementById('btPassword').value = '';
-  document.getElementById('borrarTodoOverlay').classList.add('show');
-};
-
-window.cerrarModalBorrarTodo = function() { 
-  document.getElementById('borrarTodoOverlay').classList.remove('show'); 
-};
-
-window.confirmarBorrarTodo = function() {
-  const p = document.getElementById('btPassword').value;
-  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
-  if (!confirm('¿Estás SEGURO de que quieres BORRAR TODO?\nEsta acción es IRREVERSIBLE.')) return;
-  
-  toast('Borrando todo...','info');
-  
-  const promesas = [];
-  // Borrar todos los años/meses de Firebase
-  const anios = [2026,2027,2028,2029,2030];
-  anios.forEach(function(anio) {
-    for (let mes = 1; mes <= 12; mes++) {
-      const ms = String(mes).padStart(2,'0');
-      promesas.push(remove(ref(db, RUTA_BASE + '/' + anio + '/' + ms)).catch(function(){}));
-    }
-  });
-  // Borrar todas las bitácoras
-  BITACORAS_UNIFICADAS.forEach(function(bit) {
-    promesas.push(remove(ref(db, RUTA_BITACORAS + '/' + bit.key)).catch(function(){}));
-  });
-  
-  Promise.all(promesas).then(function() {
-    cache = {};
-    pendientesAMPM = [];
-    pendientesADM = [];
-    pendientesQDM = [];
-    pendientesB2C = [];
-    pendientes = [];
-    bitacorasData = {};
-    cambiosFechaLocales = {};
-    toast('TODO eliminado correctamente','ok');
-    cerrarModalBorrarTodo();
-    render();
-    renderizarBaseDatos();
-    renderizarTodasBitacoras();
-  }).catch(function(e) {
-    toast('Error al borrar: ' + e.message, 'err');
-  });
-};
-
-// =====================================================================
-// ✅ NUEVO: ELIMINAR SOLO REGISTROS ADMIN (línea verde)
-// =====================================================================
-window.abrirModalEliminarAdmin = function() {
-  if (rolActual !== 'admin') { toast('Solo el administrador puede usar esta función', 'err'); return; }
-  // Contar registros admin
-  let totalAdmin = 0;
-  Object.keys(cache).forEach(function(a) { 
-    Object.keys(cache[a]||{}).forEach(function(m) { 
-      Object.keys(cache[a][m]||{}).forEach(function(k) {
-        if (cache[a][m][k] && cache[a][m][k].esAdmin) totalAdmin++;
-      });
-    }); 
-  });
-  // Contar pendientes admin
-  [pendientesAMPM, pendientesADM, pendientesQDM, pendientesB2C].forEach(function(lista) {
-    lista.forEach(function(p) {
-      if (p.reg && p.reg.esAdmin) totalAdmin++;
-    });
-  });
-  document.getElementById('eaInfoRegistros').textContent = 'Total de registros ADMIN (verde) a eliminar: ' + formatoEntero(totalAdmin);
-  document.getElementById('eaPassword').value = '';
-  document.getElementById('eliminarAdminOverlay').classList.add('show');
-};
-
-window.cerrarModalEliminarAdmin = function() { 
-  document.getElementById('eliminarAdminOverlay').classList.remove('show'); 
-};
-
-window.confirmarEliminarAdmin = function() {
-  const p = document.getElementById('eaPassword').value;
-  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
-  if (!confirm('¿Eliminar SOLO los registros del ADMIN (línea verde)?\nLos registros de otros usuarios NO serán afectados.')) return;
-  
-  toast('Eliminando registros admin...','info');
-  
-  const promesas = [];
-  const keysAEliminar = [];
-  
-  // Recorrer cache y marcar keys admin
-  Object.keys(cache).forEach(function(a) { 
-    Object.keys(cache[a]||{}).forEach(function(m) { 
-      Object.keys(cache[a][m]||{}).forEach(function(k) {
-        if (cache[a][m][k] && cache[a][m][k].esAdmin) {
-          keysAEliminar.push({ anio: a, mes: m, key: k });
-        }
-      });
-    }); 
-  });
-  
-  // Eliminar de Firebase
-  keysAEliminar.forEach(function(item) {
-    promesas.push(remove(ref(db, RUTA_BASE + '/' + item.anio + '/' + item.mes + '/' + item.key)).catch(function(){}));
-  });
-  
-  // Eliminar de cache local
-  keysAEliminar.forEach(function(item) {
-    if (cache[item.anio] && cache[item.anio][item.mes]) {
-      delete cache[item.anio][item.mes][item.key];
-    }
-  });
-  
-  // Eliminar pendientes admin
-  [pendientesAMPM, pendientesADM, pendientesQDM, pendientesB2C].forEach(function(lista) {
-    for (let i = lista.length - 1; i >= 0; i--) {
-      if (lista[i].reg && lista[i].reg.esAdmin) {
-        lista.splice(i, 1);
-      }
-    }
-  });
-  
-  Promise.all(promesas).then(function() {
-    toast(formatoEntero(keysAEliminar.length) + ' registros admin eliminados','ok');
-    cerrarModalEliminarAdmin();
-    render();
-    renderizarBaseDatos();
-  }).catch(function(e) {
-    toast('Error al eliminar: ' + e.message, 'err');
-  });
+  // ✅ Registrar actividad
+  registrarActividad('EXPORTACION', 'Imprimió ' + checkboxes.length + ' bitácoras', 'BITACORAS');
 };
 
 function procesarArchivoB2C(file, lista) {
@@ -2182,6 +2244,8 @@ function procesarArchivoB2C(file, lista) {
         render(); 
       }
       else cargarPendientes(regs, 'B2C (' + file.name + ')');
+      // ✅ Registrar actividad
+      registrarActividad('SUBIDA_ARCHIVO', 'Subió archivo B2C: ' + file.name + ' (' + formatoEntero(regs.length) + ' registros)', 'B2C');
     } catch(e){ 
       toast(''+e.message,'err'); 
     } 
@@ -2292,6 +2356,8 @@ function procesarArchivoTipoSeccion(file, tipo, lista) {
       paginaDesc = 1; 
       toast(formatoEntero(nuevos.length) + ' filas. Revisa TRANSPORTE/RANGO y presiona GUARDAR.','info'); 
       render();
+      // ✅ Registrar actividad
+      registrarActividad('SUBIDA_ARCHIVO', 'Subió archivo ' + tipo + ': ' + file.name + ' (' + formatoEntero(nuevos.length) + ' registros)', tipo);
     } catch(e){ 
       toast(''+e.message,'err'); 
     } 
@@ -2365,6 +2431,8 @@ function procesarJSONTipoSeccion(file, tipo, lista) {
       paginaDesc = 1; 
       toast(formatoEntero(nuevos.length) + ' registros JSON. Presiona GUARDAR.','info'); 
       render();
+      // ✅ Registrar actividad
+      registrarActividad('SUBIDA_ARCHIVO', 'Subió JSON ' + tipo + ': ' + file.name + ' (' + formatoEntero(nuevos.length) + ' registros)', tipo);
     } catch(e){ 
       toast('JSON inválido','err'); 
     } 
@@ -2455,6 +2523,8 @@ function procesarArchivoGenerico(file, tipo) {
       }
       if (sinF) toast(formatoEntero(sinF) + ' filas sin fecha válida','err');
       cargarPendientes(regs, tipo + ' (' + file.name + ')');
+      // ✅ Registrar actividad
+      registrarActividad('SUBIDA_ARCHIVO', 'Subió archivo genérico ' + tipo + ': ' + file.name, tipo);
     } catch(e){ 
       toast(''+e.message,'err'); 
     } 
@@ -2521,11 +2591,6 @@ function cargarPendientes(regs, origen) {
     if (!reg.tipo) reg.tipo = tipoImportacionActual; 
     if (!reg.rango) reg.rango = tipoImportacionActual==='B2C'?'B2C':(tipoImportacionActual==='ADM'?'ADM':(tipoImportacionActual==='QDM'?'QDM':'AM')); 
     if (reg.comuna) reg.comuna = canonComuna(reg.comuna);
-    // ✅ Marcar como admin si el usuario actual es admin
-    if (rolActual === 'admin') {
-      reg.esAdmin = true;
-      reg.usuario = emailUsuarioActual;
-    }
     if (!cache[anio]) cache[anio] = {}; 
     if (!cache[anio][mes]) cache[anio][mes] = {}; 
     const tk = 'pend_'+Date.now()+'_'+Math.random().toString(36).substr(2,9); 
@@ -2743,7 +2808,6 @@ function renderTabBD(tipo, filtroId, pagina) {
   const ini = (pagina-1)*REGISTROS_POR_PAGINA_BD; 
   const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_BD);
   const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
-  // ✅ MODIFICADO: Mostrar línea verde en base de datos también
   tbody.innerHTML = pag.map(function(r) { 
     const claseYInd = claseYIndicadorSimple(r, cf, cg);
     const claseAdmin = r.esAdmin ? ' fila-admin' : '';
@@ -2803,7 +2867,6 @@ window.guardarEdicionInline = function(key, anio, mes, esPend) {
   const nA = parts[0];
   const nM = parts[1];
   if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
-    // ✅ Mantener el campo esAdmin al editar
     nuevo.esAdmin = cache[anio][mes][key].esAdmin;
     nuevo.usuario = cache[anio][mes][key].usuario;
     cache[anio][mes][key] = Object.assign({}, cache[anio][mes][key], nuevo);
@@ -2822,6 +2885,8 @@ window.guardarEdicionInline = function(key, anio, mes, esPend) {
   toast('Registro actualizado','ok');
   render();
   renderizarBaseDatos();
+  // ✅ Registrar actividad
+  registrarActividad('EDICION', 'Editó registro ' + key, tipoDeSeccion());
 };
 
 window.cancelarEdicionInline = function() { editandoKey = null; render(); renderizarBaseDatos(); };
@@ -2837,6 +2902,87 @@ window.pedirBorrarRegistroBD = function(key, anio, mes) {
       render();
       renderizarBaseDatos();
     }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
+    // ✅ Registrar actividad
+    registrarActividad('ELIMINACION', 'Eliminó registro ' + key + ' de BD', tipoDeSeccion());
+  });
+};
+
+// =====================================================================
+// ✅ NUEVO: BORRAR DESCRIPCION ACTUAL (mantiene bitácoras)
+// =====================================================================
+window.abrirModalBorrarDescripcion = function() {
+  if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
+  const tipo = tipoDeSeccion();
+  document.getElementById('bdTipoDesc').textContent = tipo;
+  
+  // Contar registros de este tipo
+  let total = 0;
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      Object.keys(cache[a][m]||{}).forEach(function(k) {
+        if (getTipoRegistro(cache[a][m][k]) === tipo) total++;
+      });
+    }); 
+  });
+  total += pendientesDeSeccion().length;
+  
+  document.getElementById('bdInfoRegistros').textContent = 'Registros de ' + tipo + ' a eliminar: ' + formatoEntero(total);
+  document.getElementById('bdPassword').value = '';
+  document.getElementById('borrarDescOverlay').classList.add('show');
+};
+
+window.cerrarModalBorrarDesc = function() { 
+  document.getElementById('borrarDescOverlay').classList.remove('show'); 
+};
+
+window.confirmarBorrarDesc = function() {
+  const p = document.getElementById('bdPassword').value;
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  const tipo = tipoDeSeccion();
+  
+  if (!confirm('¿Eliminar TODOS los registros de ' + tipo + '?\nLas BITACORAS NO serán afectadas.')) return;
+  
+  toast('Eliminando descripción ' + tipo + '...','info');
+  
+  const promesas = [];
+  const keysAEliminar = [];
+  
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      Object.keys(cache[a][m]||{}).forEach(function(k) {
+        if (getTipoRegistro(cache[a][m][k]) === tipo) {
+          keysAEliminar.push({ anio: a, mes: m, key: k });
+        }
+      });
+    }); 
+  });
+  
+  keysAEliminar.forEach(function(item) {
+    promesas.push(remove(ref(db, RUTA_BASE + '/' + item.anio + '/' + item.mes + '/' + item.key)).catch(function(){}));
+  });
+  
+  // Eliminar de cache
+  keysAEliminar.forEach(function(item) {
+    if (cache[item.anio] && cache[item.anio][item.mes]) {
+      delete cache[item.anio][item.mes][item.key];
+    }
+  });
+  
+  // Limpiar pendientes de este tipo
+  if (tipo === 'AMPM') pendientesAMPM = [];
+  else if (tipo === 'ADM') pendientesADM = [];
+  else if (tipo === 'QDM') pendientesQDM = [];
+  else if (tipo === 'B2C') pendientesB2C = [];
+  
+  Promise.all(promesas).then(function() {
+    toast(formatoEntero(keysAEliminar.length) + ' registros de ' + tipo + ' eliminados. Bitácoras intactas.','ok');
+    cerrarModalBorrarDesc();
+    render();
+    renderizarBaseDatos();
+    // ✅ Registrar actividad
+    registrarActividad('BORRADO_MASIVO', 'Eliminó toda la descripción ' + tipo + ' (' + formatoEntero(keysAEliminar.length) + ' registros)', tipo);
+  }).catch(function(e) {
+    toast('Error: ' + e.message, 'err');
   });
 };
 
@@ -2879,8 +3025,83 @@ window.confirmarBorrarMes = function() {
       cerrarBorrarMes(); 
       renderizarBaseDatos(); 
       render(); 
+      // ✅ Registrar actividad
+      registrarActividad('BORRADO_MASIVO', 'Borró mes ' + MESES_NOM[parseInt(m)-1] + ' ' + a + ' de ' + tipoBorrarMes + ' (' + formatoEntero(keys.length) + ' registros)', tipoBorrarMes);
     })
     .catch(function(e) { toast(''+e.message,'err'); });
+};
+
+// ✅ ELIMINAR SOLO REGISTROS ADMIN
+window.abrirModalEliminarAdmin = function() {
+  if (rolActual !== 'admin') { toast('Solo el administrador', 'err'); return; }
+  let totalAdmin = 0;
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      Object.keys(cache[a][m]||{}).forEach(function(k) {
+        if (cache[a][m][k] && cache[a][m][k].esAdmin) totalAdmin++;
+      });
+    }); 
+  });
+  [pendientesAMPM, pendientesADM, pendientesQDM, pendientesB2C].forEach(function(lista) {
+    lista.forEach(function(p) {
+      if (p.reg && p.reg.esAdmin) totalAdmin++;
+    });
+  });
+  document.getElementById('eaInfoRegistros').textContent = 'Total de registros ADMIN (verde) a eliminar: ' + formatoEntero(totalAdmin);
+  document.getElementById('eaPassword').value = '';
+  document.getElementById('eliminarAdminOverlay').classList.add('show');
+};
+
+window.cerrarModalEliminarAdmin = function() { 
+  document.getElementById('eliminarAdminOverlay').classList.remove('show'); 
+};
+
+window.confirmarEliminarAdmin = function() {
+  const p = document.getElementById('eaPassword').value;
+  if (p !== CLAVE_ACCIONES) { toast('Contraseña incorrecta','err'); return; }
+  if (!confirm('¿Eliminar SOLO los registros del ADMIN (línea verde)?\nLos registros de otros usuarios NO serán afectados.')) return;
+  
+  toast('Eliminando registros admin...','info');
+  
+  const promesas = [];
+  const keysAEliminar = [];
+  
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      Object.keys(cache[a][m]||{}).forEach(function(k) {
+        if (cache[a][m][k] && cache[a][m][k].esAdmin) {
+          keysAEliminar.push({ anio: a, mes: m, key: k });
+        }
+      });
+    }); 
+  });
+  
+  keysAEliminar.forEach(function(item) {
+    promesas.push(remove(ref(db, RUTA_BASE + '/' + item.anio + '/' + item.mes + '/' + item.key)).catch(function(){}));
+  });
+  
+  keysAEliminar.forEach(function(item) {
+    if (cache[item.anio] && cache[item.anio][item.mes]) {
+      delete cache[item.anio][item.mes][item.key];
+    }
+  });
+  
+  [pendientesAMPM, pendientesADM, pendientesQDM, pendientesB2C].forEach(function(lista) {
+    for (let i = lista.length - 1; i >= 0; i--) {
+      if (lista[i].reg && lista[i].reg.esAdmin) {
+        lista.splice(i, 1);
+      }
+    }
+  });
+  
+  Promise.all(promesas).then(function() {
+    toast(formatoEntero(keysAEliminar.length) + ' registros admin eliminados','ok');
+    cerrarModalEliminarAdmin();
+    render();
+    renderizarBaseDatos();
+    // ✅ Registrar actividad
+    registrarActividad('BORRADO_MASIVO', 'Eliminó ' + formatoEntero(keysAEliminar.length) + ' registros ADMIN', 'SISTEMA');
+  }).catch(function(e) { toast(''+e.message,'err'); });
 };
 
 window.buscarFiltrosAMPM = function() { buscarFiltros('AMPM'); };
@@ -3309,6 +3530,10 @@ async function cargarDatos() {
   renderizarBaseDatos(); 
   actualizarBotonGuardar();
   if (seccionActiva === 'informes') renderInformes();
+  if (seccionActiva === 'actividad' && rolActual === 'admin') {
+    escucharActividad();
+    renderizarActividad();
+  }
   await cargarBitacoras();
 }
 
@@ -3330,6 +3555,7 @@ function renderInformes() {
   if (seccionInicial === 'basedatos') document.title = 'DR-BASE DE DATOS';
   else if (seccionInicial === 'informes') document.title = 'DR-INFORMES';
   else if (seccionInicial === 'bitacoras') document.title = 'DR-BITACORAS';
+  else if (seccionInicial === 'actividad') document.title = 'DR-ACTIVIDAD';
   const st = document.createElement('style');
   st.textContent = 'tr.fila-amarillo td{background:#ffd54f !important;color:#000 !important;} tr.fila-amarillo:hover td{background:#ffca28 !important;} tr.fila-elegir-movil td{background:#b3e5fc !important;color:#000 !important;} tr.fila-elegir-movil:hover td{background:#81d4fa !important;} tr.fila-fecha-modificada td{background:#fff3cd !important;color:#000 !important;} tr.fila-fecha-modificada:hover td{background:#ffe69c !important;} #theadDesc th, #theadAmpm th, #theadB2c th, #theadAdm th, #theadQdm th {vertical-align:middle !important;text-align:center !important;} #theadDesc tr:first-child th, #theadAmpm tr:first-child th, #theadB2c tr:first-child th, #theadAdm tr:first-child th, #theadQdm tr:first-child th {padding:8px 6px !important;border-bottom:1px solid var(--border-color) !important;} #theadDesc tr:last-child td, #theadAmpm tr:last-child td, #theadB2c tr:last-child td, #theadAdm tr:last-child td, #theadQdm tr:last-child td {padding:4px 6px !important;border-top:none !important;} .th-filter{font-size:0.8em !important;padding:3px 6px !important;margin:0 !important;}';
   document.head.appendChild(st);
@@ -3374,7 +3600,7 @@ function renderInformes() {
       else if (document.getElementById('bitacoraExportOverlay').classList.contains('show')) cerrarModalExportarBitacoras();
       else if (document.getElementById('bitacoraJPEGOverlay').classList.contains('show')) cerrarModalJPEGBitacoras();
       else if (document.getElementById('bitacoraPrintOverlay').classList.contains('show')) cerrarModalImprimirBitacoras();
-      else if (document.getElementById('borrarTodoOverlay').classList.contains('show')) cerrarModalBorrarTodo();
+      else if (document.getElementById('borrarDescOverlay').classList.contains('show')) cerrarModalBorrarDesc();
       else if (document.getElementById('eliminarAdminOverlay').classList.contains('show')) cerrarModalEliminarAdmin();
       else if (document.getElementById('borrarMesOverlay').classList.contains('show')) cerrarBorrarMes();
       else if (document.getElementById('verFechaOverlay').classList.contains('show')) cerrarModalVerFecha();
