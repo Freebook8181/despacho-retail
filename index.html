@@ -113,8 +113,6 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .basedatos-tabla tr:hover td{background:var(--row-hover)}
 .basedatos-tabla tr.id-repetido td{background:var(--id-repetido-bg)!important;font-weight:600}
 .basedatos-tabla tr.id-repetido-otro td{background:var(--id-otro-bg)!important;font-weight:600}
-.bd-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px;background:var(--bg-tertiary);border-radius:4px;flex-wrap:wrap;border:1px solid var(--border-color)}
-.bd-paginacion-info{color:var(--text-secondary);font-size:.85em;font-weight:600;margin-right:15px}
 .stats-bar{display:flex;gap:12px;padding:8px 28px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);flex-wrap:wrap;align-items:center}
 .stat-item{background:var(--bg-tertiary);padding:6px 14px;border-radius:4px;border-left:3px solid var(--accent-blue)}
 .stat-item .val{color:var(--accent-blue);font-size:1.2em;font-weight:700}
@@ -139,7 +137,7 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .buscar-input{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:7px 12px;border-radius:4px;font-size:.85em;width:250px;min-width:150px}
 .buscar-input:focus{outline:none;border-color:var(--accent-blue)}
 .tabla-section{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0}
-.tabla-scroll-vertical{flex:1;overflow-y:auto;padding:0 28px 20px}
+.tabla-scroll-vertical{flex:1;overflow-y:auto;padding:0 28px 20px;position:relative}
 .tabla-scroll-vertical::-webkit-scrollbar{width:10px}
 .tabla-scroll-vertical::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:5px}
 .tabla-scroll-vertical::-webkit-scrollbar-thumb{background:var(--scrollbar-v);border-radius:5px}
@@ -149,11 +147,11 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .tabla-scroll-horizontal{overflow-x:auto;border-top:2px solid var(--accent-orange)}
 .tabla-scroll-horizontal::-webkit-scrollbar{height:10px}
 .tabla-scroll-horizontal::-webkit-scrollbar-thumb{background:var(--scrollbar-h);border-radius:5px}
-.tabla-scroll-horizontal table{width:100%;min-width:1100px}
+.tabla-scroll-horizontal table{width:100%;min-width:1400px}
 table{width:100%;border-collapse:collapse;font-size:.82em;margin-top:8px;background:var(--bg-secondary)}
 th{background:var(--bg-tertiary);color:var(--text-primary);padding:8px 6px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;border-bottom:2px solid var(--border-color);text-transform:uppercase;font-size:.8em}
 th.th-sel,td.td-sel{text-align:center;width:34px}
-td{padding:6px;border-bottom:1px solid var(--border-color);color:var(--text-primary)}
+td{padding:6px;border-bottom:1px solid var(--border-color);color:var(--text-primary);white-space:nowrap}
 tr:hover td{background:var(--row-hover)}
 tr.fila-admin td{border-left:4px solid #10b981 !important;background:rgba(16,185,129,0.08) !important;}
 tr.fila-admin:hover td{background:rgba(16,185,129,0.15) !important;}
@@ -312,6 +310,8 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 .usuario-activo{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--accent-green-pastel);border:1px solid var(--accent-green);border-radius:12px;font-size:.8em;color:var(--accent-green);margin:3px}
 .usuario-activo .pulse{width:8px;height:8px;background:var(--accent-green);border-radius:50%;animation:pulse 1.5s infinite}
 @keyframes pulse{0%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
+.bd-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px;background:var(--bg-tertiary);border-radius:4px;flex-wrap:wrap;border:1px solid var(--border-color)}
+.bd-paginacion-info{color:var(--text-secondary);font-size:.85em;font-weight:600;margin-right:15px}
 </style>
 </head>
 <body>
@@ -516,7 +516,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
     </div>
     <div class="seccion-contenido" id="seccionActividad">
       <div class="actividad-container">
-        <div class="actividad-header"><h3> REGISTRO DE ACTIVIDAD</h3><button class="btn-borrar-todo" onclick="limpiarActividadAntigua()">LIMPIAR ANTIGUAS (>30 días)</button></div>
+        <div class="actividad-header"><h3>REGISTRO DE ACTIVIDAD</h3><button class="btn-borrar-todo" onclick="limpiarActividadAntigua()">LIMPIAR ANTIGUAS (>30 días)</button></div>
         <div class="actividad-stats">
           <div class="actividad-stat online"><div class="stat-num" id="actUsuariosOnline">0</div><div class="stat-label">Usuarios en línea</div></div>
           <div class="actividad-stat"><div class="stat-num" id="actTotalRegistros">0</div><div class="stat-label">Registros totales</div></div>
@@ -576,10 +576,11 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
       <button class="btn-enviar" id="btnEnviar" onclick="enviarSeleccion()">ENVIAR A BITACORA</button>
     </div>
     <div class="tabla-scroll-vertical">
-      <div class="tabla-scroll-horizontal-top" id="scrollTop"><div style="min-width:1100px;height:8px"></div></div>
+      <div class="tabla-scroll-horizontal-top" id="scrollTop"><div style="min-width:1400px;height:8px"></div></div>
       <div class="tabla-scroll-horizontal" id="scrollBottom"><table><thead id="theadDesc"></thead><tbody id="tbody"></tbody></table></div>
       <div class="loading-msg" id="loading"><div class="spinner"></div>Cargando datos...</div>
       <div class="empty-msg" id="empty" style="display:none">No hay registros para hoy</div>
+      <div class="bd-paginacion" id="paginacionDesc"></div>
     </div>
   </div>
 </div>
