@@ -21,15 +21,6 @@ const RUTA_BITACORAS = 'bitacoras';
 const RUTA_ACTIVIDAD = 'actividad';
 const RUTA_USUARIOS_ONLINE = 'usuarios_online';
 const CLAVE_ACCIONES = '1234';
-
-// ✅ USUARIOS PERMITIDOS
-const USUARIOS_PERMITIDOS = {
-  'eduardo.donoso@ext.quintec.cl': { password: '28111981', isAdmin: true },
-  'mvivallo@quintec.cl': { password: '123456789', isAdmin: false },
-  'yvalenzuelas@quintec.cl': { password: '123456789', isAdmin: false },
-  'fgutierrez@quintec.cl': { password: '123456789', isAdmin: false }
-};
-
 const ADMIN_EMAILS = ['eduardo.donoso@ext.quintec.cl'];
 
 const MESES_NOM = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
@@ -115,6 +106,7 @@ const REGLA_AM = {
   }
 };
 
+// ✅ Respeta transporteManual
 function autocompletarTransportePM(reg) {
   if (!reg || !reg.comuna) return reg;
   if (reg.transporteManual === true) return reg;
@@ -168,6 +160,7 @@ function obtenerDiaSemanaManana() {
   return manana.getDay();
 }
 
+// ✅ REGLA BITACORAS AM/PM
 function obtenerClaveBitacora(transporte, tipoRegistro) {
   const t = (transporte || '').toUpperCase().trim();
   const esB2C = (tipoRegistro === 'B2C');
@@ -343,7 +336,7 @@ function renderizarActividad() {
   if (registrosEl) registrosEl.textContent = formatoEntero(totalRegs);
   if (!lista) return;
   if (actividadData.length === 0) { lista.innerHTML = '<div class="actividad-empty">No hay actividad registrada</div>'; return; }
-  const iconos = { 'SUBIDA_ARCHIVO': '📤', 'GUARDADO': '💾', 'ELIMINACION': '🗑️', 'ENVIO_BITACORA': '📋', 'CAMBIO_FECHA': '📅', 'REGISTRO_NUEVO': '➕', 'LOGIN': '🔑', 'BORRADO_MASIVO': '⚠️', 'EXPORTACION': '📊', 'EDICION': '✏️' };
+  const iconos = { 'SUBIDA_ARCHIVO': '📤', 'GUARDADO': '💾', 'ELIMINACION': '🗑️', 'ENVIO_BITACORA': '📋', 'CAMBIO_FECHA': '📅', 'REGISTRO_NUEVO': '➕', 'LOGIN': '🔑', 'BORRADO_MASIVO': '️', 'EXPORTACION': '📊', 'EDICION': '✏️' };
   lista.innerHTML = actividadData.slice(0, 100).map(function(a) {
     const icono = iconos[a.accion] || '📝';
     const fecha = new Date(a.fecha);
@@ -495,59 +488,25 @@ function actualizarReloj() {
 setInterval(actualizarReloj, 1000);
 actualizarReloj();
 
-// ✅ LOGIN CON USUARIOS ESPECÍFICOS
 window.login = function() {
-  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPass').value;
-  
-  if (!email || !pass) { 
-    toast('Ingresa email y contraseña', 'err'); 
-    return; 
-  }
-  
-  // ✅ Verificar si el usuario está en la lista de permitidos
-  const usuarioPermitido = USUARIOS_PERMITIDOS[email];
-  if (!usuarioPermitido) {
-    toast('Usuario no autorizado', 'err');
-    return;
-  }
-  
-  // ✅ Verificar contraseña
-  if (pass !== usuarioPermitido.password) {
-    toast('Contraseña incorrecta', 'err');
-    return;
-  }
-  
+  if (!email || !pass) { toast('Ingresa email y contraseña', 'err'); return; }
   toast('Conectando...', 'info');
-  
   setPersistence(auth, browserLocalPersistence).then(function() {
     return signInWithEmailAndPassword(auth, email, pass);
   }).then(function(userCredential) {
     toast('Bienvenido ' + email, 'ok');
   }).catch(function(error) {
     console.error('Error de login:', error);
-    // Si el usuario no existe en Firebase, crearlo
     if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-      toast('Creando usuario...', 'info');
-      createUserWithEmailAndPassword(auth, email, pass).then(function(newUser) {
-        toast('Usuario creado: ' + email, 'ok');
-      }).catch(function(createError) {
-        toast('No se pudo crear: ' + createError.message, 'err');
-      });
+      toast('Usuario no encontrado. Creando...', 'info');
+      createUserWithEmailAndPassword(auth, email, pass).then(function(newUser) { toast('Usuario creado: ' + email, 'ok'); }).catch(function(createError) { toast('No se pudo crear: ' + createError.message, 'err'); });
       return;
     }
-    if (error.code === 'auth/wrong-password') { 
-      toast('Contraseña incorrecta para ' + email, 'err'); 
-      return; 
-    }
-    if (error.code === 'auth/user-disabled') { 
-      toast('Usuario deshabilitado en Firebase', 'err'); 
-      return; 
-    }
-    if (error.code === 'auth/too-many-requests') { 
-      toast('Demasiados intentos. Espera un momento.', 'err'); 
-      return; 
-    }
+    if (error.code === 'auth/wrong-password') { toast('Contraseña incorrecta para ' + email, 'err'); return; }
+    if (error.code === 'auth/user-disabled') { toast('Usuario deshabilitado en Firebase', 'err'); return; }
+    if (error.code === 'auth/too-many-requests') { toast('Demasiados intentos. Espera un momento.', 'err'); return; }
     toast('Error: ' + error.message, 'err');
   });
 };
@@ -722,6 +681,7 @@ window.toggleComboTransporte = function(key) { const list = document.getElementB
 window.filtrarComboTransporte = function(key, val) { const list = document.getElementById('combo_trans_' + key); if (!list) return; let vals = OPCIONES_TRANSPORTE; if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionTransporte(\'' + key + '\', \'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; list.style.display = 'block'; comboTransAbierto = key; };
 window.elegirOpcionTransporte = function(key, val) { const input = document.getElementById('trans_input_' + key); if (input) input.value = val; const list = document.getElementById('combo_trans_' + key); if (list) list.style.display = 'none'; comboTransAbierto = null; actualizarTransporteRegistro(key, val); };
 
+// ✅ Marca transporteManual al cambiar
 function actualizarTransporteRegistro(key, nuevoTransporte) {
   let p = pendientesAMPM.find(function(p) { return p.key===key; }) || pendientesADM.find(function(p) { return p.key===key; }) || pendientesQDM.find(function(p) { return p.key===key; }) || pendientesB2C.find(function(p) { return p.key===key; });
   if (p) {
@@ -783,7 +743,7 @@ function getBDBaseRows(tipo){ let r = obtenerRegsTipo(tipo); const f = filtroDia
 function getDistinctBD(tipo, campo){ const set = new Set(); getBDBaseRows(tipo).forEach(function(r) { let v=''; if(campo==='unidad')v=r.unidad||''; else if(campo==='comuna')v=canonComuna(r.comuna)||''; else if(campo==='transporte')v=r.transporte||''; else if(campo==='rango')v=r.rango||''; if(v)set.add(v); }); return Array.from(set).sort(); }
 function poblarComboBD(tipo, campo, filtro){ const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); if(!list) return; let vals = getDistinctBD(tipo, campo); if (filtro) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(filtro)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionBD(\'' + tipo + '\',\'' + campo + '\',\'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; }
 function cerrarCombosBD(){ document.querySelectorAll('.combo-list').forEach(function(l) { if (l.id.startsWith('comboBD_')) l.style.display='none'; }); comboBDAbierto = null; }
-window.toggleComboBD = function(tipo, campo){ const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo; if(!list) return; const id = tipo+'_'+campo; if (comboBDAbierto === id) { list.style.display='none'; comboBDAbierto=null; } else { cerrarCombosBD(); poblarComboBD(tipo,campo,''); list.style.display='block'; comboBDAbierto=id; } };
+window.toggleComboBD = function(tipo, campo){ const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); if(!list) return; const id = tipo+'_'+campo; if (comboBDAbierto === id) { list.style.display='none'; comboBDAbierto=null; } else { cerrarCombosBD(); poblarComboBD(tipo,campo,''); list.style.display='block'; comboBDAbierto=id; } };
 function abrirComboBD(tipo, campo){ cerrarCombosBD(); poblarComboBD(tipo,campo,''); const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); if(list){ list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } }
 window.elegirOpcionBD = function(tipo, campo, val){ const input = document.getElementById('fBD'+sufBD(tipo)+'_'+campo); if (input) input.value = val; filtroDescBD[tipo][campo] = normSinTildes(val); cerrarCombosBD(); const idMap = { AMPM: 'filtroIdAmpm', B2C: 'filtroIdB2c', ADM: 'filtroIdAdm', QDM: 'filtroIdQdm' }; const pagMap = { AMPM: paginaBDAmpm, B2C: paginaBDB2c, ADM: paginaBDAdm, QDM: paginaBDQdm }; renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]); };
 window.filtrarBDCombo = function(tipo, campo, val){ filtroDescBD[tipo][campo] = normSinTildes(val); poblarComboBD(tipo, campo, val); const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); if (list) { list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } const idMap = { AMPM: 'filtroIdAmpm', B2C: 'filtroIdB2c', ADM: 'filtroIdAdm', QDM: 'filtroIdQdm' }; const pagMap = { AMPM: paginaBDAmpm, B2C: paginaBDB2c, ADM: paginaBDAdm, QDM: paginaBDQdm }; renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]); };
@@ -978,6 +938,7 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
   });
 };
 
+// ✅ ENVÍO A BITACORAS - Usa el transporte tal cual está (respeta transporteManual)
 window.enviarSeleccion = function() {
   if (seleccionadosDesc.size === 0) { toast('Selecciona al menos una fila', 'err'); return; }
   let enviados = 0;
@@ -989,6 +950,7 @@ window.enviarSeleccion = function() {
     if (!reg) { const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;}); if (p) { reg = Object.assign({}, p.reg); } }
     if (!reg) { errores.push('Registro ' + key + ' no encontrado'); return; }
     if (cambiosFechaLocales[key]) { reg.fecha = cambiosFechaLocales[key].nuevaFecha; }
+    // ✅ Usa el transporte del registro tal cual está (respeta transporteManual)
     const transporte = (reg.transporte || '').toUpperCase();
     const tipoRegistro = getTipoRegistro(reg);
     const bitKey = obtenerClaveBitacora(transporte, tipoRegistro);
@@ -1620,7 +1582,7 @@ function renderTabBD(tipo, filtroId, pagina) {
   if (pagMap[tipo]) window[pagMap[tipo]] = pagina;
   const ini = (pagina-1)*REGISTROS_POR_PAGINA_BD; const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_BD);
   const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
-  tbody.innerHTML = pag.map(function(r) { const claseYInd = claseYIndicadorSimple(r, cf, cg); const claseAdmin = r.esAdmin ? ' fila-admin' : ''; const badgeAdmin = r.esAdmin ? ' <span class="badge badge-admin">ADMIN</span>' : ''; return '<tr class="' + claseYInd.clase + claseAdmin + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + badgeAdmin + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">🗑️</button></td></tr>'; }).join('');
+  tbody.innerHTML = pag.map(function(r) { const claseYInd = claseYIndicadorSimple(r, cf, cg); const claseAdmin = r.esAdmin ? ' fila-admin' : ''; const badgeAdmin = r.esAdmin ? ' <span class="badge badge-admin">ADMIN</span>' : ''; return '<tr class="' + claseYInd.clase + claseAdmin + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + badgeAdmin + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">️</button></td></tr>'; }).join('');
   if (tp <= 1) { pagDiv.innerHTML = '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(regs.length) + ' de ' + formatoEntero(regs.length) + '</div>'; return; }
   let h = '<div class="bd-paginacion-info">Pagina ' + pagina + ' de ' + tp + ' | ' + formatoEntero(ini+1) + '-' + formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_BD, regs.length)) + ' de ' + formatoEntero(regs.length) + '</div>';
   h += pagina>1 ? '<button class="btn-bd-pag-nav" onclick="irPaginaBD(\'' + tipo + '\',' + (pagina-1) + ')">‹ Anterior</button>' : '<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>';
@@ -1636,6 +1598,7 @@ window.irPaginaBD = function(t,p) { if (rolActual !== 'admin') return; const pag
 window.filtrarBD = function(t) { if (rolActual !== 'admin') return; const pagMap = { AMPM: 'paginaBDAmpm', B2C: 'paginaBDB2c', ADM: 'paginaBDAdm', QDM: 'paginaBDQdm' }; if (pagMap[t]) window[pagMap[t]] = 1; renderizarBaseDatos(); };
 window.pedirEditarRegistroBD = function(key, anio, mes) { pedirClave(function() { editandoKey = key; render(); renderizarBaseDatos(); }); };
 
+// ✅ Preserva transporteManual al editar
 window.guardarEdicionInline = function(key, anio, mes, esPend) {
   const gv = function(id) { const el = document.getElementById(id); return el ? el.value : ''; };
   const nuevo = { fecha: gv('edi_fecha'), unidad: gv('edi_unidad'), idPedido: gv('edi_id'), nombre: gv('edi_nombre'), direccion: gv('edi_direccion'), comuna: canonComuna(gv('edi_comuna')), valor: parseFloat(gv('edi_valor'))||0, observacion: gv('edi_obs'), transporte: gv('edi_transporte'), rango: gv('edi_rango') };
@@ -1644,6 +1607,7 @@ window.guardarEdicionInline = function(key, anio, mes, esPend) {
   if (document.getElementById('edi_email')) nuevo.email = gv('edi_email');
   const parts = (nuevo.fecha||'').split('-'); const nA = parts[0]; const nM = parts[1];
   if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
+    // ✅ Preservar transporteManual
     const transporteAnterior = cache[anio][mes][key].transporte;
     const esManual = cache[anio][mes][key].transporteManual;
     if (nuevo.transporte !== transporteAnterior) { nuevo.transporteManual = true; }
@@ -1887,7 +1851,7 @@ function renderizarCalFila(key, fechaSeleccionada) {
   const diasEnMes = ultimoDia.getDate();
   let primerDiaSemana = primerDia.getDay();
   if (primerDiaSemana === 0) primerDiaSemana = 7;
-  let html = '<div class="cal-header-fila"><button onclick="cambiarMesCalFila(\'' + key + '\', -1, event)"></button><span>' + MESES_NOM[calFilaMes].charAt(0) + MESES_NOM[calFilaMes].slice(1).toLowerCase() + ' ' + calFilaAnio + '</span><button onclick="cambiarMesCalFila(\'' + key + '\', 1, event)">▶</button></div><div class="cal-grid-fila">';
+  let html = '<div class="cal-header-fila"><button onclick="cambiarMesCalFila(\'' + key + '\', -1, event)">◀</button><span>' + MESES_NOM[calFilaMes].charAt(0) + MESES_NOM[calFilaMes].slice(1).toLowerCase() + ' ' + calFilaAnio + '</span><button onclick="cambiarMesCalFila(\'' + key + '\', 1, event)">▶</button></div><div class="cal-grid-fila">';
   DIAS_SEMANA_CORTO.forEach(function(d) { html += '<div class="dia-semana">' + d + '</div>'; });
   for (let i = 1; i < primerDiaSemana; i++) { html += '<div class="dia vacio"></div>'; }
   for (let d = 1; d <= diasEnMes; d++) {
@@ -1929,6 +1893,7 @@ window.cambiarFechaFila = function(key, nuevaFecha, esPend) {
   for (const a of Object.keys(cache)) { for (const m of Object.keys(cache[a]||{})) { if (cache[a][m] && cache[a][m][key]) { cambiosFechaLocales[key] = { esPendiente: false, anioOriginal: a, mesOriginal: m, nuevaFecha: nuevaFecha, nuevaAnio: nA, nuevaMes: nM }; toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info'); render(); return; } } }
 };
 
+// ✅ CARGA DE DATOS PRESERVA transporteManual
 async function cargarDatos() {
   const inicio = performance.now(); 
   toast('Cargando datos...', 'info');
