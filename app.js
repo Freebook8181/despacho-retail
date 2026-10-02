@@ -106,10 +106,10 @@ const REGLA_AM = {
   }
 };
 
-// ✅ Respeta transporteManual
+// ✅ MODIFICADO: Respeta transporteManual
 function autocompletarTransportePM(reg) {
   if (!reg || !reg.comuna) return reg;
-  if (reg.transporteManual === true) return reg;
+  if (reg.transporteManual) return reg; // ✅ Si es manual, no aplicar regla
   const comunaNorm = normSinTildes(reg.comuna);
   for (const movil in REGLA_PM) {
     const comunas = REGLA_PM[movil];
@@ -123,9 +123,10 @@ function autocompletarTransportePM(reg) {
   return reg;
 }
 
+// ✅ MODIFICADO: Respeta transporteManual
 function autocompletarTransporteAM(reg, diaSemana) {
   if (!reg || !reg.comuna) return reg;
-  if (reg.transporteManual === true) return reg;
+  if (reg.transporteManual) return reg; // ✅ Si es manual, no aplicar regla
   const reglas = REGLA_AM[diaSemana];
   if (!reglas) return reg;
   const comunaNorm = normSinTildes(reg.comuna);
@@ -160,11 +161,12 @@ function obtenerDiaSemanaManana() {
   return manana.getDay();
 }
 
-// ✅ REGLA BITACORAS AM/PM
+// ✅ REGLA BITACORAS AM/PM: Determina a qué bitácora va según transporte y tipo
 function obtenerClaveBitacora(transporte, tipoRegistro) {
   const t = (transporte || '').toUpperCase().trim();
   const esB2C = (tipoRegistro === 'B2C');
   const prefijo = esB2C ? 'b2c_' : '';
+  
   if (t === 'MOVIL 1') return prefijo + 'movil1';
   if (t === 'MOVIL 2') return prefijo + 'movil2';
   if (t === 'MOVIL 3') return prefijo + 'movil3';
@@ -174,8 +176,12 @@ function obtenerClaveBitacora(transporte, tipoRegistro) {
   if (t === 'SPOT') return prefijo + 'spot';
   if (t === 'SPOT 1') return prefijo + 'spot1';
   if (t === 'SPOT 2') return prefijo + 'spot2';
+  
+  // SERVICIO AM/PM, ADM, QDM → van a SPOT unificado
   if (t === 'SERVICIO AM/PM' || t === 'SERVICIO ADM' || t === 'SERVICIO QDM') return 'spot';
+  // SERVICIO B2C → va a SPOT de B2C
   if (t === 'SERVICIO B2C') return 'b2c_spot';
+  
   return null;
 }
 
@@ -256,7 +262,9 @@ function registrarActividad(accion, detalle, modulo) {
     fecha: ahora.toISOString(),
     timestamp: ahora.getTime()
   };
-  push(ref(db, RUTA_ACTIVIDAD), registro).catch(function(e) { console.error('Error registrando actividad:', e); });
+  push(ref(db, RUTA_ACTIVIDAD), registro).catch(function(e) {
+    console.error('Error registrando actividad:', e);
+  });
 }
 
 function iniciarHeartbeat() {
@@ -273,12 +281,19 @@ function iniciarHeartbeat() {
   }
   actualizarOnline();
   heartbeatInterval = setInterval(actualizarOnline, 30000);
-  window.addEventListener('beforeunload', function() { remove(ref(db, RUTA_USUARIOS_ONLINE + '/' + userId)); });
+  window.addEventListener('beforeunload', function() {
+    remove(ref(db, RUTA_USUARIOS_ONLINE + '/' + userId));
+  });
 }
 
 function detenerHeartbeat() {
-  if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
-  if (userIdActual) { remove(ref(db, RUTA_USUARIOS_ONLINE + '/' + userIdActual)); }
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+  if (userIdActual) {
+    remove(ref(db, RUTA_USUARIOS_ONLINE + '/' + userIdActual));
+  }
 }
 
 function escucharUsuariosOnline() {
@@ -290,7 +305,10 @@ function escucharUsuariosOnline() {
     let count = 0;
     Object.keys(data).forEach(function(key) {
       const u = data[key];
-      if (u.ultimoVisto && u.ultimoVisto > hace5Min) { usuariosOnline[key] = u; count++; }
+      if (u.ultimoVisto && u.ultimoVisto > hace5Min) {
+        usuariosOnline[key] = u;
+        count++;
+      }
     });
     actualizarDisplayUsuariosOnline(count);
   });
@@ -302,8 +320,9 @@ function actualizarDisplayUsuariosOnline(count) {
   if (el) el.textContent = count;
   if (lista) {
     const keys = Object.keys(usuariosOnline);
-    if (keys.length === 0) { lista.innerHTML = '<span style="color:var(--text-muted);font-size:.85em">Sin usuarios activos</span>'; }
-    else {
+    if (keys.length === 0) {
+      lista.innerHTML = '<span style="color:var(--text-muted);font-size:.85em">Sin usuarios activos</span>';
+    } else {
       lista.innerHTML = keys.map(function(k) {
         const u = usuariosOnline[k];
         const adminBadge = u.esAdmin ? ' (ADMIN)' : '';
@@ -317,7 +336,9 @@ function actualizarDisplayUsuariosOnline(count) {
 function escucharActividad() {
   onValue(ref(db, RUTA_ACTIVIDAD), function(snapshot) {
     const data = snapshot.val() || {};
-    actividadData = Object.keys(data).map(function(k) { return Object.assign({ id: k }, data[k]); }).sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+    actividadData = Object.keys(data).map(function(k) {
+      return Object.assign({ id: k }, data[k]);
+    }).sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
     renderizarActividad();
   });
 }
@@ -336,7 +357,7 @@ function renderizarActividad() {
   if (registrosEl) registrosEl.textContent = formatoEntero(totalRegs);
   if (!lista) return;
   if (actividadData.length === 0) { lista.innerHTML = '<div class="actividad-empty">No hay actividad registrada</div>'; return; }
-  const iconos = { 'SUBIDA_ARCHIVO': '📤', 'GUARDADO': '💾', 'ELIMINACION': '🗑️', 'ENVIO_BITACORA': '📋', 'CAMBIO_FECHA': '📅', 'REGISTRO_NUEVO': '➕', 'LOGIN': '🔑', 'BORRADO_MASIVO': '️', 'EXPORTACION': '📊', 'EDICION': '✏️' };
+  const iconos = { 'SUBIDA_ARCHIVO': '📤', 'GUARDADO': '💾', 'ELIMINACION': '🗑️', 'ENVIO_BITACORA': '📋', 'CAMBIO_FECHA': '📅', 'REGISTRO_NUEVO': '➕', 'LOGIN': '🔑', 'BORRADO_MASIVO': '⚠️', 'EXPORTACION': '', 'EDICION': '✏️' };
   lista.innerHTML = actividadData.slice(0, 100).map(function(a) {
     const icono = iconos[a.accion] || '📝';
     const fecha = new Date(a.fecha);
@@ -488,6 +509,7 @@ function actualizarReloj() {
 setInterval(actualizarReloj, 1000);
 actualizarReloj();
 
+// ✅ LOGIN FUNCIONAL
 window.login = function() {
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPass').value;
@@ -501,7 +523,11 @@ window.login = function() {
     console.error('Error de login:', error);
     if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
       toast('Usuario no encontrado. Creando...', 'info');
-      createUserWithEmailAndPassword(auth, email, pass).then(function(newUser) { toast('Usuario creado: ' + email, 'ok'); }).catch(function(createError) { toast('No se pudo crear: ' + createError.message, 'err'); });
+      createUserWithEmailAndPassword(auth, email, pass).then(function(newUser) {
+        toast('Usuario creado: ' + email, 'ok');
+      }).catch(function(createError) {
+        toast('No se pudo crear: ' + createError.message, 'err');
+      });
       return;
     }
     if (error.code === 'auth/wrong-password') { toast('Contraseña incorrecta para ' + email, 'err'); return; }
@@ -511,7 +537,10 @@ window.login = function() {
   });
 };
 
-window.logout = function() { detenerHeartbeat(); signOut(auth); };
+window.logout = function() { 
+  detenerHeartbeat();
+  signOut(auth); 
+};
 
 onAuthStateChanged(auth, function(user) {
   if (user) {
@@ -522,7 +551,10 @@ onAuthStateChanged(auth, function(user) {
     document.getElementById('userEmail').textContent = user.email + (rolActual === 'admin' ? '  (ADMIN)' : '');
     aplicarRol();
     iniciarHeartbeat();
-    if (rolActual === 'admin') { escucharUsuariosOnline(); escucharActividad(); }
+    if (rolActual === 'admin') {
+      escucharUsuariosOnline();
+      escucharActividad();
+    }
     cargarDatos().then(function() {
       if (seccionInicial === 'basedatos' || seccionInicial === 'informes' || seccionInicial === 'bitacoras' || seccionInicial === 'actividad') {
         cambiarSeccion(seccionInicial);
@@ -601,7 +633,9 @@ window.cambiarSeccion = function(sec) {
   if (sec === 'basedatos') renderizarBaseDatos();
   if (sec === 'informes') renderInformes();
   if (sec === 'bitacoras') renderizarTodasBitacoras();
-  if (sec === 'actividad') { if (rolActual === 'admin') { escucharActividad(); renderizarActividad(); } }
+  if (sec === 'actividad') {
+    if (rolActual === 'admin') { escucharActividad(); renderizarActividad(); }
+  }
   actualizarBotonGuardar();
 };
 
@@ -617,8 +651,15 @@ window.cambiarTabBitacora = function(tab) {
   renderizarTodasBitacoras();
 };
 
-window.toggleSeccion = function(s) { document.getElementById('contenido' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('show'); document.getElementById('flecha' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('rotada'); };
-window.toggleSubmenu = function(s) { document.getElementById('submenu' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('show'); document.getElementById('flecha' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('rotada'); };
+window.toggleSeccion = function(s) { 
+  document.getElementById('contenido' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('show'); 
+  document.getElementById('flecha' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('rotada'); 
+};
+
+window.toggleSubmenu = function(s) { 
+  document.getElementById('submenu' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('show'); 
+  document.getElementById('flecha' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('rotada'); 
+};
 
 window.cambiarTabBD = function(tab) { 
   if (rolActual !== 'admin') return; 
@@ -631,31 +672,76 @@ window.cambiarTabBD = function(tab) {
   renderizarBaseDatos();
 };
 
-window.cambiarTema = function(t) { document.documentElement.setAttribute('data-theme', t); document.querySelectorAll('.theme-btn').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-theme') === t); }); localStorage.setItem('temaDespachoRetail', t); };
+window.cambiarTema = function(t) { 
+  document.documentElement.setAttribute('data-theme', t); 
+  document.querySelectorAll('.theme-btn').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-theme') === t); }); 
+  localStorage.setItem('temaDespachoRetail', t); 
+};
 
-window.toggleSeleccionDesc = function(key, checked) { checked ? seleccionadosDesc.add(key) : seleccionadosDesc.delete(key); sincronizarSelTodos(); actualizarContadorEnviar(); };
-window.toggleSeleccionarTodo = function(checked) { checked ? keysVisiblesDesc.forEach(function(k) { seleccionadosDesc.add(k); }) : keysVisiblesDesc.forEach(function(k) { seleccionadosDesc.delete(k); }); render(); };
-function sincronizarSelTodos() { const el = document.getElementById('selTodosDesc'); if (el) el.checked = keysVisiblesDesc.length > 0 && keysVisiblesDesc.every(function(k) { return seleccionadosDesc.has(k); }); }
-function actualizarContadorEnviar() { const b = document.getElementById('btnEnviar'); if (b) b.textContent = seleccionadosDesc.size > 0 ? 'ENVIAR A BITACORA (' + seleccionadosDesc.size + ')' : 'ENVIAR A BITACORA'; }
+window.toggleSeleccionDesc = function(key, checked) { 
+  checked ? seleccionadosDesc.add(key) : seleccionadosDesc.delete(key); 
+  sincronizarSelTodos(); 
+  actualizarContadorEnviar(); 
+};
 
-function leerFiltrosDesc() { const g = function(id) { const el = document.getElementById(id); return el ? normSinTildes(el.value.trim()) : ''; }; return { unidad: g('fDescUnidad'), comuna: g('fDescComuna'), transporte: g('fDescTransporte'), rango: g('fDescRango') }; }
+window.toggleSeleccionarTodo = function(checked) { 
+  checked ? keysVisiblesDesc.forEach(function(k) { seleccionadosDesc.add(k); }) : keysVisiblesDesc.forEach(function(k) { seleccionadosDesc.delete(k); }); 
+  render(); 
+};
+
+function sincronizarSelTodos() { 
+  const el = document.getElementById('selTodosDesc'); 
+  if (el) el.checked = keysVisiblesDesc.length > 0 && keysVisiblesDesc.every(function(k) { return seleccionadosDesc.has(k); }); 
+}
+
+function actualizarContadorEnviar() { 
+  const b = document.getElementById('btnEnviar'); 
+  if (b) b.textContent = seleccionadosDesc.size > 0 ? 'ENVIAR A BITACORA (' + seleccionadosDesc.size + ')' : 'ENVIAR A BITACORA'; 
+}
+
+function leerFiltrosDesc() {
+  const g = function(id) { const el = document.getElementById(id); return el ? normSinTildes(el.value.trim()) : ''; };
+  return { unidad: g('fDescUnidad'), comuna: g('fDescComuna'), transporte: g('fDescTransporte'), rango: g('fDescRango') };
+}
 
 function getDescBaseRows() {
   const f = document.getElementById('fFecha');
   const fechaTrabajo = (f && f.value) ? f.value : new Date().toISOString().split('T')[0];
   const tipoSec = tipoDeSeccion();
   let regs = [];
-  Object.keys(cache).forEach(function(a) { Object.keys(cache[a]||{}).forEach(function(m) { Object.keys(cache[a][m]).forEach(function(k) { const r = { key:k, anio:a, mes:m }; Object.keys(cache[a][m][k]).forEach(function(key) { r[key] = cache[a][m][k][key]; }); if (getTipoRegistro(r) !== tipoSec) return; regs.push(r); }); }); });
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      Object.keys(cache[a][m]).forEach(function(k) { 
+        const r = { key:k, anio:a, mes:m };
+        Object.keys(cache[a][m][k]).forEach(function(key) { r[key] = cache[a][m][k][key]; });
+        if (getTipoRegistro(r) !== tipoSec) return; 
+        regs.push(r); 
+      }); 
+    }); 
+  });
   const keysConCambios = Object.keys(cambiosFechaLocales);
-  regs = regs.filter(function(r) { if (keysConCambios.includes(r.key)) return true; return r.fecha === fechaTrabajo; });
-  pendientesDeSeccion().forEach(function(p) { const reg = Object.assign({}, p.reg, { key: p.key, anio: p.anio, mes: p.mes, pendiente: true }); regs.push(reg); });
+  regs = regs.filter(function(r) {
+    if (keysConCambios.includes(r.key)) return true;
+    return r.fecha === fechaTrabajo;
+  });
+  pendientesDeSeccion().forEach(function(p) { 
+    const reg = Object.assign({}, p.reg, { key: p.key, anio: p.anio, mes: p.mes, pendiente: true });
+    regs.push(reg); 
+  });
   return regs;
 }
 
 function getDistinctValues(col) {
   const rows = getDescBaseRows();
   const set = new Set();
-  rows.forEach(function(r) { let v = ''; if (col === 'unidad') v = r.unidad || ''; else if (col === 'comuna') v = canonComuna(r.comuna) || ''; else if (col === 'transporte') v = r.transporte || ''; else if (col === 'rango') v = r.rango || ''; if (v) set.add(v); });
+  rows.forEach(function(r) {
+    let v = '';
+    if (col === 'unidad') v = r.unidad || '';
+    else if (col === 'comuna') v = canonComuna(r.comuna) || '';
+    else if (col === 'transporte') v = r.transporte || '';
+    else if (col === 'rango') v = r.rango || '';
+    if (v) set.add(v);
+  });
   return Array.from(set).sort();
 }
 
@@ -667,43 +753,128 @@ function poblarCombo(col, filtro) {
   list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionCombo(\'' + col + '\', \'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
 }
 
-function poblarCombos() { ['unidad','comuna','transporte','rango'].forEach(function(col) { const inp = document.getElementById('fDesc' + col.charAt(0).toUpperCase() + col.slice(1); poblarCombo(col, inp ? inp.value : ''); }); }
+function poblarCombos() { 
+  ['unidad','comuna','transporte','rango'].forEach(function(col) { 
+    const inp = document.getElementById('fDesc' + col.charAt(0).toUpperCase() + col.slice(1)); 
+    poblarCombo(col, inp ? inp.value : ''); 
+  }); 
+}
 
-function cerrarTodosCombos() { document.querySelectorAll('.combo-list').forEach(function(l) { if (!l.id.startsWith('comboModal_') && !l.id.startsWith('comboBD_') && !l.id.startsWith('combo_trans_') && !l.id.startsWith('combo_obs_')) l.style.display = 'none'; }); comboAbierto = null; comboTransAbierto = null; comboObsAbierto = null; if (calendarioAbierto) { calendarioAbierto = false; const p = document.getElementById('calendarioPopup'); if (p) p.classList.remove('show'); } if (calFilaAbierto) { const p = document.getElementById('cal_popup_' + calFilaAbierto); if (p) p.classList.remove('show'); calFilaAbierto = null; } }
+function cerrarTodosCombos() { 
+  document.querySelectorAll('.combo-list').forEach(function(l) { 
+    if (!l.id.startsWith('comboModal_') && !l.id.startsWith('comboBD_') && !l.id.startsWith('combo_trans_') && !l.id.startsWith('combo_obs_')) 
+      l.style.display = 'none'; 
+  }); 
+  comboAbierto = null; 
+  comboTransAbierto = null;
+  comboObsAbierto = null;
+  if (calendarioAbierto) { calendarioAbierto = false; const p = document.getElementById('calendarioPopup'); if (p) p.classList.remove('show'); }
+  if (calFilaAbierto) { const p = document.getElementById('cal_popup_' + calFilaAbierto); if (p) p.classList.remove('show'); calFilaAbierto = null; }
+}
 
-window.toggleCombo = function(col) { const list = document.getElementById('combo_' + col); if (!list) return; if (comboAbierto === col) { list.style.display = 'none'; comboAbierto = null; } else { cerrarTodosCombos(); poblarCombo(col, ''); list.style.display = 'block'; comboAbierto = col; } };
-function abrirCombo(col) { cerrarTodosCombos(); poblarCombo(col, ''); const list = document.getElementById('combo_' + col); if (list) { list.style.display = 'block'; comboAbierto = col; } }
-window.elegirOpcionCombo = function(col, val) { const input = document.getElementById('fDesc' + col.charAt(0).toUpperCase() + col.slice(1)); if (input) input.value = val; cerrarTodosCombos(); render(); };
-window.filtrarComboDesc = function(col, val) { poblarCombo(col, val); const list = document.getElementById('combo_' + col); if (list) { list.style.display = 'block'; comboAbierto = col; } render(); };
+window.toggleCombo = function(col) {
+  const list = document.getElementById('combo_' + col);
+  if (!list) return;
+  if (comboAbierto === col) { list.style.display = 'none'; comboAbierto = null; }
+  else { cerrarTodosCombos(); poblarCombo(col, ''); list.style.display = 'block'; comboAbierto = col; }
+};
 
-window.abrirComboTransporte = function(key) { const list = document.getElementById('combo_trans_' + key); if (!list) return; const input = document.getElementById('trans_input_' + key); const val = input ? input.value : ''; let vals = OPCIONES_TRANSPORTE; if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionTransporte(\'' + key + '\', \'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; list.style.display = 'block'; comboTransAbierto = key; };
-window.toggleComboTransporte = function(key) { const list = document.getElementById('combo_trans_' + key); if (!list) return; if (comboTransAbierto === key) { list.style.display = 'none'; comboTransAbierto = null; } else { cerrarTodosCombos(); abrirComboTransporte(key); } };
-window.filtrarComboTransporte = function(key, val) { const list = document.getElementById('combo_trans_' + key); if (!list) return; let vals = OPCIONES_TRANSPORTE; if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionTransporte(\'' + key + '\', \'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; list.style.display = 'block'; comboTransAbierto = key; };
-window.elegirOpcionTransporte = function(key, val) { const input = document.getElementById('trans_input_' + key); if (input) input.value = val; const list = document.getElementById('combo_trans_' + key); if (list) list.style.display = 'none'; comboTransAbierto = null; actualizarTransporteRegistro(key, val); };
+function abrirCombo(col) { 
+  cerrarTodosCombos(); 
+  poblarCombo(col, ''); 
+  const list = document.getElementById('combo_' + col); 
+  if (list) { list.style.display = 'block'; comboAbierto = col; } 
+}
 
-// ✅ Marca transporteManual al cambiar
+window.elegirOpcionCombo = function(col, val) {
+  const input = document.getElementById('fDesc' + col.charAt(0).toUpperCase() + col.slice(1));
+  if (input) input.value = val;
+  cerrarTodosCombos();
+  render();
+};
+
+window.filtrarComboDesc = function(col, val) {
+  poblarCombo(col, val);
+  const list = document.getElementById('combo_' + col);
+  if (list) { list.style.display = 'block'; comboAbierto = col; }
+  render();
+};
+
+// ✅ MODIFICADO: Marca transporteManual al cambiar transporte
+window.abrirComboTransporte = function(key) {
+  const list = document.getElementById('combo_trans_' + key);
+  if (!list) return;
+  const input = document.getElementById('trans_input_' + key);
+  const val = input ? input.value : '';
+  let vals = OPCIONES_TRANSPORTE;
+  if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionTransporte(\'' + key + '\', \'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+  list.style.display = 'block';
+  comboTransAbierto = key;
+};
+
+window.toggleComboTransporte = function(key) {
+  const list = document.getElementById('combo_trans_' + key);
+  if (!list) return;
+  if (comboTransAbierto === key) { list.style.display = 'none'; comboTransAbierto = null; }
+  else { cerrarTodosCombos(); abrirComboTransporte(key); }
+};
+
+window.filtrarComboTransporte = function(key, val) {
+  const list = document.getElementById('combo_trans_' + key);
+  if (!list) return;
+  let vals = OPCIONES_TRANSPORTE;
+  if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionTransporte(\'' + key + '\', \'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+  list.style.display = 'block';
+  comboTransAbierto = key;
+};
+
+window.elegirOpcionTransporte = function(key, val) {
+  const input = document.getElementById('trans_input_' + key);
+  if (input) input.value = val;
+  const list = document.getElementById('combo_trans_' + key);
+  if (list) list.style.display = 'none';
+  comboTransAbierto = null;
+  actualizarTransporteRegistro(key, val);
+};
+
+// ✅ MODIFICADO: Marca transporteManual = true cuando el usuario cambia el transporte
 function actualizarTransporteRegistro(key, nuevoTransporte) {
-  let p = pendientesAMPM.find(function(p) { return p.key===key; }) || pendientesADM.find(function(p) { return p.key===key; }) || pendientesQDM.find(function(p) { return p.key===key; }) || pendientesB2C.find(function(p) { return p.key===key; });
+  let p = pendientesAMPM.find(function(p) { return p.key===key; }) || 
+          pendientesADM.find(function(p) { return p.key===key; }) || 
+          pendientesQDM.find(function(p) { return p.key===key; }) || 
+          pendientesB2C.find(function(p) { return p.key===key; });
+  
   if (p) {
     if (p.reg.transporte !== nuevoTransporte) {
       p.reg.transporte = nuevoTransporte;
-      p.reg.transporteManual = true;
+      p.reg.transporteManual = true; // ✅ Marcar como manual
       delete p.reg._candidatos;
       if (cache[p.anio] && cache[p.anio][p.mes] && cache[p.anio][p.mes][key]) {
-        update(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes + '/' + key), { transporte: nuevoTransporte, transporteManual: true }).then(function() { toast('Transporte actualizado a ' + nuevoTransporte, 'ok'); }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
+        update(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes + '/' + key), { 
+          transporte: nuevoTransporte,
+          transporteManual: true 
+        }).then(function() { toast('Transporte actualizado', 'ok'); })
+          .catch(function(e) { toast('Error: ' + e.message, 'err'); });
       }
       render();
     }
     return;
   }
+  
   outer: for (const a of Object.keys(cache)) {
     for (const m of Object.keys(cache[a]||{})) {
       if (cache[a][m] && cache[a][m][key]) {
         if (cache[a][m][key].transporte !== nuevoTransporte) {
           cache[a][m][key].transporte = nuevoTransporte;
-          cache[a][m][key].transporteManual = true;
+          cache[a][m][key].transporteManual = true; // ✅ Marcar como manual
           delete cache[a][m][key]._candidatos;
-          update(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + key), { transporte: nuevoTransporte, transporteManual: true }).then(function() { toast('Transporte actualizado a ' + nuevoTransporte, 'ok'); }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
+          update(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + key), { 
+            transporte: nuevoTransporte,
+            transporteManual: true 
+          }).then(function() { toast('Transporte actualizado', 'ok'); })
+            .catch(function(e) { toast('Error: ' + e.message, 'err'); });
         }
         break outer;
       }
@@ -712,41 +883,239 @@ function actualizarTransporteRegistro(key, nuevoTransporte) {
   render();
 }
 
-window.abrirComboObs = function(key) { const list = document.getElementById('combo_obs_' + key); if (!list) return; const input = document.getElementById('obs_input_' + key); const val = input ? input.value : ''; let vals = OPCIONES_OBS; if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionObs(\'' + key + '\', \'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; list.style.display = 'block'; comboObsAbierto = key; };
-window.toggleComboObs = function(key) { const list = document.getElementById('combo_obs_' + key); if (!list) return; if (comboObsAbierto === key) { list.style.display = 'none'; comboObsAbierto = null; } else { cerrarTodosCombos(); abrirComboObs(key); } };
-window.filtrarComboObs = function(key, val) { const list = document.getElementById('combo_obs_' + key); if (!list) return; let vals = OPCIONES_OBS; if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionObs(\'' + key + '\', \'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; list.style.display = 'block'; comboObsAbierto = key; };
-window.elegirOpcionObs = function(key, val) { const input = document.getElementById('obs_input_' + key); if (input) input.value = val; const list = document.getElementById('combo_obs_' + key); if (list) list.style.display = 'none'; comboObsAbierto = null; actualizarObservacionRegistro(key, val); };
+window.abrirComboObs = function(key) {
+  const list = document.getElementById('combo_obs_' + key);
+  if (!list) return;
+  const input = document.getElementById('obs_input_' + key);
+  const val = input ? input.value : '';
+  let vals = OPCIONES_OBS;
+  if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionObs(\'' + key + '\', \'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+  list.style.display = 'block';
+  comboObsAbierto = key;
+};
+
+window.toggleComboObs = function(key) {
+  const list = document.getElementById('combo_obs_' + key);
+  if (!list) return;
+  if (comboObsAbierto === key) { list.style.display = 'none'; comboObsAbierto = null; }
+  else { cerrarTodosCombos(); abrirComboObs(key); }
+};
+
+window.filtrarComboObs = function(key, val) {
+  const list = document.getElementById('combo_obs_' + key);
+  if (!list) return;
+  let vals = OPCIONES_OBS;
+  if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionObs(\'' + key + '\', \'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+  list.style.display = 'block';
+  comboObsAbierto = key;
+};
+
+window.elegirOpcionObs = function(key, val) {
+  const input = document.getElementById('obs_input_' + key);
+  if (input) input.value = val;
+  const list = document.getElementById('combo_obs_' + key);
+  if (list) list.style.display = 'none';
+  comboObsAbierto = null;
+  actualizarObservacionRegistro(key, val);
+};
 
 function actualizarObservacionRegistro(key, nuevaObs) {
   let p = pendientesAMPM.find(function(p) { return p.key===key; }) || pendientesADM.find(function(p) { return p.key===key; }) || pendientesQDM.find(function(p) { return p.key===key; }) || pendientesB2C.find(function(p) { return p.key===key; });
-  if (p) { p.reg.observacion = nuevaObs.toUpperCase(); if (cache[p.anio] && cache[p.anio][p.mes] && cache[p.anio][p.mes][key]) { update(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes + '/' + key), { observacion: nuevaObs.toUpperCase() }); } render(); return; }
-  outer: for (const a of Object.keys(cache)) { for (const m of Object.keys(cache[a]||{})) { if (cache[a][m] && cache[a][m][key]) { cache[a][m][key].observacion = nuevaObs.toUpperCase(); update(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + key), { observacion: nuevaObs.toUpperCase() }); break outer; } } }
+  if (p) {
+    p.reg.observacion = nuevaObs.toUpperCase();
+    if (cache[p.anio] && cache[p.anio][p.mes] && cache[p.anio][p.mes][key]) {
+      update(ref(db, RUTA_BASE + '/' + p.anio + '/' + p.mes + '/' + key), { observacion: nuevaObs.toUpperCase() });
+    }
+    render();
+    return;
+  }
+  outer: for (const a of Object.keys(cache)) {
+    for (const m of Object.keys(cache[a]||{})) {
+      if (cache[a][m] && cache[a][m][key]) {
+        cache[a][m][key].observacion = nuevaObs.toUpperCase();
+        update(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + key), { observacion: nuevaObs.toUpperCase() });
+        break outer;
+      }
+    }
+  }
   render();
 }
 
-window.abrirComboObsEdicion = function() { const list = document.getElementById('combo_edicion_obs'); if (!list) return; const input = document.getElementById('edi_obs'); const val = input ? input.value : ''; let vals = OPCIONES_OBS; if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionObsEdicion(\'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; list.style.display = 'block'; };
-window.toggleComboObsEdicion = function() { const list = document.getElementById('combo_edicion_obs'); if (!list) return; if (list.style.display === 'block') { list.style.display = 'none'; } else { abrirComboObsEdicion(); } };
-window.filtrarComboObsEdicion = function(val) { const list = document.getElementById('combo_edicion_obs'); if (!list) return; let vals = OPCIONES_OBS; if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionObsEdicion(\'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; list.style.display = 'block'; };
-window.elegirOpcionObsEdicion = function(val) { const input = document.getElementById('edi_obs'); if (input) input.value = val; const list = document.getElementById('combo_edicion_obs'); if (list) list.style.display = 'none'; };
+window.abrirComboObsEdicion = function() {
+  const list = document.getElementById('combo_edicion_obs');
+  if (!list) return;
+  const input = document.getElementById('edi_obs');
+  const val = input ? input.value : '';
+  let vals = OPCIONES_OBS;
+  if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionObsEdicion(\'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+  list.style.display = 'block';
+};
 
-function getDistinctModal(col) { const set = new Set(); datosModal.forEach(function(r) { let v = ''; if (col==='fecha') v = fmtFecha(r.fecha); else if (col==='unidad') v = r.unidad||''; else if (col==='comuna') v = canonComuna(r.comuna)||''; else if (col==='transporte') v = r.transporte||''; else if (col==='observacion') v = r.observacion||''; else if (col==='rango') v = r.rango||''; if (v) set.add(v); }); return Array.from(set).sort(); }
-function poblarComboModal(col, filtro) { const list = document.getElementById('comboModal_'+col); if (!list) return; let vals = getDistinctModal(col); if (filtro) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(filtro)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionModal(\'' + col + '\', \'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; }
-function poblarCombosModal() { ['fecha','unidad','comuna','transporte','observacion','rango'].forEach(function(col) { const inp = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1)); poblarComboModal(col, inp ? inp.value : ''); }); }
-function cerrarCombosModal() { document.querySelectorAll('.combo-list').forEach(function(l) { if (l.id.startsWith('comboModal_')) l.style.display='none'; }); comboModalAbierto = null; }
-window.toggleComboModal = function(col) { const list = document.getElementById('comboModal_'+col); if (!list) return; if (comboModalAbierto === col) { list.style.display='none'; comboModalAbierto=null; } else { cerrarCombosModal(); poblarComboModal(col,''); list.style.display='block'; comboModalAbierto=col; } };
-function abrirComboModal(col) { cerrarCombosModal(); poblarComboModal(col,''); const list=document.getElementById('comboModal_'+col); if(list){ list.style.display='block'; comboModalAbierto=col; } }
-window.elegirOpcionModal = function(col, val) { const input = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1)); if (input) input.value = val; cerrarCombosModal(); aplicarFiltrosModal(); };
-window.filtrarComboModal = function(col, val) { poblarComboModal(col, val); const list = document.getElementById('comboModal_'+col); if (list) { list.style.display='block'; comboModalAbierto=col; } aplicarFiltrosModal(); };
+window.toggleComboObsEdicion = function() {
+  const list = document.getElementById('combo_edicion_obs');
+  if (!list) return;
+  if (list.style.display === 'block') { list.style.display = 'none'; }
+  else { abrirComboObsEdicion(); }
+};
 
-function sufBD(tipo){ if (tipo==='AMPM') return 'Ampm'; if (tipo==='B2C') return 'B2c'; if (tipo==='ADM') return 'Adm'; return 'Qdm'; }
-function getBDBaseRows(tipo){ let r = obtenerRegsTipo(tipo); const f = filtroDiaBD[tipo]; if (f.d) r = r.filter(function(x) { return (x.fecha||'').split('-')[2] === f.d; }); if (f.m) r = r.filter(function(x) { return x.mes === f.m; }); if (f.a) r = r.filter(function(x) { return x.anio === f.a; }); return r; }
-function getDistinctBD(tipo, campo){ const set = new Set(); getBDBaseRows(tipo).forEach(function(r) { let v=''; if(campo==='unidad')v=r.unidad||''; else if(campo==='comuna')v=canonComuna(r.comuna)||''; else if(campo==='transporte')v=r.transporte||''; else if(campo==='rango')v=r.rango||''; if(v)set.add(v); }); return Array.from(set).sort(); }
-function poblarComboBD(tipo, campo, filtro){ const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); if(!list) return; let vals = getDistinctBD(tipo, campo); if (filtro) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(filtro)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionBD(\'' + tipo + '\',\'' + campo + '\',\'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; }
-function cerrarCombosBD(){ document.querySelectorAll('.combo-list').forEach(function(l) { if (l.id.startsWith('comboBD_')) l.style.display='none'; }); comboBDAbierto = null; }
-window.toggleComboBD = function(tipo, campo){ const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); if(!list) return; const id = tipo+'_'+campo; if (comboBDAbierto === id) { list.style.display='none'; comboBDAbierto=null; } else { cerrarCombosBD(); poblarComboBD(tipo,campo,''); list.style.display='block'; comboBDAbierto=id; } };
-function abrirComboBD(tipo, campo){ cerrarCombosBD(); poblarComboBD(tipo,campo,''); const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); if(list){ list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } }
-window.elegirOpcionBD = function(tipo, campo, val){ const input = document.getElementById('fBD'+sufBD(tipo)+'_'+campo); if (input) input.value = val; filtroDescBD[tipo][campo] = normSinTildes(val); cerrarCombosBD(); const idMap = { AMPM: 'filtroIdAmpm', B2C: 'filtroIdB2c', ADM: 'filtroIdAdm', QDM: 'filtroIdQdm' }; const pagMap = { AMPM: paginaBDAmpm, B2C: paginaBDB2c, ADM: paginaBDAdm, QDM: paginaBDQdm }; renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]); };
-window.filtrarBDCombo = function(tipo, campo, val){ filtroDescBD[tipo][campo] = normSinTildes(val); poblarComboBD(tipo, campo, val); const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo); if (list) { list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } const idMap = { AMPM: 'filtroIdAmpm', B2C: 'filtroIdB2c', ADM: 'filtroIdAdm', QDM: 'filtroIdQdm' }; const pagMap = { AMPM: paginaBDAmpm, B2C: paginaBDB2c, ADM: paginaBDAdm, QDM: paginaBDQdm }; renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]); };
+window.filtrarComboObsEdicion = function(val) {
+  const list = document.getElementById('combo_edicion_obs');
+  if (!list) return;
+  let vals = OPCIONES_OBS;
+  if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionObsEdicion(\'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+  list.style.display = 'block';
+};
+
+window.elegirOpcionObsEdicion = function(val) {
+  const input = document.getElementById('edi_obs');
+  if (input) input.value = val;
+  const list = document.getElementById('combo_edicion_obs');
+  if (list) list.style.display = 'none';
+};
+
+function getDistinctModal(col) {
+  const set = new Set();
+  datosModal.forEach(function(r) {
+    let v = '';
+    if (col==='fecha') v = fmtFecha(r.fecha);
+    else if (col==='unidad') v = r.unidad||'';
+    else if (col==='comuna') v = canonComuna(r.comuna)||'';
+    else if (col==='transporte') v = r.transporte||'';
+    else if (col==='observacion') v = r.observacion||'';
+    else if (col==='rango') v = r.rango||'';
+    if (v) set.add(v);
+  });
+  return Array.from(set).sort();
+}
+
+function poblarComboModal(col, filtro) {
+  const list = document.getElementById('comboModal_'+col);
+  if (!list) return;
+  let vals = getDistinctModal(col);
+  if (filtro) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(filtro)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionModal(\'' + col + '\', \'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+}
+
+function poblarCombosModal() { 
+  ['fecha','unidad','comuna','transporte','observacion','rango'].forEach(function(col) { 
+    const inp = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1)); 
+    poblarComboModal(col, inp ? inp.value : ''); 
+  }); 
+}
+
+function cerrarCombosModal() { 
+  document.querySelectorAll('.combo-list').forEach(function(l) { if (l.id.startsWith('comboModal_')) l.style.display='none'; }); 
+  comboModalAbierto = null; 
+}
+
+window.toggleComboModal = function(col) {
+  const list = document.getElementById('comboModal_'+col);
+  if (!list) return;
+  if (comboModalAbierto === col) { list.style.display='none'; comboModalAbierto=null; }
+  else { cerrarCombosModal(); poblarComboModal(col,''); list.style.display='block'; comboModalAbierto=col; }
+};
+
+function abrirComboModal(col) { 
+  cerrarCombosModal(); 
+  poblarComboModal(col,''); 
+  const list=document.getElementById('comboModal_'+col); 
+  if(list){ list.style.display='block'; comboModalAbierto=col; } 
+}
+
+window.elegirOpcionModal = function(col, val) {
+  const input = document.getElementById('fMod'+col.charAt(0).toUpperCase()+col.slice(1));
+  if (input) input.value = val;
+  cerrarCombosModal();
+  aplicarFiltrosModal();
+};
+
+window.filtrarComboModal = function(col, val) {
+  poblarComboModal(col, val);
+  const list = document.getElementById('comboModal_'+col);
+  if (list) { list.style.display='block'; comboModalAbierto=col; }
+  aplicarFiltrosModal();
+};
+
+function sufBD(tipo){ 
+  if (tipo==='AMPM') return 'Ampm';
+  if (tipo==='B2C') return 'B2c';
+  if (tipo==='ADM') return 'Adm';
+  return 'Qdm';
+}
+
+function getBDBaseRows(tipo){ 
+  let r = obtenerRegsTipo(tipo); 
+  const f = filtroDiaBD[tipo]; 
+  if (f.d) r = r.filter(function(x) { return (x.fecha||'').split('-')[2] === f.d; }); 
+  if (f.m) r = r.filter(function(x) { return x.mes === f.m; }); 
+  if (f.a) r = r.filter(function(x) { return x.anio === f.a; }); 
+  return r; 
+}
+
+function getDistinctBD(tipo, campo){ 
+  const set = new Set(); 
+  getBDBaseRows(tipo).forEach(function(r) { 
+    let v=''; 
+    if(campo==='unidad')v=r.unidad||''; 
+    else if(campo==='comuna')v=canonComuna(r.comuna)||''; 
+    else if(campo==='transporte')v=r.transporte||''; 
+    else if(campo==='rango')v=r.rango||''; 
+    if(v)set.add(v); 
+  }); 
+  return Array.from(set).sort(); 
+}
+
+function poblarComboBD(tipo, campo, filtro){
+  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
+  if(!list) return;
+  let vals = getDistinctBD(tipo, campo);
+  if (filtro) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(filtro)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionBD(\'' + tipo + '\',\'' + campo + '\',\'' + v.replace(/'/g,"\\'") + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+}
+
+function cerrarCombosBD(){ 
+  document.querySelectorAll('.combo-list').forEach(function(l) { if (l.id.startsWith('comboBD_')) l.style.display='none'; }); 
+  comboBDAbierto = null; 
+}
+
+window.toggleComboBD = function(tipo, campo){
+  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
+  if(!list) return;
+  const id = tipo+'_'+campo;
+  if (comboBDAbierto === id) { list.style.display='none'; comboBDAbierto=null; }
+  else { cerrarCombosBD(); poblarComboBD(tipo,campo,''); list.style.display='block'; comboBDAbierto=id; }
+};
+
+function abrirComboBD(tipo, campo){ 
+  cerrarCombosBD(); 
+  poblarComboBD(tipo,campo,''); 
+  const list=document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
+  if(list){ list.style.display='block'; comboBDAbierto=tipo+'_'+campo; } 
+}
+
+window.elegirOpcionBD = function(tipo, campo, val){
+  const input = document.getElementById('fBD'+sufBD(tipo)+'_'+campo);
+  if (input) input.value = val;
+  filtroDescBD[tipo][campo] = normSinTildes(val);
+  cerrarCombosBD();
+  const idMap = { AMPM: 'filtroIdAmpm', B2C: 'filtroIdB2c', ADM: 'filtroIdAdm', QDM: 'filtroIdQdm' };
+  const pagMap = { AMPM: paginaBDAmpm, B2C: paginaBDB2c, ADM: paginaBDAdm, QDM: paginaBDQdm };
+  renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]);
+};
+
+window.filtrarBDCombo = function(tipo, campo, val){
+  filtroDescBD[tipo][campo] = normSinTildes(val);
+  poblarComboBD(tipo, campo, val);
+  const list = document.getElementById('comboBD_'+sufBD(tipo)+'_'+campo);
+  if (list) { list.style.display='block'; comboBDAbierto=tipo+'_'+campo; }
+  const idMap = { AMPM: 'filtroIdAmpm', B2C: 'filtroIdB2c', ADM: 'filtroIdAdm', QDM: 'filtroIdQdm' };
+  const pagMap = { AMPM: paginaBDAmpm, B2C: paginaBDB2c, ADM: paginaBDAdm, QDM: paginaBDQdm };
+  renderTabBD(tipo, document.getElementById(idMap[tipo]).value, pagMap[tipo]);
+};
 
 function renderDescThead() {
   const thead = document.getElementById('theadDesc');
@@ -773,11 +1142,33 @@ function render() {
   const fechaTrabajo = (f && f.value) ? f.value : new Date().toISOString().split('T')[0];
   const tipoSec = tipoDeSeccion();
   let regs = [];
-  Object.keys(cache).forEach(function(a) { Object.keys(cache[a]||{}).forEach(function(m) { Object.keys(cache[a][m]).forEach(function(k) { const r = { key:k, anio:a, mes:m }; Object.keys(cache[a][m][k]).forEach(function(key) { r[key] = cache[a][m][k][key]; }); if (getTipoRegistro(r) !== tipoSec) return; regs.push(r); }); }); });
+  Object.keys(cache).forEach(function(a) { 
+    Object.keys(cache[a]||{}).forEach(function(m) { 
+      Object.keys(cache[a][m]).forEach(function(k) { 
+        const r = { key:k, anio:a, mes:m };
+        Object.keys(cache[a][m][k]).forEach(function(key) { r[key] = cache[a][m][k][key]; });
+        if (getTipoRegistro(r) !== tipoSec) return; 
+        regs.push(r); 
+      }); 
+    }); 
+  });
   const keysConCambios = Object.keys(cambiosFechaLocales);
-  if (!busq) { regs = regs.filter(function(r) { if (keysConCambios.includes(r.key)) return true; return r.fecha === fechaTrabajo; }); }
-  else { regs = regs.filter(function(r) { return ['nombre','idPedido','transporte','comuna','unidad','celular','email'].some(function(c) { return (r[c]||'').toLowerCase().includes(busq); }); }); }
-  pendientesDeSeccion().forEach(function(p) { const reg = Object.assign({}, p.reg, { key: p.key, anio: p.anio, mes: p.mes, pendiente: true }); regs.push(reg); });
+  if (!busq) {
+    regs = regs.filter(function(r) {
+      if (keysConCambios.includes(r.key)) return true;
+      return r.fecha === fechaTrabajo;
+    });
+  } else {
+    regs = regs.filter(function(r) { 
+      return ['nombre','idPedido','transporte','comuna','unidad','celular','email'].some(function(c) { 
+        return (r[c]||'').toLowerCase().includes(busq); 
+      }); 
+    });
+  }
+  pendientesDeSeccion().forEach(function(p) { 
+    const reg = Object.assign({}, p.reg, { key: p.key, anio: p.anio, mes: p.mes, pendiente: true });
+    regs.push(reg); 
+  });
   const fd = leerFiltrosDesc();
   if (fd.unidad) regs = regs.filter(function(r) { return normSinTildes(r.unidad||'').includes(fd.unidad); });
   if (fd.comuna) regs = regs.filter(function(r) { return normSinTildes(canonComuna(r.comuna)||'').includes(fd.comuna); });
@@ -789,25 +1180,56 @@ function render() {
   document.getElementById('sAM').textContent = formatoEntero(regs.filter(function(r){return r.rango==='AM';}).length);
   document.getElementById('sPM').textContent = formatoEntero(regs.filter(function(r){return r.rango==='PM';}).length);
   const tbody = document.getElementById('tbody'), empty = document.getElementById('empty');
-  if (regs.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; empty.textContent = busq ? 'No se encontraron resultados' : 'No hay registros para el dia ' + fmtFechaConDia(fechaTrabajo); keysVisiblesDesc = []; renderPaginacionDesc(0,0,0); sincronizarSelTodos(); actualizarContadorEnviar(); return; }
+  if (regs.length === 0) { 
+    tbody.innerHTML = ''; 
+    empty.style.display = 'block'; 
+    empty.textContent = busq ? 'No se encontraron resultados' : 'No hay registros para el dia ' + fmtFechaConDia(fechaTrabajo); 
+    keysVisiblesDesc = []; 
+    renderPaginacionDesc(0,0,0); 
+    sincronizarSelTodos(); 
+    actualizarContadorEnviar(); 
+    return; 
+  }
   empty.style.display = 'none';
   const tp = Math.max(1, Math.ceil(regs.length / REGISTROS_POR_PAGINA_DESC));
-  if (paginaDesc > tp) paginaDesc = tp; if (paginaDesc < 1) paginaDesc = 1;
+  if (paginaDesc > tp) paginaDesc = tp; 
+  if (paginaDesc < 1) paginaDesc = 1;
   const ini = (paginaDesc-1)*REGISTROS_POR_PAGINA_DESC;
   const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_DESC);
   keysVisiblesDesc = pag.map(function(r) { return r.key; });
   const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs), dr = detectarDireccionesRepetidas(regs);
   tbody.innerHTML = pag.map(function(r) { return filaHTMLTabla(r, cf, cg, dr); }).join('');
   renderPaginacionDesc(tp, regs.length, paginaDesc);
-  sincronizarSelTodos(); actualizarContadorEnviar(); actualizarBotonGuardar(); sincronizarScrollHorizontal();
+  sincronizarSelTodos(); 
+  actualizarContadorEnviar(); 
+  actualizarBotonGuardar();
+  sincronizarScrollHorizontal();
 }
 
-function sincronizarScrollHorizontal() { const top = document.getElementById('scrollTop'); const bottom = document.getElementById('scrollBottom'); if (!top || !bottom) return; top.onscroll = null; bottom.onscroll = null; top.onscroll = function() { bottom.scrollLeft = top.scrollLeft; }; bottom.onscroll = function() { top.scrollLeft = bottom.scrollLeft; }; }
+function sincronizarScrollHorizontal() {
+  const top = document.getElementById('scrollTop');
+  const bottom = document.getElementById('scrollBottom');
+  if (!top || !bottom) return;
+  top.onscroll = null; 
+  bottom.onscroll = null;
+  top.onscroll = function() { bottom.scrollLeft = top.scrollLeft; };
+  bottom.onscroll = function() { top.scrollLeft = bottom.scrollLeft; };
+}
 
 function renderPaginacionDesc(tp, total, pag) {
   let cont = document.getElementById('paginacionDesc');
-  if (!cont) { cont = document.createElement('div'); cont.id = 'paginacionDesc'; cont.className = 'bd-paginacion'; cont.style.margin = '10px 0 0 0'; const sv = document.querySelector('.tabla-scroll-vertical'); if (sv) sv.appendChild(cont); }
-  if (tp <= 1) { cont.innerHTML = total>0 ? '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(total) + ' de ' + formatoEntero(total) + ' registros</div>' : ''; return; }
+  if (!cont) { 
+    cont = document.createElement('div'); 
+    cont.id = 'paginacionDesc'; 
+    cont.className = 'bd-paginacion'; 
+    cont.style.margin = '10px 0 0 0'; 
+    const sv = document.querySelector('.tabla-scroll-vertical'); 
+    if (sv) sv.appendChild(cont); 
+  }
+  if (tp <= 1) { 
+    cont.innerHTML = total>0 ? '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(total) + ' de ' + formatoEntero(total) + ' registros</div>' : ''; 
+    return; 
+  }
   const ini = (pag-1)*REGISTROS_POR_PAGINA_DESC, fin = Math.min(ini+REGISTROS_POR_PAGINA_DESC, total);
   let h = '<div class="bd-paginacion-info">Pagina ' + pag + ' de ' + tp + ' | ' + formatoEntero(ini+1) + '-' + formatoEntero(fin) + ' de ' + formatoEntero(total) + ' registros</div>';
   h += pag>1 ? '<button class="btn-bd-pag-nav" onclick="irAPaginaDesc(' + (pag-1) + ')">‹ Anterior</button>' : '<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>';
@@ -819,7 +1241,12 @@ function renderPaginacionDesc(tp, total, pag) {
   cont.innerHTML = h;
 }
 
-window.irAPaginaDesc = function(p) { paginaDesc = p; render(); const sv = document.querySelector('.tabla-scroll-vertical'); if (sv) sv.scrollTop = 0; };
+window.irAPaginaDesc = function(p) { 
+  paginaDesc = p; 
+  render(); 
+  const sv = document.querySelector('.tabla-scroll-vertical'); 
+  if (sv) sv.scrollTop = 0; 
+};
 
 function filaHTMLTabla(r, cf, cg, dr) {
   const b2c = (seccionActiva === 'b2c');
@@ -873,19 +1300,55 @@ function filaHTMLTabla(r, cf, cg, dr) {
   }
   const acc = '<td class="td-otro-palet"><input type="checkbox" ' + (r.otroPalet?'checked':'') + ' onchange="toggleOtroPalet(\'' + r.key + '\', ' + (r.pendiente?true:false) + ', this.checked)" title="Otro palet"></td><td class="td-acciones" style="text-align:center;vertical-align:middle"><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistro(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\',' + (r.pendiente?true:false) + ')" title="Eliminar">🗑️</button></td>';
   const valorCelda = '<td>' + formatoMonedaAlineado(r.valor) + '</td>';
-  if (b2c) { return '<tr class="' + clase + '">' + celdaSel + celdaFecha + '<td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + ind + '</td><td>' + (r.nombre||'') + '</td><td>' + (r.celular||'') + '</td><td>' + (r.email||'') + '</td><td>' + dirShow + (dirRep?' <span style="color:var(--accent-orange);font-size:.7em;font-weight:700">[misma dir x' + dr[dirKey] + ']</span>':'') + '</td><td>' + canonComuna(r.comuna) + '</td>' + valorCelda + obs + trans + rango + acc + '</tr>'; }
+  if (b2c) {
+    return '<tr class="' + clase + '">' + celdaSel + celdaFecha + '<td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + ind + '</td><td>' + (r.nombre||'') + '</td><td>' + (r.celular||'') + '</td><td>' + (r.email||'') + '</td><td>' + dirShow + (dirRep?' <span style="color:var(--accent-orange);font-size:.7em;font-weight:700">[misma dir x' + dr[dirKey] + ']</span>':'') + '</td><td>' + canonComuna(r.comuna) + '</td>' + valorCelda + obs + trans + rango + acc + '</tr>';
+  }
   return '<tr class="' + clase + '">' + celdaSel + celdaFecha + '<td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + ind + '</td><td>' + (r.nombre||'') + '</td><td>' + dirShow + (dirRep?' <span style="color:var(--accent-orange);font-size:.7em;font-weight:700">[misma dir x' + dr[dirKey] + ']</span>':'') + '</td><td>' + canonComuna(r.comuna) + '</td>' + valorCelda + obs + trans + rango + acc + '</tr>';
 }
 
-window.filtrarComboEdicion = function(val) { const list = document.getElementById('combo_edicion_transporte'); if (!list) return; let vals = OPCIONES_TRANSPORTE; if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); }); list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionEdicion(\'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>'; list.style.display = 'block'; };
+window.filtrarComboEdicion = function(val) {
+  const list = document.getElementById('combo_edicion_transporte');
+  if (!list) return;
+  let vals = OPCIONES_TRANSPORTE;
+  if (val) vals = vals.filter(function(v) { return normSinTildes(v).includes(normSinTildes(val)); });
+  list.innerHTML = vals.length ? vals.map(function(v) { return '<div class="combo-item" onmousedown="elegirOpcionEdicion(\'' + v + '\')">' + v + '</div>'; }).join('') : '<div class="combo-item">Sin coincidencias</div>';
+  list.style.display = 'block';
+};
+
 window.abrirComboEdicion = function() { filtrarComboEdicion(''); };
-window.toggleComboEdicion = function() { const list = document.getElementById('combo_edicion_transporte'); if (!list) return; if (list.style.display === 'block') { list.style.display = 'none'; } else { filtrarComboEdicion(document.getElementById('edi_transporte') ? document.getElementById('edi_transporte').value : ''); } };
-window.elegirOpcionEdicion = function(val) { const input = document.getElementById('edi_transporte'); if (input) input.value = val; const list = document.getElementById('combo_edicion_transporte'); if (list) list.style.display = 'none'; };
+window.toggleComboEdicion = function() {
+  const list = document.getElementById('combo_edicion_transporte');
+  if (!list) return;
+  if (list.style.display === 'block') { list.style.display = 'none'; }
+  else { filtrarComboEdicion(document.getElementById('edi_transporte') ? document.getElementById('edi_transporte').value : ''); }
+};
+window.elegirOpcionEdicion = function(val) {
+  const input = document.getElementById('edi_transporte');
+  if (input) input.value = val;
+  const list = document.getElementById('combo_edicion_transporte');
+  if (list) list.style.display = 'none';
+};
 window.editarObsPendiente = function(k,v) { const p = pendientesAMPM.find(function(p){return p.key===k;}) || pendientesADM.find(function(p){return p.key===k;}) || pendientesQDM.find(function(p){return p.key===k;}) || pendientesB2C.find(function(p){return p.key===k;}); if (p) p.reg.observacion = v.toUpperCase(); };
 window.editarRangoPendiente = function(k,v) { const p = pendientesAMPM.find(function(p){return p.key===k;}) || pendientesADM.find(function(p){return p.key===k;}) || pendientesQDM.find(function(p){return p.key===k;}) || pendientesB2C.find(function(p){return p.key===k;}); if (p) p.reg.rango = v; };
-window.toggleOtroPalet = function(key, esPend, checked) { if (esPend) { const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;}); if (p){ p.reg.otroPalet = checked; render(); } } else { outer: for (const a of Object.keys(cache)) { for (const m of Object.keys(cache[a]||{})) { if (cache[a][m] && cache[a][m][key]) { cache[a][m][key].otroPalet = checked; update(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + key), { otroPalet: checked }); break outer; } } } render(); } };
 
-function actualizarBotonGuardar() { const b = document.getElementById('btnGuardarAmpm'); if (!b) return; b.style.display = 'inline-block'; const numCambios = Object.keys(cambiosFechaLocales).length; if (numCambios > 0) { b.textContent = 'GUARDAR (' + numCambios + ' cambios pendientes)'; b.style.background = 'var(--accent-orange)'; } else { b.textContent = 'GUARDAR'; b.style.background = 'var(--accent-blue)'; } }
+window.toggleOtroPalet = function(key, esPend, checked) {
+  if (esPend) { 
+    const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;}); 
+    if (p){ p.reg.otroPalet = checked; render(); } 
+  } else { 
+    outer: for (const a of Object.keys(cache)) { for (const m of Object.keys(cache[a]||{})) { if (cache[a][m] && cache[a][m][key]) { cache[a][m][key].otroPalet = checked; update(ref(db, RUTA_BASE + '/' + a + '/' + m + '/' + key), { otroPalet: checked }); break outer; } } }
+    render(); 
+  }
+};
+
+function actualizarBotonGuardar() { 
+  const b = document.getElementById('btnGuardarAmpm');
+  if (!b) return; 
+  b.style.display = 'inline-block';
+  const numCambios = Object.keys(cambiosFechaLocales).length;
+  if (numCambios > 0) { b.textContent = 'GUARDAR (' + numCambios + ' cambios pendientes)'; b.style.background = 'var(--accent-orange)'; } 
+  else { b.textContent = 'GUARDAR'; b.style.background = 'var(--accent-blue)'; }
+}
 
 window.guardarPendientesSeccion = function() {
   const lista = pendientesDeSeccion();
@@ -893,14 +1356,36 @@ window.guardarPendientesSeccion = function() {
   if (!lista.length && numCambiosFecha === 0) { toast('No hay nada por guardar', 'info'); return; }
   const sR = lista.filter(function(p){return !p.reg.rango;}).length;
   const sT = lista.filter(function(p){return !p.reg.transporte;}).length;
-  if (sR || sT) { let m = 'NO SE PUEDE GUARDAR.\nFaltan campos OBLIGATORIOS:\n\n'; if (sR) m += '• ' + sR + ' fila(s) sin RANGO.\n'; if (sT) m += '• ' + sT + ' fila(s) sin TRANSPORTE.\n'; m += '\nCompleta y vuelve a presionar GUARDAR.'; toast('Faltan RANGO y/o TRANSPORTE','err'); alert(m); return; }
+  if (sR || sT) {
+    let m = 'NO SE PUEDE GUARDAR.\nFaltan campos OBLIGATORIOS:\n\n';
+    if (sR) m += '• ' + sR + ' fila(s) sin RANGO.\n';
+    if (sT) m += '• ' + sT + ' fila(s) sin TRANSPORTE.\n';
+    m += '\nCompleta y vuelve a presionar GUARDAR.';
+    toast('Faltan RANGO y/o TRANSPORTE','err');
+    alert(m);
+    return;
+  }
   if (!confirm('Se guardarán ' + formatoEntero(lista.length) + ' registros' + (numCambiosFecha > 0 ? ' y ' + numCambiosFecha + ' cambio(s) de fecha' : '') + '.\n¿Continuar?')) return;
   toast('Guardando...','info');
   const promesasFecha = [];
   Object.keys(cambiosFechaLocales).forEach(function(key) {
     const cambio = cambiosFechaLocales[key];
-    if (cambio.esPendiente) { const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;}); if (p) { p.reg.fecha = cambio.nuevaFecha; p.anio = cambio.nuevaAnio; p.mes = cambio.nuevaMes; } }
-    else { const anioOriginal = cambio.anioOriginal; const mesOriginal = cambio.mesOriginal; if (cache[anioOriginal] && cache[anioOriginal][mesOriginal] && cache[anioOriginal][mesOriginal][key]) { const regData = Object.assign({}, cache[anioOriginal][mesOriginal][key]); delete cache[anioOriginal][mesOriginal][key]; if (!cache[cambio.nuevaAnio]) cache[cambio.nuevaAnio] = {}; if (!cache[cambio.nuevaAnio][cambio.nuevaMes]) cache[cambio.nuevaAnio][cambio.nuevaMes] = {}; regData.fecha = cambio.nuevaFecha; cache[cambio.nuevaAnio][cambio.nuevaMes][key] = regData; promesasFecha.push(remove(ref(db, RUTA_BASE + '/' + anioOriginal + '/' + mesOriginal + '/' + key)).then(function() { return set(ref(db, RUTA_BASE + '/' + cambio.nuevaAnio + '/' + cambio.nuevaMes + '/' + key), regData); })); } }
+    if (cambio.esPendiente) {
+      const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
+      if (p) { p.reg.fecha = cambio.nuevaFecha; p.anio = cambio.nuevaAnio; p.mes = cambio.nuevaMes; }
+    } else {
+      const anioOriginal = cambio.anioOriginal;
+      const mesOriginal = cambio.mesOriginal;
+      if (cache[anioOriginal] && cache[anioOriginal][mesOriginal] && cache[anioOriginal][mesOriginal][key]) {
+        const regData = Object.assign({}, cache[anioOriginal][mesOriginal][key]);
+        delete cache[anioOriginal][mesOriginal][key];
+        if (!cache[cambio.nuevaAnio]) cache[cambio.nuevaAnio] = {};
+        if (!cache[cambio.nuevaAnio][cambio.nuevaMes]) cache[cambio.nuevaAnio][cambio.nuevaMes] = {};
+        regData.fecha = cambio.nuevaFecha;
+        cache[cambio.nuevaAnio][cambio.nuevaMes][key] = regData;
+        promesasFecha.push(remove(ref(db, RUTA_BASE + '/' + anioOriginal + '/' + mesOriginal + '/' + key)).then(function() { return set(ref(db, RUTA_BASE + '/' + cambio.nuevaAnio + '/' + cambio.nuevaMes + '/' + key), regData); }));
+      }
+    }
   });
   cambiosFechaLocales = {};
   let g = 0; let li = 0;
@@ -908,8 +1393,17 @@ window.guardarPendientesSeccion = function() {
   for (let i=0;i<lista.length;i+=50) lotes.push(lista.slice(i,i+50));
   const proc = function() { 
     if (li >= lotes.length) { 
-      lotes.flat().forEach(function(p) { const l = Object.assign({}, p.reg); delete l.pendiente; delete l._candidatos; if (!cache[p.anio]) cache[p.anio] = {}; if (!cache[p.anio][p.mes]) cache[p.anio][p.mes] = {}; cache[p.anio][p.mes]['local_' + p.key] = l; });
-      if (seccionActiva==='ampm') pendientesAMPM=[]; else if (seccionActiva==='adm') pendientesADM=[]; else if (seccionActiva==='qdm') pendientesQDM=[]; else if (seccionActiva==='b2c') pendientesB2C=[];
+      lotes.flat().forEach(function(p) {
+        const l = Object.assign({}, p.reg);
+        delete l.pendiente; delete l._candidatos;
+        if (!cache[p.anio]) cache[p.anio] = {};
+        if (!cache[p.anio][p.mes]) cache[p.anio][p.mes] = {};
+        cache[p.anio][p.mes]['local_' + p.key] = l;
+      });
+      if (seccionActiva==='ampm') pendientesAMPM=[];
+      else if (seccionActiva==='adm') pendientesADM=[];
+      else if (seccionActiva==='qdm') pendientesQDM=[];
+      else if (seccionActiva==='b2c') pendientesB2C=[];
       Promise.all(promesasFecha).then(function() { actualizarBotonGuardar(); render(); cargarDatos(); }).catch(function(e) { toast('Error al guardar cambios de fecha: ' + e.message, 'err'); actualizarBotonGuardar(); render(); });
       return; 
     }
@@ -924,10 +1418,13 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
     if (!confirm('El registro se eliminará de la DESCRIPCION, de la BASE DE DATOS y de FIREBASE.\nEsta acción no se puede deshacer.\n¿Confirmas?')) return;
     if (esPend) {
       let i = pendientesAMPM.findIndex(function(p){return p.key===key;});
-      if (i>=0) pendientesAMPM.splice(i,1); else { i = pendientesADM.findIndex(function(p){return p.key===key;}); if (i>=0) pendientesADM.splice(i,1); else { i = pendientesQDM.findIndex(function(p){return p.key===key;}); if (i>=0) pendientesQDM.splice(i,1); else { i = pendientesB2C.findIndex(function(p){return p.key===key;}); if (i>=0) pendientesB2C.splice(i,1); } } }
+      if (i>=0) pendientesAMPM.splice(i,1);
+      else { i = pendientesADM.findIndex(function(p){return p.key===key;}); if (i>=0) pendientesADM.splice(i,1); else { i = pendientesQDM.findIndex(function(p){return p.key===key;}); if (i>=0) pendientesQDM.splice(i,1); else { i = pendientesB2C.findIndex(function(p){return p.key===key;}); if (i>=0) pendientesB2C.splice(i,1); } } }
       if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) delete cache[anio][mes][key];
       delete cambiosFechaLocales[key];
-      toast('Eliminado de la plataforma (pendiente)','ok'); render(); return;
+      toast('Eliminado de la plataforma (pendiente)','ok');
+      render();
+      return;
     }
     const existeEnCache = cache[anio] && cache[anio][mes] && cache[anio][mes][key];
     if (!existeEnCache) { toast('El registro ya no existe','err'); return; }
@@ -938,7 +1435,7 @@ window.pedirBorrarRegistro = function(key, anio, mes, esPend) {
   });
 };
 
-// ✅ ENVÍO A BITACORAS - Usa el transporte tal cual está (respeta transporteManual)
+// ✅ ENVÍO A BITACORAS CON REGLA BITACORAS AM/PM
 window.enviarSeleccion = function() {
   if (seleccionadosDesc.size === 0) { toast('Selecciona al menos una fila', 'err'); return; }
   let enviados = 0;
@@ -946,11 +1443,17 @@ window.enviarSeleccion = function() {
   const bitacorasModificadas = new Set();
   seleccionadosDesc.forEach(function(key) {
     let reg = null;
-    outer: for (const a of Object.keys(cache)) { for (const m of Object.keys(cache[a]||{})) { if (cache[a][m] && cache[a][m][key]) { reg = Object.assign({}, cache[a][m][key]); break outer; } } }
-    if (!reg) { const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;}); if (p) { reg = Object.assign({}, p.reg); } }
+    outer: for (const a of Object.keys(cache)) {
+      for (const m of Object.keys(cache[a]||{})) {
+        if (cache[a][m] && cache[a][m][key]) { reg = Object.assign({}, cache[a][m][key]); break outer; }
+      }
+    }
+    if (!reg) {
+      const p = pendientesAMPM.find(function(p){return p.key===key;}) || pendientesADM.find(function(p){return p.key===key;}) || pendientesQDM.find(function(p){return p.key===key;}) || pendientesB2C.find(function(p){return p.key===key;});
+      if (p) { reg = Object.assign({}, p.reg); }
+    }
     if (!reg) { errores.push('Registro ' + key + ' no encontrado'); return; }
     if (cambiosFechaLocales[key]) { reg.fecha = cambiosFechaLocales[key].nuevaFecha; }
-    // ✅ Usa el transporte del registro tal cual está (respeta transporteManual)
     const transporte = (reg.transporte || '').toUpperCase();
     const tipoRegistro = getTipoRegistro(reg);
     const bitKey = obtenerClaveBitacora(transporte, tipoRegistro);
@@ -958,7 +1461,9 @@ window.enviarSeleccion = function() {
     const filaBitacora = { requirente: reg.unidad || '', documentos: reg.idPedido || '', cliente: reg.nombre || '', direccion: reg.direccion || '', comuna: reg.comuna || '', obs: reg.observacion || '', rango: reg.rango || '', tipo: reg.tipo || '', esAdmin: reg.esAdmin || false };
     if (!bitacorasData[bitKey]) { bitacorasData[bitKey] = { filas: [], footer: { transporte: transporte, fecha: reg.fecha || '', ruta: reg.rango || 'AM', responsable: '', firma: '' } }; }
     let filaIdx = -1;
-    for (let i = 0; i < 15; i++) { if (!bitacorasData[bitKey].filas[i] || (!bitacorasData[bitKey].filas[i].requirente && !bitacorasData[bitKey].filas[i].documentos && !bitacorasData[bitKey].filas[i].cliente)) { filaIdx = i; break; } }
+    for (let i = 0; i < 15; i++) {
+      if (!bitacorasData[bitKey].filas[i] || (!bitacorasData[bitKey].filas[i].requirente && !bitacorasData[bitKey].filas[i].documentos && !bitacorasData[bitKey].filas[i].cliente)) { filaIdx = i; break; }
+    }
     if (filaIdx === -1) { errores.push((reg.idPedido || key) + ': Bitácora llena'); return; }
     bitacorasData[bitKey].filas[filaIdx] = filaBitacora;
     bitacorasModificadas.add(bitKey);
@@ -973,16 +1478,21 @@ window.enviarSeleccion = function() {
       renderizarTodasBitacoras();
       seleccionadosDesc.clear();
       render();
-    }).catch(function(e) { toast('Error al guardar bitácoras: ' + e.message, 'err'); });
+    }).catch(function(e) { toast('Error al guardar bitácoras: ' + e.message, 'err'); console.error('Error detallado:', e); });
     registrarActividad('ENVIO_BITACORA', formatoEntero(enviados) + ' registros enviados a bitácoras', 'BITACORAS');
-  } else { toast('No se pudo enviar', 'err'); if (errores.length > 0) setTimeout(function() { toast('Errores: ' + errores.slice(0,3).join('; '), 'err'); }, 1000); }
+  } else {
+    toast('No se pudo enviar', 'err');
+    if (errores.length > 0) setTimeout(function() { toast('Errores: ' + errores.slice(0,3).join('; '), 'err'); }, 1000);
+  }
 };
 
 document.getElementById('formReg').addEventListener('submit', function(e) {
   e.preventDefault();
   const fecha = document.getElementById('fFecha').value; 
   if (!fecha) { toast('Seleccione fecha','err'); return; }
-  const parts = fecha.split('-'); const a = parts[0]; const m = parts[1];
+  const parts = fecha.split('-');
+  const a = parts[0];
+  const m = parts[1];
   const rango = document.getElementById('fRango').value; 
   if (!rango) { toast('Elija RANGO','err'); return; }
   const tipoSec = tipoDeSeccion();
@@ -990,21 +1500,24 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
   if (tipoSec === 'B2C') {
     const reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), celular:'', email:'', direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte:'SERVICIO B2C', rango:'B2C', tipo:'B2C', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString(), transporteManual: true };
     pendientesB2C.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
-    toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar(); return;
+    toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar();
+    return;
   }
   if (tipoSec === 'ADM') {
     const reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value || 'SERVICIO ADM', rango:rango, tipo:'ADM', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString(), transporteManual: true };
     pendientesADM.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
-    toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar(); return;
+    toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar();
+    return;
   }
   if (tipoSec === 'QDM') {
     const reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value || 'SERVICIO QDM', rango:rango, tipo:'QDM', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString(), transporteManual: true };
     pendientesQDM.push({ anio:a, mes:m, key:'pend_nr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5), reg: reg });
-    toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar(); return;
+    toast('Agregado. Presiona GUARDAR.','info'); limpiar(); paginaDesc = 1; render(); actualizarBotonGuardar();
+    return;
   }
   let reg = { fecha: fecha, unidad: document.getElementById('fUnidad').value, idPedido: document.getElementById('fId').value.trim(), nombre: document.getElementById('fNombre').value.trim().toUpperCase(), direccion: document.getElementById('fDireccion').value.trim().toUpperCase(), comuna: canonComuna(document.getElementById('fComuna').value), valor: parseFloat(document.getElementById('fValor').value)||0, observacion: document.getElementById('fObs').value.toUpperCase(), transporte: document.getElementById('fTransporte').value, rango: rango, tipo: 'AMPM', otroPalet:false, esAdmin: esAdm, usuario: emailUsuarioActual, creado: new Date().toISOString(), transporteManual: true };
   if (!reg.transporte) {
-    reg.transporteManual = false;
+    reg.transporteManual = false; // ✅ No es manual, aplicar reglas
     if (esAntesDe1400()) { reg = autocompletarTransportePM(reg); } 
     else if (esDespuesDe1401()) { const diaManana = obtenerDiaSemanaManana(); reg = autocompletarTransporteAM(reg, diaManana); }
   }
@@ -1014,9 +1527,31 @@ document.getElementById('formReg').addEventListener('submit', function(e) {
 
 window.limpiar = function() { document.getElementById('formReg').reset(); document.getElementById('fFecha').valueAsDate = new Date(); };
 
-window.abrirModalExportar = function() { const tipo = tipoDeSeccion(); const hoy = new Date().toISOString().split('T')[0]; document.getElementById('expFilaFecha').style.display = 'none'; document.getElementById('expTitulo').textContent = 'Exportar a Excel — ' + fmtFechaConDia(hoy) + ' (' + tipo + ')'; document.getElementById('expInfo').textContent = 'Registros del día: ' + formatoEntero(contarRegsDelDia(tipo).length); document.getElementById('exportarModal').classList.add('show'); };
-window.actualizarExpInfo = function() { const tipo = tipoDeSeccion(); const hoy = new Date().toISOString().split('T')[0]; document.getElementById('expInfo').textContent = 'Registros del día ' + fmtFechaConDia(hoy) + ': ' + formatoEntero(contarRegsDelDia(tipo).length); };
-function contarRegsDelDia(tipo) { const hoy = new Date().toISOString().split('T')[0]; let r = obtenerRegsTipo(tipo).filter(function(r) { return r.fecha === hoy; }); if (tipo==='AMPM') r = r.concat(pendientesAMPM.map(function(p){return Object.assign({}, p.reg, {key:p.key});})); if (tipo==='ADM') r = r.concat(pendientesADM.map(function(p){return Object.assign({}, p.reg, {key:p.key});})); if (tipo==='QDM') r = r.concat(pendientesQDM.map(function(p){return Object.assign({}, p.reg, {key:p.key});})); if (tipo==='B2C') r = r.concat(pendientesB2C.map(function(p){return Object.assign({}, p.reg, {key:p.key});})); return r; }
+window.abrirModalExportar = function() { 
+  const tipo = tipoDeSeccion(); 
+  const hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('expFilaFecha').style.display = 'none';
+  document.getElementById('expTitulo').textContent = 'Exportar a Excel — ' + fmtFechaConDia(hoy) + ' (' + tipo + ')';
+  document.getElementById('expInfo').textContent = 'Registros del día: ' + formatoEntero(contarRegsDelDia(tipo).length);
+  document.getElementById('exportarModal').classList.add('show'); 
+};
+
+window.actualizarExpInfo = function() { 
+  const tipo = tipoDeSeccion(); 
+  const hoy = new Date().toISOString().split('T')[0]; 
+  document.getElementById('expInfo').textContent = 'Registros del día ' + fmtFechaConDia(hoy) + ': ' + formatoEntero(contarRegsDelDia(tipo).length); 
+};
+
+function contarRegsDelDia(tipo) { 
+  const hoy = new Date().toISOString().split('T')[0]; 
+  let r = obtenerRegsTipo(tipo).filter(function(r) { return r.fecha === hoy; });
+  if (tipo==='AMPM') r = r.concat(pendientesAMPM.map(function(p){return Object.assign({}, p.reg, {key:p.key});}));
+  if (tipo==='ADM') r = r.concat(pendientesADM.map(function(p){return Object.assign({}, p.reg, {key:p.key});}));
+  if (tipo==='QDM') r = r.concat(pendientesQDM.map(function(p){return Object.assign({}, p.reg, {key:p.key});}));
+  if (tipo==='B2C') r = r.concat(pendientesB2C.map(function(p){return Object.assign({}, p.reg, {key:p.key});}));
+  return r; 
+}
+
 window.cerrarModalExportar = function() { document.getElementById('exportarModal').classList.remove('show'); };
 
 window.confirmarExportar = function() {
@@ -1026,7 +1561,17 @@ window.confirmarExportar = function() {
   let regs = contarRegsDelDia(tipo); 
   ordenarPorFechaDireccionId(regs);
   if (!regs.length) { toast('No hay registros del día','err'); return; }
-  const datos = regs.map(function(r) { const f = {}; cols.forEach(function(c) { if (c.key==='fecha') f[c.label]=fmtFechaConDia(r.fecha); else if (c.key==='direccion') f[c.label]=dirDe(r); else if (c.key==='comuna') f[c.label]=canonComuna(r.comuna); else if (c.key==='valor') f[c.label]=formatoMoneda(r.valor); else f[c.label]=r[c.key]!==undefined ? r[c.key] : ''; }); return f; });
+  const datos = regs.map(function(r) { 
+    const f = {}; 
+    cols.forEach(function(c) { 
+      if (c.key==='fecha') f[c.label]=fmtFechaConDia(r.fecha); 
+      else if (c.key==='direccion') f[c.label]=dirDe(r); 
+      else if (c.key==='comuna') f[c.label]=canonComuna(r.comuna); 
+      else if (c.key==='valor') f[c.label]=formatoMoneda(r.valor); 
+      else f[c.label]=r[c.key]!==undefined ? r[c.key] : ''; 
+    }); 
+    return f; 
+  });
   const ws = XLSX.utils.json_to_sheet(datos); 
   const wb = XLSX.utils.book_new(); 
   XLSX.utils.book_append_sheet(wb, ws, 'Despachos');
@@ -1036,8 +1581,16 @@ window.confirmarExportar = function() {
   registrarActividad('EXPORTACION', 'Exportó ' + formatoEntero(regs.length) + ' registros a Excel', tipo);
 };
 
-function renderizarTodasBitacoras() { BITACORAS_UNIFICADAS.forEach(function(bit) { renderizarBitacora(bit.key, bit.label, bit.domId); }); BITACORAS_B2C.forEach(function(bit) { renderizarBitacora(bit.key, bit.label, bit.domId); }); }
-function renderizarBitacora(key, label, domId) { const cont = document.getElementById(domId); if (!cont) return; cont.innerHTML = generarHTMLBitacora(key, label); }
+function renderizarTodasBitacoras() {
+  BITACORAS_UNIFICADAS.forEach(function(bit) { renderizarBitacora(bit.key, bit.label, bit.domId); });
+  BITACORAS_B2C.forEach(function(bit) { renderizarBitacora(bit.key, bit.label, bit.domId); });
+}
+
+function renderizarBitacora(key, label, domId) {
+  const cont = document.getElementById(domId);
+  if (!cont) return;
+  cont.innerHTML = generarHTMLBitacora(key, label);
+}
 
 function generarHTMLBitacora(key, label) {
   const data = bitacorasData[key] || { filas: [], footer: { transporte: label, fecha: '', ruta: '', responsable: '', firma: '' } };
@@ -1110,8 +1663,16 @@ window.confirmarBorrarBitacoraTodo = function() {
   if (!confirm('¿Eliminar TODA la información de las bitácoras ' + tipoLabel + '?\nEsta acción es IRREVERSIBLE.')) return;
   toast('Eliminando bitácoras ' + tipoLabel + '...','info');
   const promesas = [];
-  bitacoras.forEach(function(bit) { promesas.push(remove(ref(db, RUTA_BITACORAS + '/' + bit.key)).catch(function(){})); bitacorasData[bit.key] = { filas: [], footer: { transporte: bit.label, fecha: '', ruta: '', responsable: '', firma: '' } }; });
-  Promise.all(promesas).then(function() { toast('Todas las bitácoras ' + tipoLabel + ' eliminadas','ok'); cerrarModalBorrarBitacoraTodo(); renderizarTodasBitacoras(); registrarActividad('BORRADO_MASIVO', 'Eliminó todas las bitácoras ' + tipoLabel + ' (' + bitacoras.length + ' bitácoras)', 'BITACORAS'); }).catch(function(e) { toast('Error al eliminar: ' + e.message, 'err'); });
+  bitacoras.forEach(function(bit) {
+    promesas.push(remove(ref(db, RUTA_BITACORAS + '/' + bit.key)).catch(function(){}));
+    bitacorasData[bit.key] = { filas: [], footer: { transporte: bit.label, fecha: '', ruta: '', responsable: '', firma: '' } };
+  });
+  Promise.all(promesas).then(function() {
+    toast('Todas las bitácoras ' + tipoLabel + ' eliminadas','ok');
+    cerrarModalBorrarBitacoraTodo();
+    renderizarTodasBitacoras();
+    registrarActividad('BORRADO_MASIVO', 'Eliminó todas las bitácoras ' + tipoLabel + ' (' + bitacoras.length + ' bitácoras)', 'BITACORAS');
+  }).catch(function(e) { toast('Error al eliminar: ' + e.message, 'err'); });
 };
 
 window.abrirModalBorrarBitacoraAdmin = function(tipoBitacora) {
@@ -1142,10 +1703,14 @@ window.confirmarBorrarBitacoraAdmin = function() {
   let totalEliminados = 0;
   bitacoras.forEach(function(bit) {
     const data = bitacorasData[bit.key];
-    if (data && data.filas) { data.filas = data.filas.filter(function(f) { if (f && f.esAdmin) { totalEliminados++; return false; } return true; }); update(ref(db, RUTA_BITACORAS + '/' + bit.key), { filas: data.filas, footer: data.footer }).catch(function(){}); }
+    if (data && data.filas) {
+      data.filas = data.filas.filter(function(f) { if (f && f.esAdmin) { totalEliminados++; return false; } return true; });
+      update(ref(db, RUTA_BITACORAS + '/' + bit.key), { filas: data.filas, footer: data.footer }).catch(function(){});
+    }
   });
   toast(formatoEntero(totalEliminados) + ' registros admin eliminados de bitácoras ' + tipoLabel,'ok');
-  cerrarModalBorrarBitacoraAdmin(); renderizarTodasBitacoras();
+  cerrarModalBorrarBitacoraAdmin();
+  renderizarTodasBitacoras();
   registrarActividad('BORRADO_MASIVO', 'Eliminó ' + formatoEntero(totalEliminados) + ' registros ADMIN de bitácoras ' + tipoLabel, 'BITACORAS');
 };
 
@@ -1156,7 +1721,13 @@ window.abrirModalExportarBitacoras = function(tipoBitacora) {
   document.getElementById('bitExpTitulo').textContent = 'Exportar Bitácoras ' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM') + ' a Excel';
   document.getElementById('bitExpSubtitulo').textContent = 'Selecciona las bitácoras que deseas exportar.';
   let html = '';
-  bitacoras.forEach(function(bit, idx) { const data = bitacorasData[bit.key]; const tieneDatos = data && data.filas && data.filas.length > 0; const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0; const label = bit.label + (count > 0 ? ' (' + count + ')' : ''); html += '<div class="bitacora-export-item"><input type="checkbox" id="bitExp_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '><label for="bitExp_' + idx + '">' + label + '</label></div>'; });
+  bitacoras.forEach(function(bit, idx) {
+    const data = bitacorasData[bit.key];
+    const tieneDatos = data && data.filas && data.filas.length > 0;
+    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
+    const label = bit.label + (count > 0 ? ' (' + count + ')' : '');
+    html += '<div class="bitacora-export-item"><input type="checkbox" id="bitExp_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '><label for="bitExp_' + idx + '">' + label + '</label></div>';
+  });
   grid.innerHTML = html;
   grid.dataset.tipoBitacora = tipoBitacora;
   document.getElementById('bitacoraExportOverlay').classList.add('show');
@@ -1211,7 +1782,13 @@ window.abrirModalJPEGBitacoras = function(tipoBitacora) {
   document.getElementById('bitJpegTitulo').textContent = 'Exportar Bitácoras ' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM') + ' como JPEG';
   document.getElementById('bitJpegSubtitulo').textContent = 'Selecciona las bitácoras que deseas exportar como imagen.';
   let html = '';
-  bitacoras.forEach(function(bit, idx) { const data = bitacorasData[bit.key]; const tieneDatos = data && data.filas && data.filas.length > 0; const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0; const label = bit.label + (count > 0 ? ' (' + count + ' registros)' : ''); html += '<div class="bitacora-export-item"><input type="checkbox" id="bitJpeg_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '><label for="bitJpeg_' + idx + '">' + label + '</label></div>'; });
+  bitacoras.forEach(function(bit, idx) {
+    const data = bitacorasData[bit.key];
+    const tieneDatos = data && data.filas && data.filas.length > 0;
+    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
+    const label = bit.label + (count > 0 ? ' (' + count + ' registros)' : '');
+    html += '<div class="bitacora-export-item"><input type="checkbox" id="bitJpeg_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '><label for="bitJpeg_' + idx + '">' + label + '</label></div>';
+  });
   grid.innerHTML = html;
   grid.dataset.tipoBitacora = tipoBitacora;
   document.getElementById('bitacoraJPEGOverlay').classList.add('show');
@@ -1263,7 +1840,13 @@ window.abrirModalImprimirBitacoras = function(tipoBitacora) {
   document.getElementById('bitPrintTitulo').textContent = 'Imprimir Bitácoras ' + (tipoBitacora === 'b2c' ? 'B2C' : 'AM/PM-ADM-QDM');
   document.getElementById('bitPrintSubtitulo').textContent = 'Selecciona las bitácoras que deseas imprimir.';
   let html = '';
-  bitacoras.forEach(function(bit, idx) { const data = bitacorasData[bit.key]; const tieneDatos = data && data.filas && data.filas.length > 0; const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0; const label = bit.label + (count > 0 ? ' (' + count + ' registros)' : ''); html += '<div class="bitacora-export-item"><input type="checkbox" id="bitPrint_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '><label for="bitPrint_' + idx + '">' + label + '</label></div>'; });
+  bitacoras.forEach(function(bit, idx) {
+    const data = bitacorasData[bit.key];
+    const tieneDatos = data && data.filas && data.filas.length > 0;
+    const count = tieneDatos ? data.filas.filter(function(f) { return f && (f.requirente || f.documentos || f.cliente); }).length : 0;
+    const label = bit.label + (count > 0 ? ' (' + count + ' registros)' : '');
+    html += '<div class="bitacora-export-item"><input type="checkbox" id="bitPrint_' + idx + '" ' + (tieneDatos ? 'checked' : '') + '><label for="bitPrint_' + idx + '">' + label + '</label></div>';
+  });
   grid.innerHTML = html;
   grid.dataset.tipoBitacora = tipoBitacora;
   document.getElementById('bitacoraPrintOverlay').classList.add('show');
@@ -1582,7 +2165,7 @@ function renderTabBD(tipo, filtroId, pagina) {
   if (pagMap[tipo]) window[pagMap[tipo]] = pagina;
   const ini = (pagina-1)*REGISTROS_POR_PAGINA_BD; const pag = regs.slice(ini, ini+REGISTROS_POR_PAGINA_BD);
   const cf = detectarIdsRepetidosPorFecha(regs), cg = detectarIdsRepetidosGlobal(regs);
-  tbody.innerHTML = pag.map(function(r) { const claseYInd = claseYIndicadorSimple(r, cf, cg); const claseAdmin = r.esAdmin ? ' fila-admin' : ''; const badgeAdmin = r.esAdmin ? ' <span class="badge badge-admin">ADMIN</span>' : ''; return '<tr class="' + claseYInd.clase + claseAdmin + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + badgeAdmin + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">️</button></td></tr>'; }).join('');
+  tbody.innerHTML = pag.map(function(r) { const claseYInd = claseYIndicadorSimple(r, cf, cg); const claseAdmin = r.esAdmin ? ' fila-admin' : ''; const badgeAdmin = r.esAdmin ? ' <span class="badge badge-admin">ADMIN</span>' : ''; return '<tr class="' + claseYInd.clase + claseAdmin + '"><td>' + fmtFecha(r.fecha) + '</td><td><span class="badge badge-unidad">' + (r.unidad||'') + '</span></td><td><strong>' + (r.idPedido||'') + '</strong>' + claseYInd.ind + badgeAdmin + '</td><td>' + (r.nombre||'') + '</td><td>' + dirDe(r) + '</td><td>' + canonComuna(r.comuna) + '</td><td>' + formatoMonedaAlineado(r.valor) + '</td><td>' + (r.observacion||'') + '</td><td>' + (r.transporte||'') + '</td><td><span class="badge badge-' + (r.rango||'').toLowerCase() + '">' + (r.rango||'') + '</span></td><td class="td-acciones"><button class="btn-acc" onclick="pedirEditarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')">✏️</button><button class="btn-acc btn-borrar" onclick="pedirBorrarRegistroBD(\'' + r.key + '\',\'' + r.anio + '\',\'' + r.mes + '\')" title="Eliminar">🗑️</button></td></tr>'; }).join('');
   if (tp <= 1) { pagDiv.innerHTML = '<div class="bd-paginacion-info">Mostrando ' + formatoEntero(regs.length) + ' de ' + formatoEntero(regs.length) + '</div>'; return; }
   let h = '<div class="bd-paginacion-info">Pagina ' + pagina + ' de ' + tp + ' | ' + formatoEntero(ini+1) + '-' + formatoEntero(Math.min(ini+REGISTROS_POR_PAGINA_BD, regs.length)) + ' de ' + formatoEntero(regs.length) + '</div>';
   h += pagina>1 ? '<button class="btn-bd-pag-nav" onclick="irPaginaBD(\'' + tipo + '\',' + (pagina-1) + ')">‹ Anterior</button>' : '<button class="btn-bd-pag-nav" disabled>‹ Anterior</button>';
@@ -1598,7 +2181,7 @@ window.irPaginaBD = function(t,p) { if (rolActual !== 'admin') return; const pag
 window.filtrarBD = function(t) { if (rolActual !== 'admin') return; const pagMap = { AMPM: 'paginaBDAmpm', B2C: 'paginaBDB2c', ADM: 'paginaBDAdm', QDM: 'paginaBDQdm' }; if (pagMap[t]) window[pagMap[t]] = 1; renderizarBaseDatos(); };
 window.pedirEditarRegistroBD = function(key, anio, mes) { pedirClave(function() { editandoKey = key; render(); renderizarBaseDatos(); }); };
 
-// ✅ Preserva transporteManual al editar
+// ✅ MODIFICADO: Preserva transporteManual al editar
 window.guardarEdicionInline = function(key, anio, mes, esPend) {
   const gv = function(id) { const el = document.getElementById(id); return el ? el.value : ''; };
   const nuevo = { fecha: gv('edi_fecha'), unidad: gv('edi_unidad'), idPedido: gv('edi_id'), nombre: gv('edi_nombre'), direccion: gv('edi_direccion'), comuna: canonComuna(gv('edi_comuna')), valor: parseFloat(gv('edi_valor'))||0, observacion: gv('edi_obs'), transporte: gv('edi_transporte'), rango: gv('edi_rango') };
@@ -1607,11 +2190,14 @@ window.guardarEdicionInline = function(key, anio, mes, esPend) {
   if (document.getElementById('edi_email')) nuevo.email = gv('edi_email');
   const parts = (nuevo.fecha||'').split('-'); const nA = parts[0]; const nM = parts[1];
   if (cache[anio] && cache[anio][mes] && cache[anio][mes][key]) {
-    // ✅ Preservar transporteManual
+    // ✅ Preservar transporteManual si el usuario cambió el transporte
     const transporteAnterior = cache[anio][mes][key].transporte;
     const esManual = cache[anio][mes][key].transporteManual;
-    if (nuevo.transporte !== transporteAnterior) { nuevo.transporteManual = true; }
-    else { nuevo.transporteManual = esManual; }
+    if (nuevo.transporte !== transporteAnterior) {
+      nuevo.transporteManual = true; // ✅ Si cambió, marcar como manual
+    } else {
+      nuevo.transporteManual = esManual; // ✅ Mantener estado anterior
+    }
     nuevo.esAdmin = cache[anio][mes][key].esAdmin;
     nuevo.usuario = cache[anio][mes][key].usuario;
     cache[anio][mes][key] = Object.assign({}, cache[anio][mes][key], nuevo);
@@ -1661,8 +2247,15 @@ window.confirmarBorrarDesc = function() {
   Object.keys(cache).forEach(function(a) { Object.keys(cache[a]||{}).forEach(function(m) { Object.keys(cache[a][m]||{}).forEach(function(k) { if (getTipoRegistro(cache[a][m][k]) === tipo) { keysAEliminar.push({ anio: a, mes: m, key: k }); } }); }); });
   keysAEliminar.forEach(function(item) { promesas.push(remove(ref(db, RUTA_BASE + '/' + item.anio + '/' + item.mes + '/' + item.key)).catch(function(){})); });
   keysAEliminar.forEach(function(item) { if (cache[item.anio] && cache[item.anio][item.mes]) { delete cache[item.anio][item.mes][item.key]; } });
-  if (tipo === 'AMPM') pendientesAMPM = []; else if (tipo === 'ADM') pendientesADM = []; else if (tipo === 'QDM') pendientesQDM = []; else if (tipo === 'B2C') pendientesB2C = [];
-  Promise.all(promesas).then(function() { toast(formatoEntero(keysAEliminar.length) + ' registros de ' + tipo + ' eliminados','ok'); cerrarModalBorrarDesc(); render(); renderizarBaseDatos(); registrarActividad('BORRADO_MASIVO', 'Eliminó toda la descripción ' + tipo + ' (' + formatoEntero(keysAEliminar.length) + ' registros)', tipo); }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
+  if (tipo === 'AMPM') pendientesAMPM = [];
+  else if (tipo === 'ADM') pendientesADM = [];
+  else if (tipo === 'QDM') pendientesQDM = [];
+  else if (tipo === 'B2C') pendientesB2C = [];
+  Promise.all(promesas).then(function() {
+    toast(formatoEntero(keysAEliminar.length) + ' registros de ' + tipo + ' eliminados','ok');
+    cerrarModalBorrarDesc(); render(); renderizarBaseDatos();
+    registrarActividad('BORRADO_MASIVO', 'Eliminó toda la descripción ' + tipo + ' (' + formatoEntero(keysAEliminar.length) + ' registros)', tipo);
+  }).catch(function(e) { toast('Error: ' + e.message, 'err'); });
 };
 
 window.abrirModalBorrarDescripcionActual = function() { abrirModalBorrarDescripcion(tipoDeSeccion()); };
@@ -1689,11 +2282,16 @@ window.confirmarEliminarAdmin = function() {
   keysAEliminar.forEach(function(item) { promesas.push(remove(ref(db, RUTA_BASE + '/' + item.anio + '/' + item.mes + '/' + item.key)).catch(function(){})); });
   keysAEliminar.forEach(function(item) { if (cache[item.anio] && cache[item.anio][item.mes]) { delete cache[item.anio][item.mes][item.key]; } });
   [pendientesAMPM, pendientesADM, pendientesQDM, pendientesB2C].forEach(function(lista) { for (let i = lista.length - 1; i >= 0; i--) { if (lista[i].reg && lista[i].reg.esAdmin) { lista.splice(i, 1); } } });
-  Promise.all(promesas).then(function() { toast(formatoEntero(keysAEliminar.length) + ' registros admin eliminados','ok'); cerrarModalEliminarAdmin(); render(); renderizarBaseDatos(); registrarActividad('BORRADO_MASIVO', 'Eliminó ' + formatoEntero(keysAEliminar.length) + ' registros ADMIN', 'SISTEMA'); }).catch(function(e) { toast('Error al eliminar: ' + e.message, 'err'); });
+  Promise.all(promesas).then(function() {
+    toast(formatoEntero(keysAEliminar.length) + ' registros admin eliminados','ok');
+    cerrarModalEliminarAdmin(); render(); renderizarBaseDatos();
+    registrarActividad('BORRADO_MASIVO', 'Eliminó ' + formatoEntero(keysAEliminar.length) + ' registros ADMIN', 'SISTEMA');
+  }).catch(function(e) { toast('Error al eliminar: ' + e.message, 'err'); });
 };
 
 window.abrirBorrarMes = function(t) { if (rolActual !== 'admin') { toast('Sin permiso','err'); return; } tipoBorrarMes = t; document.getElementById('bmTipo').value = t; document.getElementById('bmMes').value = ''; document.getElementById('bmPassword').value = ''; document.getElementById('bmInfoRegistros').textContent = 'Selecciona mes y año para ver cantidad'; document.getElementById('borrarMesOverlay').classList.add('show'); };
 window.cerrarBorrarMes = function() { document.getElementById('borrarMesOverlay').classList.remove('show'); };
+
 function actualizarInfoBorrarMes() { const m = document.getElementById('bmMes').value; const a = document.getElementById('bmAnio').value; const d = document.getElementById('bmInfoRegistros'); if (!m) { d.textContent = 'Selecciona mes y año para ver cantidad'; return; } const c = Object.keys((cache[a] && cache[a][m]) ? cache[a][m] : {}).filter(function(k) { return getTipoRegistro(cache[a][m][k]) === tipoBorrarMes; }).length; d.textContent = c === 0 ? 'Sin registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a : formatoEntero(c) + ' registros ' + tipoBorrarMes + ' en ' + MESES_NOM[parseInt(m)-1] + ' ' + a; }
 
 window.confirmarBorrarMes = function() {
@@ -1893,7 +2491,6 @@ window.cambiarFechaFila = function(key, nuevaFecha, esPend) {
   for (const a of Object.keys(cache)) { for (const m of Object.keys(cache[a]||{})) { if (cache[a][m] && cache[a][m][key]) { cambiosFechaLocales[key] = { esPendiente: false, anioOriginal: a, mesOriginal: m, nuevaFecha: nuevaFecha, nuevaAnio: nA, nuevaMes: nM }; toast('Fecha cambiada a ' + fmtFechaConDia(nuevaFecha) + ' (pendiente de guardar)', 'info'); render(); return; } } }
 };
 
-// ✅ CARGA DE DATOS PRESERVA transporteManual
 async function cargarDatos() {
   const inicio = performance.now(); 
   toast('Cargando datos...', 'info');
@@ -1903,23 +2500,7 @@ async function cargarDatos() {
   anios.forEach(function(anio) { for (let mes = 1; mes <= 12; mes++) { const ms = String(mes).padStart(2,'0'); tareas.push(get(ref(db, RUTA_BASE + '/' + anio + '/' + ms)).then(function(s) { return {t:'b', anio: anio, ms: ms, datos: s.val()}; }).catch(function() { return {t:'b', anio: anio, ms: ms, datos: null}; })); } });
   const res = await Promise.all(tareas); 
   let total = 0;
-  res.forEach(function(item) {
-    const anio = item.anio;
-    const ms = item.ms;
-    const datos = item.datos;
-    if (datos) { 
-      if (!cache[anio]) cache[anio] = {}; 
-      cache[anio][ms] = {};
-      Object.keys(datos).forEach(function(key) {
-        const reg = datos[key];
-        if (reg && reg.transporte && reg.transporteManual === undefined) {
-          reg.transporteManual = true;
-        }
-        cache[anio][ms][key] = reg;
-      });
-      total += Object.keys(datos).length; 
-    }
-  });
+  res.forEach(function(item) { const anio = item.anio; const ms = item.ms; const datos = item.datos; if (datos) { if (!cache[anio]) cache[anio] = {}; cache[anio][ms] = datos; total += Object.keys(datos).length; } });
   document.getElementById('loading').style.display = 'none';
   toast('Carga completa: ' + total + ' registros (' + ((performance.now()-inicio)/1000).toFixed(1) + 's)', 'ok');
   render(); renderizarBaseDatos(); actualizarBotonGuardar();
