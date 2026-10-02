@@ -548,7 +548,11 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
     <div class="seccion-registro-header" onclick="toggleSeccion('registro')"><h3>NUEVO REGISTRO</h3><button class="btn-flecha" id="flechaRegistro">▼</button></div>
     <div class="seccion-contenido" id="contenidoRegistro">
       <form id="formReg" class="form-fila">
-        <div class="campo c-fecha"><label>Fecha</label><div class="fecha-wrap"><input type="date" id="fFecha" required><button type="button" class="btn-calendario" onclick="toggleCalendario()" title="Abrir calendario">📅</button><div class="calendario-popup" id="calendarioPopup"></div></div></div>
+        <!-- ✅ MODIFICADO: Calendario eliminado, solo input date nativo -->
+        <div class="campo c-fecha">
+          <label>Fecha</label>
+          <input type="date" id="fFecha" required>
+        </div>
         <div class="campo c-unidad"><label>Unidad Negocio</label><select id="fUnidad" required><option value="">-- Elegir --</option><option>MacOnline Distribucion</option><option>MacOnline Empresas</option><option>MacOnline Tienda Web</option><option>MacOnline Administracion</option><option>MacOnline Tiendas</option><option>Vertical Tiendas</option><option>Vertical Web</option><option>QD-Web</option><option>QD Matorista</option><option>CD Quintec</option><option>QD-Retail</option><option>SSTT Quintec</option></select></div>
         <div class="campo c-id"><label>ID Pedido</label><input type="text" id="fId" required autocomplete="off"></div>
         <div class="campo c-nombre"><label>Nombre Cliente</label><input type="text" id="fNombre" required autocomplete="off"></div>
