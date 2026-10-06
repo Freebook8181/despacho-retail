@@ -141,12 +141,12 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .tabla-scroll-vertical::-webkit-scrollbar{width:10px}
 .tabla-scroll-vertical::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:5px}
 .tabla-scroll-vertical::-webkit-scrollbar-thumb{background:var(--scrollbar-v);border-radius:5px}
-.tabla-scroll-horizontal-top{overflow-x:auto;border-bottom:2px solid var(--accent-orange)}
-.tabla-scroll-horizontal-top::-webkit-scrollbar{height:8px}
-.tabla-scroll-horizontal-top::-webkit-scrollbar-thumb{background:var(--accent-orange);border-radius:4px}
-.tabla-scroll-horizontal{overflow-x:auto;border-top:none}
-.tabla-scroll-horizontal::-webkit-scrollbar{height:0;width:0}
-.tabla-scroll-horizontal::-webkit-scrollbar-thumb{background:transparent}
+.tabla-scroll-horizontal-top{overflow-x:auto;border-bottom:2px solid var(--accent-orange);margin-bottom:4px}
+.tabla-scroll-horizontal-top::-webkit-scrollbar{height:10px}
+.tabla-scroll-horizontal-top::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:5px}
+.tabla-scroll-horizontal-top::-webkit-scrollbar-thumb{background:var(--accent-orange);border-radius:5px}
+.tabla-scroll-horizontal{overflow-x:hidden}
+.tabla-scroll-horizontal::-webkit-scrollbar{display:none}
 .tabla-scroll-horizontal table{width:100%;min-width:1400px}
 table{width:100%;border-collapse:collapse;font-size:.82em;margin-top:8px;background:var(--bg-secondary)}
 th{background:var(--bg-tertiary);color:var(--text-primary);padding:8px 6px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;border-bottom:2px solid var(--border-color);text-transform:uppercase;font-size:.8em}
@@ -310,7 +310,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 .usuario-activo{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--accent-green-pastel);border:1px solid var(--accent-green);border-radius:12px;font-size:.8em;color:var(--accent-green);margin:3px}
 .usuario-activo .pulse{width:8px;height:8px;background:var(--accent-green);border-radius:50%;animation:pulse 1.5s infinite}
 @keyframes pulse{0%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}100%{opacity:1;transform:scale(1)}}
-.bd-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px;background:var(--bg-tertiary);border-radius:4px;flex-wrap:wrap;border:1px solid var(--border-color)}
+.bd-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px;background:var(--bg-tertiary);border-radius:4px;flex-wrap:wrap;border:1px solid var(--border-color);margin-bottom:8px}
 .bd-paginacion-info{color:var(--text-secondary);font-size:.85em;font-weight:600;margin-right:15px}
 .fila-filtros-desc td{background:var(--bg-tertiary) !important;padding:8px 6px !important;border-bottom:2px solid var(--border-color) !important;}
 .fila-filtros-desc .th-filter{font-size:.8em !important;padding:4px 6px !important;}
@@ -579,7 +579,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 </div>
 <div class="tabla-scroll-vertical">
 <div class="bd-paginacion" id="paginacionDesc"></div>
-<div class="tabla-scroll-horizontal-top" id="scrollTop"><div style="min-width:1400px;height:8px"></div></div>
+<div class="tabla-scroll-horizontal-top" id="scrollTop"><div style="min-width:1400px;height:10px"></div></div>
 <div class="tabla-scroll-horizontal" id="scrollBottom"><table><thead id="theadDesc"></thead><tbody id="tbody"></tbody></table></div>
 <div class="loading-msg" id="loading"><div class="spinner"></div>Cargando datos...</div>
 <div class="empty-msg" id="empty" style="display:none">No hay registros para hoy</div>
