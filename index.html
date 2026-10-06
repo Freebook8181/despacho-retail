@@ -104,9 +104,10 @@ body.oculta-principal .stats-bar,body.oculta-principal .seccion-registro,body.oc
 .bd-resumen .res-pm strong{color:var(--accent-purple)}
 .bd-resumen .res-periodo strong{color:var(--accent-green)}
 .bd-descripcion-subtitulo{color:var(--accent-blue);font-size:1em;font-weight:700;margin:4px 0 8px 0;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.basedatos-tabla-wrap{overflow:auto;max-height:500px;border:1px solid var(--border-color);border-radius:4px;margin-bottom:10px;background:var(--bg-secondary)}
+.basedatos-tabla-wrap{overflow-x:hidden;overflow-y:auto;max-height:500px;border:1px solid var(--border-color);border-radius:4px;margin-bottom:10px;background:var(--bg-secondary)}
 .basedatos-tabla-wrap::-webkit-scrollbar{width:8px;height:8px}
 .basedatos-tabla-wrap::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
+.bd-scroll-top{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border-color);border-bottom:2px solid var(--accent-orange);border-radius:4px;margin-bottom:4px;background:var(--bg-secondary)}.bd-scroll-top::-webkit-scrollbar{height:10px}.bd-scroll-top::-webkit-scrollbar-track{background:var(--bg-tertiary);border-radius:5px}.bd-scroll-top::-webkit-scrollbar-thumb{background:var(--accent-orange);border-radius:5px}
 .basedatos-tabla{width:100%;border-collapse:collapse;font-size:.85em}
 .basedatos-tabla th{background:var(--bg-tertiary);color:var(--text-primary);padding:10px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--border-color);position:sticky;top:0;z-index:10;text-transform:uppercase;font-size:.8em}
 .basedatos-tabla td{padding:8px;border-bottom:1px solid var(--border-color);color:var(--text-primary)}
@@ -465,7 +466,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 </div>
 <div class="bd-resumen" id="bdResumenAmpm"></div>
 <div class="bd-descripcion-subtitulo"><span>Descripcion</span><button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion('AMPM')">BORRAR DESCRIPCION AMPM</button></div>
-<div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAmpm"></thead><tbody id="bdTbodyAmpm"></tbody></table></div>
+<div class="bd-scroll-top" id="bdScrollTopAmpm"><div style="height:10px"></div></div><div class="basedatos-tabla-wrap" id="bdWrapAmpm"><table class="basedatos-tabla"><thead id="theadAmpm"></thead><tbody id="bdTbodyAmpm"></tbody></table></div>
 <div class="bd-paginacion" id="bdPaginacionAmpm"></div>
 </div>
 <div class="basedatos-tab-content" id="tabContentB2c">
@@ -480,7 +481,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 </div>
 <div class="bd-resumen" id="bdResumenB2c"></div>
 <div class="bd-descripcion-subtitulo"><span>Descripcion</span><button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion('B2C')">BORRAR DESCRIPCION B2C</button></div>
-<div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadB2c"></thead><tbody id="bdTbodyB2c"></tbody></table></div>
+<div class="bd-scroll-top" id="bdScrollTopB2c"><div style="height:10px"></div></div><div class="basedatos-tabla-wrap" id="bdWrapB2c"><table class="basedatos-tabla"><thead id="theadB2c"></thead><tbody id="bdTbodyB2c"></tbody></table></div>
 <div class="bd-paginacion" id="bdPaginacionB2c"></div>
 </div>
 <div class="basedatos-tab-content" id="tabContentAdm">
@@ -495,7 +496,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 </div>
 <div class="bd-resumen" id="bdResumenAdm"></div>
 <div class="bd-descripcion-subtitulo"><span>Descripcion</span><button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion('ADM')">BORRAR DESCRIPCION ADM</button></div>
-<div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAdm"></thead><tbody id="bdTbodyAdm"></tbody></table></div>
+<div class="bd-scroll-top" id="bdScrollTopAdm"><div style="height:10px"></div></div><div class="basedatos-tabla-wrap" id="bdWrapAdm"><table class="basedatos-tabla"><thead id="theadAdm"></thead><tbody id="bdTbodyAdm"></tbody></table></div>
 <div class="bd-paginacion" id="bdPaginacionAdm"></div>
 </div>
 <div class="basedatos-tab-content" id="tabContentQdm">
@@ -510,7 +511,7 @@ td.td-otro-palet input[type="checkbox"]{width:18px;height:18px;cursor:pointer;ac
 </div>
 <div class="bd-resumen" id="bdResumenQdm"></div>
 <div class="bd-descripcion-subtitulo"><span>Descripcion</span><button class="btn-borrar-desc" onclick="abrirModalBorrarDescripcion('QDM')">BORRAR DESCRIPCION QDM</button></div>
-<div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadQdm"></thead><tbody id="bdTbodyQdm"></tbody></table></div>
+<div class="bd-scroll-top" id="bdScrollTopQdm"><div style="height:10px"></div></div><div class="basedatos-tabla-wrap" id="bdWrapQdm"><table class="basedatos-tabla"><thead id="theadQdm"></thead><tbody id="bdTbodyQdm"></tbody></table></div>
 <div class="bd-paginacion" id="bdPaginacionQdm"></div>
 </div>
 </div>
