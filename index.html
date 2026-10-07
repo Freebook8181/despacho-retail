@@ -113,545 +113,115 @@ tr.fila-admin td{border-left:4px solid #10b981!important}
 .toast{position:fixed;top:15px;right:15px;padding:10px 18px;border-radius:4px;color:#fff;font-weight:600;font-size:.85em;z-index:9999;transform:translateX(400px);transition:transform .3s}
 .toast.show{transform:translateX(0)}
 .toast.ok{background:var(--toast-ok)}.toast.err{background:var(--toast-err)}.toast.info{background:var(--toast-info)}
-.modal-overlay{display:none;position:fixed;inset:0;background:var(--modal-overlay);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay{display:none;position:fixed;inset:0;background:var(--modal-overlay);z-index:1000}
 .modal-overlay.show{display:flex}
-.modal-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:22px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 10px 40px var(--shadow)}
-.modal-box h2{color:var(--accent-blue);margin-bottom:12px;font-size:1.1em;text-transform:uppercase}
-.modal-box p{color:var(--text-secondary);margin-bottom:12px;font-size:.9em}
-.modal-box input{background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:8px 12px;border-radius:4px;width:100%;margin-bottom:10px}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
-.modal-actions button{padding:8px 16px}
-.btn-confirmar{background:var(--accent-blue);color:#fff;border:none}
-.btn-cancelar{background:transparent;color:var(--text-secondary)}
-.btn-peligro{background:var(--accent-red);color:#fff;border:none}
-.combo-list{display:none;position:absolute;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;max-height:220px;overflow-y:auto;z-index:999;box-shadow:0 4px 12px var(--shadow)}
-.combo-item{padding:6px 12px;cursor:pointer;font-size:.85em;color:var(--text-primary)}
-.combo-item:hover{background:var(--accent-blue-pastel);color:var(--accent-blue)}
-.filtro-combo{position:relative;display:inline-block}
-.obs-combo-wrap{position:relative;display:inline-block;width:100%}
-.combo-arrow{position:absolute;right:2px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 4px;font-size:.7em}
-.fecha-wrap{position:relative;display:inline-block}
-.fecha-cell-wrap{position:relative;display:inline-block}
-.cal-popup-fila{display:none;position:fixed;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:10px;z-index:99999;box-shadow:0 8px 24px var(--shadow);width:280px}
-.cal-popup-fila.show{display:block}
-.calendario-popup{display:none;position:fixed;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:12px;z-index:9999;box-shadow:0 8px 24px var(--shadow);width:280px}
-.calendario-popup.show{display:block}
-.calendario-header,.cal-header-fila{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.calendario-header button,.cal-header-fila button{background:none;border:none;color:var(--accent-blue);cursor:pointer;font-size:1em;padding:4px 8px}
-.calendario-header span,.cal-header-fila span{color:var(--text-primary);font-weight:700;text-transform:uppercase;font-size:.85em}
-.calendario-grid,.cal-grid-fila{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.dia-semana{color:var(--text-muted);text-align:center;font-size:.7em;font-weight:700;padding:4px;text-transform:uppercase}
-.dia{text-align:center;padding:6px;cursor:pointer;border-radius:4px;font-size:.85em;color:var(--text-primary)}
-.dia:hover{background:var(--accent-blue-pastel)}
-.dia.hoy{background:var(--accent-orange-pastel);color:var(--accent-orange);font-weight:700}
-.dia.seleccionado{background:var(--accent-blue);color:#fff;font-weight:700}
-.dia.vacio{cursor:default}
-.checkbox-item{display:flex;align-items:center;gap:6px;padding:4px 0}
-.checkbox-item input{width:16px;height:16px}
-.checkbox-item label{color:var(--text-primary);font-size:.85em}
-.bitacora-export-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
-.bitacora-export-item{display:flex;align-items:center;gap:6px;padding:6px;background:var(--bg-tertiary);border-radius:4px}
-.bitacora-wrapper{background:#fff;color:#000;padding:12px;margin-bottom:16px;border:1px solid #ccc;border-radius:4px}
-.bitacora-header-info{background:#1a5490;color:#fff;padding:8px 12px;font-weight:700;font-size:1em;text-align:center;margin-bottom:8px;text-transform:uppercase}
-.bitacora-table{width:100%;border-collapse:collapse;margin-bottom:8px}
-.bitacora-table th{background:#1a5490;color:#fff;padding:6px 8px;text-align:left;font-size:.8em;border:1px solid #333}
-.bitacora-table td{border:1px solid #999;padding:2px;background:#fff}
-.bitacora-table input{width:100%;border:none;padding:4px 6px;font-size:.85em;background:transparent;color:#000}
-.bitacora-table input:focus{background:#fff8dc;outline:1px solid #1a5490}
-.bitacora-footer-table{width:100%;border-collapse:collapse;margin-top:4px}
-.bitacora-footer-table th{background:#1a5490;color:#fff;padding:6px 8px;text-align:left;font-size:.8em;border:1px solid #333}
-.bitacora-footer-table td{border:1px solid #999;padding:2px}
-.bitacora-footer-table input{width:100%;border:none;padding:4px 6px;font-size:.85em;background:#fff;color:#000}
-.fila-admin-bit{background:#d4edda!important}
-.fila-admin-bit input{background:#d4edda!important}
-.num-col{background:#f0f0f0!important;text-align:center;font-weight:700;color:#1a5490}
-.actividad-list{max-height:600px;overflow-y:auto;padding:10px}
-.actividad-item{display:flex;gap:12px;padding:10px;border-bottom:1px solid var(--border-color);align-items:flex-start}
-.actividad-icon{font-size:1.5em;flex-shrink:0}
-.actividad-content{flex:1}
-.actividad-user{font-weight:700;color:var(--text-primary);font-size:.9em}
-.actividad-action{color:var(--text-secondary);font-size:.85em;margin-top:2px}
-.actividad-time{color:var(--text-muted);font-size:.75em;margin-top:4px}
-.actividad-empty{text-align:center;padding:40px;color:var(--text-muted);font-style:italic}
-.usuario-activo{display:inline-block;padding:4px 10px;background:var(--bg-tertiary);border-radius:12px;font-size:.8em;margin:2px;color:var(--text-primary)}
-.pulse{display:inline-block;width:8px;height:8px;background:var(--accent-green);border-radius:50%;margin-right:6px;animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.inf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
-.inf-stat{background:var(--bg-tertiary);padding:16px;border-radius:6px;text-align:center;border-left:4px solid var(--accent-blue)}
-.inf-stat .num{font-size:1.8em;font-weight:800;color:var(--accent-blue)}
-.inf-stat .lbl{color:var(--text-secondary);font-size:.8em;text-transform:uppercase;margin-top:4px}
-.bd-paginacion-info{color:var(--text-secondary);font-size:.85em;padding:4px 8px}
-.btn-bd-pag,.btn-bd-pag-nav,.btn-pag-numero,.btn-pag-nav{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.85em;margin:2px}
-.btn-bd-pag.activa,.btn-pag-numero.activa{background:var(--accent-blue);color:#fff;border-color:var(--accent-blue)}
-.btn-bd-pag:disabled,.btn-bd-pag-nav:disabled,.btn-pag-numero:disabled,.btn-pag-nav:disabled{opacity:.4;cursor:not-allowed}
-.btn-acc{background:transparent;border:1px solid var(--border-color);padding:3px 8px;border-radius:4px;cursor:pointer;font-size:.85em;margin:0 2px}
-.btn-acc:hover{border-color:var(--accent-blue);color:var(--accent-blue)}
-.btn-borrar:hover{border-color:var(--accent-red);color:var(--accent-red)}
-.td-acciones{text-align:center;vertical-align:middle}
-.td-sel{text-align:center;vertical-align:middle}
-.td-otro-palet{text-align:center;vertical-align:middle}
-.res-periodo{color:var(--accent-orange);font-weight:700}
-.res-am{color:var(--accent-orange);font-weight:700}
-.res-pm{color:var(--accent-purple);font-weight:700}
-.modal-paginacion-info{color:var(--text-secondary);font-size:.85em;padding:4px 8px;text-align:center;margin:8px 0}
-@media(max-width:768px){.header{flex-direction:column;gap:8px;padding:10px}.stats-bar{padding:6px 10px}.seccion-tab{padding:10px 14px;font-size:.75em}.form-fila{flex-direction:column}.campo{width:100%}.campo input,.campo select{width:100%}.inf-stats{grid-template-columns:repeat(2,1fr)}.bitacora-export-grid{grid-template-columns:1fr}}
+.modal-window{width:100vw;height:100vh;background:var(--bg-primary);display:flex;flex-direction:column}
+.modal-titlebar{background:var(--accent-blue);padding:12px 20px;display:flex;justify-content:space-between}
+.modal-title{color:#fff;font-weight:700}
+.modal-body{flex:1;overflow:auto}
+.modal-info{padding:12px 20px;background:var(--bg-tertiary);font-size:.9em}
+.modal-filtro{display:flex;gap:8px;padding:10px 20px;flex-wrap:wrap}
+.modal-body table{min-width:1200px}
+.modal-paginacion{display:flex;justify-content:center;gap:4px;padding:12px;flex-wrap:wrap}
+.overlay-centro{display:none;position:fixed;inset:0;background:var(--modal-overlay);z-index:3000;align-items:center;justify-content:center}
+.overlay-centro.show{display:flex}
+.modal-caja{background:var(--bg-secondary);border-radius:4px;padding:25px;max-width:420px;width:90%}
+.modal-caja h3{text-align:center;text-transform:uppercase;margin-bottom:15px}
+.modal-caja .form-group{margin-bottom:12px}
+.modal-caja .form-group label{display:block;color:var(--text-secondary);font-size:.85em;margin-bottom:5px}
+.modal-caja .form-group select,.modal-caja .form-group input{width:100%;background:var(--bg-input);color:var(--text-primary);border:1px solid var(--border-color);padding:8px;border-radius:4px}
+.modal-caja .info-registros{color:var(--accent-orange);font-size:.85em;margin:10px 0;text-align:center;padding:8px;background:var(--accent-orange-pastel);border-radius:4px}
+.modal-caja-buttons{display:flex;gap:10px;justify-content:center}
+.exportar-modal-overlay,.bitacora-export-overlay{display:none;position:fixed;inset:0;background:var(--modal-overlay);z-index:2000;align-items:center;justify-content:center}
+.exportar-modal-overlay.show,.bitacora-export-overlay.show{display:flex}
+.exportar-modal,.bitacora-export-modal{background:var(--bg-secondary);border-radius:4px;padding:25px;max-width:700px;width:90%;max-height:85vh;overflow-y:auto}
+.exportar-modal h3,.bitacora-export-modal h3{color:var(--accent-blue);text-align:center;text-transform:uppercase;margin-bottom:15px}
+.exp-info{color:var(--accent-orange);font-size:.85em;margin-bottom:12px;text-align:center;padding:8px;background:var(--accent-orange-pastel);border-radius:4px}
+.checkbox-group,.bitacora-export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.checkbox-item,.bitacora-export-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-tertiary);border-radius:4px;border:1px solid var(--border-color)}
+.checkbox-item label,.bitacora-export-item label{flex:1;font-size:.9em}
+.exportar-modal-buttons,.bitacora-export-actions{display:flex;gap:10px;justify-content:flex-end}
+.bitacora-wrapper{background:#fff;border-radius:8px;padding:15px;margin-bottom:20px;color:#000}
+.bitacora-header-info{background:#1a5490;color:#fff;padding:12px;border-radius:6px 6px 0 0;text-align:center;font-weight:700}
+.bitacora-table,.bitacora-footer-table{width:100%;border-collapse:collapse;font-family:Arial}
+.bitacora-table th,.bitacora-footer-table th{background:#1a5490;color:#fff;padding:10px 8px;border:1px solid #0f3d6e}
+.bitacora-table td,.bitacora-footer-table td{border:1px solid #999;padding:6px 8px;color:#000}
+.bitacora-table input,.bitacora-footer-table input{border:none;width:100%;background:transparent;color:#000}
+.bitacora-table .num-col{background:#f0f0f0;text-align:center;width:40px}
+.bitacora-table tr.fila-admin-bit td{background:#d1fae5!important}
+.actividad-container{padding:20px;background:var(--bg-secondary);border-radius:8px}
+.actividad-stats{display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.actividad-stat{background:var(--bg-tertiary);padding:12px 20px;border-radius:6px;border-left:4px solid var(--accent-blue)}
+.actividad-stat .stat-num{font-size:1.8em;font-weight:700;color:var(--accent-blue)}
+.actividad-item{padding:12px 15px;border-bottom:1px solid var(--border-color);display:flex;gap:12px}
+.usuario-activo{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--accent-green-pastel);border:1px solid var(--accent-green);border-radius:12px;font-size:.8em;color:var(--accent-green);margin:3px}
+.bd-paginacion{display:flex;justify-content:center;align-items:center;gap:4px;padding:10px;background:var(--bg-tertiary);border-radius:4px;flex-wrap:wrap;position:sticky;bottom:0;z-index:100}
+#theadDesc th,#theadAmpm th,#theadB2c th,#theadAdm th,#theadQdm th{vertical-align:middle!important;text-align:center!important}
+#theadDesc tr:first-child th,#theadAmpm tr:first-child th,#theadB2c tr:first-child th,#theadAdm tr:first-child th,#theadQdm tr:first-child th{padding:8px 6px!important;border-bottom:1px solid var(--border-color)!important}
+#theadDesc tr:last-child td,#theadAmpm tr:last-child td,#theadB2c tr:last-child td,#theadAdm tr:last-child td,#theadQdm tr:last-child td{padding:4px 6px!important;border-top:none!important}
+.th-filter{font-size:0.8em!important;padding:3px 6px!important;margin:0!important}
 </style>
 </head>
 <body>
-<section id="loginSection">
-<div class="login-box">
-<h1>DESPACHO RETAIL</h1>
-<div class="version">v1.0</div>
-<p>Sistema de Control de Despachos<br>2026 - 2030</p>
-<input type="email" id="loginEmail" placeholder="Email">
-<input type="password" id="loginPass" placeholder="Contraseña">
-<button onclick="login()">INGRESAR AL SISTEMA</button>
-</div>
-</section>
-<section id="appSection">
-<div class="header">
-<div class="header-left"><h1>DESPACHO RETAIL v1.0</h1></div>
-<div class="header-right">
-<div class="reloj-digital">
-<div><div id="relojFecha" class="reloj-fecha">----:----</div></div>
-<div id="relojHora" class="reloj-hora">--:--</div>
-<div id="relojSeg" class="reloj-segundos">--</div>
-</div>
-<div class="theme-selector">
-<button class="theme-btn" data-theme="dark" onclick="cambiarTema('dark')" title="Oscuro"></button>
-<button class="theme-btn" data-theme="light" onclick="cambiarTema('light')" title="Claro"></button>
-<button class="theme-btn" data-theme="feminino" onclick="cambiarTema('feminino')" title="Femenino"></button>
-</div>
-<span class="user-info" id="userEmail"></span>
-<button class="btn-logout" onclick="logout()">Salir</button>
-</div>
-</div>
-<div class="secciones-bar">
-<div class="secciones-header">
+<div id="loginSection"><div class="login-box"><h1>DESPACHO RETAIL</h1><div class="version">v1.0</div><p>Sistema de Control de Despachos<br>2026 - 2030</p><input type="email" id="loginEmail" placeholder="Correo electrónico" autocomplete="off"><input type="password" id="loginPass" placeholder="Contraseña" autocomplete="new-password"><button onclick="login()">INGRESAR AL SISTEMA</button></div></div>
+<div id="appSection">
+<div class="header"><div class="header-left"><h1>DESPACHO RETAIL v1.0</h1></div><div class="header-right"><div class="reloj-digital"><div class="reloj-fecha" id="relojFecha">--</div><div class="reloj-hora" id="relojHora">--:--</div><div class="reloj-segundos" id="relojSeg">--</div></div><div class="theme-selector"><button class="theme-btn" data-theme="dark" onclick="cambiarTema('dark')"></button><button class="theme-btn" data-theme="light" onclick="cambiarTema('light')"></button><button class="theme-btn" data-theme="feminino" onclick="cambiarTema('feminino')"></button></div><span class="user-info"><span id="userEmail"></span></span><button class="btn-logout" onclick="logout()">Salir</button></div></div>
+<div class="secciones-bar"><div class="secciones-header">
 <div class="seccion-tab active" data-seccion="ampm" onclick="cambiarSeccion('ampm')">AM/PM</div>
 <div class="seccion-tab" data-seccion="b2c" onclick="cambiarSeccion('b2c')">B2C</div>
 <div class="seccion-tab" data-seccion="adm" onclick="cambiarSeccion('adm')">ADM</div>
 <div class="seccion-tab" data-seccion="qdm" onclick="cambiarSeccion('qdm')">QDM</div>
 <div class="seccion-tab" data-seccion="bitacoras" onclick="cambiarSeccion('bitacoras')">BITACORAS</div>
-<div class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')">BASE DE DATOS</div>
-<div class="seccion-tab" data-seccion="actividad" id="tabActividad" onclick="cambiarSeccion('actividad')" style="display:none">ACTIVIDAD</div>
-<div class="seccion-tab" data-seccion="informes" onclick="cambiarSeccion('informes')">INFORMES</div>
+<div class="seccion-tab" data-seccion="basedatos" onclick="cambiarSeccion('basedatos')" style="display:none">BASE DE DATOS</div>
+<div class="seccion-tab" data-seccion="actividad" onclick="cambiarSeccion('actividad')" style="display:none" id="tabActividad">ACTIVIDAD</div>
 </div>
-<div id="seccionBitacoras" class="seccion-contenido">
-<div class="submenu-header" onclick="toggleSubmenu('bitacoras')">
-<h3>BITACORAS</h3>
-<button class="btn-flecha-submenu" id="flechaBitacoras">▼</button>
+<div class="seccion-contenido show" id="seccionAmpm"><div class="submenu-header" onclick="toggleSubmenu('busquedaAmpm')"><h3>Búsqueda AM/PM</h3><button class="btn-flecha-submenu" id="flechaBusquedaAmpm">▼</button></div><div class="submenu-contenido show" id="submenuBusquedaAmpm"><div class="busqueda-filtros"><label>Día:</label><select class="select-filtro" id="filtroDiaAmpm"><option value="">-- Día --</option></select><label>Mes:</label><select class="select-filtro" id="filtroMesAmpm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select><label>Año:</label><select class="select-filtro" id="filtroAnioAmpm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select><button onclick="buscarFiltrosAMPM()">BUSCAR</button></div></div></div>
+<div class="seccion-contenido" id="seccionB2c"><div class="submenu-header" onclick="toggleSubmenu('busquedaB2c')"><h3>Búsqueda B2C</h3><button class="btn-flecha-submenu" id="flechaBusquedaB2c">▼</button></div><div class="submenu-contenido show" id="submenuBusquedaB2c"><div class="busqueda-filtros"><label>Día:</label><select class="select-filtro" id="filtroDiaB2c"><option value="">-- Día --</option></select><label>Mes:</label><select class="select-filtro" id="filtroMesB2c"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select><label>Año:</label><select class="select-filtro" id="filtroAnioB2c"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select><button onclick="buscarFiltrosB2C()">BUSCAR</button></div></div></div>
+<div class="seccion-contenido" id="seccionAdm"><div class="submenu-header" onclick="toggleSubmenu('busquedaAdm')"><h3>Búsqueda ADM</h3><button class="btn-flecha-submenu" id="flechaBusquedaAdm">▼</button></div><div class="submenu-contenido show" id="submenuBusquedaAdm"><div class="busqueda-filtros"><label>Día:</label><select class="select-filtro" id="filtroDiaAdm"><option value="">-- Día --</option></select><label>Mes:</label><select class="select-filtro" id="filtroMesAdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select><label>Año:</label><select class="select-filtro" id="filtroAnioAdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select><button onclick="buscarFiltrosADM()">BUSCAR</button></div></div></div>
+<div class="seccion-contenido" id="seccionQdm"><div class="submenu-header" onclick="toggleSubmenu('busquedaQdm')"><h3>Búsqueda QDM</h3><button class="btn-flecha-submenu" id="flechaBusquedaQdm">▼</button></div><div class="submenu-contenido show" id="submenuBusquedaQdm"><div class="busqueda-filtros"><label>Día:</label><select class="select-filtro" id="filtroDiaQdm"><option value="">-- Día --</option></select><label>Mes:</label><select class="select-filtro" id="filtroMesQdm"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select><label>Año:</label><select class="select-filtro" id="filtroAnioQdm"><option value="">-- Año --</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select><button onclick="buscarFiltrosQDM()">BUSCAR</button></div></div></div>
+<div class="seccion-contenido" id="seccionBitacoras"><h3 class="basedatos-subtitulo">BITACORAS</h3><div class="bitacora-tabs"><div class="bitacora-tab active" data-btab="unificadas" onclick="cambiarTabBitacora('unificadas')">AM/PM - ADM - QDM</div><div class="bitacora-tab" data-btab="b2c" onclick="cambiarTabBitacora('b2c')">B2C</div></div>
+<div class="bitacora-tab-content show" id="bitContentUnificadas"><div class="bitacora-actions"><button onclick="guardarTodasBitacoras('unificadas')">GUARDAR TODO</button><button onclick="abrirModalExportarBitacoras('unificadas')">EXPORTAR EXCEL</button><button onclick="abrirModalJPEGBitacoras('unificadas')">EXPORTAR JPEG</button><button onclick="abrirModalImprimirBitacoras('unificadas')">IMPRIMIR</button><button onclick="abrirModalBorrarBitacoraTodo('unificadas')">BORRAR TODO</button><button id="btnBorrarBitacoraAdminU" onclick="abrirModalBorrarBitacoraAdmin('unificadas')" style="display:none">BORRAR ADMIN</button></div><div class="bitacora-seccion-titulo">BITACORAS AM/PM - ADM - QDM</div><div id="bitacoraMovil1"></div><div id="bitacoraMovil2"></div><div id="bitacoraMovil3"></div><div id="bitacoraMovil4"></div><div id="bitacoraMovil5"></div><div id="bitacoraMovil6"></div><div id="bitacoraSpot"></div><div id="bitacoraSpot1"></div><div id="bitacoraSpot2"></div></div>
+<div class="bitacora-tab-content" id="bitContentB2c"><div class="bitacora-actions"><button onclick="guardarTodasBitacoras('b2c')">GUARDAR TODO</button><button onclick="abrirModalExportarBitacoras('b2c')">EXPORTAR EXCEL</button><button onclick="abrirModalJPEGBitacoras('b2c')">EXPORTAR JPEG</button><button onclick="abrirModalImprimirBitacoras('b2c')">IMPRIMIR</button><button onclick="abrirModalBorrarBitacoraTodo('b2c')">BORRAR TODO</button><button id="btnBorrarBitacoraAdminB" onclick="abrirModalBorrarBitacoraAdmin('b2c')" style="display:none">BORRAR ADMIN</button></div><div class="bitacora-seccion-titulo">BITACORAS B2C</div><div id="bitacoraB2cGeneral"></div><div id="bitacoraB2cMovil1"></div><div id="bitacoraB2cMovil2"></div><div id="bitacoraB2cMovil3"></div><div id="bitacoraB2cMovil4"></div><div id="bitacoraB2cMovil5"></div><div id="bitacoraB2cMovil6"></div><div id="bitacoraB2cSpot"></div><div id="bitacoraB2cSpot1"></div><div id="bitacoraB2cSpot2"></div></div></div>
+<div class="seccion-contenido" id="seccionBasedatos"><h3 class="basedatos-subtitulo">BASE DE DATOS</h3><div class="basedatos-tabs"><div class="basedatos-tab active" data-tab="ampm" onclick="cambiarTabBD('ampm')">AM/PM</div><div class="basedatos-tab" data-tab="b2c" onclick="cambiarTabBD('b2c')">B2C</div><div class="basedatos-tab" data-tab="adm" onclick="cambiarTabBD('adm')">ADM</div><div class="basedatos-tab" data-tab="qdm" onclick="cambiarTabBD('qdm')">QDM</div></div>
+<div class="basedatos-tab-content show" id="tabContentAmpm"><div class="bd-filtro-row"><button onclick="abrirModalVerFecha('AMPM')">VER MES</button><label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdAmpm" oninput="filtrarBD('AMPM')"><span class="pendientes-info" id="pendientesAmpm"></span><button onclick="importarDesdeBD('AMPM')">IMPORTAR</button><button onclick="guardarEnFirebase()">GUARDAR</button><button onclick="exportarPDFBD()">EXPORTAR PDF</button><button onclick="abrirBorrarMes('AMPM')">BORRAR MES</button></div><div class="bd-resumen" id="bdResumenAmpm"></div><div class="bd-descripcion-subtitulo"><span>Descripcion</span><button onclick="abrirModalBorrarDescripcion('AMPM')">BORRAR DESCRIPCION AMPM</button></div><div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAmpm"></thead><tbody id="bdTbodyAmpm"></tbody></table></div><div class="bd-paginacion" id="bdPaginacionAmpm"></div></div>
+<div class="basedatos-tab-content" id="tabContentB2c"><div class="bd-filtro-row"><button onclick="abrirModalVerFecha('B2C')">VER MES</button><label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdB2c" oninput="filtrarBD('B2C')"><span class="pendientes-info" id="pendientesB2c"></span><button onclick="importarDesdeBD('B2C')">IMPORTAR</button><button onclick="guardarEnFirebase()">GUARDAR</button><button onclick="exportarPDFBD()">EXPORTAR PDF</button><button onclick="abrirBorrarMes('B2C')">BORRAR MES</button></div><div class="bd-resumen" id="bdResumenB2c"></div><div class="bd-descripcion-subtitulo"><span>Descripcion</span><button onclick="abrirModalBorrarDescripcion('B2C')">BORRAR DESCRIPCION B2C</button></div><div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadB2c"></thead><tbody id="bdTbodyB2c"></tbody></table></div><div class="bd-paginacion" id="bdPaginacionB2c"></div></div>
+<div class="basedatos-tab-content" id="tabContentAdm"><div class="bd-filtro-row"><button onclick="abrirModalVerFecha('ADM')">VER MES</button><label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdAdm" oninput="filtrarBD('ADM')"><span class="pendientes-info" id="pendientesAdm"></span><button onclick="importarDesdeBD('ADM')">IMPORTAR</button><button onclick="guardarEnFirebase()">GUARDAR</button><button onclick="exportarPDFBD()">EXPORTAR PDF</button><button onclick="abrirBorrarMes('ADM')">BORRAR MES</button></div><div class="bd-resumen" id="bdResumenAdm"></div><div class="bd-descripcion-subtitulo"><span>Descripcion</span><button onclick="abrirModalBorrarDescripcion('ADM')">BORRAR DESCRIPCION ADM</button></div><div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadAdm"></thead><tbody id="bdTbodyAdm"></tbody></table></div><div class="bd-paginacion" id="bdPaginacionAdm"></div></div>
+<div class="basedatos-tab-content" id="tabContentQdm"><div class="bd-filtro-row"><button onclick="abrirModalVerFecha('QDM')">VER MES</button><label>Filtrar ID:</label><input type="text" class="bd-filtro-input" id="filtroIdQdm" oninput="filtrarBD('QDM')"><span class="pendientes-info" id="pendientesQdm"></span><button onclick="importarDesdeBD('QDM')">IMPORTAR</button><button onclick="guardarEnFirebase()">GUARDAR</button><button onclick="exportarPDFBD()">EXPORTAR PDF</button><button onclick="abrirBorrarMes('QDM')">BORRAR MES</button></div><div class="bd-resumen" id="bdResumenQdm"></div><div class="bd-descripcion-subtitulo"><span>Descripcion</span><button onclick="abrirModalBorrarDescripcion('QDM')">BORRAR DESCRIPCION QDM</button></div><div class="basedatos-tabla-wrap"><table class="basedatos-tabla"><thead id="theadQdm"></thead><tbody id="bdTbodyQdm"></tbody></table></div><div class="bd-paginacion" id="bdPaginacionQdm"></div></div></div>
+<div class="seccion-contenido" id="seccionActividad"><div class="actividad-container"><div style="display:flex;justify-content:space-between"><h3>REGISTRO DE ACTIVIDAD</h3><button onclick="limpiarActividadAntigua()">LIMPIAR ANTIGUAS</button></div><div class="actividad-stats"><div class="actividad-stat"><div class="stat-num" id="actUsuariosOnline">0</div><div>Usuarios en línea</div></div><div class="actividad-stat"><div class="stat-num" id="actTotalRegistros">0</div><div>Registros totales</div></div><div class="actividad-stat"><div class="stat-num" id="actHoy">0</div><div>Acciones hoy</div></div><div class="actividad-stat"><div class="stat-num" id="actTotalAcciones">0</div><div>Total acciones</div></div></div><div style="margin-bottom:15px"><div id="actUsuariosActivos"></div></div><div id="actividadList"></div></div></div>
 </div>
-<div id="submenuBitacoras" class="submenu-contenido show">
-<div class="bitacora-tabs">
-<div class="bitacora-tab active" data-btab="unificadas" onclick="cambiarTabBitacora('unificadas')">AM/PM - ADM - QDM</div>
-<div class="bitacora-tab" data-btab="b2c" onclick="cambiarTabBitacora('b2c')">B2C</div>
-</div>
-<div id="bitContentUnificadas" class="bitacora-tab-content show">
-<div class="bitacora-actions">
-<button onclick="guardarTodasBitacoras('unificadas')">GUARDAR TODO</button>
-<button onclick="abrirModalExportarBitacoras('unificadas')">EXPORTAR EXCEL</button>
-<button onclick="abrirModalJPEGBitacoras('unificadas')">EXPORTAR JPEG</button>
-<button onclick="abrirModalImprimirBitacoras('unificadas')">IMPRIMIR</button>
-<button id="btnBorrarBitacoraAdminU" onclick="abrirModalBorrarBitacoraTodo('unificadas')" style="display:none">BORRAR TODO</button>
-<button id="btnBorrarBitacoraAdminB" onclick="abrirModalBorrarBitacoraAdmin('unificadas')" style="display:none">BORRAR ADMIN</button>
-</div>
-<div class="bitacora-seccion-titulo">BITACORAS AM/PM - ADM - QDM</div>
-<div id="bitacoraMovil1"></div>
-<div id="bitacoraMovil2"></div>
-<div id="bitacoraMovil3"></div>
-<div id="bitacoraMovil4"></div>
-<div id="bitacoraMovil5"></div>
-<div id="bitacoraMovil6"></div>
-<div id="bitacoraSpot"></div>
-<div id="bitacoraSpot1"></div>
-<div id="bitacoraSpot2"></div>
-</div>
-<div id="bitContentB2c" class="bitacora-tab-content">
-<div class="bitacora-actions">
-<button onclick="guardarTodasBitacoras('b2c')">GUARDAR TODO</button>
-<button onclick="abrirModalExportarBitacoras('b2c')">EXPORTAR EXCEL</button>
-<button onclick="abrirModalJPEGBitacoras('b2c')">EXPORTAR JPEG</button>
-<button onclick="abrirModalImprimirBitacoras('b2c')">IMPRIMIR</button>
-<button onclick="abrirModalBorrarBitacoraTodo('b2c')" style="display:none">BORRAR TODO</button>
-<button onclick="abrirModalBorrarBitacoraAdmin('b2c')" style="display:none">BORRAR ADMIN</button>
-</div>
-<div class="bitacora-seccion-titulo">BITACORAS B2C</div>
-<div id="bitacoraB2cGeneral"></div>
-<div id="bitacoraB2cMovil1"></div>
-<div id="bitacoraB2cMovil2"></div>
-<div id="bitacoraB2cMovil3"></div>
-<div id="bitacoraB2cMovil4"></div>
-<div id="bitacoraB2cMovil5"></div>
-<div id="bitacoraB2cMovil6"></div>
-<div id="bitacoraB2cSpot"></div>
-<div id="bitacoraB2cSpot1"></div>
-<div id="bitacoraB2cSpot2"></div>
-</div>
-</div>
-</div>
-<div id="seccionBasedatos" class="seccion-contenido">
-<div class="submenu-header" onclick="toggleSubmenu('basedatos')">
-<h3>BASE DE DATOS</h3>
-<button class="btn-flecha-submenu" id="flechaBasedatos">▼</button>
-</div>
-<div id="submenuBasedatos" class="submenu-contenido show">
-<div class="basedatos-tabs">
-<div class="basedatos-tab active" data-tab="ampm" onclick="cambiarTabBD('ampm')">AM/PM</div>
-<div class="basedatos-tab" data-tab="b2c" onclick="cambiarTabBD('b2c')">B2C</div>
-<div class="basedatos-tab" data-tab="adm" onclick="cambiarTabBD('adm')">ADM</div>
-<div class="basedatos-tab" data-tab="qdm" onclick="cambiarTabBD('qdm')">QDM</div>
-</div>
-<div id="tabContentAmpm" class="basedatos-tab-content show">
-<div class="bd-filtro-row">
-<button onclick="abrirModalVerFecha('AMPM')">VER MES</button>
-<label>Filtrar ID:</label>
-<input type="text" id="filtroIdAmpm" class="bd-filtro-input" placeholder="ID..." oninput="filtrarBD('AMPM')">
-<button onclick="importarDesdeBD('AMPM')">IMPORTAR</button>
-<button onclick="guardarEnFirebase()">GUARDAR</button>
-<button onclick="exportarPDFBD()">EXPORTAR PDF</button>
-<button onclick="abrirBorrarMes('AMPM')">BORRAR MES</button>
-<span class="pendientes-info" id="pendientesAmpm"></span>
-</div>
-<div class="bd-descripcion-subtitulo"><span>Descripcion</span><div><button onclick="abrirModalBorrarDescripcion('AMPM')">BORRAR DESCRIPCION AMPM</button></div></div>
-<div id="bdResumenAmpm" class="bd-resumen"></div>
-<div class="basedatos-tabla-wrap">
-<table class="basedatos-tabla">
-<thead id="theadAmpm"></thead>
-<tbody id="bdTbodyAmpm"></tbody>
-</table>
-</div>
-<div id="bdPaginacionAmpm"></div>
-</div>
-<div id="tabContentB2c" class="basedatos-tab-content">
-<div class="bd-filtro-row">
-<button onclick="abrirModalVerFecha('B2C')">VER MES</button>
-<label>Filtrar ID:</label>
-<input type="text" id="filtroIdB2c" class="bd-filtro-input" placeholder="ID..." oninput="filtrarBD('B2C')">
-<button onclick="importarDesdeBD('B2C')">IMPORTAR</button>
-<button onclick="guardarEnFirebase()">GUARDAR</button>
-<button onclick="exportarPDFBD()">EXPORTAR PDF</button>
-<button onclick="abrirBorrarMes('B2C')">BORRAR MES</button>
-<span class="pendientes-info" id="pendientesB2c"></span>
-</div>
-<div class="bd-descripcion-subtitulo"><span>Descripcion</span><div><button onclick="abrirModalBorrarDescripcion('B2C')">BORRAR DESCRIPCION B2C</button></div></div>
-<div id="bdResumenB2c" class="bd-resumen"></div>
-<div class="basedatos-tabla-wrap">
-<table class="basedatos-tabla">
-<thead id="theadB2c"></thead>
-<tbody id="bdTbodyB2c"></tbody>
-</table>
-</div>
-<div id="bdPaginacionB2c"></div>
-</div>
-<div id="tabContentAdm" class="basedatos-tab-content">
-<div class="bd-filtro-row">
-<button onclick="abrirModalVerFecha('ADM')">VER MES</button>
-<label>Filtrar ID:</label>
-<input type="text" id="filtroIdAdm" class="bd-filtro-input" placeholder="ID..." oninput="filtrarBD('ADM')">
-<button onclick="importarDesdeBD('ADM')">IMPORTAR</button>
-<button onclick="guardarEnFirebase()">GUARDAR</button>
-<button onclick="exportarPDFBD()">EXPORTAR PDF</button>
-<button onclick="abrirBorrarMes('ADM')">BORRAR MES</button>
-<span class="pendientes-info" id="pendientesAdm"></span>
-</div>
-<div class="bd-descripcion-subtitulo"><span>Descripcion</span><div><button onclick="abrirModalBorrarDescripcion('ADM')">BORRAR DESCRIPCION ADM</button></div></div>
-<div id="bdResumenAdm" class="bd-resumen"></div>
-<div class="basedatos-tabla-wrap">
-<table class="basedatos-tabla">
-<thead id="theadAdm"></thead>
-<tbody id="bdTbodyAdm"></tbody>
-</table>
-</div>
-<div id="bdPaginacionAdm"></div>
-</div>
-<div id="tabContentQdm" class="basedatos-tab-content">
-<div class="bd-filtro-row">
-<button onclick="abrirModalVerFecha('QDM')">VER MES</button>
-<label>Filtrar ID:</label>
-<input type="text" id="filtroIdQdm" class="bd-filtro-input" placeholder="ID..." oninput="filtrarBD('QDM')">
-<button onclick="importarDesdeBD('QDM')">IMPORTAR</button>
-<button onclick="guardarEnFirebase()">GUARDAR</button>
-<button onclick="exportarPDFBD()">EXPORTAR PDF</button>
-<button onclick="abrirBorrarMes('QDM')">BORRAR MES</button>
-<span class="pendientes-info" id="pendientesQdm"></span>
-</div>
-<div class="bd-descripcion-subtitulo"><span>Descripcion</span><div><button onclick="abrirModalBorrarDescripcion('QDM')">BORRAR DESCRIPCION QDM</button></div></div>
-<div id="bdResumenQdm" class="bd-resumen"></div>
-<div class="basedatos-tabla-wrap">
-<table class="basedatos-tabla">
-<thead id="theadQdm"></thead>
-<tbody id="bdTbodyQdm"></tbody>
-</table>
-</div>
-<div id="bdPaginacionQdm"></div>
-</div>
-</div>
-</div>
-<div id="seccionActividad" class="seccion-contenido">
-<div class="submenu-header" onclick="toggleSubmenu('actividad')">
-<h3>REGISTRO DE ACTIVIDAD</h3>
-<button class="btn-flecha-submenu" id="flechaActividad">▼</button>
-</div>
-<div id="submenuActividad" class="submenu-contenido show">
-<div class="bitacora-actions">
-<button onclick="limpiarActividadAntigua()">LIMPIAR ANTIGUAS (>30 días)</button>
-</div>
-<div class="inf-stats">
-<div class="inf-stat"><div class="num" id="actUsuariosOnline">0</div><div class="lbl">Usuarios en línea</div></div>
-<div class="inf-stat"><div class="num" id="actTotalRegistros">0</div><div class="lbl">Registros totales</div></div>
-<div class="inf-stat"><div class="num" id="actHoy">0</div><div class="lbl">Acciones hoy</div></div>
-<div class="inf-stat"><div class="num" id="actTotalAcciones">0</div><div class="lbl">Total acciones</div></div>
-</div>
-<div class="bitacora-seccion-titulo">USUARIOS ACTIVOS AHORA:</div>
-<div id="actUsuariosActivos" style="margin-bottom:12px">Cargando...</div>
-<div class="bitacora-seccion-titulo">HISTORIAL DE ACTIVIDAD:</div>
-<div id="actividadList" class="actividad-list">Cargando actividad...</div>
-</div>
-</div>
-<div id="seccionInformes" class="seccion-contenido">
-<div class="submenu-header" onclick="toggleSubmenu('informes')">
-<h3>INFORMES LOGISTICOS - BUSINESS INTELLIGENCE</h3>
-<button class="btn-flecha-submenu" id="flechaInformes">▼</button>
-</div>
-<div id="submenuInformes" class="submenu-contenido show">
-<div class="basedatos-tabs">
-<div class="basedatos-tab active" data-inftipo="AMPM" onclick="setInfTipo('AMPM')">AM/PM</div>
-<div class="basedatos-tab" data-inftipo="B2C" onclick="setInfTipo('B2C')">B2C</div>
-<div class="basedatos-tab" data-inftipo="ADM" onclick="setInfTipo('ADM')">ADM</div>
-<div class="basedatos-tab" data-inftipo="QDM" onclick="setInfTipo('QDM')">QDM</div>
-</div>
-<div id="infResultado" style="margin-top:12px">
-<div style="padding:40px;text-align:center;color:var(--text-muted);font-style:italic">
-<h3 style="margin-bottom:15px;color:var(--accent-blue)">Modulo de Informes Logisticos</h3>
-<p>Seleccione los filtros y presione <strong>GENERAR INFORME</strong> para visualizar el analisis completo.</p>
-<p style="margin-top:10px;font-size:.85em">Datos en tiempo real desde Firebase - Analisis BI profesional</p>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="stats-bar">
-<div class="stat-item"><div class="val" id="sTotal">0</div><div class="lbl">Total</div></div>
-<div class="stat-item"><div class="val" id="sValor">$0</div><div class="lbl">Valor</div></div>
-<div class="stat-item"><div class="val" id="sAM">0</div><div class="lbl">Turno AM</div></div>
-<div class="stat-item"><div class="val" id="sPM">0</div><div class="lbl">Turno PM</div></div>
-</div>
-<div class="seccion-registro">
-<div class="seccion-registro-header" onclick="toggleSeccion('registro')">
-<h3>NUEVO REGISTRO</h3>
-<button class="btn-flecha rotada" id="flechaRegistro">▼</button>
-</div>
-<div id="contenidoRegistro" class="show" style="padding:10px 28px">
-<form id="formReg">
-<div class="form-fila">
-<div class="campo c-fecha"><label>▼ Fecha</label><div class="fecha-wrap"><input type="date" id="fFecha" required><button type="button" class="combo-arrow" onclick="toggleCalendario()" style="right:4px">▼</button></div></div>
-<div class="campo c-unidad"><label>Unidad Negocio</label><select id="fUnidad"><option value="">-- Elegir --</option><option>MacOnline Distribucion</option><option>MacOnline Empresas</option><option>MacOnline Tienda Web</option><option>MacOnline Administracion</option><option>MacOnline Tiendas</option><option>Vertical Tiendas</option><option>Vertical Web</option><option>QD-Web</option><option>QD Matorista</option><option>CD Quintec</option><option>QD-Retail</option><option>SSTT Quintec</option></select></div>
-<div class="campo c-id"><label>ID Pedido</label><input type="text" id="fId"></div>
-<div class="campo c-nombre"><label>Nombre Cliente</label><input type="text" id="fNombre"></div>
-<div class="campo c-direccion"><label>Direccion</label><input type="text" id="fDireccion"></div>
-<div class="campo c-comuna"><label>Comuna</label><input type="text" id="fComuna" list="dlComunas"></div>
-<div class="campo c-valor"><label>Valor</label><input type="number" id="fValor" step="0.01"></div>
-<div class="campo c-obs"><label>Observacion</label><input type="text" id="fObs" list="dlObs"></div>
-<div class="campo c-transporte"><label>Transporte</label><input type="text" id="fTransporte" list="dlTransporteDesc"></div>
-<div class="campo c-rango"><label>Rango</label><select id="fRango"><option value="">--</option><option>AM</option><option>PM</option><option>B2C</option><option>ADM</option><option>QDM</option></select></div>
-<div class="campo"><button type="submit" style="background:var(--accent-blue);color:#fff;border:none;padding:8px 16px">REGISTRAR</button></div>
-<div class="campo"><button type="button" onclick="limpiar()" style="padding:8px 16px">LIMPIAR</button></div>
-</div>
-</form>
-<datalist id="dlComunas"></datalist>
-<datalist id="dlObs"></datalist>
-<datalist id="dlTransporteDesc"></datalist>
-</div>
-</div>
-<div class="descripcion-subtitulo"><span>Descripcion</span><div><button id="btnEliminarAdmin" onclick="abrirModalEliminarAdmin()" style="display:none">ELIMINAR ADMIN</button> <button onclick="abrirModalBorrarDescripcionActual()">BORRAR DESCRIPCION</button> <button onclick="importarExcelSegunSeccion()">IMPORTAR EXCEL</button> <button class="btn-exportar" onclick="abrirModalExportar()">EXPORTAR EXCEL</button></div></div>
-<div class="acciones-bar">
-<input type="text" id="buscar" class="buscar-input" placeholder="Buscar...">
-<button id="btnGuardarAmpm" onclick="guardarPendientesSeccion()" style="background:var(--accent-blue);color:#fff;border:none">GUARDAR</button>
-<button id="btnEnviar" onclick="enviarSeleccion()">ENVIAR A BITACORA</button>
-<div class="busqueda-filtros" style="margin-left:auto">
-<label>▼ Día:</label>
-<select id="filtroDiaAmpm" class="select-filtro"><option value="">-- Día --</option></select>
-<label>Mes:</label>
-<select id="filtroMesAmpm" class="select-filtro"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
-<label>Año:</label>
-<select id="filtroAnioAmpm" class="select-filtro"><option value="">-- Año --</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option></select>
-<button onclick="buscarFiltrosAMPM()">BUSCAR</button>
-</div>
-<div class="busqueda-filtros" style="margin-left:auto;display:none" id="filtrosB2c">
-<label>▼ Día:</label><select id="filtroDiaB2c" class="select-filtro"><option value="">-- Día --</option></select>
-<label>Mes:</label><select id="filtroMesB2c" class="select-filtro"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
-<label>Año:</label><select id="filtroAnioB2c" class="select-filtro"><option value="">-- Año --</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option></select>
-<button onclick="buscarFiltrosB2C()">BUSCAR</button>
-</div>
-<div class="busqueda-filtros" style="margin-left:auto;display:none" id="filtrosAdm">
-<label>▼ Día:</label><select id="filtroDiaAdm" class="select-filtro"><option value="">-- Día --</option></select>
-<label>Mes:</label><select id="filtroMesAdm" class="select-filtro"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
-<label>Año:</label><select id="filtroAnioAdm" class="select-filtro"><option value="">-- Año --</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option></select>
-<button onclick="buscarFiltrosADM()">BUSCAR</button>
-</div>
-<div class="busqueda-filtros" style="margin-left:auto;display:none" id="filtrosQdm">
-<label>▼ Día:</label><select id="filtroDiaQdm" class="select-filtro"><option value="">-- Día --</option></select>
-<label>Mes:</label><select id="filtroMesQdm" class="select-filtro"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select>
-<label>Año:</label><select id="filtroAnioQdm" class="select-filtro"><option value="">-- Año --</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option></select>
-<button onclick="buscarFiltrosQDM()">BUSCAR</button>
-</div>
-</div>
+<div class="stats-bar"><div class="stat-item"><div class="val" id="sTotal">0</div><div class="lbl">Despachos</div></div><div class="stat-item"><div class="val" id="sValor">$0</div><div class="lbl">Valor Total</div></div><div class="stat-item"><div class="val" id="sAM">0</div><div class="lbl">Turno AM</div></div><div class="stat-item"><div class="val" id="sPM">0</div><div class="lbl">Turno PM</div></div></div>
+<div class="seccion-registro"><div class="seccion-registro-header" onclick="toggleSeccion('registro')"><h3>NUEVO REGISTRO</h3><button class="btn-flecha" id="flechaRegistro">▼</button></div><div class="seccion-contenido" id="contenidoRegistro"><form id="formReg" class="form-fila"><div class="campo c-fecha"><label>Fecha</label><input type="date" id="fFecha" required></div><div class="campo c-unidad"><label>Unidad Negocio</label><select id="fUnidad" required><option value="">-- Elegir --</option><option>MacOnline Distribucion</option><option>MacOnline Empresas</option><option>MacOnline Tienda Web</option><option>MacOnline Administracion</option><option>MacOnline Tiendas</option><option>Vertical Tiendas</option><option>Vertical Web</option><option>QD-Web</option><option>QD Matorista</option><option>CD Quintec</option><option>QD-Retail</option><option>SSTT Quintec</option></select></div><div class="campo c-id"><label>ID Pedido</label><input type="text" id="fId" required></div><div class="campo c-nombre"><label>Nombre Cliente</label><input type="text" id="fNombre" required></div><div class="campo c-direccion"><label>Direccion</label><input type="text" id="fDireccion" required></div><div class="campo c-comuna"><label>Comuna</label><input type="text" id="fComuna" required></div><div class="campo c-valor"><label>Valor</label><input type="number" id="fValor" step="0.01" min="0" required></div><div class="campo c-obs"><label>Observacion</label><input type="text" id="fObs"></div><div class="campo c-transporte"><label>Transporte</label><select id="fTransporte"><option value="">-- Elegir --</option><option>MOVIL 1</option><option>MOVIL 2</option><option>MOVIL 3</option><option>MOVIL 4</option><option>MOVIL 5</option><option>MOVIL 6</option><option>DON JOSE</option><option>DON RAUL</option><option>SERVICIO AM/PM</option><option>SERVICIO B2C</option><option>SERVICIO ADM</option><option>SERVICIO QDM</option><option>SPOT</option><option>SPOT 1</option><option>SPOT 2</option><option>RETIRA CLIENTE</option><option>SERVICIO 3PL</option><option>TRANSGAMBOA</option></select></div><div class="campo c-rango"><label>Rango</label><select id="fRango" required><option value="">--</option><option>AM</option><option>PM</option><option>B2C</option><option>ADM</option><option>QDM</option></select></div><button type="submit">REGISTRAR</button><button type="button" onclick="limpiar()">LIMPIAR</button></form></div></div>
 <div class="tabla-section">
+<div class="descripcion-subtitulo"><span>Descripcion</span><span style="display:flex;gap:8px"><button onclick="abrirModalBorrarDescripcionActual()">BORRAR DESCRIPCION</button><button id="btnEliminarAdmin" onclick="abrirModalEliminarAdmin()" style="display:none">ELIMINAR ADMIN</button></span></div>
+<div class="acciones-bar"><input type="text" class="buscar-input" id="buscar" placeholder="Buscar..."><button onclick="importarExcelSegunSeccion()">IMPORTAR EXCEL</button><button onclick="abrirModalExportar()">EXPORTAR EXCEL</button><button id="btnGuardarAmpm" onclick="guardarPendientesSeccion()">GUARDAR</button><button id="btnEnviar" onclick="enviarSeleccion()">ENVIAR A BITACORA</button></div>
 <div class="tabla-scroll-vertical">
-<div id="loading" class="loading-msg"><div class="spinner"></div>Cargando datos...</div>
-<div id="empty" class="empty-msg" style="display:none">No hay registros para hoy</div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-<strong style="color:var(--accent-blue)">Detalle de Pedidos</strong>
-<div><button onclick="exportarPDFBD()" style="font-size:.75em">PDF</button><button onclick="abrirModalExportar()" style="font-size:.75em">X</button></div>
-</div>
-<div class="bd-filtro-row" style="margin-bottom:8px">
-<label>Filtrar ID Pedido:</label>
-<input type="text" id="filtroIdModal" class="bd-filtro-input" placeholder="ID..." oninput="aplicarFiltroIdModal()">
-</div>
-<div class="tabla-scroll-horizontal-top" id="scrollTop"><div style="height:1px"></div></div>
-<div class="tabla-scroll-horizontal" id="scrollBottom">
-<table>
-<thead id="theadDesc"></thead>
-<tbody id="tbody"></tbody>
-</table>
-</div>
-<div id="paginacionDesc" style="margin-top:10px"></div>
+<div class="tabla-scroll-horizontal-top" id="scrollTop"><div style="min-width:1500px;height:10px"></div></div>
+<div class="tabla-scroll-horizontal" id="scrollBottom"><table><thead id="theadDesc"></thead><tbody id="tbody"></tbody></table></div>
+<div class="loading-msg" id="loading"><div class="spinner"></div>Cargando datos...</div>
+<div class="empty-msg" id="empty" style="display:none">No hay registros para hoy</div>
+<div class="bd-paginacion" id="paginacionDesc"></div>
 </div>
 </div>
-</section>
-<div id="verFechaOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2>BUSCAR POR FECHA</h2>
-<p>Tipo: <strong id="vfTipo"></strong></p>
-<div class="campo" style="margin-bottom:8px"><label>Dia (opcional):</label><select id="vfDia" class="select-filtro"><option value="">-- Todos --</option></select></div>
-<div class="campo" style="margin-bottom:8px"><label>Mes:</label><select id="vfMes" class="select-filtro"><option value="">-- Todos --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div>
-<div class="campo" style="margin-bottom:8px"><label>Año:</label><select id="vfAnio" class="select-filtro"><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option></select></div>
-<div class="modal-actions"><button class="btn-cancelar" onclick="cerrarModalVerFecha()">Cancelar</button><button class="btn-confirmar" onclick="confirmarVerFecha()">VER</button></div>
 </div>
-</div>
-<div id="borrarMesOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2>BORRAR MES</h2>
-<p>Tipo: <input type="hidden" id="bmTipo"><strong id="bmTipoLabel"></strong></p>
-<div class="campo" style="margin-bottom:8px"><label>1. Elige el mes a borrar:</label><select id="bmMes" class="select-filtro"><option value="">-- Seleccionar Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div>
-<div class="campo" style="margin-bottom:8px"><label>2. Elige el año:</label><select id="bmAnio" class="select-filtro"><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option></select></div>
-<p id="bmInfoRegistros" style="color:var(--accent-orange);font-weight:700">Selecciona mes y año para ver cantidad</p>
-<div class="campo" style="margin-bottom:8px"><label>3. Contraseña:</label><input type="password" id="bmPassword"></div>
-<div class="modal-actions"><button class="btn-cancelar" onclick="cerrarBorrarMes()">Cancelar</button><button class="btn-peligro" onclick="confirmarBorrarMes()">ELIMINAR</button></div>
-</div>
-</div>
-<div id="passwordOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2>CONTRASEÑA</h2>
-<p>Ingresa la clave:</p>
-<input type="password" id="pwInput">
-<div class="modal-actions"><button class="btn-cancelar" onclick="cerrarPassword()">Cancelar</button><button class="btn-confirmar" onclick="confirmarPassword()">Confirmar</button></div>
-</div>
-</div>
-<div id="borrarDescOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2>BORRAR DESCRIPCION</h2>
-<p>Esta acción eliminará TODOS los registros de la descripción <strong id="bdTipoDesc">AM/PM</strong> de la plataforma y Firebase. Las BITACORAS NO serán afectadas.</p>
-<p id="bdInfoRegistros" style="color:var(--accent-orange);font-weight:700">Calculando...</p>
-<div class="campo" style="margin-bottom:8px"><label>Contraseña de administrador:</label><input type="password" id="bdPassword"></div>
-<div class="modal-actions"><button class="btn-cancelar" onclick="cerrarModalBorrarDesc()">Cancelar</button><button class="btn-peligro" onclick="confirmarBorrarDesc()">ELIMINAR DESCRIPCION</button></div>
-</div>
-</div>
-<div id="eliminarAdminOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2>ELIMINAR REGISTROS ADMIN</h2>
-<p>Esta acción eliminará SOLO los registros marcados en VERDE (creados por el administrador).</p>
-<p id="eaInfoRegistros" style="color:var(--accent-orange);font-weight:700">Calculando...</p>
-<div class="campo" style="margin-bottom:8px"><label>Contraseña de administrador:</label><input type="password" id="eaPassword"></div>
-<div class="modal-actions"><button class="btn-cancelar" onclick="cerrarModalEliminarAdmin()">Cancelar</button><button class="btn-peligro" onclick="confirmarEliminarAdmin()">ELIMINAR SOLO ADMIN</button></div>
-</div>
-</div>
-<div id="borrarBitacoraTodoOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2 id="bbtTitulo">BORRAR TODAS LAS BITACORAS</h2>
-<p id="bbtDescripcion">Esta acción eliminará TODA la información de las 9 bitácoras. Esta acción es IRREVERSIBLE.</p>
-<p id="bbtInfoRegistros" style="color:var(--accent-orange);font-weight:700">Calculando...</p>
-<div class="campo" style="margin-bottom:8px"><label>Contraseña de administrador:</label><input type="password" id="bbtPassword"></div>
-<div class="modal-actions"><button class="btn-cancelar" onclick="cerrarModalBorrarBitacoraTodo()">Cancelar</button><button class="btn-peligro" onclick="confirmarBorrarBitacoraTodo()">ELIMINAR TODO</button></div>
-</div>
-</div>
-<div id="borrarBitacoraAdminOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2 id="bbaTitulo">BORRAR BITACORAS ADMIN</h2>
-<p id="bbaDescripcion">Esta acción eliminará SOLO los registros marcados en VERDE (creados por el administrador) de todas las bitácoras.</p>
-<p id="bbaInfoRegistros" style="color:var(--accent-orange);font-weight:700">Calculando...</p>
-<div class="campo" style="margin-bottom:8px"><label>Contraseña de administrador:</label><input type="password" id="bbaPassword"></div>
-<div class="modal-actions"><button class="btn-cancelar" onclick="cerrarModalBorrarBitacoraAdmin()">Cancelar</button><button class="btn-peligro" onclick="confirmarBorrarBitacoraAdmin()">ELIMINAR SOLO ADMIN</button></div>
-</div>
-</div>
-<div id="exportarModal" class="modal-overlay">
-<div class="modal-box">
-<h2 id="expTitulo">Exportar a Excel</h2>
-<p id="expInfo"></p>
-<div id="expFilaFecha" style="display:none" class="busqueda-filtros"><label>Dia:</label><select id="expDia" class="select-filtro"><option value="">-- Todos --</option></select><label>Mes:</label><select id="expMes" class="select-filtro"><option value="">-- Todos --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select><label>Año:</label><select id="expAnio" class="select-filtro"><option value="">-- Todos --</option><option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option></select></div>
-<div id="exportarCheckboxes" style="margin:12px 0"></div>
-<div class="modal-actions"><button class="btn-cancelar" onclick="cerrarModalExportar()">Cancelar</button><button class="btn-confirmar" onclick="confirmarExportar()">Exportar</button></div>
-</div>
-</div>
-<div id="bitacoraExportOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2 id="bitExpTitulo">Exportar Bitacoras a Excel</h2>
-<p id="bitExpSubtitulo">Selecciona las bitacoras que deseas exportar.</p>
-<div id="bitacoraExportGrid" class="bitacora-export-grid"></div>
-<div class="modal-actions"><button onclick="seleccionarTodasBitacoras()">Seleccionar todas</button><button class="btn-cancelar" onclick="cerrarModalExportarBitacoras()">Cancelar</button><button class="btn-confirmar" onclick="confirmarExportarBitacoras()">Exportar seleccionadas</button></div>
-</div>
-</div>
-<div id="bitacoraJPEGOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2 id="bitJpegTitulo">Exportar Bitacoras como JPEG</h2>
-<p id="bitJpegSubtitulo">Selecciona las bitacoras que deseas exportar como imagen.</p>
-<div id="bitacoraJPEGGrid" class="bitacora-export-grid"></div>
-<div class="modal-actions"><button onclick="seleccionarTodasBitacorasJPEG()">Seleccionar todas</button><button class="btn-cancelar" onclick="cerrarModalJPEGBitacoras()">Cancelar</button><button class="btn-confirmar" onclick="confirmarExportarJPEGBitacoras()">Exportar seleccionadas</button></div>
-</div>
-</div>
-<div id="bitacoraPrintOverlay" class="modal-overlay">
-<div class="modal-box">
-<h2 id="bitPrintTitulo">Imprimir Bitacoras</h2>
-<p id="bitPrintSubtitulo">Selecciona las bitacoras que deseas imprimir.</p>
-<div id="bitacoraPrintGrid" class="bitacora-export-grid"></div>
-<div class="modal-actions"><button onclick="seleccionarTodasBitacorasPrint()">Seleccionar todas</button><button class="btn-cancelar" onclick="cerrarModalImprimirBitacoras()">Cancelar</button><button class="btn-confirmar" onclick="confirmarImprimirBitacoras()">Imprimir seleccionadas</button></div>
-</div>
-</div>
-<div id="modalOverlay" class="modal-overlay">
-<div class="modal-box" style="max-width:1200px;width:95%">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<h2 id="modalTitleText" style="margin:0">Detalle</h2>
-<button onclick="cerrarModal()" style="background:var(--accent-red);color:#fff;border:none;padding:6px 12px">X</button>
-</div>
-<div id="modalInfo" style="margin-bottom:10px;color:var(--text-secondary);font-size:.9em"></div>
-<div class="busqueda-filtros" style="margin-bottom:10px">
-<label>Fecha:</label><input type="text" id="fModFecha" class="bd-filtro-input" style="width:100px" oninput="filtrarComboModal('fecha',this.value)" onfocus="abrirComboModal('fecha')">
-<label>Unidad:</label><input type="text" id="fModUnidad" class="bd-filtro-input" style="width:120px" oninput="filtrarComboModal('unidad',this.value)" onfocus="abrirComboModal('unidad')">
-<label>Comuna:</label><input type="text" id="fModComuna" class="bd-filtro-input" style="width:120px" oninput="filtrarComboModal('comuna',this.value)" onfocus="abrirComboModal('comuna')">
-<label>Transporte:</label><input type="text" id="fModTransporte" class="bd-filtro-input" style="width:120px" oninput="filtrarComboModal('transporte',this.value)" onfocus="abrirComboModal('transporte')">
-<label>Obs:</label><input type="text" id="fModObservacion" class="bd-filtro-input" style="width:120px" oninput="filtrarComboModal('observacion',this.value)" onfocus="abrirComboModal('observacion')">
-<label>Rango:</label><input type="text" id="fModRango" class="bd-filtro-input" style="width:80px" oninput="filtrarComboModal('rango',this.value)" onfocus="abrirComboModal('rango')">
-<button onclick="aplicarFiltrosModal()">Filtrar</button>
-<button onclick="exportarPDFModal()">PDF</button>
-</div>
-<div id="filtroInfo" style="color:var(--text-muted);font-size:.8em;margin-bottom:8px"></div>
-<div style="overflow:auto;max-height:60vh" id="modalBody">
-<table style="min-width:1400px">
-<thead><tr><th>Fecha</th><th>Unidad</th><th>ID Pedido</th><th>Cliente</th><th>Direccion</th><th>Comuna</th><th>Valor</th><th>Observacion</th><th>Transporte</th><th>Rango</th></tr></thead>
-<tbody id="modalTbody"></tbody>
-</table>
-</div>
-<div id="modalPaginacion" style="margin-top:10px"></div>
-</div>
-</div>
-<div id="calendarioPopup" class="calendario-popup"></div>
-<input type="file" id="importFile" style="display:none" accept=".xlsx,.xls,.csv,.json">
-<div id="toast" class="toast"></div>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<input type="file" id="importFile" accept=".xlsx,.xls,.csv,.json" style="display:none">
+<datalist id="dlTransporteDesc"></datalist>
+<div class="modal-overlay" id="modalOverlay"><div class="modal-window"><div class="modal-titlebar"><div class="modal-title"><span id="modalTitleText">Detalle de Pedidos</span></div><div><button onclick="exportarPDFModal()">PDF</button> <button onclick="cerrarModal()">X</button></div></div><div class="modal-info" id="modalInfo"></div><div class="modal-filtro"><label>Filtrar ID Pedido:</label><input type="text" id="filtroIdModal" oninput="aplicarFiltroIdModal()"><span id="filtroInfo"></span></div><div class="modal-body"><table><thead><tr><th>Fecha</th><th>Unidad</th><th>ID Pedido</th><th>Cliente</th><th>Direccion</th><th>Comuna</th><th>Valor</th><th>Observacion</th><th>Transporte</th><th>Rango</th></tr></thead><tbody id="modalTbody"></tbody></table></div><div class="modal-paginacion" id="modalPaginacion"></div></div></div>
+<div class="overlay-centro" id="verFechaOverlay"><div class="modal-caja"><h3>BUSCAR POR FECHA</h3><div class="form-group"><label>Tipo:</label><input type="text" id="vfTipo" readonly></div><div class="form-group"><label>Dia (opcional):</label><select id="vfDia"><option value="">-- Todos --</option></select></div><div class="form-group"><label>Mes:</label><select id="vfMes"><option value="">-- Todos --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div><div class="form-group"><label>Año:</label><select id="vfAnio"><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select></div><div class="modal-caja-buttons"><button onclick="cerrarModalVerFecha()">Cancelar</button><button onclick="confirmarVerFecha()">VER</button></div></div></div>
+<div class="overlay-centro" id="borrarMesOverlay"><div class="modal-caja"><h3>BORRAR MES</h3><div class="form-group"><label>Tipo:</label><input type="text" id="bmTipo" readonly></div><div class="form-group"><label>Mes:</label><select id="bmMes"><option value="">-- Mes --</option><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div><div class="form-group"><label>Año:</label><select id="bmAnio"><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option></select></div><div class="info-registros" id="bmInfoRegistros"></div><div class="form-group"><label>Contraseña:</label><input type="password" id="bmPassword"></div><div class="modal-caja-buttons"><button onclick="cerrarBorrarMes()">Cancelar</button><button onclick="confirmarBorrarMes()">ELIMINAR</button></div></div></div>
+<div class="overlay-centro" id="passwordOverlay"><div class="modal-caja"><h3>CONTRASEÑA</h3><div class="form-group"><label>Ingresa la clave:</label><input type="password" id="pwInput"></div><div class="modal-caja-buttons"><button onclick="cerrarPassword()">Cancelar</button><button onclick="confirmarPassword()">Confirmar</button></div></div></div>
+<div class="overlay-centro" id="borrarDescOverlay"><div class="modal-caja"><h3>BORRAR DESCRIPCION</h3><p style="text-align:center;font-size:.9em">Eliminará TODOS los registros de <strong id="bdTipoDesc">AM/PM</strong>. Las BITACORAS NO serán afectadas.</p><div class="info-registros" id="bdInfoRegistros"></div><div class="form-group"><label>Contraseña:</label><input type="password" id="bdPassword"></div><div class="modal-caja-buttons"><button onclick="cerrarModalBorrarDesc()">Cancelar</button><button onclick="confirmarBorrarDesc()">ELIMINAR</button></div></div></div>
+<div class="overlay-centro" id="eliminarAdminOverlay"><div class="modal-caja"><h3>ELIMINAR REGISTROS ADMIN</h3><div class="info-registros" id="eaInfoRegistros"></div><div class="form-group"><label>Contraseña:</label><input type="password" id="eaPassword"></div><div class="modal-caja-buttons"><button onclick="cerrarModalEliminarAdmin()">Cancelar</button><button onclick="confirmarEliminarAdmin()">ELIMINAR</button></div></div></div>
+<div class="overlay-centro" id="borrarBitacoraTodoOverlay"><div class="modal-caja"><h3 id="bbtTitulo">BORRAR BITACORAS</h3><p id="bbtDescripcion" style="text-align:center;font-size:.9em"></p><div class="info-registros" id="bbtInfoRegistros"></div><div class="form-group"><label>Contraseña:</label><input type="password" id="bbtPassword"></div><div class="modal-caja-buttons"><button onclick="cerrarModalBorrarBitacoraTodo()">Cancelar</button><button onclick="confirmarBorrarBitacoraTodo()">ELIMINAR</button></div></div></div>
+<div class="overlay-centro" id="borrarBitacoraAdminOverlay"><div class="modal-caja"><h3 id="bbaTitulo">BORRAR BITACORAS ADMIN</h3><p id="bbaDescripcion" style="text-align:center;font-size:.9em"></p><div class="info-registros" id="bbaInfoRegistros"></div><div class="form-group"><label>Contraseña:</label><input type="password" id="bbaPassword"></div><div class="modal-caja-buttons"><button onclick="cerrarModalBorrarBitacoraAdmin()">Cancelar</button><button onclick="confirmarBorrarBitacoraAdmin()">ELIMINAR</button></div></div></div>
+<div class="exportar-modal-overlay" id="exportarModal"><div class="exportar-modal"><h3 id="expTitulo">Exportar a Excel</h3><div class="exp-info" id="expInfo"></div><div class="checkbox-group" id="exportarCheckboxes"></div><div class="exportar-modal-buttons"><button onclick="cerrarModalExportar()">Cancelar</button><button onclick="confirmarExportar()">Exportar</button></div></div></div>
+<div class="bitacora-export-overlay" id="bitacoraExportOverlay"><div class="bitacora-export-modal"><h3 id="bitExpTitulo">Exportar Bitacoras</h3><p id="bitExpSubtitulo" style="text-align:center"></p><button onclick="seleccionarTodasBitacoras()">Seleccionar todas</button><div class="bitacora-export-grid" id="bitacoraExportGrid"></div><div class="bitacora-export-actions"><button onclick="cerrarModalExportarBitacoras()">Cancelar</button><button onclick="confirmarExportarBitacoras()">Exportar</button></div></div></div>
+<div class="bitacora-export-overlay" id="bitacoraJPEGOverlay"><div class="bitacora-export-modal"><h3 id="bitJpegTitulo">Exportar JPEG</h3><p id="bitJpegSubtitulo" style="text-align:center"></p><button onclick="seleccionarTodasBitacorasJPEG()">Seleccionar todas</button><div class="bitacora-export-grid" id="bitacoraJPEGGrid"></div><div class="bitacora-export-actions"><button onclick="cerrarModalJPEGBitacoras()">Cancelar</button><button onclick="confirmarExportarJPEGBitacoras()">Exportar</button></div></div></div>
+<div class="bitacora-export-overlay" id="bitacoraPrintOverlay"><div class="bitacora-export-modal"><h3 id="bitPrintTitulo">Imprimir Bitacoras</h3><p id="bitPrintSubtitulo" style="text-align:center"></p><button onclick="seleccionarTodasBitacorasPrint()">Seleccionar todas</button><div class="bitacora-export-grid" id="bitacoraPrintGrid"></div><div class="bitacora-export-actions"><button onclick="cerrarModalImprimirBitacoras()">Cancelar</button><button onclick="confirmarImprimirBitacoras()">Imprimir</button></div></div></div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>
