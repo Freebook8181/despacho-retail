@@ -382,7 +382,9 @@ function buildMarkup(){
 /* ===== app3.js ===== */
 /* ====== FILTERS ====== */
 function uniq(a){return [...new Set(a)];}
-const LS_KEY='quintec_meses_v1';
+const LS_KEY='quintec_meses_v2';
+// Limpia cache antigua: meses de demo (Jul-Dic) quedaron guardados por una versi\u00f3n previa.
+try{localStorage.removeItem('quintec_meses_v1');}catch(e){}
 function buildFilters(){
  const rowsM=rowsForMonth();
  // Mes (Enero–Diciembre, fijo) + Año (2026–2030, fijo)
@@ -1241,14 +1243,4 @@ function ishikawaSVG(cats,effect,effVal){
    const startY=top?ty+22:ty+34;
    cat.cz.forEach((c,j)=>{
      const cy=startY+j*20;
-     s+=`<circle cx="${bx-86}" cy="${cy-4}" r="2.6" fill="${cat.c}"/>`;
-     s+=`<text x="${bx-78}" y="${cy}" fill="#44525f" font-size="11.5">${esc(c)}</text>`;
-   });
- }
- s+=`</svg>`;
- return s;
-}
-
-</script>
-</body>
-</html>
+     s+=`<circle cx="${bx-86}" cy="${cy-4}" r="2.6" fill="${cat.c}"/
