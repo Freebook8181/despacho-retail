@@ -238,7 +238,7 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
     <div class="fg"><label>Semana</label><div class="wkbtns" id="fSem"></div></div>
     <div class="fg"><label>Día</label><select id="fDia"></select></div>
     <div class="fg"><label>Vehículo</label><select id="fTp"></select></div>
-    <div class="fg"><label>Rango</label><select id="fRg"><option value="all">Todos</option><option value="AM">AM</option><option value="PM">PM</option></select></div>
+    <div class="fg"><label>Rango</label><select id="fRg"><option value="all">Todos</option><option value="AM">AM</option><option value="PM">PM</option><option value="EN BLANCO">EN BLANCO</option></select></div>
     <div class="fg"><label>Unidad</label><select id="fUn"></select></div>
     <div class="fg"><label>Comuna</label><select id="fCom"></select></div>
     <button class="reset" id="fReset">✕ Limpiar</button>
@@ -530,7 +530,7 @@ function cleanSheet(json,fname){
    const semRaw=get('Unnamed: 0','SEMANA');let sem=0;if(semRaw!=null){const mm=String(semRaw).match(/\d+/);if(mm)sem=+mm[0];}
    if(!sem||sem<1){const _off=(new Date(dt.getFullYear(),dt.getMonth(),1).getDay()+6)%7;sem=Math.floor((dt.getDate()-1+_off)/7)+1;}
    let tp=get('TRANSPORTE');tp=tp!=null?String(tp).trim():'Sin dato';if(tp==='SERVICO 3PL')tp='SERVICIO 3PL';
-   out.push({id:+(get('N° PEDIDOS','N PEDIDOS','ID PEDIDO')||out.length+1),f:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`,sem:sem,dow:(dt.getDay()+6)%7,un:(get('UNIDAD NEGOCIO')||'Sin dato')+'',co:canonComuna(get('COMUNA'),map),v:Math.round(val),ob:(()=>{const o=get('OBSERVACION');return o!=null?String(o).trim():'';})(),tp:tp,rg:(get('RANGO')||'Sin dato')+'',_mo:monthFromName,_dt:dt});
+   out.push({id:+(get('N° PEDIDOS','N PEDIDOS','ID PEDIDO')||out.length+1),f:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`,sem:sem,dow:(dt.getDay()+6)%7,un:(get('UNIDAD NEGOCIO')||'Sin dato')+'',co:canonComuna(get('COMUNA'),map),v:Math.round(val),ob:(()=>{const o=get('OBSERVACION');return o!=null?String(o).trim():'';})(),tp:tp,rg:(()=>{const r=get('RANGO');const s=r!=null?String(r).trim().toUpperCase():'';return s||'EN BLANCO';})(),_mo:monthFromName,_dt:dt});
  });
  if(!out.length)return null;
  let mi=out[0]._dt.getMonth(),yy=out[0]._dt.getFullYear();
@@ -788,7 +788,7 @@ function renderRouteTable(){
  const meta=document.getElementById('rt_meta');
  if(meta)meta.innerHTML=total?`Mostrando <b>${fi(start+1)}–${fi(end)}</b> de <b>${fi(total)}</b> registros filtrados · página <b>${RT_PAGE}</b> de <b>${pages}</b>`:'Sin registros';
  const tb=document.querySelector('#rt_tbl tbody');
- if(tb)tb.innerHTML=show.map(r=>`<tr><td class="num">${r.id}</td><td>${dLabel(r.f)}</td><td>${r.un}</td><td>${r.co}</td><td><span class="tag">${r.tp}</span></td><td><span class="tag ${r.rg==='AM'?'am':'pm'}">${r.rg}</span></td><td class="num">${fm(r.v)}</td></tr>`).join('')||'<tr><td colspan=7 style="text-align:center;color:#6b7684;padding:30px">Sin registros</td></tr>';
+ if(tb)tb.innerHTML=show.map(r=>`<tr><td class="num">${r.id}</td><td>${dLabel(r.f)}</td><td>${r.un}</td><td>${r.co}</td><td><span class="tag">${r.tp}</span></td><td><span class="tag ${r.rg==='AM'?'am':r.rg==='PM'?'pm':''}">${r.rg}</span></td><td class="num">${fm(r.v)}</td></tr>`).join('')||'<tr><td colspan=7 style="text-align:center;color:#6b7684;padding:30px">Sin registros</td></tr>';
  const pg=document.getElementById('rt_pager');if(!pg)return;
  if(pages<=1){pg.innerHTML='';return;}
  // ventana de numeros de pagina
