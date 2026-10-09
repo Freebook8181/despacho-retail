@@ -7,6 +7,8 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -216,6 +218,7 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
       <div class="htools">
         <input type="file" id="fileInp" accept=".xlsx,.xls" multiple style="display:none"/>
         <button class="htool adminonly" id="btnUpload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></svg> Subir mes (.xlsx)</button>
+        <button class="htool adminonly" id="btnClear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14"/></svg> Vaciar datos</button>
         <button class="htool adminonly" id="btnPdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 15h6M9 18h6M9 12h2"/></svg> Informe PDF</button>
         <button class="htool adminonly" id="btnReporte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg> Reporte</button>
         <button class="htool sug adminonly" id="btnSug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2.1h6c0-.8.4-1.6 1-2.1A7 7 0 0012 2z"/></svg> Sugerencias IA</button>
@@ -439,6 +442,7 @@ function wireFilters(){
  document.getElementById('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;CUR=t.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.section').forEach(sx=>sx.classList.toggle('on',sx.id==='s-'+CUR));resizeCur();if(typeof updateEmptyState==='function')updateEmptyState();});
  document.getElementById('btnUpload').addEventListener('click',()=>document.getElementById('fileInp').click());
  document.getElementById('fileInp').addEventListener('change',handleUpload);
+ (function(){const bc=document.getElementById('btnClear');if(bc)bc.addEventListener('click',clearSavedMonths);})();
  document.getElementById('btnPdf').addEventListener('click',exportPDF);
  document.getElementById('btnPpt').addEventListener('click',exportPPT);
  document.getElementById('btnReporte').addEventListener('click',exportReporte);
@@ -557,12 +561,47 @@ function handleUpload(e){
          F.mes=res.mk;
        }else msgs.push(`${file.name}: sin datos válidos`);
      }catch(err){msgs.push(`${file.name}: error (${err.message})`);}
-     done++;if(done===files.length){recomputeMeta();const ok=saveMonths();buildFilters();render();info.textContent=`${DATA.meta.meses.length} mes(es) · ${fi(DATA.rows.length)} reg.`;alert('Carga completada:\n'+msgs.join('\n')+'\n\n'+(ok?'\u2713 Los meses quedaron guardados en este navegador: al volver a abrir el tablero seguir\u00e1n disponibles.':'\u26a0 No se pudieron guardar en este navegador (espacio lleno). Los datos funcionan en esta sesi\u00f3n, pero se perder\u00e1n al cerrar.'));}
+     done++;if(done===files.length){recomputeMeta();const ok=saveMonths();buildFilters();render();info.textContent=`${DATA.meta.meses.length} mes(es) · ${fi(DATA.rows.length)} reg.`;if(fbReady){fbPush();alert('Carga completada:\n'+msgs.join('\n')+'\n\n\u2601 Los meses se guardaron en la nube (Firebase): quedan disponibles al volver a abrir y los ven todos los usuarios.');}else{alert('Carga completada:\n'+msgs.join('\n')+'\n\n'+(ok?'\u2713 Los meses quedaron guardados en este navegador.':'\u26a0 No se pudieron guardar en este navegador (espacio lleno). Los datos funcionan en esta sesi\u00f3n, pero se perder\u00e1n al cerrar.'));}}
    };rd.readAsArrayBuffer(file);
  });
  e.target.value='';
 }
 /* ====== PERSISTENCIA LOCAL (localStorage) ====== */
+/* ====== FIREBASE (nube · datos compartidos entre usuarios) ====== */
+const FB_CFG={apiKey:"AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOj0Vzk",authDomain:"despacho-retail.firebaseapp.com",databaseURL:"https://despacho-retail-default-rtdb.firebaseio.com",projectId:"despacho-retail",storageBucket:"despacho-retail.appspot.com",messagingSenderId:"1011000908999",appId:"1:1011000908999:web:08c8630fab0c9537e0b2e2"};
+const FB_PATH='quintec/meses';
+let fbDB=null,fbReady=false,fbWriting=false;
+function buildStore(){const store={};DATA.rows.forEach(r=>{(store[r.mk]=store[r.mk]||{label:r.mes,rows:[]}).rows.push(r);});return store;}
+function flattenStore(store){let rows=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length)rows=rows.concat(o.rows);});return rows;}
+function fbInit(){try{if(typeof firebase==='undefined'||!firebase.initializeApp)return false;if(!firebase.apps||!firebase.apps.length)firebase.initializeApp(FB_CFG);fbDB=firebase.database();fbReady=true;return true;}catch(e){console.error('fbInit',e);return false;}}
+function fbSubscribe(){
+ if(!fbReady||!fbDB)return;
+ try{
+  fbDB.ref(FB_PATH).on('value',snap=>{
+   try{
+    const store=snap.val();
+    if(store&&Object.keys(store).length){
+     DATA.rows=flattenStore(store);
+     try{localStorage.setItem(LS_KEY,JSON.stringify(store));}catch(_){}
+    }else{
+     // Nube vacía: la sembramos con lo que haya ahora (datos base + lo local).
+     fbPush();return;
+    }
+    recomputeMeta();
+    try{if(!DATA.meta.meses.find(m=>m.key===F.mes)&&DATA.meta.meses.length){F.mes=DATA.meta.meses[DATA.meta.meses.length-1].key;}}catch(_){}
+    buildFilters();render();
+    const el=document.getElementById('fbStat');if(el){el.textContent='☁ Nube conectada';el.style.color='#2e7d5b';}
+   }catch(err){console.error('fbSnap',err);}
+  },err=>{console.error('fbOn',err);const el=document.getElementById('fbStat');if(el){el.textContent='⚠ Sin conexión a la nube (modo local)';el.style.color='#b06a2a';}});
+ }catch(e){console.error('fbSubscribe',e);}
+}
+function fbPush(){if(!fbReady||!fbDB)return;try{fbWriting=true;fbDB.ref(FB_PATH).set(buildStore()).then(()=>{fbWriting=false;}).catch(e=>{fbWriting=false;console.error('fbPush',e);});}catch(e){fbWriting=false;console.error('fbPush',e);}}
+function fbClear(){if(!fbReady||!fbDB)return Promise.resolve();try{return fbDB.ref(FB_PATH).remove();}catch(e){return Promise.resolve();}}
+function clearSavedMonths(){
+ if(!confirm('Esto borrará TODOS los meses guardados (en la nube y en este navegador) para TODOS los usuarios. El tablero volverá a mostrar solo los datos base. ¿Deseas continuar?'))return;
+ try{localStorage.removeItem(LS_KEY);}catch(e){}
+ Promise.resolve(fbClear()).finally(()=>{alert('Listo. Se vaciaron los datos. La página se recargará.');try{location.reload();}catch(e){}});
+}
 function saveMonths(){
  const store={};
  DATA.rows.forEach(r=>{(store[r.mk]=store[r.mk]||{label:r.mes,rows:[]}).rows.push(r);});
@@ -825,7 +864,7 @@ function renderAud(f){
 }
 /* ====== FOOTER ====== */
 function buildFooter(){
- document.getElementById('footc').innerHTML=`<b>QUINTEC · Suite KPI Logística</b> — Dashboard interactivo multi-mes.<br/>Metodología: Valor = suma de columna VALOR (sin impuestos declarados). Comunas normalizadas (mayúsculas/tildes); typo “SERVICO 3PL” → “SERVICIO 3PL”. Flota propia = MOVIL / DON; el resto se considera tercerizada. Todos los KPI reaccionan a los filtros activos.<div class="note">⬆️ Usa <b>“Subir mes (.xlsx)”</b> para añadir Octubre, Noviembre, etc. (mismo formato de columnas). Cada mes queda seleccionable por separado en el filtro <b>Mes</b>. Exporta el <b>Informe PDF</b> (narrativa + gráficos) o la <b>presentación PowerPoint</b> con los botones superiores.</div>`;
+ document.getElementById('footc').innerHTML=`<b>QUINTEC · Suite KPI Logística</b> — Dashboard interactivo multi-mes.<br/>Metodología: Valor = suma de columna VALOR (sin impuestos declarados). Comunas normalizadas (mayúsculas/tildes); typo “SERVICO 3PL” → “SERVICIO 3PL”. Flota propia = MOVIL / DON; el resto se considera tercerizada. Todos los KPI reaccionan a los filtros activos.<div class="note">⬆️ Usa <b>“Subir mes (.xlsx)”</b> para añadir Octubre, Noviembre, etc. (mismo formato de columnas). Cada mes queda seleccionable por separado en el filtro <b>Mes</b>. Exporta el <b>Informe PDF</b> (narrativa + gráficos) o la <b>presentación PowerPoint</b> con los botones superiores.<span id="fbStat" style="display:block;margin-top:6px;font-weight:600;color:#8a95a1">Conectando con la nube…</span></div>`;
 }
 /* ====== BOOT (resiliente: el ingreso SIEMPRE debe quedar activo) ====== */
 // 1) El login se arma PRIMERO y aparte, para que ning\u00fan error de datos/gr\u00e1ficos
@@ -843,6 +882,9 @@ try{buildFooter();}catch(e){console.error('buildFooter',e);}
 try{render();}catch(e){console.error('render',e);}
 // 3) Reaplica el rol por si buildMarkup se re-ejecut\u00f3 (botones de admin, etc.).
 try{applyRole();}catch(e){console.error('applyRole2',e);}
+// 4) Conexión a la nube (Firebase). Nunca bloquea el ingreso: va en try/catch
+//    y, si falla o no hay internet, el tablero sigue con los datos locales.
+try{if(fbInit())fbSubscribe();}catch(e){console.error('firebase',e);}
 try{setTimeout(()=>{try{Object.values(CH).forEach(c=>c.resize());}catch(_){}} ,150);}catch(e){}
 
 /* ===== app8.js ===== */
