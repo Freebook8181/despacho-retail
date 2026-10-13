@@ -133,6 +133,16 @@ td.num{font-family:'IBM Plex Mono';text-align:right;color:var(--navy-d)}
 .cinfo:hover{background:var(--navy);color:#fff;transform:scale(1.08)}
 .kinfo{position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;border:1.3px solid var(--teal);background:#eef5f2;color:var(--teal-d);font-family:'Sora';font-weight:700;font-size:11px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:.15s;padding:0;z-index:3}
 .kinfo:hover{background:var(--teal);color:#fff;transform:scale(1.1)}
+/* botón Ver detalle (pequeño) */
+.vdet{margin-left:auto;flex:none;border:1.3px solid var(--teal);background:#eef5f2;color:var(--teal-d);font-family:'Sora';font-weight:600;font-size:11px;line-height:1;cursor:pointer;padding:5px 10px;border-radius:7px;transition:.15s;white-space:nowrap}
+.vdet:hover{background:var(--teal);color:#fff}
+.vdet+.cinfo{margin-left:8px}
+/* tabla de detalle en el modal */
+.dtbl{width:100%;border-collapse:collapse;font-size:12.5px;font-family:'IBM Plex Sans'}
+.dtbl th{position:sticky;top:0;background:var(--navy-d,#1f3a59);color:#fff;padding:7px 10px;text-align:left;font-weight:600;font-size:12px;z-index:1}
+.dtbl td{padding:6px 10px;border-bottom:1px solid #eef1f4;color:#36454f}
+.dtbl tbody tr:nth-child(even){background:#f7f9fb}
+.dtbl tfoot td{background:#eef3f8;border-top:2px solid var(--navy,#2b4a6f);color:#1f3a59}
 /* contenido modal explicativo */
 .xinfo h4{font-family:'Sora';color:var(--navy-d);font-size:15px;margin:16px 0 6px}
 .xinfo .lead{background:#eef3f8;border-left:4px solid var(--navy);border-radius:0 8px 8px 0;padding:12px 15px;color:#36454f;font-size:13.5px;margin-bottom:6px}
@@ -301,7 +311,9 @@ const fm=n=>'$'+fi(n);
 function fmShort(n){n=n||0;const s=n<0?'-':'';n=Math.abs(n);if(n>=1e9)return s+'$'+(n/1e9).toLocaleString('es-CL',{maximumFractionDigits:2})+'MM';if(n>=1e6)return s+'$'+(n/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+'M';if(n>=1e3)return s+'$'+(n/1e3).toLocaleString('es-CL',{maximumFractionDigits:0})+'K';return s+'$'+fi(n);}
 function dLabel(s){const d=new Date(s+'T00:00:00');return d.getDate()+' '+MESES_ES[d.getMonth()];}
 function dFull(s){const d=new Date(s+'T00:00:00');return DOW[(d.getDay()+6)%7]+' '+d.getDate()+' '+MESES_ES[d.getMonth()];}
-function esProp(tp){return /^MOVIL/i.test(tp)||/^DON /i.test(tp);}
+function dDMY(s){const d=new Date(s+'T00:00:00');const p=n=>(n<10?'0':'')+n;return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear();}
+// Flota propia = móviles 1 al 6 + Don Raúl + Don José (el resto se considera tercerizada/externa)
+function esProp(tp){tp=(tp||'').toString().toUpperCase().trim();return /^MOVIL\s*0*[1-6]$/.test(tp)||tp==='DON RAUL'||tp==='DON RAÚL'||tp==='DON JOSE'||tp==='DON JOSÉ';}
 function catFlota(tp){return esProp(tp)?'Flota propia':'Tercerizada / Externa';}
 /* ====== STATE ====== */
 const F={mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all'};
@@ -325,15 +337,14 @@ function rowsForMonth(){return F.mes==='all'?DATA.rows:DATA.rows.filter(r=>r.mk=
 /* ====== MARKUP ====== */
 const TABS=[['op','Operaciones & Flota',IC.truck],['fin','Finanzas & P&L',IC.money],['log','Logística & Rutas',IC.map],['aud','Auditoría & Excepciones',IC.search],['cmp','Tendencias & Comparativo',IC.cal],['diag','Diagnóstico & Causas',IC.alert]];
 function kpi(id,icon,title,tl){return `<div class="kpi ${tl?'tl':''}"><button class="kinfo adminonly" data-k="${id}" title="¿Qué significa este indicador?">?</button><div class="kt">${icon}<span>${title}</span></div><div class="kv" id="${id}">–</div><div class="kf" id="${id}_f"></div></div>`;}
-function card(id,icon,title,sub,cls){return `<div class="card"><h3>${icon} ${title}<button class="cinfo adminonly" data-c="${id}" title="¿Para qué sirve este gráfico?">?</button></h3><div class="cs">${sub}</div><div class="chart ${cls||''}" id="${id}"></div><div class="insight" id="${id}_i"></div></div>`;}
+function card(id,icon,title,sub,cls,detail){return `<div class="card"><h3>${icon} ${title}${detail?`<button class="vdet" data-detail="${id}" title="Ver todo el detalle">Ver detalle</button>`:''}<button class="cinfo adminonly" data-c="${id}" title="¿Para qué sirve este gráfico?">?</button></h3><div class="cs">${sub}</div><div class="chart ${cls||''}" id="${id}"></div><div class="insight" id="${id}_i"></div></div>`;}
 function buildMarkup(){
- document.getElementById('tabs').innerHTML=TABS.map(t=>`<div class="tab ${t[0]=='op'?'on':''}" data-t="${t[0]}">${t[2]}<span>${t[1]}</span></div>`).join('');
+ document.getElementById('tabs').innerHTML=TABS.map(t=>`<div class="tab ${t[0]=='op'?'on':''} ${t[0]==='diag'?'adminonly':''}" data-t="${t[0]}">${t[2]}<span>${t[1]}</span></div>`).join('');
  const M=document.getElementById('main');let h='';
  // ===== OPERACIONES =====
  h+=`<section class="section on" id="s-op"><div class="sec-head"><h2>Operaciones & Desempeño de Flota</h2><p>Rendimiento volumétrico y densidad de despachos</p></div>`;
  h+=`<div class="kgrid">${kpi('k_ped',IC.box,'Total Pedidos')}${kpi('k_prom',IC.gauge,'Prom. Pedidos / Día')}${kpi('k_peak',IC.peak,'Peak Pedidos Día')}${kpi('k_com',IC.map,'Comunas Cubiertas')}</div>`;
  h+=`<div class="kgrid">${kpi('k_veh',IC.truck,'Vehículos Activos')}${kpi('k_dias',IC.cal,'Días Operados')}${kpi('k_prop',IC.layers,'% Flota Propia')}${kpi('k_med',IC.gauge,'Mediana Pedidos / Día')}</div>`;
- h+=`<div class="kgrid">${kpi('k_pxv',IC.gauge,'Productividad (Pedidos / Vehículo)')}${kpi('k_hhi',IC.layers,'Índice Concentración HHI')}${kpi('k_cv',IC.line,'Estabilidad Diaria (CV)')}${kpi('k_vprop',IC.truck,'Vehículos Flota Propia')}</div>`;
  h+=`<div class="grid g-2">${card('c_flota',IC.chart,'Eficiencia de Flota','Pedidos por vehículo — orden descendente','tall')}${card('c_unidad',IC.pie,'Participación por Unidad de Negocio','Cuota de despachos por división / cliente','tall')}</div>`;
  h+=`<div class="grid g-2e">${card('c_prop',IC.layers,'Flota Propia vs Tercerizada','Dependencia de terceros en la operación','sm')}${card('c_heat',IC.grid,'Ritmo Operativo (Día × Semana)','Campos de calor: concentración de despachos','sm')}</div>`;
  h+=`<div class="grid g-1">${card('c_matriz',IC.grid,'Matriz de Control Semanal','Vehículo × Semana — mapa de calor de pedidos')}</div>`;
@@ -341,8 +352,6 @@ function buildMarkup(){
  // ===== FINANZAS =====
  h+=`<section class="section" id="s-fin"><div class="sec-head"><h2>Finanzas & P&L — Valorización de Carga</h2><p>Impacto monetário y tendencia del flujo</p></div>`;
  h+=`<div class="kgrid fin">${kpi('k_val',IC.money,'Valor Total Operado',1)}${kpi('k_tkt',IC.ticket,'Ticket Promedio / Pedido',1)}${kpi('k_vdia',IC.line,'Valor Promedio / Día',1)}</div>`;
- h+=`<div class="kgrid fin">${kpi('k_vmed',IC.gauge,'Valor Mediano / Pedido',1)}${kpi('k_vmax2',IC.peak,'Pedido de Mayor Valor',1)}${kpi('k_vtopun',IC.pie,'% Valor — Unidad Líder',1)}</div>`;
- h+=`<div class="kgrid fin">${kpi('k_vter',IC.layers,'% Valor Tercerizado',1)}${kpi('k_vcom',IC.map,'Valor Promedio / Comuna',1)}${kpi('k_tprop',IC.ticket,'Ticket Flota Propia',1)}</div>`;
  h+=`<div class="grid g-2e">${card('c_valun',IC.chart,'Valor por Unidad de Negocio','Fuentes principales de ingreso logístico','tall')}${card('c_valtp',IC.chart,'Valor Movilizado por Vehículo','Carga económica concentrada por móvil','tall')}</div>`;
  h+=`<div class="grid g-1">${card('c_evo',IC.line,'Evolución Diaria del Capital','Valor movilizado y pedidos por día')}</div>`;
  h+=`<div class="grid g-2e">${card('c_comval',IC.map,'Top Comunas por Valorización','Destinos con mayor valor de carga','tall')}${card('c_bubble',IC.scatter,'Volumen vs Valor por Vehículo','Tamaño = ticket promedio del móvil','tall')}</div>`;
@@ -350,27 +359,26 @@ function buildMarkup(){
  // ===== LOGISTICA =====
  h+=`<section class="section" id="s-log"><div class="sec-head"><h2>Eficiencia Logística & Rutas</h2><p>Distribución espacial y temporal de entregas</p></div>`;
  h+=`<div class="kgrid">${kpi('k_am',IC.clock,'% Despachos AM')}${kpi('k_pm',IC.clock,'% Despachos PM')}${kpi('k_top5',IC.map,'Concentración Top 5 Comunas')}${kpi('k_pcom',IC.gauge,'Pedidos Promedio / Comuna')}</div>`;
- h+=`<div class="kgrid">${kpi('k_pareto',IC.chart,'Comunas = 80% del Volumen')}${kpi('k_pico',IC.peak,'Ratio Pico / Valle (día)')}${kpi('k_coml',IC.map,'Comuna Líder (cuota)')}${kpi('k_ampm',IC.clock,'Balance AM : PM')}</div>`;
- h+=`<div class="grid g-2e">${card('c_rango',IC.clock,'Distribución por Rango Horario','Volumen AM / PM por día')}${card('c_comvol',IC.map,'Cobertura — Top 10 Comunas','Centros de gravedad de entrega (RM)')}</div>`;
+ h+=`<div class="grid g-2e">${card('c_rango',IC.clock,'Distribución por Rango Horario','Volumen AM / PM por día','',1)}${card('c_comvol',IC.map,'Cobertura — Top 10 Comunas','Centros de gravedad de entrega (RM)','',1)}</div>`;
  h+=`<div class="grid g-1">${card('c_pareto',IC.chart,'Pareto de Comunas (regla 80/20)','Concentración acumulada de despachos')}</div>`;
  h+=`<div class="grid g-1"><div class="card"><h3>${IC.list} Detalle Operativo de Rutas</h3><div class="cs">Listado interactivo a nivel de registro</div><div class="tbl-meta" id="rt_meta"></div><div class="tblwrap"><table id="rt_tbl"><thead><tr><th>ID</th><th>Fecha</th><th>Unidad Negocio</th><th>Comuna</th><th>Vehículo</th><th>Rango</th><th style="text-align:right">Valor</th></tr></thead><tbody></tbody></table></div><div class="rt-pager" id="rt_pager"></div></div></div>`;
  h+=`</section>`;
  // ===== AUDITORIA =====
  h+=`<section class="section" id="s-aud"><div class="sec-head"><h2>Auditoría & Excepciones</h2><p>Trazabilidad de calidad y monitoreo de anomalías</p></div>`;
- h+=`<div class="kgrid">${kpi('k_obs',IC.alert,'Registros con Observación')}${kpi('k_obsp',IC.pct,'% con Observación')}${kpi('k_obst',IC.list,'Tipos de Observación')}${kpi('k_reenv',IC.redo,'Reenvíos / Reintentos')}</div>`;
- h+=`<div class="kgrid">${kpi('k_camb',IC.map,'Cambios de Dirección')}${kpi('k_prior',IC.peak,'Pedidos Prioritarios')}${kpi('k_vobs',IC.money,'Valor en Riesgo (c/obs)')}${kpi('k_vmax',IC.money,'Pedido de Mayor Valor')}</div>`;
- h+=`<div class="kgrid">${kpi('k_cal',IC.gauge,'% Calidad (sin observación)')}${kpi('k_vobsavg',IC.ticket,'Valor Promedio Observado')}${kpi('k_comobs',IC.map,'Comuna + Observada')}${kpi('k_semcrit',IC.alert,'Semana + Crítica')}</div>`;
+ h+=`<div class="kgrid">${kpi('k_cal',IC.gauge,'% Calidad (sin observación)')}${kpi('k_vobsavg',IC.ticket,'Valor Promedio Observado')}${kpi('k_vmax',IC.money,'Pedido de Mayor Valor')}</div>`;
  h+=`<div class="grid g-2e">${card('c_obstipo',IC.chart,'Distribución de Observaciones','Top motivos / alertas registradas','tall')}${card('c_obstp',IC.truck,'Observaciones por Vehículo','Flota con mayor incidencia','tall')}</div>`;
  h+=`<div class="grid g-1">${card('c_obssem',IC.chart,'Observaciones por Semana','Evolución de incidencias en el periodo','sm')}</div>`;
- h+=`<div class="grid g-1"><div class="card"><h3>${IC.search} Matriz de Trazabilidad</h3><div class="cs">Registros con observación para control de calidad</div><div class="tbl-meta" id="au_meta"></div><div class="tblwrap"><table id="au_tbl"><thead><tr><th>Fecha</th><th>ID</th><th>Vehículo</th><th>Comuna</th><th>Observación</th><th style="text-align:right">Valor</th></tr></thead><tbody></tbody></table></div></div></div>`;
  h+=`</section>`;
  // ===== TENDENCIAS & COMPARATIVO (multi-mes) =====
  h+=`<section class="section" id="s-cmp"><div class="sec-head"><h2>Tendencias & Comparativo Mensual</h2><p>Evolución mes a mes del volumen, el valor y la calidad</p></div>`;
  h+=`<div class="card" id="cmpBox"><h3>${IC.cal} Comparar dos meses</h3><div class="cs">Elige un mes base y un mes a comparar (por ejemplo, el mes anterior frente al actual). El tablero calcula la variación en cada indicador.</div><div class="cmp-pick" id="cmpPick" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:12px 0 4px"></div><div class="cmp-delta" id="cmpDelta" style="margin-top:14px"></div></div>`;
- h+=`<div class="kgrid">${kpi('k_cmpmeses',IC.cal,'Meses Analizados')}${kpi('k_cmpbestvol',IC.peak,'Mes de Mayor Volumen')}${kpi('k_cmpbestval',IC.money,'Mes de Mayor Valor')}${kpi('k_cmpgrow',IC.up,'Crecimiento (1º vs último)')}</div>`;
+ h+=`<div class="grid g-2e">${card('cmp_c_ped',IC.box,'Pedidos — Mes A vs Mes B','Comparación directa de volumen','sm')}${card('cmp_c_val',IC.money,'Valor Movilizado — Mes A vs Mes B','Comparación directa de capital','sm')}</div>`;
+ h+=`<div class="grid g-2e">${card('cmp_c_tkt',IC.ticket,'Ticket Promedio — Mes A vs Mes B','Valor medio por pedido','sm')}${card('cmp_c_cal',IC.gauge,'% Calidad — Mes A vs Mes B','Pedidos sin observación','sm')}</div>`;
+ h+=`<div class="grid g-2e">${card('cmp_c_prop',IC.layers,'% Flota Propia — Mes A vs Mes B','Participación de flota propia','sm')}${card('cmp_c_obs',IC.alert,'% con Observación — Mes A vs Mes B','Tasa de incidencias','sm')}</div>`;
+ h+=`<div class="kgrid">${kpi('k_cmpbestvol',IC.peak,'Mes de Mayor Volumen')}${kpi('k_cmpbestval',IC.money,'Mes de Mayor Valor')}${kpi('k_cmpgrow',IC.up,'Crecimiento (1º vs último)')}</div>`;
  h+=`<div class="grid g-2e">${card('c_mesvol',IC.chart,'Pedidos por Mes','Volumen total despachado en cada mes','tall')}${card('c_mesval',IC.money,'Valor Movilizado por Mes','Capital transportado mes a mes','tall')}</div>`;
  h+=`<div class="grid g-1">${card('c_mesheat',IC.grid,'Campo de Calor Mes × Semana','Concentración de pedidos por semana en cada mes')}</div>`;
- h+=`<div class="grid g-2e">${card('c_mesun',IC.layers,'Mezcla de Unidades por Mes','Participación (%) de cada unidad de negocio','tall')}${card('c_radar',IC.scatter,'Perfil Comparado (últimos meses)','Radar multi-dimensional de desempeño','tall')}</div>`;
+ h+=`<div class="grid g-1">${card('c_mesun',IC.layers,'Mezcla de Unidades por Mes','Participación (%) de cada unidad de negocio')}</div>`;
  h+=`</section>`;
  // ===== DIAGNOSTICO & CAUSAS (Ishikawa) =====
  h+=`<section class="section" id="s-diag"><div class="sec-head"><h2>Diagnóstico & Análisis de Causas</h2><p>Causa-raíz de las incidencias y focos de concentración</p></div>`;
@@ -455,6 +463,7 @@ function wireFilters(){
  document.getElementById('main').addEventListener('click',e=>{
    const cb=e.target.closest('.cinfo');if(cb){openChartInfo(cb.dataset.c);return;}
    const kb=e.target.closest('.kinfo');if(kb){openKpiInfo(kb.dataset.k);return;}
+   const db=e.target.closest('.vdet');if(db){openDetail(db.dataset.detail);return;}
  });
 }
 /* ====== AUTH (control de acceso local) ====== */
@@ -802,7 +811,7 @@ function renderLog(f,days){
  const ds=[...days].sort();
  const am=ds.map(d=>f.filter(r=>r.f===d&&r.rg==='AM').length);
  const pm=ds.map(d=>f.filter(r=>r.f===d&&r.rg==='PM').length);
- setC('c_rango',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>{let s=`<b>${dFull(p[0].axisValue)}</b>`;p.forEach(x=>s+=`<br/>${x.marker}${x.seriesName}: <b>${fi(x.value)}</b>`);return s;}},TT),legend:{top:0,right:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:12,itemHeight:8},grid:{left:4,right:8,top:34,bottom:30,containLabel:true},xAxis:Object.assign({type:'category',data:ds,axisLabel:{formatter:dLabel,rotate:40,color:'#6b7684',fontSize:10}},axCfg()),yAxis:Object.assign({type:'value'},axCfg()),series:[{name:'AM',type:'bar',stack:'r',data:am,itemStyle:{color:'#4f8a79'},label:{show:true,position:'inside',color:'#fff',fontSize:9,fontFamily:'IBM Plex Mono',formatter:p=>p.value||''}},{name:'PM',type:'bar',stack:'r',data:pm,itemStyle:{color:'#8a7bb0'},label:{show:true,position:'inside',color:'#111111',fontSize:9,fontFamily:'IBM Plex Mono',fontWeight:600,formatter:p=>p.value||''}}]});
+ setC('c_rango',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>{let s=`<b>${dFull(p[0].axisValue)}</b>`;p.forEach(x=>s+=`<br/>${x.marker}${x.seriesName}: <b>${fi(x.value)}</b>`);return s;}},TT),legend:{top:0,right:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:12,itemHeight:8},grid:{left:4,right:8,top:34,bottom:30,containLabel:true},xAxis:Object.assign({type:'category',data:ds,axisLabel:{formatter:dDMY,rotate:40,color:'#6b7684',fontSize:10}},axCfg()),yAxis:Object.assign({type:'value'},axCfg()),series:[{name:'AM',type:'bar',stack:'r',data:am,itemStyle:{color:'#4f8a79'},label:{show:true,position:'inside',color:'#fff',fontSize:9,fontFamily:'IBM Plex Mono',formatter:p=>p.value||''}},{name:'PM',type:'bar',stack:'r',data:pm,itemStyle:{color:'#8a7bb0'},label:{show:true,position:'inside',color:'#111111',fontSize:9,fontFamily:'IBM Plex Mono',fontWeight:600,formatter:p=>p.value||''}}]});
  const tAM=f.filter(r=>r.rg==='AM').length,tPM=f.filter(r=>r.rg==='PM').length;setI('c_rango',`Reparto <span class="up">AM ${fi(tAM)}</span> vs <span style="color:#6a5a92;font-weight:600">PM ${fi(tPM)}</span>. Las ventanas con mayor volumen definen los turnos críticos de la flota.`);
  const cv=toArr(groupSum(f,'co')).sort((a,b)=>b.n-a.n).slice(0,10).reverse();
  setC('c_comvol',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>Pedidos: <b>${fi(p[0].value)}</b>`},TT),grid:{left:4,right:48,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value'},axCfg()),yAxis:Object.assign({type:'category',data:cv.map(x=>x.k)},axCfg()),series:[{type:'bar',data:cv.map(x=>x.n),barWidth:'60%',itemStyle:{color:'#3a5b80',borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#1f3a59',fontFamily:'IBM Plex Mono',fontSize:10,formatter:p=>fi(p.value)}}]});
@@ -860,8 +869,8 @@ function renderAud(f){
  setC('c_obssem',{tooltip:Object.assign({trigger:'axis',formatter:p=>{let s=`<b>Semana ${p[0].axisValue}</b>`;p.forEach(x=>s+=`<br/>${x.marker}${x.seriesName}: <b>${x.seriesName.indexOf('%')>=0?x.value+'%':fi(x.value)}</b>`);return s;}},TT),legend:{top:0,right:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:12,itemHeight:8},grid:{left:4,right:40,top:34,bottom:24,containLabel:true},xAxis:Object.assign({type:'category',data:sems.map(s=>'S'+s)},axCfg()),yAxis:[Object.assign({type:'value',name:'Obs.',nameTextStyle:{color:'#8a95a1',fontSize:10}},axCfg()),Object.assign({type:'value',max:100,axisLabel:{formatter:'{value}%',color:'#6b7684',fontSize:10},splitLine:{show:false}},axCfg())],series:[{name:'Observaciones',type:'bar',data:os,barWidth:'48%',itemStyle:{color:'#c06a5a',borderRadius:[3,3,0,0]},label:{show:true,position:'top',color:'#9a4a3a',fontFamily:'IBM Plex Mono',fontSize:10,formatter:p=>p.value||''}},{name:'% de la semana',type:'line',yAxisIndex:1,data:sems.map((s,i)=>ts[i]?+(100*os[i]/ts[i]).toFixed(1):0),smooth:true,symbol:'circle',symbolSize:5,lineStyle:{color:'#2b4a6f',width:2.5},itemStyle:{color:'#2b4a6f'}}]});
  setI('c_obssem',`Evolución de incidencias por semana: un alza en la tasa (%) indica deterioro de calidad que conviene investigar antes de que escale.`);
  const show=obs.slice().sort((a,b)=>b.v-a.v).slice(0,400);
- document.getElementById('au_meta').innerHTML=`<b>${fi(obs.length)}</b> registros con observación · ordenados por valor`;
- document.querySelector('#au_tbl tbody').innerHTML=show.map(r=>`<tr><td>${dLabel(r.f)}</td><td class="num">${r.id}</td><td><span class="tag">${r.tp}</span></td><td>${r.co}</td><td><span class="tag obs">${r.ob}</span></td><td class="num">${fm(r.v)}</td></tr>`).join('')||'<tr><td colspan=6 style="text-align:center;color:#6b7684;padding:30px">Sin observaciones — operación limpia ✔</td></tr>';
+ const _am=document.getElementById('au_meta');if(_am)_am.innerHTML=`<b>${fi(obs.length)}</b> registros con observación · ordenados por valor`;
+ const _at=document.querySelector('#au_tbl tbody');if(_at)_at.innerHTML=show.map(r=>`<tr><td>${dLabel(r.f)}</td><td class="num">${r.id}</td><td><span class="tag">${r.tp}</span></td><td>${r.co}</td><td><span class="tag obs">${r.ob}</span></td><td class="num">${fm(r.v)}</td></tr>`).join('')||'<tr><td colspan=6 style="text-align:center;color:#6b7684;padding:30px">Sin observaciones — operación limpia ✔</td></tr>';
 }
 /* ====== FOOTER ====== */
 function buildFooter(){
@@ -950,6 +959,22 @@ function narrative(){
 /* ====== MODAL HELPERS ====== */
 function openOvr(title,html){document.getElementById('ovrTitle').textContent=title;document.getElementById('ovrBody').innerHTML=html;document.getElementById('ovr').classList.add('on');}
 function closeOvr(){document.getElementById('ovr').classList.remove('on');}
+function openDetail(cid){
+ const f=(LAST.f||[]);
+ if(cid==='c_rango'){
+   const days=[...new Set(f.map(r=>r.f))].sort();
+   let rows='';let tAM=0,tPM=0,tT=0;
+   days.forEach(d=>{const dd=f.filter(r=>r.f===d);const am=dd.filter(r=>r.rg==='AM').length;const pm=dd.filter(r=>r.rg==='PM').length;const t=dd.length;tAM+=am;tPM+=pm;tT+=t;rows+=`<tr><td>${dDMY(d)}</td><td style="text-align:right">${fi(am)}</td><td style="text-align:right">${fi(pm)}</td><td style="text-align:right"><b>${fi(t)}</b></td></tr>`;});
+   const h=`<div class="xinfo"><p style="color:#6b7684;font-size:12.5px;margin:0 0 10px">Detalle día por día — <b>${scopeLabel()}</b> · ${fi(days.length)} días</p><div class="tblwrap" style="max-height:60vh;overflow:auto"><table class="dtbl"><thead><tr><th>Fecha (día-mes-año)</th><th style="text-align:right">AM</th><th style="text-align:right">PM</th><th style="text-align:right">Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td><b>Total</b></td><td style="text-align:right"><b>${fi(tAM)}</b></td><td style="text-align:right"><b>${fi(tPM)}</b></td><td style="text-align:right"><b>${fi(tT)}</b></td></tr></tfoot></table></div></div>`;
+   openOvr('Distribución por Rango Horario — Detalle por día',h);return;
+ }
+ if(cid==='c_comvol'){
+   const ca=toArr(groupSum(f,'co')).sort((a,b)=>b.n-a.n);const tot=f.length||1;let acc=0;let rows='';
+   ca.forEach((x,i)=>{acc+=x.n;rows+=`<tr><td style="text-align:right">${i+1}</td><td>${x.k}</td><td style="text-align:right">${fi(x.n)}</td><td style="text-align:right">${(100*x.n/tot).toFixed(1)}%</td><td style="text-align:right">${(100*acc/tot).toFixed(1)}%</td></tr>`;});
+   const h=`<div class="xinfo"><p style="color:#6b7684;font-size:12.5px;margin:0 0 10px">Todas las comunas cubiertas — <b>${scopeLabel()}</b> · ${fi(ca.length)} comunas · ${fi(f.length)} pedidos</p><div class="tblwrap" style="max-height:60vh;overflow:auto"><table class="dtbl"><thead><tr><th style="text-align:right">#</th><th>Comuna</th><th style="text-align:right">Pedidos</th><th style="text-align:right">% del total</th><th style="text-align:right">% acumulado</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+   openOvr('Cobertura por Comuna — Detalle completo',h);return;
+ }
+}
 function printOvr(){const title=document.getElementById('ovrTitle').textContent;const body=document.getElementById('ovrBody').innerHTML;const w=window.open('','_blank');w.document.write(`<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>${title} \u2014 QUINTEC</title><style>@page{size:A4;margin:15mm}body{font-family:'Segoe UI',Arial,sans-serif;color:#263340;font-size:12.5px;line-height:1.6;padding:0}h1,h2,h3{color:#1f3a59;font-family:'Segoe UI',Arial}h2{border-bottom:2px solid #2f7d6b;padding-bottom:5px;margin:20px 0 10px}table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11.5px}td,th{border:1px solid #dde3e9;padding:5px 8px}th{background:#1f3a59;color:#fff}.rcard,.scard{border:1px solid #e3e7ec;border-radius:8px;padding:12px 14px;margin:10px 0;background:#f8fafb}.pri{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;color:#fff;margin-right:6px}img{max-width:100%;border:1px solid #e3e7ec;border-radius:6px}</style></head><body>${body}</body></html>`);w.document.close();setTimeout(()=>w.print(),400);}
 //__END__
 /* ====== GRUPOS (secciones) ====== */
@@ -1138,7 +1163,10 @@ function renderCmp(){
    const v=rr.reduce((a,x)=>a+x.v,0);
    const obs=rr.filter(r=>r.ob&&r.ob!=='').length;
    const prop=rr.filter(r=>esProp(r.tp)).length;
-   return {key:m.key,label:m.label,short:m.label.split(' ')[0],n:rr.length,v:v,obs:obs,prop:prop,tkt:rr.length?v/rr.length:0,cal:rr.length?100-100*obs/rr.length:0,propP:rr.length?100*prop/rr.length:0};
+   const dayMap={};rr.forEach(r=>{dayMap[r.f]=(dayMap[r.f]||0)+1;});
+   const dias=Object.keys(dayMap).length;const peak=dias?Math.max(...Object.values(dayMap)):0;
+   const comunas=new Set(rr.map(r=>r.co)).size;
+   return {key:m.key,label:m.label,short:m.label.split(' ')[0],n:rr.length,v:v,obs:obs,prop:prop,tkt:rr.length?v/rr.length:0,cal:rr.length?100-100*obs/rr.length:0,propP:rr.length?100*prop/rr.length:0,dias:dias,peak:peak,comunas:comunas,promDia:dias?rr.length/dias:0,vDia:dias?v/dias:0};
  });
  // KPIs
  const bv=agg.slice().sort((a,b)=>b.n-a.n)[0];const bval=agg.slice().sort((a,b)=>b.v-a.v)[0];
@@ -1151,15 +1179,15 @@ function renderCmp(){
  LASTAGG=agg;
  buildCmpPicker(agg);
  // c_mesvol
- setC('c_mesvol',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>Pedidos: <b>${fi(p[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:agg.map(x=>x.short)},axCfg()),yAxis:Object.assign({type:'value'},axCfg()),series:[{type:'bar',data:agg.map(x=>x.n),barWidth:'52%',itemStyle:{color:'#3a5b80',borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:'#1f3a59',fontFamily:'IBM Plex Mono',fontSize:11,fontWeight:600,formatter:p=>fi(p.value)},markLine:{silent:true,symbol:'none',data:[{type:'average',name:'Prom',lineStyle:{color:'#c06a5a',type:'dashed'},label:{formatter:'prom',color:'#c06a5a',fontSize:10}}]}}]});
+ setC('c_mesvol',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>Pedidos: <b>${fi(p[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:agg.map(x=>x.short)},axCfg(),{axisLabel:{interval:0,rotate:30,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value'},axCfg()),series:[{type:'bar',data:agg.map(x=>x.n),barWidth:'52%',itemStyle:{color:'#3a5b80',borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:'#1f3a59',fontFamily:'IBM Plex Mono',fontSize:11,fontWeight:600,formatter:p=>fi(p.value)},markLine:{silent:true,symbol:'none',data:[{type:'average',name:'Prom',lineStyle:{color:'#c06a5a',type:'dashed'},label:{formatter:'prom',color:'#c06a5a',fontSize:10}}]}}]});
  setI('c_mesvol',bv?`El mes de mayor volumen es <b>${bv.short}</b> con <span class="up">${fi(bv.n)} pedidos</span>. Tendencia ${grow>=0?'al alza':'a la baja'} de <b>${(grow>=0?'+':'')+grow.toFixed(0)}%</b> entre el primer y el último mes.`:'Sin datos.');
  // c_mesval
- setC('c_mesval',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>Valor: <b>${fm(p[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:agg.map(x=>x.short)},axCfg()),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:agg.map(x=>x.v),barWidth:'52%',itemStyle:{color:'#2f7d6b',borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:'#246153',fontFamily:'IBM Plex Mono',fontSize:10,fontWeight:600,formatter:p=>fmShort(p.value)}}]});
+ setC('c_mesval',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>Valor: <b>${fm(p[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:agg.map(x=>x.short)},axCfg(),{axisLabel:{interval:0,rotate:30,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:agg.map(x=>x.v),barWidth:'52%',itemStyle:{color:'#2f7d6b',borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:'#246153',fontFamily:'IBM Plex Mono',fontSize:10,fontWeight:600,formatter:p=>fmShort(p.value)}}]});
  setI('c_mesval',bval?`El mayor capital movilizado fue en <b>${bval.short}</b> (<span class="up">${fmShort(bval.v)}</span>). El valor sigue de cerca al volumen, con ticket promedio relativamente estable.`:'Sin datos.');
  // c_mesheat (mes x semana)
  const sems=[1,2,3,4,5];let hmax=0;const hd=[];
  agg.forEach((m,yi)=>{sems.forEach((s,xi)=>{const n=rows.filter(r=>r.mk===m.key&&r.sem===s).length;hd.push([xi,yi,n]);if(n>hmax)hmax=n;});});
- setC('c_mesheat',{tooltip:Object.assign({position:'top',formatter:p=>`<b>${agg[p.value[1]].short}</b> · Semana ${sems[p.value[0]]}<br/>Pedidos: <b>${fi(p.value[2])}</b>`},TT),grid:{left:4,right:14,top:8,bottom:28,containLabel:true},xAxis:{type:'category',data:sems.map(s=>'Sem '+s),axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#6b7684',fontSize:11}},yAxis:{type:'category',data:agg.map(x=>x.short),axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#6b7684',fontSize:11}},visualMap:{min:0,max:hmax||1,calculable:true,orient:'horizontal',right:0,bottom:0,itemWidth:12,itemHeight:70,text:['alto','bajo'],textStyle:{color:'#6b7684',fontSize:10},inRange:{color:['#eef2f7','#9cb6d0','#3a5b80','#1f3a59']}},series:[{type:'heatmap',data:hd,label:{show:true,color:function(p){return heatTxt(p.value[2]/(hmax||1),['#eef2f7','#9cb6d0','#3a5b80','#1f3a59']);},fontFamily:'IBM Plex Mono',fontSize:10,fontWeight:600,formatter:p=>fi(p.value[2])},itemStyle:{borderColor:'#fff',borderWidth:2}}]});
+ setC('c_mesheat',{tooltip:Object.assign({position:'top',formatter:p=>`<b>${agg[p.value[1]].short}</b> · Semana ${sems[p.value[0]]}<br/>Pedidos: <b>${fi(p.value[2])}</b>`},TT),grid:{left:4,right:14,top:8,bottom:28,containLabel:true},xAxis:{type:'category',data:sems.map(s=>'Sem '+s),axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#6b7684',fontSize:11}},yAxis:{type:'category',data:agg.map(x=>x.short),axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#6b7684',fontSize:11}},visualMap:{min:0,max:hmax||1,calculable:true,orient:'horizontal',right:0,bottom:0,itemWidth:12,itemHeight:70,text:['alto','bajo'],textStyle:{color:'#6b7684',fontSize:10},inRange:{color:['#eef2f7','#9cb6d0','#3a5b80','#1f3a59']}},series:[{type:'heatmap',data:hd,label:{show:true,color:function(p){return (p.value[2]/(hmax||1))>=0.55?'#ffffff':'#111111';},fontFamily:'IBM Plex Mono',fontSize:10,fontWeight:600,formatter:p=>fi(p.value[2])},itemStyle:{borderColor:'#fff',borderWidth:2}}]});
  setI('c_mesheat','Cada fila es un mes y cada columna una semana. Las celdas intensas marcan las semanas de mayor carga — útil para detectar patrones recurrentes (p.ej. cierres de fin de mes).');
  // c_mesun (100% apilado por unidad)
  const unTot={};rows.forEach(r=>{unTot[r.un]=(unTot[r.un]||0)+1;});
@@ -1167,7 +1195,7 @@ function renderCmp(){
  const series=topUn.map((u,i)=>({name:u,type:'bar',stack:'t',data:agg.map(m=>{const tt=rows.filter(r=>r.mk===m.key).length||1;const c=rows.filter(r=>r.mk===m.key&&r.un===u).length;return +(100*c/tt).toFixed(1);}),itemStyle:{color:PAL[i%PAL.length]}}));
  const otros=agg.map(m=>{const tt=rows.filter(r=>r.mk===m.key).length||1;const c=rows.filter(r=>r.mk===m.key&&!topUn.includes(r.un)).length;return +(100*c/tt).toFixed(1);});
  if(otros.some(x=>x>0))series.push({name:'Otros',type:'bar',stack:'t',data:otros,itemStyle:{color:'#c3cbd4'}});
- setC('c_mesun',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>{let s=`<b>${p[0].name}</b>`;p.forEach(x=>{if(x.value>0)s+=`<br/>${x.marker}${x.seriesName}: <b>${x.value}%</b>`;});return s;}},TT),legend:{type:'scroll',bottom:0,textStyle:{color:'#6b7684',fontSize:10},itemWidth:9,itemHeight:9},grid:{left:4,right:10,top:12,bottom:30,containLabel:true},xAxis:Object.assign({type:'category',data:agg.map(x=>x.short)},axCfg()),yAxis:Object.assign({type:'value',max:100,axisLabel:{formatter:'{value}%',color:'#6b7684',fontSize:10}},axCfg()),series:series});
+ setC('c_mesun',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>{let s=`<b>${p[0].name}</b>`;p.forEach(x=>{if(x.value>0)s+=`<br/>${x.marker}${x.seriesName}: <b>${x.value}%</b>`;});return s;}},TT),legend:{type:'scroll',bottom:0,textStyle:{color:'#6b7684',fontSize:10},itemWidth:9,itemHeight:9},grid:{left:4,right:10,top:12,bottom:30,containLabel:true},xAxis:Object.assign({type:'category',data:agg.map(x=>x.short)},axCfg(),{axisLabel:{interval:0,rotate:30,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',max:100,axisLabel:{formatter:'{value}%',color:'#6b7684',fontSize:10}},axCfg()),series:series});
  setI('c_mesun','Muestra si la mezcla de clientes cambia en el tiempo. Si una unidad gana peso mes a mes, crece la dependencia comercial de esa línea.');
  // c_radar (ultimos meses)
  const sel=agg.slice(-4);
@@ -1203,8 +1231,14 @@ function renderCmpDelta(){
  const col=(d,good)=>{const up=d>0.05,dn=d<-0.05;if(!up&&!dn)return '#6b7684';const positive=good==='up'?up:dn;return positive?'#2f7d6b':'#c0392b';};
  const rows=[
   ['Pedidos',A.n,B.n,fi,'up'],
+  ['Pedidos promedio / d\u00eda',A.promDia,B.promDia,x=>fi(Math.round(x)),'up'],
+  ['Peak pedidos en un d\u00eda',A.peak,B.peak,fi,'up'],
+  ['D\u00edas operados',A.dias,B.dias,fi,'up'],
+  ['Comunas cubiertas',A.comunas,B.comunas,fi,'up'],
   ['Valor movilizado',A.v,B.v,fmShort,'up'],
+  ['Valor promedio / d\u00eda',A.vDia,B.vDia,fmShort,'up'],
   ['Ticket promedio',A.tkt,B.tkt,fm,'up'],
+  ['Registros con observaci\u00f3n',A.obs,B.obs,fi,'down'],
   ['% Calidad (sin obs.)',A.cal,B.cal,x=>x.toFixed(1)+'%','up'],
   ['% Flota propia',A.propP,B.propP,x=>x.toFixed(0)+'%','up'],
   ['% con observaci\u00f3n',100-A.cal,100-B.cal,x=>x.toFixed(1)+'%','down']
@@ -1216,6 +1250,15 @@ function renderCmpDelta(){
  const dn=dpct(A.n,B.n),dcal=B.cal-A.cal;
  h+=`<div style="background:#eef3f1;border-left:3px solid #2f7d6b;border-radius:0 7px 7px 0;padding:10px 13px;margin-top:12px;font-size:12.5px;color:#3a4854;line-height:1.6"><b>Lectura:</b> del mes ${A.short} al ${B.short} el volumen ${dn>=0?'subi\u00f3':'baj\u00f3'} <b>${(dn>=0?'+':'')+dn.toFixed(1)}%</b> y la calidad ${dcal>=0?'mejor\u00f3':'empeor\u00f3'} <b>${(dcal>=0?'+':'')+dcal.toFixed(1)} pts</b>. ${dn>15?'El salto de volumen exige revisar capacidad de flota y turnos.':dn<-15?'La ca\u00edda de volumen abre espacio para reducir costos variables de terceros.':'La operaci\u00f3n se mantiene estable en volumen.'}</div>`;
  del.innerHTML=h;
+ drawCmpBar('cmp_c_ped','Pedidos',A.n,B.n,A.short,B.short,'#3a5b80',fi);
+ drawCmpBar('cmp_c_val','Valor',A.v,B.v,A.short,B.short,'#2f7d6b',fmShort);
+ drawCmpBar('cmp_c_tkt','Ticket',A.tkt,B.tkt,A.short,B.short,'#c89a4e',fm);
+ drawCmpBar('cmp_c_cal','% Calidad',A.cal,B.cal,A.short,B.short,'#4f8a79',x=>x.toFixed(1)+'%');
+ drawCmpBar('cmp_c_prop','% Flota propia',A.propP,B.propP,A.short,B.short,'#2b4a6f',x=>x.toFixed(0)+'%');
+ drawCmpBar('cmp_c_obs','% con observaci\u00f3n',100-A.cal,100-B.cal,A.short,B.short,'#c06a5a',x=>x.toFixed(1)+'%');
+}
+function drawCmpBar(id,name,a,b,la,lb,color,fmt){
+ setC(id,{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>${name}: <b>${fmt(p[0].value)}</b>`},TT),grid:{left:4,right:14,top:22,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:[la,lb]},axCfg()),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmt(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:[{value:a,itemStyle:{color:'#9aa9b8'}},{value:b,itemStyle:{color:color}}],barWidth:'46%',itemStyle:{borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:'#1f3a59',fontFamily:'IBM Plex Mono',fontSize:11,fontWeight:600,formatter:p=>fmt(p.value)}}]});
 }
 /* ====== DIAGNOSTICO & CAUSAS ====== */
 function renderDiag(f){
