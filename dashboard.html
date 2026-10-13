@@ -1433,8 +1433,8 @@ function modFbSubscribe(){
 }
 /* ===== ESTADO DE FILTROS POR MODULO ===== */
 const MF={
- mac:{zona:'all',ano:'all',mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all',tienda:'all'},
- ver:{zona:'all',ano:'all',mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all',tienda:'all'}
+ mac:{zona:'all',region:'all',ano:'all',mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all',tienda:'all'},
+ ver:{zona:'all',region:'all',ano:'all',mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all',tienda:'all'}
 };
 function mkpi(id,icon,title){return `<div class="kpi"><div class="kt">${icon}<span>${title}</span></div><div class="kv" id="${id}">–</div><div class="kf" id="${id}_f"></div></div>`;}
 function mcard(id,icon,title,sub,cls){return `<div class="card"><h3>${icon} ${title}</h3><div class="cs">${sub}</div><div class="chart ${cls||''}" id="${id}"></div><div class="insight" id="${id}_i"></div></div>`;}
@@ -1449,6 +1449,7 @@ function modFilterBar(k){
    <div class="fg"><label>Vehículo</label><select id="${k}_fTp"></select></div>
    <div class="fg"><label>Rango</label><select id="${k}_fRg"><option value="all">Todos</option><option value="AM">AM</option><option value="PM">PM</option><option value="EN BLANCO">EN BLANCO</option></select></div>
    <div class="fg"><label>Unidad</label><select id="${k}_fUn"></select></div>
+   <div class="fg"><label>Región</label><select id="${k}_fRegion"></select></div>
    <div class="fg"><label>Comuna</label><select id="${k}_fCom"></select></div>
    <div class="fg"><label>Tienda</label><select id="${k}_fTie" style="max-width:260px"></select></div>
    <button class="reset" id="${k}_fReset">✕ Limpiar</button>
@@ -1530,6 +1531,9 @@ function buildModFilters(k){
  // Comuna
  const cos=[...new Set(sc.map(r=>r.co))].filter(c=>c&&c!=='Sin dato').sort((a,b)=>a.localeCompare(b,'es'));
  const coEl=document.getElementById(k+'_fCom');if(coEl){coEl.innerHTML='<option value="all">Todas las comunas</option>'+cos.map(c=>`<option value="${c}">${c}</option>`).join('');coEl.value=cos.includes(f.co)?f.co:(f.co='all');}
+ // Región
+ const regs=[...new Set(sc.map(r=>r.region))].filter(x=>x&&x!=='\u2014'&&x!=='Regiones').sort((a,b)=>a.localeCompare(b,'es'));
+ const regEl=document.getElementById(k+'_fRegion');if(regEl){regEl.innerHTML='<option value="all">Todas las regiones</option>'+regs.map(x=>`<option value="${x}">${x}</option>`).join('');regEl.value=regs.includes(f.region)?f.region:(f.region='all');}
  // Tienda (lista oficial segun zona + TODAS LAS TIENDAS)
  const tiendas=modStoreList(k,f.zona);
  const tieEl=document.getElementById(k+'_fTie');if(tieEl){tieEl.innerHTML='<option value="all">TODAS LAS TIENDAS</option>'+tiendas.map(t=>`<option value="${t}">${t}</option>`).join('');tieEl.value=tiendas.includes(f.tienda)?f.tienda:(f.tienda='all');}
@@ -1554,6 +1558,7 @@ function getModFiltered(k){const f=MF[k];return MDATA.rows.filter(r=>r.grp===k
  && (f.tp==='all'||r.tp===f.tp)
  && (f.rg==='all'||r.rg===f.rg)
  && (f.un==='all'||r.un===f.un)
+ && (f.region==='all'||r.region===f.region)
  && (f.co==='all'||r.co===f.co)
  && (f.tienda==='all'||r.tienda===f.tienda));}
 function modScopeChips(k){
@@ -1564,6 +1569,7 @@ function modScopeChips(k){
  parts.push(['Vehículo',f.tp==='all'?'Flota completa':f.tp]);
  if(f.rg!=='all')parts.push(['Rango',f.rg]);
  if(f.un!=='all')parts.push(['Unidad',f.un]);
+ if(f.region!=='all')parts.push(['Región',f.region]);
  if(f.co!=='all')parts.push(['Comuna',f.co]);
  if(f.tienda!=='all')parts.push(['Tienda',f.tienda]);
  const el=document.getElementById(k+'_scope');if(el)el.innerHTML='<span style="font-weight:600;color:var(--navy)">Vista activa:</span>'+parts.map(p=>`<span class="chip">${p[0]}: <b>${p[1]}</b></span>`).join('');
@@ -1662,9 +1668,10 @@ function wireMod(){
   on(k+'_fTp',e=>{MF[k].tp=e.target.value;renderMod(k);});
   on(k+'_fRg',e=>{MF[k].rg=e.target.value;renderMod(k);});
   on(k+'_fUn',e=>{MF[k].un=e.target.value;renderMod(k);});
+  on(k+'_fRegion',e=>{MF[k].region=e.target.value;MF[k].co='all';MF[k].tienda='all';renderMod(k);});
   on(k+'_fCom',e=>{MF[k].co=e.target.value;renderMod(k);});
   on(k+'_fTie',e=>{MF[k].tienda=e.target.value;renderMod(k);});
-  const rs=document.getElementById(k+'_fReset');if(rs)rs.addEventListener('click',()=>{MF[k]={zona:'all',ano:'all',mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all',tienda:'all'};const z=document.getElementById(k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));const rg=document.getElementById(k+'_fRg');if(rg)rg.value='all';renderMod(k);});
+  const rs=document.getElementById(k+'_fReset');if(rs)rs.addEventListener('click',()=>{MF[k]={zona:'all',region:'all',ano:'all',mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all',tienda:'all'};const z=document.getElementById(k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));const rg=document.getElementById(k+'_fRg');if(rg)rg.value='all';renderMod(k);});
   const up=document.getElementById(k+'_upBtn'),fi2=document.getElementById(k+'_fileInp');
   if(up&&fi2){up.addEventListener('click',()=>fi2.click());fi2.addEventListener('change',handleModUpload);}
  });
