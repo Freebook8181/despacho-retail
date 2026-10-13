@@ -1033,9 +1033,11 @@ function exportPDF(){
 }
 //__END2__
 /* ====== POWERPOINT (m\u00e1s diapositivas) ====== */
-function exportPPT(){
+function exportPPT(sel){
+ if(sel===undefined){try{openExportPicker('ppt',function(s){exportPPT(s);});}catch(e){console.error('picker',e);}return;}
  if(typeof PptxGenJS==='undefined'){alert('No se pudo cargar la librer\u00eda de PowerPoint (revisa tu conexi\u00f3n a internet).');return;}
  const imgs=captureAll();const K=LAST.kpis||{},f=LAST.f||[],totV=LAST.totV||0;
+ const CG={};expGroups().forEach((g,i)=>g[1].forEach(c=>CG[c]=i));
  const p=new PptxGenJS();p.defineLayout({name:'W',width:13.333,height:7.5});p.layout='W';
  const NAVY='1F3A59',TEAL='2F7D6B',GRAY='6B7684',BG='F4F6F8';
  const head=(s,t,sub)=>{s.addText(t,{x:0.5,y:0.32,w:12.3,h:0.6,fontSize:25,bold:true,color:NAVY,fontFace:'Segoe UI'});if(sub)s.addText(sub,{x:0.5,y:0.95,w:12.3,h:0.35,fontSize:13,color:TEAL,fontFace:'Segoe UI'});s.addShape(p.ShapeType.line,{x:0.5,y:1.32,w:12.3,h:0,line:{color:'DDE3E9',width:1}});};
@@ -1053,9 +1055,9 @@ function exportPPT(){
  // 3-4 narrativa (dividida)
  const nar=narrative().map(x=>x.replace(/<[^>]+>/g,''));
  const half=Math.ceil(nar.length/2);
- [nar.slice(0,half),nar.slice(half)].forEach((chunk,ci)=>{s=p.addSlide();head(s,'An\u00e1lisis Narrativo'+(ci?' (cont.)':''));s.addText(chunk.map(x=>({text:x,options:{bullet:{code:'2022'},fontSize:13.5,color:'394552',paraSpaceAfter:10,fontFace:'Segoe UI'}})),{x:0.6,y:1.5,w:12.1,h:5.5,valign:'top'});});
+ if(sel.resumen){[nar.slice(0,half),nar.slice(half)].forEach((chunk,ci)=>{s=p.addSlide();head(s,'An\u00e1lisis Narrativo'+(ci?' (cont.)':''));s.addText(chunk.map(x=>({text:x,options:{bullet:{code:'2022'},fontSize:13.5,color:'394552',paraSpaceAfter:10,fontFace:'Segoe UI'}})),{x:0.6,y:1.5,w:12.1,h:5.5,valign:'top'});});}
  // 5+ gr\u00e1ficos: 1 por diapositiva (gr\u00e1fico grande + an\u00e1lisis)
- const order=['c_flota','c_unidad','c_prop','c_heat','c_matriz','c_valun','c_valtp','c_evo','c_comval','c_bubble','c_rango','c_comvol','c_pareto','c_obstipo','c_obstp','c_obssem','c_mesvol','c_mesval','c_mesheat','c_mesun','c_radar','c_treemap','c_dispcom','c_causebar'].filter(c=>imgs[c]);
+ const order=['c_flota','c_unidad','c_prop','c_heat','c_matriz','c_valun','c_valtp','c_evo','c_comval','c_bubble','c_rango','c_comvol','c_pareto','c_obstipo','c_obstp','c_obssem','c_mesvol','c_mesval','c_mesheat','c_mesun','c_radar','c_treemap','c_dispcom','c_causebar'].filter(c=>imgs[c]&&sel.charts&&CG[c]!==undefined&&sel.areas.has(CG[c]));
  const secOf={c_flota:'Operaciones',c_unidad:'Operaciones',c_prop:'Operaciones',c_heat:'Operaciones',c_matriz:'Operaciones',c_valun:'Finanzas',c_valtp:'Finanzas',c_evo:'Finanzas',c_comval:'Finanzas',c_bubble:'Finanzas',c_rango:'Log\u00edstica',c_comvol:'Log\u00edstica',c_pareto:'Log\u00edstica',c_obstipo:'Auditor\u00eda',c_obstp:'Auditor\u00eda',c_obssem:'Auditor\u00eda',c_mesvol:'Tendencias',c_mesval:'Tendencias',c_mesheat:'Tendencias',c_mesun:'Tendencias',c_radar:'Tendencias',c_treemap:'Diagn\u00f3stico',c_dispcom:'Diagn\u00f3stico',c_causebar:'Diagn\u00f3stico'};
  order.forEach(cid=>{s=p.addSlide();head(s,(CTITLE[cid]||cid),(secOf[cid]||'')+' \u00b7 '+scopeLabel());
    s.addImage({data:imgs[cid],x:0.5,y:1.55,w:7.5,h:5.35,sizing:{type:'contain',w:7.5,h:5.35}});
@@ -1065,16 +1067,16 @@ function exportPPT(){
    if(ins)s.addText([{text:'Qu\u00e9 est\u00e1 pasando en esta vista',options:{bold:true,fontSize:12.5,color:NAVY,breakLine:true}},{text:ins,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:3.72,w:tw,h:1.3,valign:'top',fontFace:'Segoe UI',fit:'shrink'});
    if(an)s.addText([{text:'An\u00e1lisis del ingeniero en log\u00edstica',options:{bold:true,fontSize:12.5,color:'6A5A92',breakLine:true}},{text:an,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:5.12,w:tw,h:1.98,valign:'top',fontFace:'Segoe UI',fit:'shrink'});});
  // Ishikawa (resumen de causas en texto)
- if(typeof LASTISH!=='undefined'&&LASTISH&&LASTISH.cats){s=p.addSlide();head(s,'Diagrama de Ishikawa \u2014 Causas','Efecto analizado: '+(LASTISH.effect||'')+' \u00b7 '+(LASTISH.effVal||''));
+ if(sel.charts&&sel.areas.has(5)&&typeof LASTISH!=='undefined'&&LASTISH&&LASTISH.cats){s=p.addSlide();head(s,'Diagrama de Ishikawa \u2014 Causas','Efecto analizado: '+(LASTISH.effect||'')+' \u00b7 '+(LASTISH.effVal||''));
   LASTISH.cats.forEach((cat,i)=>{const col=i%3,row=Math.floor(i/3);const x=0.5+col*4.3,y=1.65+row*2.7;
    s.addShape(p.ShapeType.roundRect,{x,y,w:4.05,h:0.44,fill:{color:(cat.c||'#1f3a59').replace('#','')},rectRadius:0.05});
    s.addText(cat.t,{x:x+0.12,y:y+0.02,w:3.8,h:0.4,fontSize:12.5,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
    s.addText(cat.cz.map(c=>({text:c,options:{bullet:{code:'2022'},fontSize:11,color:'394552',paraSpaceAfter:4,fontFace:'Segoe UI'}})),{x:x+0.12,y:y+0.52,w:3.85,h:2.0,valign:'top'});});
  }
  // cierre
- s=p.addSlide();head(s,'Hallazgos & Recomendaciones');
+ if(sel.sug){s=p.addSlide();head(s,'Hallazgos & Recomendaciones');
  const recs=sugList().slice(0,6).map(r=>r.t+': '+r.a);
- s.addText(recs.map(r=>({text:r,options:{bullet:{code:'2022'},fontSize:13.5,color:'394552',paraSpaceAfter:11,fontFace:'Segoe UI'}})),{x:0.7,y:1.55,w:12,h:5.3,valign:'top'});
+ s.addText(recs.map(r=>({text:r,options:{bullet:{code:'2022'},fontSize:13.5,color:'394552',paraSpaceAfter:11,fontFace:'Segoe UI'}})),{x:0.7,y:1.55,w:12,h:5.3,valign:'top'});}
  p.writeFile({fileName:`QUINTEC_Presentacion_${scopeLabel().replace(/[^0-9A-Za-z]+/g,'_')}.pptx`});
 }
 //__END3__
@@ -1119,8 +1121,11 @@ function exportSugerencia(){
  h+=`<p style="font-size:11px;color:#9aa5b1;margin-top:16px">Sugerencias generadas autom\u00e1ticamente a partir de los indicadores del tablero. No sustituyen el criterio operativo; priorizar seg\u00fan impacto y factibilidad.</p>`;
  openOvr('Sugerencias IA \u00b7 Experto en Log\u00edstica',h);
 }
-function exportReporte(){
- const imgs=captureAll();const K=LAST.kpis||{},f=LAST.f||[],totV=LAST.totV||0;const groups=expGroups();
+function exportReporte(sel){
+ if(sel===undefined){try{openExportPicker('reporte',function(s){exportReporte(s);});}catch(e){console.error('picker',e);}return;}
+ const imgs=captureAll();const K=LAST.kpis||{},f=LAST.f||[],totV=LAST.totV||0;const groups0=expGroups();
+ const groups=groups0.filter((g,i)=>sel.areas.has(i));
+ const CG={};groups0.forEach((g,i)=>g[1].forEach(c=>CG[c]=i));
  let h=`<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte QUINTEC \u2014 ${scopeLabel()}</title>
  <style>@page{size:A4;margin:15mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2a37;font-size:12.5px;line-height:1.6}
  h1{font-size:24px;color:#1f3a59}h2{font-size:17px;color:#1f3a59;border-bottom:2px solid #2f7d6b;padding-bottom:5px;margin:22px 0 11px}h3{font-size:13.5px;color:#2b4a6f;margin:14px 0 6px}
@@ -1137,16 +1142,16 @@ function exportReporte(){
  h+=`<div class="intro" style="margin-top:0">Este reporte entrega una <b>lectura con enfoque de ingenier\u00eda en log\u00edstica</b>: para <b>cada gr\u00e1fico</b> se explica qu\u00e9 muestra, qu\u00e9 est\u00e1 pasando en esta vista y la recomendaci\u00f3n correspondiente. Para presentar en pantalla, se incluyen <b>como m\u00e1ximo dos gr\u00e1ficos por hoja</b>, separados.</div>`;
  const big=[['Total Pedidos',fi(f.length)],['Valor Total',fmShort(totV)],['Ticket Prom.',fm(f.length?totV/f.length:0)],['Comunas',fi(K.comunas||0)],['% Flota Propia',(100*(K.prop||0)/(K.tot||1)).toFixed(0)+'%'],['% Calidad',(K.tot?(100-100*(K.obs||0)/K.tot):0).toFixed(1)+'%']];
  h+=`<div class="big">`+big.map(b=>`<div class="bigk"><div class="l">${b[0]}</div><div class="v">${b[1]}</div></div>`).join('')+`</div>`;
- h+=`<h2>S\u00edntesis del periodo</h2>`+narrative().map(x=>`<p class="n">${x}</p>`).join('');
+ if(sel.resumen){h+=`<h2>S\u00edntesis del periodo</h2>`+narrative().map(x=>`<p class="n">${x}</p>`).join('');}
  h+=`<h2>Indicadores por \u00e1rea</h2>`;
  groups.forEach(g=>{h+=`<h3>${g[0]}</h3><table><tr><th>Indicador</th><th style="text-align:right">Valor</th><th>Detalle</th></tr>`+g[2].map(id=>`<tr><td>${KLBL[id]||id}</td><td style="text-align:right;font-family:Consolas,monospace;font-weight:600;color:#1f3a59">${kv(id)}</td><td style="color:#6b7684;font-size:10.5px">${kf(id)}</td></tr>`).join('')+`</table>`;});
- const keyC=['c_mesvol','c_flota','c_prop','c_heat','c_valun','c_comval','c_evo','c_rango','c_comvol','c_pareto','c_obstipo','c_obssem','c_causebar'].filter(c=>imgs[c]);
+ const keyC=['c_mesvol','c_flota','c_prop','c_heat','c_valun','c_comval','c_evo','c_rango','c_comvol','c_pareto','c_obstipo','c_obssem','c_causebar'].filter(c=>imgs[c]&&sel.charts&&CG[c]!==undefined&&sel.areas.has(CG[c]));
  if(keyC.length){h+=`<div class="pb"><h2>An\u00e1lisis gr\u00e1fico por gr\u00e1fico</h2><div class="intro">A continuaci\u00f3n cada gr\u00e1fico va con su an\u00e1lisis completo de ingenier\u00eda en log\u00edstica. Se muestran <b>hasta dos gr\u00e1ficos por hoja</b> para que se lean c\u00f3modos.</div>`;
   for(let i=0;i<keyC.length;i+=2){const pair=keyC.slice(i,i+2);h+=`<div class="${i>0?'pb':''}">`+pair.map(c=>`<div class="chartblk"><h3>${CTITLE[c]||c}</h3><img src="${imgs[c]}"/>`+narrHTML(c)+`</div>`).join('')+`</div>`;}
   h+=`</div>`;}
- const ishR=document.getElementById('c_ish')?document.getElementById('c_ish').innerHTML:'';
+ const ishR=(sel.charts&&sel.areas.has(5))?(document.getElementById('c_ish')?document.getElementById('c_ish').innerHTML:''):'';
  if(ishR){h+=`<div class="pb"><h2>Diagrama de Ishikawa</h2><div class="chartblk" style="border:1px solid #e3e7ec;border-radius:6px;padding:8px;background:#fff">${ishR}</div>`+narrHTML('c_ish')+`</div>`;}
- try{const L=sugList().slice(0,4);if(L&&L.length){h+=`<div class="pb"><h2>Conclusiones \u00b7 foco inmediato</h2>`;L.forEach((r,i)=>{h+=`<div style="border:1px solid #e3e7ec;border-radius:7px;padding:9px 12px;margin:7px 0;background:#f8fafb;font-size:12.5px"><b style="color:#1f3a59">${i+1}. ${r.t}</b><div class="n" style="margin:3px 0"><b>Diagn\u00f3stico:</b> ${r.d}</div><div style="background:#eef3f1;border-radius:6px;padding:5px 9px;color:#246153">\u2192 ${r.a}</div></div>`;});h+=`</div>`;}}catch(e){}
+ if(sel.sug){try{const L=sugList().slice(0,4);if(L&&L.length){h+=`<div class="pb"><h2>Conclusiones \u00b7 foco inmediato</h2>`;L.forEach((r,i)=>{h+=`<div style="border:1px solid #e3e7ec;border-radius:7px;padding:9px 12px;margin:7px 0;background:#f8fafb;font-size:12.5px"><b style="color:#1f3a59">${i+1}. ${r.t}</b><div class="n" style="margin:3px 0"><b>Diagn\u00f3stico:</b> ${r.d}</div><div style="background:#eef3f1;border-radius:6px;padding:5px 9px;color:#246153">\u2192 ${r.a}</div></div>`;});h+=`</div>`;}}catch(e){}}
  h+=`<div class="foot">QUINTEC \u00b7 Reporte generado desde el dashboard. Los valores respetan los filtros activos al momento de la exportaci\u00f3n (${scopeLabel()}).</div></body></html>`;
  const w=window.open('','_blank');w.document.write(h);w.document.close();
 }
@@ -1370,6 +1375,9 @@ function modNorm(s){return stripAcc(String(s==null?'':s)).toUpperCase().replace(
 const MOD_LOOKUP={};
 (function(){Object.keys(MOD_STORES).forEach(grp=>{['Santiago','Regiones'].forEach(z=>{MOD_STORES[grp][z].forEach(([nm,co])=>{MOD_LOOKUP[modNorm(nm)]={name:nm,comuna:co,zona:z,grp:grp};});});});})();
 function modStoreList(grp,zona){let a=[];if(zona==='all'||zona==='Santiago')a=a.concat(MOD_STORES[grp].Santiago.map(x=>x[0]));if(zona==='all'||zona==='Regiones')a=a.concat(MOD_STORES[grp].Regiones.map(x=>x[0]));return a;}
+/* Region oficial segun la comuna (lista entregada en la imagen) */
+const MOD_REGION={'Vi\u00f1a del Mar':'Regi\u00f3n de Valpara\u00edso','Curic\u00f3':'Regi\u00f3n del Maule','Concepci\u00f3n':'Regi\u00f3n del Biob\u00edo','Talcahuano':'Regi\u00f3n del Biob\u00edo','Coquimbo':'Regi\u00f3n de Coquimbo','Antofagasta':'Regi\u00f3n de Antofagasta','Iquique':'Regi\u00f3n de Tarapac\u00e1','Arica':'Regi\u00f3n de Arica y Parinacota','Valdivia':'Regi\u00f3n de Los R\u00edos','La Serena':'Regi\u00f3n de Coquimbo','Temuco':'Regi\u00f3n de La Araucan\u00eda','Osorno':'Regi\u00f3n de Los Lagos','Rancagua':"Regi\u00f3n del Libertador General Bernardo O'Higgins",'Copiap\u00f3':'Regi\u00f3n de Atacama','Chill\u00e1n':'Regi\u00f3n de \u00d1uble','Puerto Montt':'Regi\u00f3n de Los Lagos','Talca':'Regi\u00f3n del Maule','Los \u00c1ngeles':'Regi\u00f3n del Biob\u00edo','Punta Arenas':'Regi\u00f3n de Magallanes y de la Ant\u00e1rtica Chilena'};
+function modRegion(co,zona){if(zona==='Santiago')return 'Regi\u00f3n Metropolitana';if(MOD_REGION[co])return MOD_REGION[co];return zona==='Regiones'?'Regiones':'\u2014';}
 /* ===== LIMPIEZA DEL EXCEL NUEVO (MacOnline + Vertical) ===== */
 function cleanSheetMod(json,fname){
  const out=[];
@@ -1384,11 +1392,18 @@ function cleanSheetMod(json,fname){
   let tp=get('TRANSPORTE','VEHICULO');tp=tp!=null?String(tp).trim():'Sin dato';if(tp==='SERVICO 3PL')tp='SERVICIO 3PL';
   const cliente=get('CLIENTE','TIENDA');const tienda=cliente!=null?String(cliente).trim():'Sin dato';
   const req=get('REQUIRENTE','UNIDAD','UNIDAD NEGOCIO');let un=req!=null?String(req).trim():'';
+  const pedRaw=get('PEDIDO','N PEDIDO','NRO PEDIDO','NUMERO PEDIDO','N\u00b0 PEDIDO','ORDEN','N\u00b0 ORDEN');const pedido=pedRaw!=null?String(pedRaw).trim():'';
   const info=MOD_LOOKUP[modNorm(tienda)];
-  let grp,comuna,zona;
-  if(info){grp=info.grp;comuna=info.comuna;zona=info.zona;if(!un)un=MOD_LABEL[grp];}
-  else{grp=/VERTICAL/.test(modNorm(un))?'ver':'mac';comuna='Sin dato';zona='Sin dato';if(!un)un=MOD_LABEL[grp];}
-  out.push({f:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`,sem:sem,dow:(dt.getDay()+6)%7,un:un,tienda:tienda,co:comuna,zona:zona,grp:grp,v:Math.round(val),ob:(()=>{const o=get('OBSERVACION');return o!=null?String(o).trim():'';})(),tp:tp,rg:(()=>{const rr=get('RANGO');const s=rr!=null?String(rr).trim().toUpperCase():'';return s||'EN BLANCO';})(),_mo:monthFromName,_dt:dt});
+  const unN=modNorm(un);
+  let grp=null,comuna='Sin dato',zona='Sin dato';
+  if(/VERTICAL/.test(unN))grp='ver';
+  else if(/MACONLINE/.test(unN)||/DISTRIBUCION/.test(unN))grp='mac';
+  else if(info)grp=info.grp;
+  else return; // unidad desconocida: no pertenece a MacOnline Distribucion ni a Vertical
+  if(info){comuna=info.comuna;zona=info.zona;}
+  const region=modRegion(comuna,zona);
+  un=MOD_LABEL[grp]; // juntar las variantes del mismo nombre de unidad en una sola
+  out.push({f:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`,sem:sem,dow:(dt.getDay()+6)%7,un:un,tienda:tienda,co:comuna,zona:zona,region:region,grp:grp,pedido:pedido,v:Math.round(val),ob:(()=>{const o=get('OBSERVACION');return o!=null?String(o).trim():'';})(),tp:tp,rg:(()=>{const rr=get('RANGO');const s=rr!=null?String(rr).trim().toUpperCase():'';return s||'EN BLANCO';})(),_mo:monthFromName,_dt:dt});
  });
  if(!out.length)return null;
  let mi=out[0]._dt.getMonth(),yy=out[0]._dt.getFullYear();if(out[0]._mo!=null)mi=out[0]._mo;
@@ -1439,6 +1454,8 @@ function modFilterBar(k){
    <button class="reset" id="${k}_fReset">✕ Limpiar</button>
    <input type="file" id="${k}_fileInp" accept=".xlsx,.xls" multiple style="display:none"/>
    <button class="htool adminonly" id="${k}_upBtn" style="background:${MOD_COLOR[k]};border-color:${MOD_COLOR[k]};color:#fff">⬆ Subir Excel Tiendas</button>
+   ${k==='mac'?`<button class="htool adminonly" id="${k}_retBtn" style="background:#555b63;border-color:#555b63;color:#fff">↩ Quitar pedido devuelto</button>`:''}
+   <button class="htool adminonly" id="${k}_delBtn" style="background:#b4442f;border-color:#b4442f;color:#fff">🗑 Borrar Excel</button>
   </div>
   <div class="active-scope" id="${k}_scope" style="margin-top:8px"></div>
  </div>`;
@@ -1470,7 +1487,8 @@ function buildModMarkup(){
  h+=modFilterBar('ver')+modDashboard('ver')+`</section>`;
  // Devoluciones (placeholder)
  h+=`<section class="section" id="s-devo"><div class="sec-head"><h2 style="color:${MOD_COLOR.devo}">Devoluciones</h2><p>Seguimiento de devoluciones</p></div>`;
- h+=`<div class="card" style="border-left:5px solid ${MOD_COLOR.devo}"><h3>${IC.redo} Devoluciones — en preparación</h3><div class="cs">Esta sección usará un Excel propio de devoluciones.</div><div style="padding:22px 4px;color:#5a6672;font-size:13.5px;line-height:1.65">El módulo de <b>Devoluciones</b> ya está creado. Tomará la información de <b>otro Excel</b> (independiente) con los filtros: Mes, Año, Semana, Día, Vehículo, Rango, Unidad y Comuna. Cuando envíes ese Excel y la regla para reconocer una devolución, activo aquí los mismos indicadores, gráficos y campos de calor.</div></div>`;
+ h+=`<div class="card" style="border-left:5px solid ${MOD_COLOR.devo}"><h3>${IC.redo} Devoluciones — en preparación</h3><div class="cs">Esta sección usará un Excel propio de devoluciones.</div><div style="padding:22px 4px;color:#5a6672;font-size:13.5px;line-height:1.65">El módulo de <b>Devoluciones</b> ya está creado. Tomará la información de <b>otro Excel</b> (independiente) con los filtros: Mes, Año, Semana, Día, Vehículo, Rango, Unidad y Comuna. Cuando envíes ese Excel y la regla para reconocer una devolución, activo aquí los mismos indicadores, gráficos y campos de calor.</div>
+   <div style="padding:4px 4px 16px"><button class="htool adminonly" id="devo_delBtn" style="background:#b4442f;border-color:#b4442f;color:#fff">🗑 Borrar Excel</button></div></div>`;
  h+=`</section>`;
  M.insertAdjacentHTML('beforeend',h);
  // pestañas con color distinto
@@ -1564,7 +1582,9 @@ function renderMod(k){
  const comunas=new Set(f.filter(r=>r.co&&r.co!=='Sin dato').map(r=>r.co)).size;
  const prop=f.filter(r=>esProp(r.tp)).length;const obs=f.filter(r=>r.ob&&r.ob!=='');
  const tiendasAct=new Set(f.map(r=>r.tienda).filter(t=>t&&t!=='Sin dato')).size;
- setKV(p+'k_ped',fi(f.length),`<b>${fi(nDays)}</b> días en la vista`);
+ const uniqPed=new Set(f.filter(r=>r.pedido&&r.pedido!=='').map(r=>r.pedido));const nPed=uniqPed.size;
+ if(k==='mac'&&nPed>0){setKV(p+'k_ped',fi(nPed),`<b>${fi(f.length)}</b> salidas \u00b7 ${fi(nDays)} d\u00edas`);}
+ else{setKV(p+'k_ped',fi(f.length),`<b>${fi(nDays)}</b> d\u00edas en la vista`);}
  setKV(p+'k_prom',fi(f.length/nDays),'Ritmo diario medio');
  setKV(p+'k_peak',fi(peakN),peakD!=='–'?`Mayor día: <b>${dLabel(peakD)}</b>`:'');
  setKV(p+'k_tie',fi(tiendasAct),'Tiendas con despachos');
@@ -1672,6 +1692,113 @@ try{modLoadLocal();}catch(e){console.error('modLoadLocal',e);}
 try{['mac','ver'].forEach(k=>buildModFilters(k));}catch(e){console.error('buildModFilters',e);}
 try{if(typeof fbReady!=='undefined'&&fbReady)modFbSubscribe();}catch(e){console.error('modFbSubscribe',e);}
 try{applyRole();}catch(e){}
+
+/* ===== app11.js ===== */
+/* ====== APP11 · Roles granulares, borrado de Excel de tiendas, quitar pedido y selector de exportación ====== */
+/* Nuevo usuario: solo lectura + exportar (sin subir ni borrar, porque eso es acción de administrador) */
+try{USERS['cretamac@quintec.cl']={pass:'123456789',role:'cretamac',name:'Creta Mac'};}catch(e){}
+
+/* applyRole con permisos finos:
+   - admin: ve TODO
+   - cretamac: ve casi todo, EXCEPTO Sugerencias IA, Vaciar datos, pestaña Diagnóstico y pestaña Auditoría; tampoco ve subir/borrar Excel
+   - resto (ops): como antes (oculta lo de administrador) */
+function applyRole(){
+ try{
+  var role=SESSION&&SESSION.role;
+  var admin=role==='admin';
+  var cm=role==='cretamac';
+  var staff=admin||cm;
+  document.querySelectorAll('.adminonly').forEach(function(el){el.style.display=admin?'':'none';});
+  document.querySelectorAll('.staffonly').forEach(function(el){el.style.display=staff?'':'none';});
+  document.querySelectorAll('.cinfo,.kinfo').forEach(function(el){el.style.display='';});
+  // cretamac: ocultar las pestañas Auditoría y Diagnóstico
+  document.querySelectorAll('.tab[data-t="aud"]').forEach(function(el){el.style.display=cm?'none':'';});
+  // (la pestaña Diagnóstico ya es adminonly, así que queda oculta para cretamac y ops)
+  var lo=document.getElementById('btnLogout');if(lo)lo.style.display=SESSION?'':'none';
+  var w=document.getElementById('whoami');if(w)w.textContent=SESSION?('Salir · '+SESSION.name):'';
+ }catch(err){console.error('applyRole11',err);}
+}
+
+/* ====== Borrar el Excel de tiendas (plataforma + nube) ====== */
+function modDeleteExcel(scope){
+ if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede borrar el Excel.');return;}
+ if(scope==='devo'){alert('El módulo de Devoluciones todavía no tiene un Excel cargado. Cuando subas su Excel propio, aquí podrás borrarlo.');return;}
+ var ok=confirm('¿Seguro que quieres BORRAR el Excel de tiendas?\n\nMacOnline Distribución y Vertical Tiendas comparten el MISMO Excel, así que se borrarán los datos de AMBOS módulos, tanto de esta plataforma como de la nube (Firebase).\n\nEsta acción no se puede deshacer.');
+ if(!ok)return;
+ try{MDATA.rows=[];}catch(e){}
+ try{localStorage.removeItem(MLS_KEY);}catch(e){}
+ var done=function(){try{['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});}catch(_){}
+   try{if(CUR==='mac'||CUR==='ver')renderMod(CUR);}catch(_){}
+   alert('Listo. Se borró el Excel de tiendas de la plataforma y de la nube.');};
+ try{var r=modFbClear();if(r&&r.then){r.then(done).catch(done);}else{done();}}catch(e){done();}
+}
+
+/* ====== Quitar un pedido devuelto por su N° (plataforma + nube) ====== */
+function modRemovePedido(){
+ if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede quitar un pedido.');return;}
+ var num=prompt('Escribe el N° de pedido que quieres QUITAR (pedido devuelto).\n\nSe borrará ese pedido de MacOnline, tanto de la plataforma como de la nube (Firebase).');
+ if(num==null)return;
+ var target=String(num).trim();
+ if(!target){alert('No escribiste ningún número de pedido.');return;}
+ var before=MDATA.rows.length;
+ MDATA.rows=MDATA.rows.filter(function(r){return !(r.grp==='mac'&&String(r.pedido).trim()===target);});
+ var removed=before-MDATA.rows.length;
+ if(!removed){alert('No se encontró ningún pedido con el N° "'+target+'" en MacOnline. Revisa el número e inténtalo de nuevo.');return;}
+ try{modSaveLocal();}catch(e){}
+ try{modFbPush();}catch(e){}
+ try{['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});}catch(_){}
+ try{if(CUR==='mac'||CUR==='ver')renderMod(CUR);}catch(_){}
+ alert('Listo. Se quitó el pedido N° '+target+' ('+removed+' salida(s) eliminada(s)) de la plataforma y de la nube.');
+}
+
+function wireModExtra(){
+ ['mac','ver','devo'].forEach(function(k){var d=document.getElementById(k+'_delBtn');if(d&&!d._wired){d._wired=1;d.addEventListener('click',function(){modDeleteExcel(k);});}});
+ var rb=document.getElementById('mac_retBtn');if(rb&&!rb._wired){rb._wired=1;rb.addEventListener('click',modRemovePedido);}
+}
+
+/* ====== Ventana de selección para el Reporte / PowerPoint ====== */
+function openExportPicker(kind,cb){
+ var groups=expGroups();
+ var admin=SESSION&&SESSION.role==='admin';
+ var cm=SESSION&&SESSION.role==='cretamac';
+ var hide=cm?[3,5]:[]; // cretamac no exporta Auditoría ni Diagnóstico
+ var title=(kind==='ppt')?'Armar PowerPoint':'Armar Reporte PDF';
+ var old=document.getElementById('expPickerOv');if(old)old.remove();
+ var ov=document.createElement('div');ov.id='expPickerOv';
+ ov.style.cssText='position:fixed;inset:0;background:rgba(15,25,40,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px';
+ var lbl='display:flex;gap:9px;align-items:center;padding:8px 10px;border:1px solid #e3e7ec;border-radius:8px;margin:5px 0;cursor:pointer;font-size:13.5px;color:#28364a';
+ var areas='';
+ groups.forEach(function(g,i){if(hide.indexOf(i)>=0)return;areas+='<label style="'+lbl+'"><input type="checkbox" class="xpArea" data-i="'+i+'" checked style="width:17px;height:17px"><span>'+g[0]+'</span></label>';});
+ var extra='<label style="'+lbl+'"><input type="checkbox" id="xpResumen" checked style="width:17px;height:17px"><span>Resumen ejecutivo / narrativa</span></label>';
+ extra+='<label style="'+lbl+'"><input type="checkbox" id="xpCharts" checked style="width:17px;height:17px"><span>Incluir los gráficos</span></label>';
+ if(admin)extra+='<label style="'+lbl+'"><input type="checkbox" id="xpSug" checked style="width:17px;height:17px"><span>Sugerencias IA / conclusiones</span></label>';
+ ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 24px 70px rgba(10,20,35,.4)">'+
+   '<div style="padding:18px 22px;border-bottom:1px solid #eef1f4"><div style="font-size:19px;font-weight:800;color:#1f3a59">'+title+'</div><div style="font-size:13px;color:#6b7684;margin-top:3px">Marca lo que quieres incluir. Se arma solo con lo seleccionado.</div></div>'+
+   '<div style="padding:16px 22px"><div style="font-size:12px;font-weight:700;color:#2f7d6b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Áreas del tablero</div>'+areas+
+   '<div style="font-size:12px;font-weight:700;color:#2f7d6b;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">Otros contenidos</div>'+extra+
+   '<div style="margin-top:8px"><a href="#" id="xpAll" style="font-size:12.5px;color:#2b4a6f;margin-right:14px">Marcar todo</a><a href="#" id="xpNone" style="font-size:12.5px;color:#2b4a6f">Desmarcar todo</a></div></div>'+
+   '<div style="padding:14px 22px;border-top:1px solid #eef1f4;display:flex;justify-content:flex-end;gap:10px"><button id="xpCancel" style="background:#eef1f4;color:#44515f;border:0;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">Cancelar</button><button id="xpGo" style="background:#1f3a59;color:#fff;border:0;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700">Generar</button></div>'+
+   '</div>';
+ document.body.appendChild(ov);
+ var close=function(){ov.remove();};
+ ov.addEventListener('click',function(e){if(e.target===ov)close();});
+ var cEl=document.getElementById('xpCancel');if(cEl)cEl.addEventListener('click',close);
+ var allEl=document.getElementById('xpAll');if(allEl)allEl.addEventListener('click',function(e){e.preventDefault();ov.querySelectorAll('input[type=checkbox]').forEach(function(c){c.checked=true;});});
+ var noneEl=document.getElementById('xpNone');if(noneEl)noneEl.addEventListener('click',function(e){e.preventDefault();ov.querySelectorAll('input[type=checkbox]').forEach(function(c){c.checked=false;});});
+ var go=document.getElementById('xpGo');if(go)go.addEventListener('click',function(){
+   var areasSet=new Set();ov.querySelectorAll('.xpArea').forEach(function(c){if(c.checked)areasSet.add(parseInt(c.dataset.i,10));});
+   var rz=document.getElementById('xpResumen'),ch=document.getElementById('xpCharts'),sg=document.getElementById('xpSug');
+   var sel={areas:areasSet,resumen:!!(rz&&rz.checked),charts:!!(ch&&ch.checked),sug:!!(sg&&sg.checked)};
+   if(areasSet.size===0&&!sel.resumen){alert('Marca al menos un área o el resumen para poder generar el documento.');return;}
+   close();try{cb(sel);}catch(e){console.error('cb export',e);}
+ });
+}
+
+/* ====== Reclasificar botones de exportación: ahora los ve admin y cretamac ====== */
+try{['btnPdf','btnReporte','btnPpt'].forEach(function(id){var b=document.getElementById(id);if(b){b.classList.remove('adminonly');b.classList.add('staffonly');}});}catch(e){}
+
+try{wireModExtra();}catch(e){console.error('wireModExtra',e);}
+try{applyRole();}catch(e){console.error('applyRole-init11',e);}
 
 </script>
 </body>
