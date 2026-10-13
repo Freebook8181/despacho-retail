@@ -1347,6 +1347,332 @@ function ishikawaSVG(cats,effect,effVal){
  return s;
 }
 
+/* ===== app10.js ===== */
+/* ===== MODULOS TIENDAS: MacOnline Distribucion / Vertical Tiendas / Devoluciones ===== */
+/* Fuente de datos independiente (Excel nuevo con columnas FECHA, VALOR, RANGO, TRANSPORTE,
+   REQUIRENTE=UNIDAD, CLIENTE=TIENDA). La COMUNA se deduce de la tienda (listas de las imagenes). */
+var MDATA={rows:[]};
+const MOD_COLOR={mac:'#8e44ad',ver:'#e67e22',devo:'#16a085'};
+const MOD_LABEL={mac:'MacOnline Distribucion',ver:'Vertical Tiendas',devo:'Devoluciones'};
+/* Tiendas por unidad y zona (nombre, comuna) tomadas de las imagenes entregadas */
+const MOD_STORES={
+ mac:{
+  Santiago:[['MacOnline Parque Arauco','Las Condes'],['MacOnline Costanera Center','Providencia'],['MacOnline Alto Las Condes','Las Condes'],['MacOnline Arauco Maipu','Maipú'],['MacOnline Casa Costanera','Vitacura'],['MacOnline Plaza Egaña','La Reina'],['MacOnline Plaza Los Dominicos','Las Condes'],['MacOnline Plaza Norte','Huechuraba'],['MacOnline Plaza Tobalaba','Puente Alto'],['MacOnline Portal La Dehesa','Lo Barnechea'],['MacOnline Mercado Urbano','Las Condes'],['MacOnline Pie Andino','Lo Barnechea'],['MacOnline Portal Ñuñoa','Ñuñoa'],['MacOnline Huerfanos','Santiago'],['MacOnline Florida Center','La Florida'],['MacOnline Vespucio','La Florida'],['MacOnline Los Trapenses','Lo Barnechea'],['MacOnline Mall Plaza Alameda','Estación Central'],['MacOnline Plaza Oeste','Cerrillos']],
+  Regiones:[['MacOnline Marina','Viña del Mar'],['MacOnline Curico','Curicó'],['MacOnline Concepción','Concepción'],['MacOnline Plaza Trebol','Talcahuano'],['MacOnline Coquimbo','Coquimbo'],['MacOnline Plaza Calama','Antofagasta'],['MacOnline Portal Antofagasta','Antofagasta'],['MacOnline Plaza Iquique','Iquique'],['MacOnline Plaza Arica','Arica'],['MacOnline Valdivia','Valdivia'],['MacOnline La Serena','La Serena'],['MacOnline Temuco','Temuco'],['MacOnline Osorno','Osorno'],['MacOnline Rancagua','Rancagua'],['MacOnline Copiapó','Copiapó'],['MacOnline Chillán','Chillán'],['MacOnline Puerto Montt','Puerto Montt'],['MacOnline Talca','Talca'],['MacOnline Los Ángeles','Los Ángeles'],['MacOnline Plaza Antofagasta','Antofagasta'],['MacOnline Punta Arenas','Punta Arenas']]
+ },
+ ver:{
+  Santiago:[['MacOnline Administracion','Las Condes'],['CASA CENTRAL','Las Condes'],['Vertical BackOnline Apumanque','Las Condes'],['Vertical BackOnline Mercado Urbano','Providencia'],['Vertical BackOnline La Reina','Las Condes'],['Vertical BackOnline Costanera','Providencia']],
+  Regiones:[['Vertical BackOnline Marina','Viña del Mar']]
+ }
+};
+function modNorm(s){return stripAcc(String(s==null?'':s)).toUpperCase().replace(/[^A-Z0-9]/g,'');}
+/* Lookup: nombre normalizado -> {name,comuna,zona,grp} */
+const MOD_LOOKUP={};
+(function(){Object.keys(MOD_STORES).forEach(grp=>{['Santiago','Regiones'].forEach(z=>{MOD_STORES[grp][z].forEach(([nm,co])=>{MOD_LOOKUP[modNorm(nm)]={name:nm,comuna:co,zona:z,grp:grp};});});});})();
+function modStoreList(grp,zona){let a=[];if(zona==='all'||zona==='Santiago')a=a.concat(MOD_STORES[grp].Santiago.map(x=>x[0]));if(zona==='all'||zona==='Regiones')a=a.concat(MOD_STORES[grp].Regiones.map(x=>x[0]));return a;}
+/* ===== LIMPIEZA DEL EXCEL NUEVO (MacOnline + Vertical) ===== */
+function cleanSheetMod(json,fname){
+ const out=[];
+ const monthFromName=(()=>{const m=stripAcc(fname).toUpperCase();const names=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];for(let i=0;i<12;i++)if(m.includes(names[i]))return i;return null;})();
+ json.forEach(r=>{
+  const keys=Object.keys(r);
+  const get=(...cands)=>{for(const c of cands){const k=keys.find(k=>modNorm(k)===modNorm(c));if(k!=null&&r[k]!=null&&r[k]!=='')return r[k];}return null;};
+  const fx=get('FECHA');const dt=fx!=null?excelDate(fx):null;if(!dt)return;
+  const valRaw=get('VALOR');const val=valRaw!=null?parseFloat(String(valRaw).replace(/[^0-9.-]/g,''))||0:0;
+  const semRaw=get('Unnamed: 0','SEMANA');let sem=0;if(semRaw!=null){const mm=String(semRaw).match(/\d+/);if(mm)sem=+mm[0];}
+  if(!sem||sem<1){const _off=(new Date(dt.getFullYear(),dt.getMonth(),1).getDay()+6)%7;sem=Math.floor((dt.getDate()-1+_off)/7)+1;}
+  let tp=get('TRANSPORTE','VEHICULO');tp=tp!=null?String(tp).trim():'Sin dato';if(tp==='SERVICO 3PL')tp='SERVICIO 3PL';
+  const cliente=get('CLIENTE','TIENDA');const tienda=cliente!=null?String(cliente).trim():'Sin dato';
+  const req=get('REQUIRENTE','UNIDAD','UNIDAD NEGOCIO');let un=req!=null?String(req).trim():'';
+  const info=MOD_LOOKUP[modNorm(tienda)];
+  let grp,comuna,zona;
+  if(info){grp=info.grp;comuna=info.comuna;zona=info.zona;if(!un)un=MOD_LABEL[grp];}
+  else{grp=/VERTICAL/.test(modNorm(un))?'ver':'mac';comuna='Sin dato';zona='Sin dato';if(!un)un=MOD_LABEL[grp];}
+  out.push({f:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`,sem:sem,dow:(dt.getDay()+6)%7,un:un,tienda:tienda,co:comuna,zona:zona,grp:grp,v:Math.round(val),ob:(()=>{const o=get('OBSERVACION');return o!=null?String(o).trim():'';})(),tp:tp,rg:(()=>{const rr=get('RANGO');const s=rr!=null?String(rr).trim().toUpperCase():'';return s||'EN BLANCO';})(),_mo:monthFromName,_dt:dt});
+ });
+ if(!out.length)return null;
+ let mi=out[0]._dt.getMonth(),yy=out[0]._dt.getFullYear();if(out[0]._mo!=null)mi=out[0]._mo;
+ const label=`${MESES_FULL[mi]} ${yy}`;const mk=`${yy}-${String(mi+1).padStart(2,'0')}`;
+ out.forEach(o=>{o.mes=label;o.mk=mk;delete o._mo;delete o._dt;});
+ return {label,mk,rows:out};
+}
+/* ===== PERSISTENCIA / NUBE DEL MODULO (independiente del Excel principal) ===== */
+const MLS_KEY='quintec_tiendas_v1';
+const FB_PATH_MOD='quintec/tiendas_meses';
+function modBuildStore(){const s={};MDATA.rows.forEach(r=>{(s[r.mk]=s[r.mk]||{label:r.mes,rows:[]}).rows.push(r);});return s;}
+function modFlatten(store){let rows=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length)rows=rows.concat(o.rows);});return rows;}
+function modSaveLocal(){try{localStorage.setItem(MLS_KEY,JSON.stringify(modBuildStore()));return true;}catch(e){return false;}}
+function modLoadLocal(){try{const raw=localStorage.getItem(MLS_KEY);if(!raw)return;const store=JSON.parse(raw);MDATA.rows=modFlatten(store);}catch(e){}}
+function modFbPush(){if(!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_MOD).set(modBuildStore());}catch(e){console.error('modFbPush',e);}}
+function modFbClear(){if(!fbReady||!fbDB)return Promise.resolve();try{return fbDB.ref(FB_PATH_MOD).remove();}catch(e){return Promise.resolve();}}
+function modFbSubscribe(){
+ if(!fbReady||!fbDB)return;
+ try{fbDB.ref(FB_PATH_MOD).on('value',snap=>{
+  try{const store=snap.val();
+   if(store&&Object.keys(store).length){MDATA.rows=modFlatten(store);try{localStorage.setItem(MLS_KEY,JSON.stringify(store));}catch(_){}}
+   else{MDATA.rows=[];try{localStorage.removeItem(MLS_KEY);}catch(_){}}
+   ['mac','ver'].forEach(k=>{try{buildModFilters(k);}catch(_){}});
+   if(CUR==='mac'||CUR==='ver')renderMod(CUR);
+  }catch(err){console.error('modSnap',err);}
+ },err=>{console.error('modOn',err);});}catch(e){console.error('modFbSubscribe',e);}
+}
+/* ===== ESTADO DE FILTROS POR MODULO ===== */
+const MF={
+ mac:{zona:'all',ano:'all',mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all',tienda:'all'},
+ ver:{zona:'all',ano:'all',mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all',tienda:'all'}
+};
+function mkpi(id,icon,title){return `<div class="kpi"><div class="kt">${icon}<span>${title}</span></div><div class="kv" id="${id}">–</div><div class="kf" id="${id}_f"></div></div>`;}
+function mcard(id,icon,title,sub,cls){return `<div class="card"><h3>${icon} ${title}</h3><div class="cs">${sub}</div><div class="chart ${cls||''}" id="${id}"></div><div class="insight" id="${id}_i"></div></div>`;}
+function modFilterBar(k){
+ return `<div class="card" style="border-left:5px solid ${MOD_COLOR[k]}">
+  <div class="filters-inline" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+   <div class="fg"><label>Zona</label><div class="wkbtns" id="${k}_fZona"><button data-z="all" class="on">Todas</button><button data-z="Santiago">Santiago</button><button data-z="Regiones">Regiones</button></div></div>
+   <div class="fg"><label>Año</label><select id="${k}_fAno"></select></div>
+   <div class="fg"><label>Mes</label><select id="${k}_fMes"></select></div>
+   <div class="fg"><label>Semana</label><div class="wkbtns" id="${k}_fSem"></div></div>
+   <div class="fg"><label>Día</label><select id="${k}_fDia"></select></div>
+   <div class="fg"><label>Vehículo</label><select id="${k}_fTp"></select></div>
+   <div class="fg"><label>Rango</label><select id="${k}_fRg"><option value="all">Todos</option><option value="AM">AM</option><option value="PM">PM</option><option value="EN BLANCO">EN BLANCO</option></select></div>
+   <div class="fg"><label>Unidad</label><select id="${k}_fUn"></select></div>
+   <div class="fg"><label>Comuna</label><select id="${k}_fCom"></select></div>
+   <div class="fg"><label>Tienda</label><select id="${k}_fTie" style="max-width:260px"></select></div>
+   <button class="reset" id="${k}_fReset">✕ Limpiar</button>
+   <input type="file" id="${k}_fileInp" accept=".xlsx,.xls" multiple style="display:none"/>
+   <button class="htool adminonly" id="${k}_upBtn" style="background:${MOD_COLOR[k]};border-color:${MOD_COLOR[k]};color:#fff">⬆ Subir Excel Tiendas</button>
+  </div>
+  <div class="active-scope" id="${k}_scope" style="margin-top:8px"></div>
+ </div>`;
+}
+function modDashboard(k){
+ let h='';
+ h+=`<div id="${k}_empty" style="display:none;margin:4px 0 16px;padding:26px 24px;background:#fff;border:1px solid #e3e7ec;border-left:5px solid ${MOD_COLOR[k]};border-radius:12px;box-shadow:0 6px 22px rgba(23,42,67,.07)"></div>`;
+ h+=`<div id="${k}_body">`;
+ h+=`<div class="kgrid">${mkpi(k+'_k_ped',IC.box,'Total Pedidos')}${mkpi(k+'_k_prom',IC.gauge,'Prom. Pedidos / Día')}${mkpi(k+'_k_peak',IC.peak,'Peak Pedidos Día')}${mkpi(k+'_k_tie',IC.grid,'Tiendas Activas')}</div>`;
+ h+=`<div class="kgrid">${mkpi(k+'_k_com',IC.map,'Comunas Cubiertas')}${mkpi(k+'_k_veh',IC.truck,'Vehículos Activos')}${mkpi(k+'_k_dias',IC.cal,'Días Operados')}${mkpi(k+'_k_prop',IC.layers,'% Flota Propia')}</div>`;
+ h+=`<div class="kgrid fin">${mkpi(k+'_k_val',IC.money,'Valor Total Operado')}${mkpi(k+'_k_tkt',IC.ticket,'Ticket Promedio')}${mkpi(k+'_k_cal',IC.gauge,'% Calidad (sin obs.)')}</div>`;
+ h+=`<div class="grid g-2">${mcard(k+'_c_tienda',IC.chart,'Pedidos por Tienda','Volumen despachado por cada tienda','tall')}${mcard(k+'_c_prop',IC.pie,'Flota Propia vs Tercerizada','Dependencia de terceros','tall')}</div>`;
+ h+=`<div class="grid g-2e">${mcard(k+'_c_veh',IC.truck,'Eficiencia de Flota','Pedidos por vehículo','tall')}${mcard(k+'_c_comvol',IC.map,'Top Comunas','Cobertura por comuna','tall')}</div>`;
+ h+=`<div class="grid g-1">${mcard(k+'_c_evo',IC.line,'Evolución Diaria','Pedidos y valor movilizado por día')}</div>`;
+ h+=`<div class="grid g-2e">${mcard(k+'_c_rango',IC.clock,'Distribución por Rango Horario','Volumen AM / PM por día','sm')}${mcard(k+'_c_valtie',IC.money,'Valor por Tienda','Capital movilizado por tienda','sm')}</div>`;
+ h+=`<div class="grid g-1">${mcard(k+'_c_heat',IC.grid,'Campo de Calor (Día × Semana)','Concentración de despachos')}</div>`;
+ h+=`</div>`;
+ return h;
+}
+/* ===== CONSTRUIR SECCIONES Y PESTAÑAS DE LOS 3 MODULOS ===== */
+function buildModMarkup(){
+ const M=document.getElementById('main');if(!M)return;
+ let h='';
+ // MacOnline Distribucion
+ h+=`<section class="section" id="s-mac"><div class="sec-head"><h2 style="color:${MOD_COLOR.mac}">MacOnline Distribución</h2><p>Despachos a tiendas MacOnline — por zona, mes y tienda</p></div>`;
+ h+=modFilterBar('mac')+modDashboard('mac')+`</section>`;
+ // Vertical Tiendas
+ h+=`<section class="section" id="s-ver"><div class="sec-head"><h2 style="color:${MOD_COLOR.ver}">Vertical Tiendas</h2><p>Despachos a tiendas Vertical — por zona, mes y tienda</p></div>`;
+ h+=modFilterBar('ver')+modDashboard('ver')+`</section>`;
+ // Devoluciones (placeholder)
+ h+=`<section class="section" id="s-devo"><div class="sec-head"><h2 style="color:${MOD_COLOR.devo}">Devoluciones</h2><p>Seguimiento de devoluciones</p></div>`;
+ h+=`<div class="card" style="border-left:5px solid ${MOD_COLOR.devo}"><h3>${IC.redo} Devoluciones — en preparación</h3><div class="cs">Esta sección usará un Excel propio de devoluciones.</div><div style="padding:22px 4px;color:#5a6672;font-size:13.5px;line-height:1.65">El módulo de <b>Devoluciones</b> ya está creado. Tomará la información de <b>otro Excel</b> (independiente) con los filtros: Mes, Año, Semana, Día, Vehículo, Rango, Unidad y Comuna. Cuando envíes ese Excel y la regla para reconocer una devolución, activo aquí los mismos indicadores, gráficos y campos de calor.</div></div>`;
+ h+=`</section>`;
+ M.insertAdjacentHTML('beforeend',h);
+ // pestañas con color distinto
+ const tabsEl=document.getElementById('tabs');if(tabsEl){
+  const dot=c=>`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:2px"></span>`;
+  tabsEl.insertAdjacentHTML('beforeend',
+   `<div class="tab" data-t="mac">${dot(MOD_COLOR.mac)}<span>MacOnline Distribución</span></div>`+
+   `<div class="tab" data-t="ver">${dot(MOD_COLOR.ver)}<span>Vertical Tiendas</span></div>`+
+   `<div class="tab" data-t="devo">${dot(MOD_COLOR.devo)}<span>Devoluciones</span></div>`);
+ }
+}
+/* ===== FILTRO: POBLAR CONTROLES ===== */
+function modScopeRows(k){return MDATA.rows.filter(r=>r.grp===k&&(MF[k].zona==='all'||r.zona===MF[k].zona));}
+function buildModFilters(k){
+ const base=MDATA.rows.filter(r=>r.grp===k);
+ const f=MF[k];
+ // Año
+ const anos=[...new Set(base.map(r=>r.mk.slice(0,4)))].sort();
+ const aSel=document.getElementById(k+'_fAno');
+ if(aSel){aSel.innerHTML='<option value="all">Todos</option>'+anos.map(y=>`<option value="${y}">${y}</option>`).join('');aSel.value=anos.includes(f.ano)?f.ano:(f.ano='all');}
+ // Mes (dentro del año elegido)
+ const mScope=base.filter(r=>f.ano==='all'||r.mk.slice(0,4)===f.ano);
+ const meses=[];const seen=new Set();mScope.forEach(r=>{if(!seen.has(r.mk)){seen.add(r.mk);meses.push({mk:r.mk,label:r.mes});}});
+ meses.sort((a,b)=>a.mk<b.mk?-1:1);
+ const mSel=document.getElementById(k+'_fMes');
+ if(mSel){mSel.innerHTML='<option value="all">Todos los meses</option>'+meses.map(m=>`<option value="${m.mk}">${m.label}</option>`).join('');mSel.value=meses.find(m=>m.mk===f.mes)?f.mes:(f.mes='all');}
+ // filas segun zona+año+mes para poblar el resto
+ let sc=modScopeRows(k).filter(r=>(f.ano==='all'||r.mk.slice(0,4)===f.ano)&&(f.mes==='all'||r.mk===f.mes));
+ // Semana
+ const sems=[...new Set(sc.map(r=>r.sem))].filter(s=>s>0).sort((a,b)=>a-b);
+ let s='<button data-s="all" class="'+(f.sem==='all'?'on':'')+'">Mes</button>';sems.forEach(w=>s+=`<button data-s="${w}" class="${f.sem==w?'on':''}">S${w}</button>`);
+ const semEl=document.getElementById(k+'_fSem');if(semEl)semEl.innerHTML=s;
+ // Vehículo
+ const tps=[...new Set(sc.map(r=>r.tp))].filter(t=>t!=='Sin dato').sort();
+ const tpEl=document.getElementById(k+'_fTp');if(tpEl){tpEl.innerHTML='<option value="all">Flota completa</option>'+tps.map(t=>`<option value="${t}">${t}</option>`).join('');tpEl.value=tps.includes(f.tp)?f.tp:(f.tp='all');}
+ // Unidad
+ const uns=[...new Set(sc.map(r=>r.un))].filter(Boolean).sort();
+ const unEl=document.getElementById(k+'_fUn');if(unEl){unEl.innerHTML='<option value="all">Todas las unidades</option>'+uns.map(u=>`<option value="${u}">${u}</option>`).join('');unEl.value=uns.includes(f.un)?f.un:(f.un='all');}
+ // Comuna
+ const cos=[...new Set(sc.map(r=>r.co))].filter(c=>c&&c!=='Sin dato').sort((a,b)=>a.localeCompare(b,'es'));
+ const coEl=document.getElementById(k+'_fCom');if(coEl){coEl.innerHTML='<option value="all">Todas las comunas</option>'+cos.map(c=>`<option value="${c}">${c}</option>`).join('');coEl.value=cos.includes(f.co)?f.co:(f.co='all');}
+ // Tienda (lista oficial segun zona + TODAS LAS TIENDAS)
+ const tiendas=modStoreList(k,f.zona);
+ const tieEl=document.getElementById(k+'_fTie');if(tieEl){tieEl.innerHTML='<option value="all">TODAS LAS TIENDAS</option>'+tiendas.map(t=>`<option value="${t}">${t}</option>`).join('');tieEl.value=tiendas.includes(f.tienda)?f.tienda:(f.tienda='all');}
+ fillModDias(k);
+}
+function fillModDias(k){
+ const f=MF[k];
+ let sc=modScopeRows(k).filter(r=>(f.ano==='all'||r.mk.slice(0,4)===f.ano)&&(f.mes==='all'||r.mk===f.mes));
+ if(f.sem!=='all')sc=sc.filter(r=>r.sem==+f.sem);
+ const fechas=[...new Set(sc.map(r=>r.f))].sort();
+ const sel=document.getElementById(k+'_fDia');if(!sel)return;
+ sel.innerHTML='<option value="all">Todo el periodo</option>'+fechas.map(ff=>`<option value="${ff}">${dFull(ff)}</option>`).join('');
+ if(!fechas.includes(f.dia))f.dia='all';sel.value=f.dia;
+}
+/* ===== DATOS FILTRADOS Y RENDER DEL MODULO ===== */
+function getModFiltered(k){const f=MF[k];return MDATA.rows.filter(r=>r.grp===k
+ && (f.zona==='all'||r.zona===f.zona)
+ && (f.ano==='all'||r.mk.slice(0,4)===f.ano)
+ && (f.mes==='all'||r.mk===f.mes)
+ && (f.sem==='all'||r.sem==+f.sem)
+ && (f.dia==='all'||r.f===f.dia)
+ && (f.tp==='all'||r.tp===f.tp)
+ && (f.rg==='all'||r.rg===f.rg)
+ && (f.un==='all'||r.un===f.un)
+ && (f.co==='all'||r.co===f.co)
+ && (f.tienda==='all'||r.tienda===f.tienda));}
+function modScopeChips(k){
+ const f=MF[k];const parts=[['Zona',f.zona==='all'?'Todas':f.zona]];
+ parts.push(['Mes',f.mes==='all'?(f.ano==='all'?'Todos':'Año '+f.ano):(MDATA.rows.find(r=>r.mk===f.mes)||{}).mes||f.mes]);
+ parts.push(['Semana',f.sem==='all'?'Todas':'Semana '+f.sem]);
+ if(f.dia!=='all')parts.push(['Día',dFull(f.dia)]);
+ parts.push(['Vehículo',f.tp==='all'?'Flota completa':f.tp]);
+ if(f.rg!=='all')parts.push(['Rango',f.rg]);
+ if(f.un!=='all')parts.push(['Unidad',f.un]);
+ if(f.co!=='all')parts.push(['Comuna',f.co]);
+ if(f.tienda!=='all')parts.push(['Tienda',f.tienda]);
+ const el=document.getElementById(k+'_scope');if(el)el.innerHTML='<span style="font-weight:600;color:var(--navy)">Vista activa:</span>'+parts.map(p=>`<span class="chip">${p[0]}: <b>${p[1]}</b></span>`).join('');
+}
+function renderMod(k){
+ try{buildModFilters(k);}catch(e){}
+ modScopeChips(k);
+ const col=MOD_COLOR[k];
+ const base=MDATA.rows.filter(r=>r.grp===k);
+ const empty=document.getElementById(k+'_empty'),body=document.getElementById(k+'_body');
+ if(!base.length){if(empty){empty.style.display='';empty.innerHTML=`<div style="font-size:17px;font-weight:700;color:#1f3a59;margin-bottom:6px">Aún no hay datos cargados para ${MOD_LABEL[k]==='MacOnline Distribucion'?'MacOnline Distribución':MOD_LABEL[k]}</div><div style="color:#5a6672;font-size:13.5px;line-height:1.65">Sube el <b>Excel de tiendas</b> con el botón <b>“Subir Excel Tiendas”</b> (arriba, solo administrador). El mismo Excel alimenta <b>MacOnline Distribución</b> y <b>Vertical Tiendas</b>; cada pestaña muestra sus propias tiendas.</div>`;}if(body)body.style.display='none';return;}
+ if(empty)empty.style.display='none';if(body)body.style.display='';
+ const f=getModFiltered(k);const p=k+'_';
+ const days=[...new Set(f.map(r=>r.f))];const nDays=days.length||1;const tot=f.length||1;const totV=f.reduce((a,r)=>a+r.v,0);
+ const byDay={};f.forEach(r=>byDay[r.f]=(byDay[r.f]||0)+1);let peakN=0,peakD='–';Object.entries(byDay).forEach(([d,n])=>{if(n>peakN){peakN=n;peakD=d;}});
+ const comunas=new Set(f.filter(r=>r.co&&r.co!=='Sin dato').map(r=>r.co)).size;
+ const prop=f.filter(r=>esProp(r.tp)).length;const obs=f.filter(r=>r.ob&&r.ob!=='');
+ const tiendasAct=new Set(f.map(r=>r.tienda).filter(t=>t&&t!=='Sin dato')).size;
+ setKV(p+'k_ped',fi(f.length),`<b>${fi(nDays)}</b> días en la vista`);
+ setKV(p+'k_prom',fi(f.length/nDays),'Ritmo diario medio');
+ setKV(p+'k_peak',fi(peakN),peakD!=='–'?`Mayor día: <b>${dLabel(peakD)}</b>`:'');
+ setKV(p+'k_tie',fi(tiendasAct),'Tiendas con despachos');
+ setKV(p+'k_com',fi(comunas),'Cobertura de comunas');
+ setKV(p+'k_veh',fi(new Set(f.map(r=>r.tp).filter(t=>t!=='Sin dato')).size),'Móviles con actividad');
+ setKV(p+'k_dias',fi(nDays),'Jornadas con despachos');
+ setKV(p+'k_prop',(100*prop/tot).toFixed(0)+'%',`<b>${fi(tot-prop)}</b> tercerizados`);
+ setKV(p+'k_val',fmShort(totV),`${fm(totV)} exactos`);
+ setKV(p+'k_tkt',fm(f.length?totV/f.length:0),'Ticket medio por pedido');
+ setKV(p+'k_cal',(100-100*obs.length/tot).toFixed(1)+'%',`<b>${fi(obs.length)}</b> con observación`);
+ // Pedidos por tienda
+ const tie=Object.entries(f.reduce((m,r)=>{const key=r.tienda||'Sin dato';if(!m[key])m[key]={n:0,v:0};m[key].n++;m[key].v+=r.v;return m;},{})).map(([key,o])=>({k:key,n:o.n,v:o.v}));
+ const tieN=[...tie].sort((a,b)=>a.n-b.n).slice(-15);
+ setC(p+'c_tienda',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Pedidos: <b>${fi(x[0].value)}</b>`},TT),grid:{left:4,right:52,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value'},axCfg()),yAxis:Object.assign({type:'category',data:tieN.map(x=>x.k),axisLabel:{color:'#6b7684',fontSize:10,width:170,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:tieN.map(x=>x.n),barWidth:'62%',itemStyle:{color:col,borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:col,fontFamily:'IBM Plex Mono',fontSize:10,formatter:x=>fi(x.value)}}]});
+ // Flota propia vs terc
+ const pr=f.filter(r=>esProp(r.tp)).length,ex=tot-pr;
+ setC(p+'c_prop',{tooltip:Object.assign({trigger:'item',formatter:x=>`<b>${x.name}</b><br/>Pedidos: <b>${fi(x.value)}</b> (${x.percent}%)`},TT),legend:{bottom:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:9,itemHeight:9},series:[{type:'pie',radius:['48%','72%'],center:['50%','44%'],itemStyle:{borderColor:'#fff',borderWidth:2},label:{show:true,position:'outside',formatter:x=>`${x.name}\n${x.percent}%`,color:'#111',fontFamily:'IBM Plex Mono',fontSize:11,fontWeight:600},data:[{name:'Flota propia',value:pr,itemStyle:{color:col}},{name:'Tercerizada / Externa',value:ex,itemStyle:{color:'#c88a6a'}}]}]});
+ // Eficiencia flota
+ const veh=Object.entries(f.reduce((m,r)=>{m[r.tp]=(m[r.tp]||0)+1;return m;},{})).map(([key,n])=>({k:key,n:n})).filter(x=>x.k!=='Sin dato').sort((a,b)=>a.n-b.n).slice(-12);
+ setC(p+'c_veh',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Pedidos: <b>${fi(x[0].value)}</b>`},TT),grid:{left:4,right:52,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value'},axCfg()),yAxis:Object.assign({type:'category',data:veh.map(x=>x.k)},axCfg()),series:[{type:'bar',data:veh.map(x=>({value:x.n,itemStyle:{color:esProp(x.k)?col:'#9aa9b8'}})),barWidth:'60%',itemStyle:{borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#1f3a59',fontFamily:'IBM Plex Mono',fontSize:10,formatter:x=>fi(x.value)}}]});
+ // Top comunas
+ const cv=Object.entries(f.reduce((m,r)=>{const key=r.co||'Sin dato';if(!m[key])m[key]={n:0};m[key].n++;return m;},{})).map(([key,o])=>({k:key,n:o.n})).filter(x=>x.k!=='Sin dato').sort((a,b)=>a.n-b.n).slice(-10);
+ setC(p+'c_comvol',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Pedidos: <b>${fi(x[0].value)}</b>`},TT),grid:{left:4,right:48,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value'},axCfg()),yAxis:Object.assign({type:'category',data:cv.map(x=>x.k)},axCfg()),series:[{type:'bar',data:cv.map(x=>x.n),barWidth:'60%',itemStyle:{color:'#4f8a79',borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#246153',fontFamily:'IBM Plex Mono',fontSize:10,formatter:x=>fi(x.value)}}]});
+ // Evolucion diaria
+ const ds=[...days].sort();const dn=ds.map(d=>f.filter(r=>r.f===d).length);const dv=ds.map(d=>f.filter(r=>r.f===d).reduce((a,r)=>a+r.v,0));
+ setC(p+'c_evo',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'cross',crossStyle:{color:'#aaa'}},formatter:x=>{let s=`<b>${dFull(x[0].axisValue)}</b>`;x.forEach(y=>s+=`<br/>${y.marker}${y.seriesName}: <b>${y.seriesName.indexOf('Valor')>=0?fm(y.value):fi(y.value)}</b>`);return s;}},TT),legend:{top:0,right:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:12,itemHeight:8},grid:{left:4,right:8,top:34,bottom:30,containLabel:true},xAxis:Object.assign({type:'category',data:ds,axisLabel:{formatter:dDMY,rotate:40,color:'#6b7684',fontSize:10}},axCfg()),yAxis:[Object.assign({type:'value',name:'Valor',nameTextStyle:{color:'#8a95a1',fontSize:10},axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),Object.assign({type:'value',name:'Pedidos',nameTextStyle:{color:'#8a95a1',fontSize:10},splitLine:{show:false}},axCfg())],series:[{name:'Pedidos',type:'bar',yAxisIndex:1,data:dn,barWidth:'45%',itemStyle:{color:'#c3d0dd',borderRadius:[3,3,0,0]}},{name:'Valor movilizado',type:'line',smooth:true,yAxisIndex:0,data:dv,symbol:'circle',symbolSize:6,lineStyle:{color:col,width:2.5},itemStyle:{color:col},areaStyle:{color:'rgba(142,68,173,.08)'}}]});
+ // Rango horario AM/PM por dia
+ const am=ds.map(d=>f.filter(r=>r.f===d&&r.rg==='AM').length);const pm=ds.map(d=>f.filter(r=>r.f===d&&r.rg==='PM').length);
+ setC(p+'c_rango',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>{let s=`<b>${dFull(x[0].axisValue)}</b>`;x.forEach(y=>s+=`<br/>${y.marker}${y.seriesName}: <b>${fi(y.value)}</b>`);return s;}},TT),legend:{top:0,right:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:12,itemHeight:8},grid:{left:4,right:8,top:34,bottom:30,containLabel:true},xAxis:Object.assign({type:'category',data:ds,axisLabel:{formatter:dDMY,rotate:40,color:'#6b7684',fontSize:10}},axCfg()),yAxis:Object.assign({type:'value'},axCfg()),series:[{name:'AM',type:'bar',stack:'r',data:am,itemStyle:{color:'#4f8a79'}},{name:'PM',type:'bar',stack:'r',data:pm,itemStyle:{color:'#8a7bb0'}}]});
+ // Valor por tienda
+ const tieV=[...tie].sort((a,b)=>a.v-b.v).slice(-12);
+ setC(p+'c_valtie',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Valor: <b>${fm(x[0].value)}</b>`},TT),grid:{left:4,right:62,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),yAxis:Object.assign({type:'category',data:tieV.map(x=>x.k),axisLabel:{color:'#6b7684',fontSize:10,width:150,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:tieV.map(x=>x.v),barWidth:'60%',itemStyle:{color:'#2b4a6f',borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#1f3a59',fontFamily:'IBM Plex Mono',fontSize:10,formatter:x=>fmShort(x.value)}}]});
+ // Campo de calor dia x semana
+ const sems=[...new Set(f.map(r=>r.sem))].filter(s=>s>0).sort((a,b)=>a-b);
+ const hd=[];let hmax=0;sems.forEach((w,wi)=>{for(let d=0;d<7;d++){const n=f.filter(r=>r.sem===w&&r.dow===d).length;if(n>hmax)hmax=n;hd.push([d,wi,n]);}});
+ setC(p+'c_heat',{tooltip:Object.assign({position:'top',formatter:x=>`${DOW[x.value[0]]} · Semana ${sems[x.value[1]]}<br/>Pedidos: <b>${fi(x.value[2])}</b>`},TT),grid:{left:4,right:14,top:8,bottom:28,containLabel:true},xAxis:{type:'category',data:DOW,axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#6b7684',fontSize:11}},yAxis:{type:'category',data:sems.map(s=>'Sem '+s),axisLine:{show:false},axisTick:{show:false},axisLabel:{color:'#6b7684',fontSize:11}},visualMap:{min:0,max:hmax||1,calculable:true,orient:'horizontal',right:0,bottom:0,itemWidth:12,itemHeight:70,text:['alto','bajo'],textStyle:{color:'#6b7684',fontSize:10},inRange:{color:['#f3eef7','#c9a6dd','#9b59b6','#6c3483']}},series:[{type:'heatmap',data:hd,label:{show:true,color:function(x){return (x.value[2]/(hmax||1))>=0.55?'#ffffff':'#111111';},fontFamily:'IBM Plex Mono',fontSize:10,fontWeight:600,formatter:x=>fi(x.value[2])},itemStyle:{borderColor:'#fff',borderWidth:2}}]});
+ setI(p+'c_tienda',tieN.length?`La tienda con más despachos es <b>${tieN[tieN.length-1].k}</b> con <span class="up">${fi(tieN[tieN.length-1].n)} pedidos</span>.`:'Sin datos en la vista.');
+ setTimeout(()=>{Object.keys(CH).forEach(id=>{if(id.indexOf(p)===0){const el=document.getElementById(id);if(el&&el.closest('.section')&&el.closest('.section').classList.contains('on'))CH[id].resize();}});},60);
+}
+/* ===== SUBIR EXCEL DE TIENDAS (MacOnline + Vertical en un mismo archivo) ===== */
+function handleModUpload(e){
+ const files=[...e.target.files];if(!files.length)return;
+ let done=0,msgs=[];
+ files.forEach(file=>{
+  const rd=new FileReader();
+  rd.onload=ev=>{
+   try{
+    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const json=XLSX.utils.sheet_to_json(ws,{defval:null});
+    const res=cleanSheetMod(json,file.name);
+    if(res){MDATA.rows=MDATA.rows.filter(r=>r.mk!==res.mk).concat(res.rows);const nm=res.rows.filter(r=>r.grp==='mac').length,nv=res.rows.filter(r=>r.grp==='ver').length;msgs.push(`${res.label}: ${nm} MacOnline + ${nv} Vertical`);}
+    else msgs.push(`${file.name}: sin datos válidos`);
+   }catch(err){msgs.push(`${file.name}: error (${err.message})`);}
+   done++;if(done===files.length){
+    modSaveLocal();['mac','ver'].forEach(k=>{try{buildModFilters(k);}catch(_){}});
+    if(CUR==='mac'||CUR==='ver')renderMod(CUR);
+    if(fbReady){modFbPush();alert('Carga de tiendas completada:\n'+msgs.join('\n')+'\n\n☁ Guardado en la nube (Firebase).');}
+    else alert('Carga de tiendas completada:\n'+msgs.join('\n')+'\n\n✓ Guardado en este navegador.');
+   }
+  };rd.readAsArrayBuffer(file);
+ });
+ e.target.value='';
+}
+/* ===== WIRE ===== */
+function wireMod(){
+ ['mac','ver'].forEach(k=>{
+  const zEl=document.getElementById(k+'_fZona');
+  if(zEl)zEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;MF[k].zona=b.dataset.z;[...zEl.children].forEach(x=>x.classList.toggle('on',x===b));MF[k].tienda='all';MF[k].co='all';renderMod(k);});
+  const on=(id,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',fn);};
+  on(k+'_fAno',e=>{MF[k].ano=e.target.value;MF[k].mes='all';MF[k].sem='all';MF[k].dia='all';renderMod(k);});
+  on(k+'_fMes',e=>{MF[k].mes=e.target.value;MF[k].sem='all';MF[k].dia='all';renderMod(k);});
+  const semEl=document.getElementById(k+'_fSem');if(semEl)semEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;MF[k].sem=b.dataset.s;[...semEl.children].forEach(x=>x.classList.toggle('on',x===b));MF[k].dia='all';fillModDias(k);renderMod(k);});
+  on(k+'_fDia',e=>{MF[k].dia=e.target.value;renderMod(k);});
+  on(k+'_fTp',e=>{MF[k].tp=e.target.value;renderMod(k);});
+  on(k+'_fRg',e=>{MF[k].rg=e.target.value;renderMod(k);});
+  on(k+'_fUn',e=>{MF[k].un=e.target.value;renderMod(k);});
+  on(k+'_fCom',e=>{MF[k].co=e.target.value;renderMod(k);});
+  on(k+'_fTie',e=>{MF[k].tienda=e.target.value;renderMod(k);});
+  const rs=document.getElementById(k+'_fReset');if(rs)rs.addEventListener('click',()=>{MF[k]={zona:'all',ano:'all',mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all',tienda:'all'};const z=document.getElementById(k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));const rg=document.getElementById(k+'_fRg');if(rg)rg.value='all';renderMod(k);});
+  const up=document.getElementById(k+'_upBtn'),fi2=document.getElementById(k+'_fileInp');
+  if(up&&fi2){up.addEventListener('click',()=>fi2.click());fi2.addEventListener('change',handleModUpload);}
+ });
+ const modTabs=['mac','ver','devo'];
+ const tabsEl=document.getElementById('tabs');
+ if(tabsEl)tabsEl.addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;const key=t.dataset.t;const fl=document.querySelector('.filters');if(fl)fl.style.display=modTabs.includes(key)?'none':'';if(key==='mac'||key==='ver')renderMod(key);});
+}
+/* ===== OVERRIDE: no ocultar #main en las pestañas de módulos ===== */
+function updateEmptyState(){
+ const em=document.getElementById('emptyMonth');if(!em)return;
+ const main=document.getElementById('main');
+ if(CUR==='mac'||CUR==='ver'||CUR==='devo'||CUR==='cmp'){em.style.display='none';if(main)main.style.display='';return;}
+ const has=DATA.rows.some(r=>r.mk===F.mes);
+ const mm=(F.mes&&F.mes.length>=7)?+F.mes.slice(5,7):9;
+ const yy=(F.mes&&F.mes.length>=4)?F.mes.slice(0,4):'2026';
+ const lbl=`${MESES_FULL[mm-1]} ${yy}`;
+ if(has){em.style.display='none';if(main)main.style.display='';return;}
+ em.style.display='';if(main)main.style.display='none';
+ em.innerHTML=`<div style="font-size:17px;font-weight:700;color:#1f3a59;margin-bottom:6px">Aún no hay datos cargados para ${lbl}</div><div style="color:#5a6672;font-size:13.5px;line-height:1.65">Este mes todavía no tiene información. Si eres administrador, usa el botón <b>“Subir mes (.xlsx)”</b> (arriba a la derecha) para cargar el Excel de ${lbl}. También puedes elegir en los filtros <b>Mes</b> y <b>Año</b> un periodo que ya tenga datos (los meses cargados aparecen con un ✓). La pestaña <b>Tendencias &amp; Comparativo</b> sigue mostrando todos los meses disponibles.</div>`;
+}
+/* ===== INIT (corre después del boot principal) ===== */
+try{buildModMarkup();}catch(e){console.error('buildModMarkup',e);}
+try{wireMod();}catch(e){console.error('wireMod',e);}
+try{modLoadLocal();}catch(e){console.error('modLoadLocal',e);}
+try{['mac','ver'].forEach(k=>buildModFilters(k));}catch(e){console.error('buildModFilters',e);}
+try{if(typeof fbReady!=='undefined'&&fbReady)modFbSubscribe();}catch(e){console.error('modFbSubscribe',e);}
+try{applyRole();}catch(e){}
+
 </script>
 </body>
 </html>
