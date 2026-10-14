@@ -98,6 +98,25 @@ select:focus{border-color:var(--navy)}
 .chart{width:100%;height:300px}
 .chart.tall{height:360px}
 .chart.sm{height:250px}
+/* ===== Fondo crema para las pestanas de modulo ===== */
+#s-mac,#s-ver,#s-devo{background:#f8f1df;border:1px solid #e9dcba;border-radius:16px;padding:18px 18px 10px;box-shadow:0 6px 24px rgba(90,70,20,.06)}
+#s-mac{border-top:4px solid #8e44ad}
+#s-ver{border-top:4px solid #e67e22}
+#s-devo{border-top:4px solid #16a085}
+/* ===== Boton y ventana "Ver analisis" ===== */
+.card{position:relative}
+.an-btn{position:absolute;top:12px;right:12px;z-index:5;border:1px solid var(--line);background:#fff;color:var(--navy-d);font-family:'IBM Plex Sans';font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 4px rgba(23,42,67,.08);transition:.15s}
+.an-btn:hover{background:var(--navy-d);color:#fff;border-color:var(--navy-d)}
+.an-ov{position:fixed;inset:0;background:rgba(15,25,40,.6);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px}
+.an-box{background:#fff;border-radius:16px;width:min(1120px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(10,20,35,.45)}
+.an-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.an-head h3{font-family:'Sora';font-weight:600;font-size:17px;color:var(--navy-d);margin:0}
+.an-x{border:0;background:#eef0f3;color:#28364a;width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer;line-height:1}
+.an-x:hover{background:#dde2e8}
+.an-body{padding:16px 20px 20px;overflow:auto}
+.an-chart{width:100%;height:min(60vh,520px)}
+.an-note{margin-top:14px;background:#f8f9fb;border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:10px;padding:12px 15px;font-size:13.5px;line-height:1.65;color:#2b3a4a}
+.an-note b{color:var(--navy-d)}
 .insight{margin-top:11px;background:var(--soft);border-radius:7px;padding:10px 12px;font-size:12.5px;color:#44525f;line-height:1.5}
 .insight b{color:var(--navy-d)}
 .insight .up{color:var(--teal-d);font-weight:600}
@@ -1455,7 +1474,7 @@ function modFilterBar(k){
    <button class="reset" id="${k}_fReset">✕ Limpiar</button>
    <input type="file" id="${k}_fileInp" accept=".xlsx,.xls" multiple style="display:none"/>
    <button class="htool adminonly" id="${k}_upBtn" style="background:${MOD_COLOR[k]};border-color:${MOD_COLOR[k]};color:#fff">⬆ Subir Excel Tiendas</button>
-   ${k==='mac'?`<button class="htool adminonly" id="${k}_retBtn" style="background:#555b63;border-color:#555b63;color:#fff">↩ Quitar pedido devuelto</button>`:''}
+   ${k==='mac'?`<button class="htool adminonly" id="${k}_retBtn" style="background:#555b63;border-color:#555b63;color:#fff">↩ Quitar pedido</button>`:''}
    <button class="htool adminonly" id="${k}_delBtn" style="background:#b4442f;border-color:#b4442f;color:#fff">🗑 Borrar Excel</button>
   </div>
   <div class="active-scope" id="${k}_scope" style="margin-top:8px"></div>
@@ -1754,22 +1773,55 @@ function modDeleteExcel(scope){
  try{var r=modFbClear();if(r&&r.then){r.then(done).catch(done);}else{done();}}catch(e){done();}
 }
 
-/* ====== Quitar un pedido devuelto por su N° (plataforma + nube) ====== */
+/* ====== Quitar un pedido por su N° (plataforma + nube) con selección y contraseña ====== */
+function modFmtMoney(v){try{if(typeof fm==='function')return fm(v);}catch(e){}return '$'+(v||0).toLocaleString('es-CL');}
 function modRemovePedido(){
  if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede quitar un pedido.');return;}
- var num=prompt('Escribe el N° de pedido que quieres QUITAR (pedido devuelto).\n\nSe borrará ese pedido de MacOnline, tanto de la plataforma como de la nube (Firebase).');
+ var num=prompt('Escribe el N° de pedido que quieres QUITAR.\n\nTe mostraré las veces que aparece (con su fecha y valor) para que elijas cuál(es) quitar.');
  if(num==null)return;
  var target=String(num).trim();
  if(!target){alert('No escribiste ningún número de pedido.');return;}
- var before=MDATA.rows.length;
- MDATA.rows=MDATA.rows.filter(function(r){return !(r.grp==='mac'&&String(r.pedido).trim()===target);});
- var removed=before-MDATA.rows.length;
- if(!removed){alert('No se encontró ningún pedido con el N° "'+target+'" en MacOnline. Revisa el número e inténtalo de nuevo.');return;}
- try{modSaveLocal();}catch(e){}
- try{modFbPush();}catch(e){}
- try{['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});}catch(_){}
- try{if(CUR==='mac'||CUR==='ver')renderMod(CUR);}catch(_){}
- alert('Listo. Se quitó el pedido N° '+target+' ('+removed+' salida(s) eliminada(s)) de la plataforma y de la nube.');
+ var matches=[];
+ MDATA.rows.forEach(function(r,idx){if(r.grp==='mac'&&String(r.pedido).trim()===target&&!r.devuelto)matches.push({idx:idx,r:r});});
+ if(!matches.length){alert('No se encontró ningún pedido con el N° "'+target+'" en MacOnline (o ya fue quitado). Revisa el número.');return;}
+ var old=document.getElementById('qpOv');if(old)old.remove();
+ var ov=document.createElement('div');ov.id='qpOv';
+ ov.style.cssText='position:fixed;inset:0;background:rgba(15,25,40,.6);z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px';
+ var rowsHtml='';
+ matches.forEach(function(m,i){
+  var pre=(i>0)?'checked':''; // por defecto deja el primero y quita las repeticiones (valor se cuenta una sola vez)
+  rowsHtml+='<label style="display:flex;gap:10px;align-items:center;padding:9px 11px;border:1px solid #e3e7ec;border-radius:9px;margin:6px 0;cursor:pointer">'+
+   '<input type="checkbox" class="qpChk" data-idx="'+m.idx+'" '+pre+' style="width:17px;height:17px">'+
+   '<span style="flex:1;font-size:13px;color:#28364a"><b>Fecha:</b> '+m.r.f+' &nbsp; <b>Valor:</b> '+modFmtMoney(m.r.v)+' &nbsp; <b>Tienda:</b> '+(m.r.tienda||'—')+'</span>'+
+   '</label>';
+ });
+ ov.innerHTML='<div style="background:#fff;border-radius:16px;width:min(640px,96vw);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(10,20,35,.45)">'+
+  '<div style="padding:16px 20px;border-bottom:1px solid #e3e7ec;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;font-family:Sora;font-size:17px;color:#1f3a59">Quitar pedido N° '+target+'</h3><button id="qpX" style="border:0;background:#eef0f3;width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer">✕</button></div>'+
+  '<div style="padding:16px 20px">'+
+   '<div style="font-size:13px;color:#5a6672;line-height:1.6;margin-bottom:8px">Este pedido aparece <b>'+matches.length+'</b> vez(ces). Marca la(s) que quieres <b>quitar</b> (su valor dejará de sumar). El pedido se seguirá contando como salida en los gráficos.</div>'+
+   rowsHtml+
+   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="qpPass" type="password" placeholder="Escribe 1234" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
+   '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button id="qpCancel" style="padding:9px 16px;border:1px solid #cfd6de;background:#fff;border-radius:9px;cursor:pointer;font-weight:600;color:#28364a">Cancelar</button><button id="qpOk" style="padding:9px 16px;border:0;background:#b4442f;color:#fff;border-radius:9px;cursor:pointer;font-weight:600">Quitar seleccionados</button></div>'+
+  '</div></div>';
+ document.body.appendChild(ov);
+ function close(){ov.remove();}
+ ov.addEventListener('click',function(e){if(e.target===ov)close();});
+ document.getElementById('qpX').addEventListener('click',close);
+ document.getElementById('qpCancel').addEventListener('click',close);
+ document.getElementById('qpOk').addEventListener('click',function(){
+  var pass=(document.getElementById('qpPass')||{}).value||'';
+  if(String(pass).trim()!=='1234'){alert('Contraseña incorrecta. La contraseña es 1234.');return;}
+  var chks=[].slice.call(ov.querySelectorAll('.qpChk:checked'));
+  if(!chks.length){alert('No marcaste ninguna fila para quitar.');return;}
+  if(!confirm('¿Confirmas quitar el valor de '+chks.length+' registro(s) del pedido N° '+target+'?\n\nSe guardará en la plataforma y en la nube (Firebase). El pedido seguirá contando como salida.'))return;
+  chks.forEach(function(c){var idx=+c.getAttribute('data-idx');if(MDATA.rows[idx]){MDATA.rows[idx].v=0;MDATA.rows[idx].devuelto=true;}});
+  try{modSaveLocal();}catch(e){}
+  try{modFbPush();}catch(e){}
+  try{['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});}catch(_){}
+  try{if(CUR==='mac'||CUR==='ver')renderMod(CUR);}catch(_){}
+  close();
+  alert('Listo. Se quitó el valor de '+chks.length+' registro(s) del pedido N° '+target+' en la plataforma y en la nube.\nEl pedido sigue contando como salida en los gráficos.');
+ });
 }
 
 function wireModExtra(){
@@ -1985,6 +2037,102 @@ function initVentasFor(k){
 }
 function initVentas(){vLoadLocal();['mac','ver'].forEach(k=>{try{initVentasFor(k);}catch(e){console.error('initVentasFor',k,e);}});try{if(typeof applyRole==='function')applyRole();}catch(e){}}
 try{initVentas();}catch(e){console.error('initVentas',e);}
+
+/* ===== app13.js ===== */
+/* ====== APP13 · Botón "Ver análisis" en cada gráfico / campo de calor ======
+   Agrega un botón a cada tarjeta con gráfico. Al pulsarlo abre una ventana
+   centrada que muestra el gráfico completo (más grande) y una explicación
+   de qué muestra y para qué sirve. No inventa datos: usa el título, el
+   subtítulo y el análisis ya calculado de cada tarjeta. */
+(function(){
+ /* Explicación "para qué sirve" según palabras clave del título (texto fijo, sin cifras inventadas) */
+ function usoDe(titulo){
+  const t=(titulo||'').toLowerCase();
+  const map=[
+   ['eficiencia de flota','Compara el rendimiento de los vehículos. Sirve para ver cuáles mueven más y detectar flota sub‑utilizada.'],
+   ['participación por unidad','Muestra cuánto aporta cada unidad de negocio. Sirve para saber dónde se concentra la operación.'],
+   ['flota propia','Compara flota propia (móviles 1 a 6, fijos de la bodega) contra la tercerizada. Sirve para medir dependencia de terceros.'],
+   ['valor por unidad','Reparte el valor movilizado por unidad de negocio. Sirve para ver qué unidad concentra más capital.'],
+   ['valor movilizado por veh','Muestra el valor que mueve cada vehículo. Sirve para ubicar los móviles que cargan más valor.'],
+   ['evolución diaria','Muestra cómo varía el capital movilizado día a día. Sirve para ver picos y tendencias dentro del mes.'],
+   ['top comunas por valor','Ordena las comunas por el valor que reciben. Sirve para ubicar las zonas de mayor capital.'],
+   ['rango horario','Muestra cómo se reparten los despachos por franja de horario. Sirve para planificar la jornada.'],
+   ['cobertura','Muestra las comunas con más cobertura. Sirve para ver el alcance geográfico de la distribución.'],
+   ['pareto','Aplica la regla 80/20: pocas comunas suelen concentrar la mayor parte del valor. Sirve para enfocar esfuerzos.'],
+   ['pedidos por mes','Compara la cantidad de pedidos entre meses. Sirve para ver crecimiento o caída de volumen.'],
+   ['valor movilizado por mes','Compara el valor total movilizado entre meses. Sirve para seguir la tendencia del capital.'],
+   ['mes × semana','mes x semana','Campo de calor por mes y semana. Sirve para ubicar las semanas más cargadas.'],
+   ['mezcla de unidades','Muestra cómo cambia la mezcla de unidades de negocio mes a mes.'],
+   ['matriz de control','Resume la actividad por semana. Sirve para el control operativo semanal.'],
+   ['detalle operativo','Detalle de rutas del Excel cargado. Sirve para revisar la operación fila por fila.'],
+   ['ventas por mes','Muestra las ventas de cada mes. Sirve para seguir la tendencia de ventas.'],
+   ['ventas por tienda','Ordena las tiendas por sus ventas. Sirve para ver qué tiendas venden más.'],
+   ['santiago vs regiones','Reparte el total entre Santiago y Regiones. Sirve para ver el peso de cada zona.']
+  ];
+  for(const row of map){for(let i=0;i<row.length-1;i++){if(t.indexOf(row[i])>=0)return row[row.length-1];}}
+  return 'Este gráfico resume la información del Excel cargado para apoyar el análisis de la operación.';
+ }
+ var anChart=null;
+ function closeAn(){var ov=document.getElementById('anOv');if(ov)ov.remove();if(anChart){try{anChart.dispose();}catch(e){}anChart=null;}window.removeEventListener('resize',anResize);}
+ function anResize(){if(anChart){try{anChart.resize();}catch(e){}}}
+ function openAn(chartId,titulo,sub,insightHtml){
+  closeAn();
+  var ov=document.createElement('div');ov.id='anOv';ov.className='an-ov';
+  ov.innerHTML='<div class="an-box">'+
+   '<div class="an-head"><h3>'+(titulo||'Análisis')+'</h3><button class="an-x" id="anX">✕</button></div>'+
+   '<div class="an-body"><div class="an-chart" id="anChartBox"></div>'+
+   '<div class="an-note">'+(sub?('<div style="margin-bottom:6px">'+sub+'</div>'):'')+
+   '<div><b>Análisis:</b> '+(insightHtml&&insightHtml.trim()?insightHtml:'Carga un mes con datos para ver el análisis.')+'</div>'+
+   '<div style="margin-top:6px"><b>Para qué sirve:</b> '+usoDe(titulo)+'</div>'+
+   '</div></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)closeAn();});
+  var x=document.getElementById('anX');if(x)x.addEventListener('click',closeAn);
+  var box=document.getElementById('anChartBox');
+  try{
+   if(typeof CH!=='undefined'&&CH[chartId]&&typeof echarts!=='undefined'){
+    var opt=CH[chartId].getOption();
+    anChart=echarts.init(box,null,{renderer:'canvas'});
+    anChart.setOption(opt,true);
+    setTimeout(anResize,60);
+    window.addEventListener('resize',anResize);
+   }else{box.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6b7684;font-size:14px">Aún no hay datos para mostrar este gráfico. Carga un mes con información.</div>';}
+  }catch(err){box.innerHTML='<div style="color:#6b7684;padding:20px">No se pudo abrir el gráfico ('+err.message+').</div>';}
+ }
+ window.__openAn=openAn;
+ /* Inyecta el botón en cada tarjeta con gráfico que aún no lo tenga */
+ function inject(){
+  var cards=document.querySelectorAll('.card');
+  cards.forEach(function(card){
+   if(card._anWired)return;
+   var chart=card.querySelector('.chart[id]');
+   if(!chart)return;
+   card._anWired=1;
+   var h3=card.querySelector('h3');
+   var titulo=h3?h3.textContent.trim():'Análisis';
+   var csEl=card.querySelector('.cs');var sub=csEl?csEl.innerHTML:'';
+   var btn=document.createElement('button');btn.className='an-btn';btn.type='button';
+   btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-5-5"/></svg> Ver análisis';
+   btn.addEventListener('click',function(ev){
+    ev.stopPropagation();
+    var insEl=document.getElementById(chart.id+'_i');
+    openAn(chart.id,titulo,sub,insEl?insEl.innerHTML:'');
+   });
+   card.appendChild(btn);
+  });
+ }
+ function schedule(){clearTimeout(schedule._t);schedule._t=setTimeout(inject,180);}
+ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeAn();});
+ if(document.readyState!=='loading')schedule();else document.addEventListener('DOMContentLoaded',schedule);
+ /* Re-inyecta cuando se agregan tarjetas dinámicamente (cambios de pestaña / render de módulos) */
+ try{
+  var main=document.getElementById('main')||document.body;
+  var mo=new MutationObserver(function(){schedule();});
+  mo.observe(main,{childList:true,subtree:true});
+ }catch(e){}
+ /* También al hacer click en pestañas */
+ try{var tabsEl=document.getElementById('tabs');if(tabsEl)tabsEl.addEventListener('click',schedule);}catch(e){}
+})();
 
 </script>
 </body>
