@@ -313,7 +313,7 @@ function dLabel(s){const d=new Date(s+'T00:00:00');return d.getDate()+' '+MESES_
 function dFull(s){const d=new Date(s+'T00:00:00');return DOW[(d.getDay()+6)%7]+' '+d.getDate()+' '+MESES_ES[d.getMonth()];}
 function dDMY(s){const d=new Date(s+'T00:00:00');const p=n=>(n<10?'0':'')+n;return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear();}
 // Flota propia = móviles 1 al 6 + Don Raúl + Don José (el resto se considera tercerizada/externa)
-function esProp(tp){tp=(tp||'').toString().toUpperCase().trim();return /^MOVIL\s*0*[1-6]$/.test(tp)||tp==='DON RAUL'||tp==='DON RAÚL'||tp==='DON JOSE'||tp==='DON JOSÉ';}
+function esProp(tp){tp=(typeof stripAcc==='function'?stripAcc((tp||'').toString()):(tp||'').toString()).toUpperCase().trim();return /^MOVIL\s*0*[1-6]$/.test(tp);}
 function catFlota(tp){return esProp(tp)?'Flota propia':'Tercerizada / Externa';}
 /* ====== STATE ====== */
 const F={mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all'};
@@ -1449,7 +1449,7 @@ function modFilterBar(k){
    <div class="fg"><label>Vehículo</label><select id="${k}_fTp"></select></div>
    <div class="fg"><label>Rango</label><select id="${k}_fRg"><option value="all">Todos</option><option value="AM">AM</option><option value="PM">PM</option><option value="EN BLANCO">EN BLANCO</option></select></div>
    <div class="fg"><label>Unidad</label><select id="${k}_fUn"></select></div>
-   <div class="fg"><label>Región</label><select id="${k}_fRegion"></select></div>
+   <div class="fg" id="${k}_fRegionWrap"><label>Región</label><select id="${k}_fRegion"></select></div>
    <div class="fg"><label>Comuna</label><select id="${k}_fCom"></select></div>
    <div class="fg"><label>Tienda</label><select id="${k}_fTie" style="max-width:260px"></select></div>
    <button class="reset" id="${k}_fReset">✕ Limpiar</button>
@@ -1496,9 +1496,9 @@ function buildModMarkup(){
  const tabsEl=document.getElementById('tabs');if(tabsEl){
   const dot=c=>`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:2px"></span>`;
   tabsEl.insertAdjacentHTML('beforeend',
-   `<div class="tab" data-t="mac">${dot(MOD_COLOR.mac)}<span>MacOnline Distribución</span></div>`+
-   `<div class="tab" data-t="ver">${dot(MOD_COLOR.ver)}<span>Vertical Tiendas</span></div>`+
-   `<div class="tab" data-t="devo">${dot(MOD_COLOR.devo)}<span>Devoluciones</span></div>`);
+   `<div class="tab modtab" data-t="mac" style="background:${MOD_COLOR.mac}1f;border:1.5px solid ${MOD_COLOR.mac};color:${MOD_COLOR.mac};font-weight:700;border-radius:9px"><span>MacOnline Distribución</span></div>`+
+   `<div class="tab modtab" data-t="ver" style="background:${MOD_COLOR.ver}1f;border:1.5px solid ${MOD_COLOR.ver};color:${MOD_COLOR.ver};font-weight:700;border-radius:9px"><span>Vertical Tiendas</span></div>`+
+   `<div class="tab modtab" data-t="devo" style="background:${MOD_COLOR.devo}1f;border:1.5px solid ${MOD_COLOR.devo};color:${MOD_COLOR.devo};font-weight:700;border-radius:9px"><span>Devoluciones</span></div>`);
  }
 }
 /* ===== FILTRO: POBLAR CONTROLES ===== */
@@ -1538,7 +1538,9 @@ function buildModFilters(k){
  const tiendas=modStoreList(k,f.zona);
  const tieEl=document.getElementById(k+'_fTie');if(tieEl){tieEl.innerHTML='<option value="all">TODAS LAS TIENDAS</option>'+tiendas.map(t=>`<option value="${t}">${t}</option>`).join('');tieEl.value=tiendas.includes(f.tienda)?f.tienda:(f.tienda='all');}
  fillModDias(k);
+ modToggleRegion(k);
 }
+function modToggleRegion(k){var w=document.getElementById(k+'_fRegionWrap');if(w)w.style.display=(MF[k].zona==='Regiones')?'':'none';}
 function fillModDias(k){
  const f=MF[k];
  let sc=modScopeRows(k).filter(r=>(f.ano==='all'||r.mk.slice(0,4)===f.ano)&&(f.mes==='all'||r.mk===f.mes));
@@ -1659,7 +1661,7 @@ function handleModUpload(e){
 function wireMod(){
  ['mac','ver'].forEach(k=>{
   const zEl=document.getElementById(k+'_fZona');
-  if(zEl)zEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;MF[k].zona=b.dataset.z;[...zEl.children].forEach(x=>x.classList.toggle('on',x===b));MF[k].tienda='all';MF[k].co='all';renderMod(k);});
+  if(zEl)zEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;MF[k].zona=b.dataset.z;[...zEl.children].forEach(x=>x.classList.toggle('on',x===b));MF[k].tienda='all';MF[k].co='all';MF[k].region='all';var rs=document.getElementById(k+'_fRegion');if(rs)rs.selectedIndex=0;modToggleRegion(k);renderMod(k);});
   const on=(id,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener('change',fn);};
   on(k+'_fAno',e=>{MF[k].ano=e.target.value;MF[k].mes='all';MF[k].sem='all';MF[k].dia='all';renderMod(k);});
   on(k+'_fMes',e=>{MF[k].mes=e.target.value;MF[k].sem='all';MF[k].dia='all';renderMod(k);});
