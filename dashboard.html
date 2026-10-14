@@ -1645,6 +1645,18 @@ function handleModUpload(e){
     const json=XLSX.utils.sheet_to_json(ws,{defval:null});
     const res=cleanSheetMod(json,file.name);
     if(res){MDATA.rows=MDATA.rows.filter(r=>r.mk!==res.mk).concat(res.rows);const nm=res.rows.filter(r=>r.grp==='mac').length,nv=res.rows.filter(r=>r.grp==='ver').length;msgs.push(`${res.label}: ${nm} MacOnline + ${nv} Vertical`);}
+    else if(typeof vExtract==='function'){
+     /* No es un Excel de despachos: ¿será el Excel de "Ventas por tienda y mes"? Lo cargamos ahí automáticamente. */
+     const vMac=vExtract(wb,file.name,'mac'),vVer=vExtract(wb,file.name,'ver');
+     if(vMac||vVer){
+      const parts=[];
+      if(vMac){VSTORE.mac=vMac;VF.mac={zona:'all',mes:'all'};parts.push(`${vMac.rows.length} MacOnline`);}
+      if(vVer){VSTORE.ver=vVer;VF.ver={zona:'all',mes:'all'};parts.push(`${vVer.rows.length} Vertical`);}
+      try{vSaveLocal();}catch(_){}
+      ['mac','ver'].forEach(k=>{try{fillVentasControls(k);}catch(_){}try{const z=document.getElementById('v'+k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));}catch(_){}try{if(document.getElementById('v'+k+'_body'))renderVentas(k);}catch(_){}});
+      msgs.push(`${file.name}: cargado como VENTAS por tienda y mes (${parts.join(' + ')}) → míralo en el botón "Ventas por tienda y mes"`);
+     }else msgs.push(`${file.name}: sin datos válidos`);
+    }
     else msgs.push(`${file.name}: sin datos válidos`);
    }catch(err){msgs.push(`${file.name}: error (${err.message})`);}
    done++;if(done===files.length){
