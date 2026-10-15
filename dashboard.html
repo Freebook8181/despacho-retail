@@ -1763,14 +1763,52 @@ function applyRole(){
 function modDeleteExcel(scope){
  if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede borrar el Excel.');return;}
  if(scope==='devo'){alert('El módulo de Devoluciones todavía no tiene un Excel cargado. Cuando subas su Excel propio, aquí podrás borrarlo.');return;}
- var ok=confirm('¿Seguro que quieres BORRAR el Excel de tiendas?\n\nMacOnline Distribución y Vertical Tiendas comparten el MISMO Excel, así que se borrarán los datos de AMBOS módulos, tanto de esta plataforma como de la nube (Firebase).\n\nEsta acción no se puede deshacer.');
- if(!ok)return;
- try{MDATA.rows=[];}catch(e){}
- try{localStorage.removeItem(MLS_KEY);}catch(e){}
- var done=function(){try{['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});}catch(_){}
-   try{if(CUR==='mac'||CUR==='ver')renderMod(CUR);}catch(_){}
-   alert('Listo. Se borró el Excel de tiendas de la plataforma y de la nube.');};
- try{var r=modFbClear();if(r&&r.then){r.then(done).catch(done);}else{done();}}catch(e){done();}
+ var store={};try{store=modBuildStore();}catch(e){}
+ var mks=Object.keys(store);
+ if(!mks.length){alert('No hay ningún Excel de tiendas cargado para borrar.');return;}
+ mks.sort();
+ var old=document.getElementById('delExOv');if(old)old.remove();
+ var ov=document.createElement('div');ov.id='delExOv';
+ ov.style.cssText='position:fixed;inset:0;background:rgba(15,25,40,.6);z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px';
+ var rowsHtml='';
+ mks.forEach(function(mk){var o=store[mk];var n=(o&&o.rows)?o.rows.length:0;
+  rowsHtml+='<label style="display:flex;gap:10px;align-items:center;padding:9px 11px;border:1px solid #e3e7ec;border-radius:9px;margin:6px 0;cursor:pointer">'+
+   '<input type="checkbox" class="delExChk" data-mk="'+mk+'" style="width:17px;height:17px">'+
+   '<span style="flex:1;font-size:13.5px;color:#28364a"><b>'+((o&&o.label)||mk)+'</b> &nbsp;<span style="color:#6b7684">('+n+' registros)</span></span>'+
+   '</label>';
+ });
+ ov.innerHTML='<div style="background:#fff;border-radius:16px;width:min(600px,96vw);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(10,20,35,.45)">'+
+  '<div style="padding:16px 20px;border-bottom:1px solid #e3e7ec;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;font-family:Sora;font-size:17px;color:#1f3a59">Borrar Excel de tiendas</h3><button id="delExX" style="border:0;background:#eef0f3;width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer">✕</button></div>'+
+  '<div style="padding:16px 20px">'+
+   '<div style="font-size:13px;color:#5a6672;line-height:1.6;margin-bottom:8px">Marca el o los meses (Excel) que quieres borrar. Se borrarán de esta plataforma y de la nube (Firebase). MacOnline y Vertical comparten el mismo Excel, así que se afectan ambos módulos.</div>'+
+   rowsHtml+
+   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="delExPass" type="password" placeholder="Escribe 1234" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
+   '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button id="delExCancel" style="padding:9px 16px;border:1px solid #cfd6de;background:#fff;border-radius:9px;cursor:pointer;font-weight:600;color:#28364a">Cancelar</button><button id="delExOk" style="padding:9px 16px;border:0;background:#b4442f;color:#fff;border-radius:9px;cursor:pointer;font-weight:600">Borrar seleccionados</button></div>'+
+  '</div></div>';
+ document.body.appendChild(ov);
+ function close(){ov.remove();}
+ ov.addEventListener('click',function(e){if(e.target===ov)close();});
+ document.getElementById('delExX').addEventListener('click',close);
+ document.getElementById('delExCancel').addEventListener('click',close);
+ document.getElementById('delExOk').addEventListener('click',function(){
+  var pass=(document.getElementById('delExPass')||{}).value||'';
+  if(String(pass).trim()!=='1234'){alert('Contraseña incorrecta. La contraseña es 1234.');return;}
+  var chks=[].slice.call(ov.querySelectorAll('.delExChk:checked'));
+  if(!chks.length){alert('No marcaste ningún Excel para borrar.');return;}
+  var selMk={};chks.forEach(function(c){selMk[c.getAttribute('data-mk')]=1;});
+  var labels=chks.map(function(c){var mk=c.getAttribute('data-mk');return (store[mk]&&store[mk].label)||mk;});
+  if(!confirm('¿Confirmas borrar: '+labels.join(', ')+'?\n\nSe borrará de la plataforma y de la nube (Firebase). Esta acción no se puede deshacer.'))return;
+  try{MDATA.rows=MDATA.rows.filter(function(r){return !selMk[r.mk];});}catch(e){}
+  var done=function(){try{['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});}catch(_){}
+    try{if(CUR==='mac'||CUR==='ver')renderMod(CUR);}catch(_){}
+    close();
+    alert('Listo. Se borró: '+labels.join(', ')+' de la plataforma y de la nube.');};
+  try{modSaveLocal();}catch(e){}
+  try{
+   if(MDATA.rows.length){modFbPush();done();}
+   else{var r=modFbClear();if(r&&r.then){r.then(done).catch(done);}else{done();}}
+  }catch(e){done();}
+ });
 }
 
 /* ====== Quitar un pedido por su N° (plataforma + nube) con selección y contraseña ====== */
@@ -1933,6 +1971,19 @@ function vExtract(wb,fname,unitKey){
 /* ---- Persistencia local ---- */
 function vSaveLocal(){try{localStorage.setItem(VLS_KEY,JSON.stringify(VSTORE));}catch(e){}}
 function vLoadLocal(){try{const raw=localStorage.getItem(VLS_KEY);if(raw){const o=JSON.parse(raw);if(o&&o.mac&&o.ver)VSTORE=o;}}catch(e){}}
+/* ---- Persistencia en la nube (Firebase) ---- */
+const FB_PATH_VENTAS='quintec/ventas';
+function vFbPush(){if(!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_VENTAS).set(VSTORE);}catch(e){console.error('vFbPush',e);}}
+function vFbClear(){if(!fbReady||!fbDB)return Promise.resolve();try{return fbDB.ref(FB_PATH_VENTAS).remove();}catch(e){return Promise.resolve();}}
+function vFbSubscribe(){
+ if(!fbReady||!fbDB)return;
+ try{fbDB.ref(FB_PATH_VENTAS).on('value',snap=>{
+  try{const o=snap.val();
+   if(o&&o.mac&&o.ver){VSTORE=o;try{localStorage.setItem(VLS_KEY,JSON.stringify(o));}catch(_){}}
+   ['mac','ver'].forEach(k=>{try{fillVentasControls(k);}catch(_){}if(document.getElementById('v'+k+'_body'))try{renderVentas(k);}catch(_){}});
+  }catch(err){console.error('vSnap',err);}
+ },err=>{console.error('vOn',err);});}catch(e){console.error('vFbSubscribe',e);}
+}
 /* ---- HTML de la vista (por unidad) ---- */
 function ventasHTML(k){
  const col=MOD_COLOR[k];const p='v'+k+'_';let h='';
@@ -1984,10 +2035,23 @@ function renderVentas(k){
  setKV(p+'k_tie',fi(fRows.filter(r=>vVal(k,r)>0).length),`de ${fi(fRows.length)} tiendas`);
  const zRows=all.filter(r=>VF[k].zona==='all'||r.zona===VF[k].zona);
  const mLabels=D.months.map(mi=>MESES_FULL[mi]);
- const mVals=D.months.map(mi=>zRows.reduce((a,r)=>a+(r.m[mi]||0),0));
- setC(p+'c_mes',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Ventas: <b>${fm(x[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:mLabels},axCfg(),{axisLabel:{interval:0,rotate:28,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:mVals,barWidth:'52%',itemStyle:{color:col,borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:col,fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
- const tie=fRows.map(r=>({k:r.tienda,v:vVal(k,r)})).filter(x=>x.v>0).sort((a,b)=>a.v-b.v).slice(-18);
- setC(p+'c_tie',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Ventas: <b>${fm(x[0].value)}</b>`},TT),grid:{left:4,right:70,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),yAxis:Object.assign({type:'category',data:tie.map(x=>x.k),axisLabel:{color:'#6b7684',fontSize:10,width:180,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:tie.map(x=>x.v),barWidth:'62%',itemStyle:{color:col,borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:col,fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
+ const ZCOL={Santiago:col,Regiones:'#c88a6a'};
+ if(VF[k].zona==='all'){
+  /* Ventas por Mes = barra apilada Santiago + Regiones, con valor por color y total encima */
+  const mSant=D.months.map(mi=>all.filter(r=>r.zona==='Santiago').reduce((a,r)=>a+(r.m[mi]||0),0));
+  const mRegi=D.months.map(mi=>all.filter(r=>r.zona==='Regiones').reduce((a,r)=>a+(r.m[mi]||0),0));
+  const mTot=D.months.map((mi,i)=>mSant[i]+mRegi[i]);
+  setC(p+'c_mes',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){var s='<b>'+ps[0].name+'</b>';var t=0;ps.forEach(function(x){s+='<br/>'+x.marker+x.seriesName+': <b>'+fm(x.value)+'</b>';t+=x.value||0;});s+='<br/>Total: <b>'+fm(t)+'</b>';return s;}},TT),legend:{top:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:11,itemHeight:11},grid:{left:4,right:14,top:30,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:mLabels},axCfg(),{axisLabel:{interval:0,rotate:28,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[
+   {name:'Santiago',type:'bar',stack:'z',data:mSant,barWidth:'52%',itemStyle:{color:ZCOL.Santiago},label:{show:true,color:'#fff',fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>x.value?fmShort(x.value):''}},
+   {name:'Regiones',type:'bar',stack:'z',data:mRegi,itemStyle:{color:ZCOL.Regiones,borderRadius:[4,4,0,0]},label:{show:true,color:'#fff',fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>x.value?fmShort(x.value):''}},
+   {name:'Total',type:'bar',stack:'z',data:mTot.map(()=>0),label:{show:true,position:'top',color:'#1f3a59',fontFamily:'IBM Plex Mono',fontWeight:600,fontSize:10,formatter:function(x){return mTot[x.dataIndex]?fmShort(mTot[x.dataIndex]):'';}},tooltip:{show:false},silent:true}
+  ]});
+ }else{
+  const mVals=D.months.map(mi=>zRows.reduce((a,r)=>a+(r.m[mi]||0),0));
+  setC(p+'c_mes',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Ventas: <b>${fm(x[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:mLabels},axCfg(),{axisLabel:{interval:0,rotate:28,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:mVals,barWidth:'52%',itemStyle:{color:col,borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:col,fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
+ }
+ const tie=fRows.map(r=>({k:r.tienda,v:vVal(k,r),z:r.zona})).filter(x=>x.v>0).sort((a,b)=>a.v-b.v).slice(-18);
+ setC(p+'c_tie',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){var i=ps[0].dataIndex;return '<b>'+ps[0].name+'</b><br/>Zona: '+tie[i].z+'<br/>Ventas: <b>'+fm(ps[0].value)+'</b>';}},TT),grid:{left:4,right:70,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),yAxis:Object.assign({type:'category',data:tie.map(x=>x.k),axisLabel:{color:'#6b7684',fontSize:10,width:180,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:tie.map(x=>({value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[0,4,4,0]}})),barWidth:'62%',label:{show:true,position:'right',color:'#2b3a4a',fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
  setC(p+'c_zona',{tooltip:Object.assign({trigger:'item',formatter:x=>`<b>${x.name}</b><br/>Ventas: <b>${fm(x.value)}</b> (${x.percent}%)`},TT),legend:{bottom:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:9,itemHeight:9},series:[{type:'pie',radius:['48%','72%'],center:['50%','44%'],itemStyle:{borderColor:'#fff',borderWidth:2},label:{show:true,position:'outside',formatter:x=>`${x.name}\n${x.percent}%`,color:'#111',fontFamily:'IBM Plex Mono',fontSize:11,fontWeight:600},data:[{name:'Santiago',value:santi,itemStyle:{color:col}},{name:'Regiones',value:regio,itemStyle:{color:'#c88a6a'}}]}]});
  const tv=document.getElementById(p+'table');
  if(tv){const srt=[...fRows].sort((a,b)=>vVal(k,b)-vVal(k,a));
@@ -2011,11 +2075,64 @@ function handleVentasUpload(e,fromK){
    if(rVer){VSTORE.ver=rVer;VF.ver={zona:'all',mes:'all'};msg.push('Vertical: '+rVer.rows.length+' tiendas, '+rVer.months.length+' meses');}
    vSaveLocal();
    ['mac','ver'].forEach(k=>{fillVentasControls(k);const z=document.getElementById('v'+k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+k+'_body'))renderVentas(k);});
-   alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n✓ Guardado en este navegador.');
+   if(fbReady){vFbPush();alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n☁ Guardado en la nube (Firebase).');}
+   else{alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n✓ Guardado en este navegador.');}
   }catch(err){alert('Error al leer el Excel de ventas: '+err.message);}
  };rd.readAsArrayBuffer(f);e.target.value='';
 }
-function vClear(k){if(!confirm('¿Borrar los datos de “Ventas por tienda y mes” ('+VLABEL[k]+') de este navegador?'))return;VSTORE[k]={year:2026,rows:[],months:[]};VF[k]={zona:'all',mes:'all'};vSaveLocal();fillVentasControls(k);renderVentas(k);}
+function vClear(k){
+ if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede borrar el Excel.');return;}
+ const D=VSTORE[k];
+ if(!D.rows.length||!D.months.length){alert('No hay Excel de ventas de '+VLABEL[k]+' cargado para borrar.');return;}
+ var old=document.getElementById('vDelOv');if(old)old.remove();
+ var ov=document.createElement('div');ov.id='vDelOv';
+ ov.style.cssText='position:fixed;inset:0;background:rgba(15,25,40,.6);z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px';
+ var rowsHtml='<label style="display:flex;gap:10px;align-items:center;padding:9px 11px;border:1.5px solid #b4442f;border-radius:9px;margin:6px 0;cursor:pointer;background:#fbf1ee"><input type="checkbox" id="vDelAll" style="width:17px;height:17px"><span style="flex:1;font-size:13.5px;color:#b4442f;font-weight:700">Borrar TODO el Excel de ventas de '+VLABEL[k]+' ('+D.year+')</span></label>';
+ rowsHtml+='<div style="font-size:12px;color:#6b7684;margin:8px 0 2px">— o selecciona meses puntuales —</div>';
+ D.months.forEach(function(mi){rowsHtml+='<label style="display:flex;gap:10px;align-items:center;padding:8px 11px;border:1px solid #e3e7ec;border-radius:9px;margin:5px 0;cursor:pointer"><input type="checkbox" class="vDelChk" data-mi="'+mi+'" style="width:16px;height:16px"><span style="flex:1;font-size:13px;color:#28364a">'+MESES_FULL[mi]+' '+D.year+'</span></label>';});
+ ov.innerHTML='<div style="background:#fff;border-radius:16px;width:min(560px,96vw);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(10,20,35,.45)">'+
+  '<div style="padding:16px 20px;border-bottom:1px solid #e3e7ec;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;font-family:Sora;font-size:17px;color:#1f3a59">Borrar Excel de Ventas — '+VLABEL[k]+'</h3><button id="vDelX" style="border:0;background:#eef0f3;width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer">✕</button></div>'+
+  '<div style="padding:16px 20px">'+
+   '<div style="font-size:13px;color:#5a6672;line-height:1.6;margin-bottom:6px">Elige qué borrar. Se borrará de esta plataforma y de la nube (Firebase).</div>'+
+   rowsHtml+
+   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="vDelPass" type="password" placeholder="Escribe 1234" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
+   '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button id="vDelCancel" style="padding:9px 16px;border:1px solid #cfd6de;background:#fff;border-radius:9px;cursor:pointer;font-weight:600;color:#28364a">Cancelar</button><button id="vDelOk" style="padding:9px 16px;border:0;background:#b4442f;color:#fff;border-radius:9px;cursor:pointer;font-weight:600">Borrar</button></div>'+
+  '</div></div>';
+ document.body.appendChild(ov);
+ function close(){ov.remove();}
+ ov.addEventListener('click',function(e){if(e.target===ov)close();});
+ document.getElementById('vDelX').addEventListener('click',close);
+ document.getElementById('vDelCancel').addEventListener('click',close);
+ document.getElementById('vDelOk').addEventListener('click',function(){
+  var pass=(document.getElementById('vDelPass')||{}).value||'';
+  if(String(pass).trim()!=='1234'){alert('Contraseña incorrecta. La contraseña es 1234.');return;}
+  var all=document.getElementById('vDelAll').checked;
+  var chks=[].slice.call(ov.querySelectorAll('.vDelChk:checked'));
+  if(!all&&!chks.length){alert('No marcaste nada para borrar.');return;}
+  var deleteAll=all||chks.length>=D.months.length;
+  if(deleteAll){
+   if(!confirm('¿Confirmas borrar TODO el Excel de ventas de '+VLABEL[k]+' ('+D.year+')?\n\nSe borrará de la plataforma y de la nube. No se puede deshacer.'))return;
+   VSTORE[k]={year:2026,rows:[],months:[]};VF[k]={zona:'all',mes:'all'};
+  }else{
+   var selMi={};chks.forEach(function(c){selMi[+c.getAttribute('data-mi')]=1;});
+   var labels=chks.map(function(c){return MESES_FULL[+c.getAttribute('data-mi')];});
+   if(!confirm('¿Confirmas borrar los meses: '+labels.join(', ')+' de '+VLABEL[k]+'?\n\nSe borrará de la plataforma y de la nube. No se puede deshacer.'))return;
+   D.months=D.months.filter(function(mi){return !selMi[mi];});
+   D.rows.forEach(function(r){Object.keys(selMi).forEach(function(mi){delete r.m[mi];});var t=0;Object.keys(r.m).forEach(function(mi){t+=r.m[mi]||0;});r.total=Math.round(t);});
+   D.rows=D.rows.filter(function(r){return r.total>0||D.months.some(function(mi){return r.m[mi]!=null;});});
+   if(!D.months.length){VSTORE[k]={year:2026,rows:[],months:[]};}
+   VF[k]={zona:'all',mes:'all'};
+  }
+  vSaveLocal();
+  var done=function(){fillVentasControls(k);if(document.getElementById('v'+k+'_body'))renderVentas(k);close();alert('Listo. Se borró el Excel de ventas seleccionado de la plataforma y de la nube.');};
+  try{
+   var anyLeft=VSTORE.mac.rows.length||VSTORE.ver.rows.length;
+   if(fbReady&&anyLeft){vFbPush();done();}
+   else if(fbReady){var r=vFbClear();if(r&&r.then){r.then(done).catch(done);}else{done();}}
+   else{done();}
+  }catch(e){done();}
+ });
+}
 /* ---- Wire + init (por unidad) ---- */
 function initVentasFor(k){
  const sec=document.getElementById('s-'+k);if(!sec)return;
@@ -2035,7 +2152,7 @@ function initVentasFor(k){
  const up=document.getElementById(p+'upBtn'),fin=document.getElementById(p+'fileInp');if(up&&fin){up.addEventListener('click',()=>fin.click());fin.addEventListener('change',ev=>handleVentasUpload(ev,k));}
  const del=document.getElementById(p+'delBtn');if(del)del.addEventListener('click',()=>vClear(k));
 }
-function initVentas(){vLoadLocal();['mac','ver'].forEach(k=>{try{initVentasFor(k);}catch(e){console.error('initVentasFor',k,e);}});try{if(typeof applyRole==='function')applyRole();}catch(e){}}
+function initVentas(){vLoadLocal();['mac','ver'].forEach(k=>{try{initVentasFor(k);}catch(e){console.error('initVentasFor',k,e);}});try{if(typeof fbReady!=='undefined'&&fbReady)vFbSubscribe();}catch(e){console.error('vFbSubscribe',e);}try{if(typeof applyRole==='function')applyRole();}catch(e){}}
 try{initVentas();}catch(e){console.error('initVentas',e);}
 
 /* ===== app13.js ===== */
