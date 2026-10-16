@@ -118,15 +118,32 @@ h2.sec::before{content:'';width:4px;height:15px;background:var(--teal);border-ra
 .tbtn.add{background:var(--blue);color:#fff;border-color:var(--blue)}
 .tbtn.imp{background:#7c3aed;color:#fff;border-color:#7c3aed}
 .toolbar .st{margin-left:auto;font-size:12px;color:var(--muted)}
+.tbsep{width:1px;align-self:stretch;background:var(--line);margin:2px 4px}
+/* botones de icono con tooltip */
+.ib{position:relative;width:40px;height:40px;border:1px solid var(--line);background:#fff;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--navy);transition:.15s}
+.ib:hover{background:#f1f5fb;border-color:var(--steel);transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.ib .ic{font-size:18px;line-height:1}
+.ib.act-save:hover{background:#e7f3ec;border-color:var(--ok)}
+.ib.act-clean:hover{background:#fdf6e3;border-color:var(--warn)}
+.ib.act-del:hover{background:#fdeaea;border-color:var(--bad)}
+.ib::after{content:attr(title);position:absolute;bottom:-34px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:11px;font-weight:600;padding:5px 9px;border-radius:7px;white-space:nowrap;opacity:0;pointer-events:none;transition:.15s;z-index:40;max-width:240px;overflow:hidden;text-overflow:ellipsis}
+.ib:hover::after{opacity:1;bottom:-30px}
+/* chips de métricas sobre cada gráfico */
+.metrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{background:#f1f5fb;border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:11.5px;line-height:1.2}
+.chip b{display:block;color:var(--navy);font-size:14px;font-weight:800;margin-top:2px}
+.chip span{color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;font-size:10px}
+.grid.g2{grid-template-columns:repeat(auto-fit,minmax(440px,1fr))}
+.cc.big{height:340px}
 /* planilla editable */
 .plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh}
-table.plan{border-collapse:collapse;width:100%;font-size:12px;min-width:1700px}
+table.plan{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;table-layout:auto}
 table.plan th{background:var(--navy);color:#e8eef7;padding:11px 9px;text-align:left;position:sticky;top:0;white-space:nowrap;font-weight:700;font-size:11px;letter-spacing:.3px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
 table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
 table.plan td input,table.plan td select{width:100%;border:none;background:transparent;padding:8px 9px;font-size:12px;font-family:inherit;color:var(--txt)}
 table.plan td input:focus,table.plan td select:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#eff5ff}
 table.plan tr:nth-child(even) td{background:#f8fafc}
-table.plan td.rown{background:var(--navy2);color:#fff;text-align:center;font-weight:700;position:sticky;left:0;z-index:1}
+table.plan td.rown{background:#eef1f6;color:var(--muted);text-align:center;font-weight:600;position:sticky;left:0;z-index:1}
 table.plan td.del-c{text-align:center}
 .rowdel{background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:4px 8px}
 .rowdel:hover{background:var(--badbg);border-radius:5px}
@@ -179,6 +196,8 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 .actuser{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden}
 .actuser .hd{background:var(--navy);color:#fff;padding:12px 18px;display:flex;align-items:center;gap:11px;font-weight:700}
 .actuser .hd .cnt{margin-left:auto;background:rgba(255,255,255,.15);padding:3px 11px;border-radius:20px;font-size:12px}
+.det-btn{background:#2563eb;color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;margin-left:10px}
+.det-btn:hover{background:#1d4ed8}
 .actlog{max-height:360px;overflow-y:auto}
 .actrow{display:flex;gap:14px;padding:10px 18px;border-bottom:1px solid var(--line2);font-size:12.5px;align-items:baseline}
 .actrow:hover{background:#f8fafc}
@@ -223,9 +242,8 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <aside class="side">
     <div class="logo"><div class="t">COMEX <span>QD</span></div><div class="d">CONTROL DE IMPORTACIONES</div></div>
     <nav class="nav" id="nav">
-      <button data-tab="panel" class="active" onclick="go('panel')"><span class="ic">▦</span><span class="lbl">Panel / Resumen</span></button>
+      <button data-tab="graficos" class="active" onclick="go('graficos')"><span class="ic">◑</span><span class="lbl">Gráficos &amp; KPIs</span></button>
       <button data-tab="planilla" onclick="go('planilla')"><span class="ic">▤</span><span class="lbl">Planilla</span></button>
-      <button data-tab="graficos" onclick="go('graficos')"><span class="ic">◑</span><span class="lbl">Gráficos</span></button>
       <button data-tab="reporte" onclick="go('reporte')"><span class="ic">▧</span><span class="lbl">Reporte</span></button>
       <button data-tab="sugerencias" id="navSug" onclick="go('sugerencias')" style="display:none"><span class="ic">✨</span><span class="lbl">Sugerencias IA</span></button>
       <button data-tab="actividad" id="navAct" onclick="go('actividad')" style="display:none"><span class="ic">○</span><span class="lbl">Actividad</span></button>
@@ -235,76 +253,86 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <!-- main -->
   <div class="main">
     <div class="topbar">
-      <div class="pt" id="ptitle">Panel / Resumen</div>
+      <div class="pt" id="ptitle">Gráficos &amp; KPIs</div>
       <div class="sp"></div>
       <div class="who"><b id="whoName">—</b><span id="whoRole">—</span></div>
       <div class="wav" id="whoAv">?</div>
       <button class="btn btn-g" onclick="logout()" style="padding:8px 13px">Salir</button>
     </div>
     <div class="content">
-<!-- PANEL / RESUMEN -->
-<section class="tabpane on" id="tab-panel">
-  <h2 class="sec">Indicadores clave</h2>
-  <div class="kpis" id="kpis"></div>
-  <h2 class="sec">Alertas operativas</h2>
-  <div class="alerts" id="alerts"></div>
-  <h2 class="sec">Vista general</h2>
-  <div class="grid">
-    <div class="panel"><div class="ph"><h3>USD por zona de origen</h3></div><div class="cc"><canvas id="cZonaMini"></canvas></div></div>
-    <div class="panel"><div class="ph"><h3>Estado de los embarques</h3></div><div class="cc"><canvas id="cEstadoMini"></canvas></div></div>
-  </div>
-</section>
-
 <!-- PLANILLA -->
 <section class="tabpane" id="tab-planilla">
   <div class="toolbar">
-    <button class="tbtn add" onclick="addRow()"><span class="ic">＋</span> Nueva fila</button>
-    <button class="tbtn imp" onclick="document.getElementById('impFile').click()"><span class="ic">⬆</span> Importar</button>
+    <button class="ib" onclick="addRow()" title="Agregar una nueva fila a la planilla"><span class="ic">➕</span></button>
+    <button class="ib" onclick="document.getElementById('impFile').click()" title="Importar datos desde un archivo Excel"><span class="ic">📥</span></button>
     <input type="file" id="impFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this)">
-    <button class="tbtn clean" onclick="limpiar()"><span class="ic">⌫</span> Limpiar</button>
-    <button class="tbtn excel" onclick="exportExcel()"><span class="ic">⬇</span> Exportar Excel</button>
-    <button class="tbtn" onclick="imprimir()"><span class="ic">⎙</span> Imprimir</button>
-    <button class="tbtn save" onclick="saveCloud()"><span class="ic">☁</span> Guardar</button>
-    <button class="tbtn del" onclick="openDel()"><span class="ic">✗</span> Eliminar</button>
-    <button class="tbtn graf" onclick="go('graficos')"><span class="ic">◑</span> Gráficos</button>
+    <button class="ib" onclick="exportExcel()" title="Exportar la planilla a Excel con el mismo diseño"><span class="ic">📄</span></button>
+    <button class="ib" onclick="imprimir()" title="Imprimir la planilla"><span class="ic">🖨️</span></button>
+    <button class="ib" onclick="go('graficos')" title="Ver gráficos y KPIs"><span class="ic">📊</span></button>
+    <span class="tbsep"></span>
+    <button class="ib act-save" onclick="saveCloud()" title="Guardar los cambios en la base de datos (Firebase)"><span class="ic">💾</span></button>
+    <button class="ib act-clean" onclick="limpiar()" title="Limpiar la planilla en pantalla (no afecta la nube)"><span class="ic">🧹</span></button>
+    <button class="ib act-del" onclick="openDel()" title="Eliminar los datos de la base de datos (requiere clave)"><span class="ic">🗑️</span></button>
     <span class="st" id="planStatus">—</span>
   </div>
   <div class="plan-wrap"><table class="plan" id="planTable"><thead id="planHead"></thead><tbody id="planBody"></tbody></table></div>
 </section>
 
-<!-- GRAFICOS -->
-<section class="tabpane" id="tab-graficos">
+<!-- GRAFICOS & KPIS -->
+<section class="tabpane on" id="tab-graficos">
+  <h2 class="sec">Indicadores clave &amp; métricas</h2>
+  <div class="kpis" id="kpis"></div>
+  <h2 class="sec">Alertas operativas</h2>
+  <div class="alerts" id="alerts"></div>
   <h2 class="sec">Análisis gráfico de importaciones</h2>
-  <div class="grid">
+  <div class="grid g2">
     <div class="panel">
       <div class="ph"><h3>USD por zona de origen</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exZona')">ℹ Análisis</button></div>
-      <div class="cc"><canvas id="cZona"></canvas></div>
+      <div class="metrow" id="mZona"></div>
+      <div class="cc big"><canvas id="cZona"></canvas></div>
       <div class="explain-box" id="exZona"></div>
     </div>
     <div class="panel">
       <div class="ph"><h3>Top proveedores por USD</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exProv')">ℹ Análisis</button></div>
-      <div class="cc"><canvas id="cProv"></canvas></div>
+      <div class="metrow" id="mProv"></div>
+      <div class="cc big"><canvas id="cProv"></canvas></div>
       <div class="explain-box" id="exProv"></div>
     </div>
     <div class="panel">
       <div class="ph"><h3>Estado de embarques</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exEstado')">ℹ Análisis</button></div>
-      <div class="cc"><canvas id="cEstado"></canvas></div>
+      <div class="metrow" id="mEstado"></div>
+      <div class="cc big"><canvas id="cEstado"></canvas></div>
       <div class="explain-box" id="exEstado"></div>
     </div>
     <div class="panel">
       <div class="ph"><h3>Tiempo total de tránsito por PO (días)</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exTiempo')">ℹ Análisis</button></div>
-      <div class="cc"><canvas id="cTiempo"></canvas></div>
+      <div class="metrow" id="mTiempo"></div>
+      <div class="cc big"><canvas id="cTiempo"></canvas></div>
       <div class="explain-box" id="exTiempo"></div>
     </div>
     <div class="panel">
       <div class="ph"><h3>Unidades por zona</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exUnid')">ℹ Análisis</button></div>
-      <div class="cc"><canvas id="cUnid"></canvas></div>
+      <div class="metrow" id="mUnid"></div>
+      <div class="cc big"><canvas id="cUnid"></canvas></div>
       <div class="explain-box" id="exUnid"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>USD acumulado por mes de ETA</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exMes')">ℹ Análisis</button></div>
-      <div class="cc"><canvas id="cMes"></canvas></div>
+      <div class="ph"><h3>USD por mes (ETA / costeo)</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exMes')">ℹ Análisis</button></div>
+      <div class="metrow" id="mMes"></div>
+      <div class="cc big"><canvas id="cMes"></canvas></div>
       <div class="explain-box" id="exMes"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3>USD vs. Unidades por proveedor</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exMix')">ℹ Análisis</button></div>
+      <div class="metrow" id="mMix"></div>
+      <div class="cc big"><canvas id="cMix"></canvas></div>
+      <div class="explain-box" id="exMix"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3>Ticket promedio (USD/unidad) por zona</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exTicket')">ℹ Análisis</button></div>
+      <div class="metrow" id="mTicket"></div>
+      <div class="cc big"><canvas id="cTicket"></canvas></div>
+      <div class="explain-box" id="exTicket"></div>
     </div>
   </div>
 </section>
@@ -354,10 +382,10 @@ const auth=firebase.auth(), db=firebase.database();
 
 /* ===== Usuarios (sin mostrar contraseñas) ===== */
 const USERS=[
-  {email:"cretamac@quintec.cl",name:"C. Retamal",role:"Administrador",admin:true,color:"#0f2744"},
-  {email:"eduardo.donoso@ext.quintec.cl",name:"Eduardo Donoso",role:"Analista COMEX",admin:false,analyst:true,color:"#0e7490"}
+  {email:"eduardo.donoso@ext.quintec.cl",name:"Eduardo Donoso",role:"Administrador COMEX",admin:true,analyst:true,color:"#0f2744"},
+  {email:"cretamac@quintec.cl",name:"C. Retamal",role:"Usuario COMEX",admin:false,color:"#1b4b7a"}
 ];
-const IA_USER="eduardo.donoso@ext.quintec.cl";   // único con Sugerencias IA + Actividad
+const IA_USER="eduardo.donoso@ext.quintec.cl";   // admin + Sugerencias IA + Actividad
 let CURRENT=null, selEmail=null;
 
 /* ===== Columnas de la planilla (del Excel COMEX_QD) ===== */
@@ -401,7 +429,10 @@ const SEED=[
 ];
 /* ===== Helpers formato ===== */
 const $=id=>document.getElementById(id);
-function fmtMoney(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return '$'+Math.round(v).toLocaleString('es-CL');}
+/* USD: U$ 1,234,567.89  (miles con coma, 2 decimales con punto) */
+function fmtMoney(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return 'U$ '+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+/* Unidades: 1.234.567 (miles con punto) */
+function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return Math.round(v).toLocaleString('es-CL');}
 function numClean(v){return parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;}
 function initials(n){return n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();}
 function esc(s){return (s==null?'':''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -462,25 +493,34 @@ function startApp(u){
   $('navSug').style.display=priv?'flex':'none';
   $('navAct').style.display=priv?'flex':'none';
   loadCloud();
+  fetchDolar();
+  go('graficos');
   logAct('sesion','Inicio de sesión');
 }
 /* ===== Navegación pestañas ===== */
-const TITLES={panel:'Panel / Resumen',planilla:'Planilla',graficos:'Gráficos',reporte:'Reporte',sugerencias:'Sugerencias IA',actividad:'Actividad'};
+const TITLES={planilla:'Planilla',graficos:'Gráficos & KPIs',reporte:'Reporte',sugerencias:'Sugerencias IA',actividad:'Actividad'};
 function go(tab){
   if((tab==='sugerencias'||tab==='actividad') && CURRENT.email!==IA_USER) return;
   document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('on'));
   $('tab-'+tab).classList.add('on');
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   $('ptitle').textContent=TITLES[tab];
-  if(tab==='panel'){renderKpis();renderAlerts();drawMini();}
-  if(tab==='graficos') drawCharts();
+  if(tab==='graficos'){renderKpis();renderAlerts();drawCharts();}
   if(tab==='sugerencias') renderSug();
   if(tab==='actividad') loadActividad();
 }
 
 /* ===== Planilla editable ===== */
+/* ancho auto de columna según contenido (fijado en ch) */
+function dispVal(c,v){if(v==null||v==='')return '';if(c.money)return fmtMoney(v);if(c.k==='unid')return fmtUnid(v);return ''+v;}
+function colWidth(c){
+  let max=(''+c.t).length;
+  ROWS.forEach(r=>{const l=dispVal(c,r[c.k]).length;if(l>max)max=l;});
+  return Math.min(Math.max(max+2,8),40);
+}
 function renderHead(){
-  $('planHead').innerHTML='<tr><th style="min-width:40px">#</th>'+COLS.map(c=>`<th>${esc(c.t)}</th>`).join('')+'<th style="min-width:46px"></th></tr>';
+  const ths=COLS.map(c=>`<th style="width:${colWidth(c)}ch">${esc(c.t)}</th>`).join('');
+  $('planHead').innerHTML='<tr><th style="width:4ch">#</th>'+ths+'<th style="width:4ch"></th></tr>';
 }
 function rowObj(arr){const o={};COLS.forEach((c,i)=>o[c.k]=arr?arr[i]:'' );return o;}
 function renderPlanilla(){
@@ -492,18 +532,27 @@ function renderPlanilla(){
         return `<td><select onchange="upd(${ri},'${c.k}',this.value)">`+
           `<option value=""></option>`+c.opt.map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('')+`</select></td>`;
       }
-      const disp=c.money&&v!==''?fmtMoney(v):v;
       const t=c.date?'date':'text';
-      return `<td><input type="${t}" value="${esc(disp)}" oninput="upd(${ri},'${c.k}',this.value)" ${c.num||c.money?'inputmode="numeric"':''}></td>`;
+      const disp=t==='date'?(''+v):dispVal(c,v);
+      const al=(c.money||c.num)?' style="text-align:right"':'';
+      return `<td><input type="${t}" value="${esc(disp)}"${al} onfocus="focusCell(${ri},'${c.k}',this)" onblur="renderOne(${ri},'${c.k}',this)" oninput="upd(${ri},'${c.k}',this.value)" ${c.num||c.money?'inputmode="numeric"':''}></td>`;
     }).join('');
     return `<tr><td class="rown">${ri+1}</td>${tds}<td class="del-c"><button class="rowdel" title="Quitar fila" onclick="delRow(${ri})">✕</button></td></tr>`;
   }).join('');
-  $('planStatus').textContent=ROWS.length+' registro(s) · '+fmtMoney(ROWS.reduce((a,r)=>a+numClean(r.usd),0))+' USD';
+  $('planStatus').textContent=ROWS.length+' registro(s) · '+fmtMoney(ROWS.reduce((a,r)=>a+numClean(r.usd),0))+' total';
 }
 function upd(ri,k,val){
   const c=COLS.find(x=>x.k===k);
-  if(c&&c.money){ROWS[ri][k]=numClean(val);}
+  if(c&&(c.money||c.num)){ROWS[ri][k]=val===''?'':numClean(val);}
   else ROWS[ri][k]=val;
+}
+function renderOne(ri,k,el){
+  const c=COLS.find(x=>x.k===k);const v=ROWS[ri][k];
+  if(c&&(c.money||c.k==='unid'))el.value=dispVal(c,v);
+  $('planStatus').textContent=ROWS.length+' registro(s) · '+fmtMoney(ROWS.reduce((a,r)=>a+numClean(r.usd),0));
+}
+function focusCell(ri,k,el){
+  const c=COLS.find(x=>x.k===k);if(c&&(c.money||c.k==='unid')){const v=ROWS[ri][k];el.value=(v===''||v==null)?'':numClean(v);}
 }
 function addRow(){ROWS.push(rowObj());renderPlanilla();}
 function delRow(ri){ROWS.splice(ri,1);renderPlanilla();}
@@ -523,7 +572,7 @@ function loadCloud(){
     const d=s.val();
     if(d&&d.rows&&d.rows.length){ROWS=d.rows.map(r=>Object.assign(rowObj(),r));}
     else{ROWS=SEED.map(a=>rowObj(a));}
-    renderPlanilla();renderKpis();renderAlerts();drawMini();
+    renderPlanilla();renderKpis();renderAlerts();
   }).catch(()=>{ROWS=SEED.map(a=>rowObj(a));renderPlanilla();});
 }
 /* clave ELIMINAR = 1234, enmascarada con # y nunca revelada */
@@ -553,6 +602,7 @@ function exportExcel(){
     const tds=COLS.map(c=>{
       let v=r[c.k]==null?'':r[c.k];
       if(c.money&&v!=='')v=fmtMoney(v);
+      else if(c.num&&v!=='')v=fmtUnid(v);
       const al=(c.num||c.money)?'right':'left';
       return `<td style="background:${bg};border:1px solid #dde3ec;padding:6px 9px;font-family:Segoe UI;font-size:11px;text-align:${al}">${esc(v)}</td>`;
     }).join('');
@@ -610,7 +660,7 @@ function importExcel(inp){
         if(COLS.some(c=>o[c.k]!==''&&o[c.k]!==0))newRows.push(o);
       }
       if(!newRows.length){$('planStatus').textContent='El archivo no contenía filas de datos.';inp.value='';return;}
-      ROWS=newRows;renderPlanilla();renderKpis();renderAlerts();drawMini();
+      ROWS=newRows;renderPlanilla();renderKpis();renderAlerts();
       $('planStatus').textContent='Importadas '+newRows.length+' fila(s) desde '+f.name+' · recuerde Guardar';
       logAct('importar','Importó '+newRows.length+' fila(s) desde '+f.name);
     }catch(err){$('planStatus').textContent='Error al importar: '+err.message;}
@@ -652,18 +702,34 @@ function totUnid(){return ROWS.reduce((a,r)=>a+numClean(r.unid),0);}
 function avgTiempo(){const v=ROWS.map(r=>numClean(r.ttot)).filter(x=>x>0);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0;}
 
 /* ===== KPIs ===== */
+let DOLAR=null, DOLAR_FECHA=null;
+function fetchDolar(){
+  // Valor dólar observado oficial (Banco Central de Chile, vía mindicador.cl)
+  fetch('https://mindicador.cl/api/dolar').then(r=>r.json()).then(d=>{
+    if(d&&d.serie&&d.serie[0]){DOLAR=d.serie[0].valor;DOLAR_FECHA=d.serie[0].fecha.slice(0,10);if($('kpis').innerHTML)renderKpis();}
+  }).catch(()=>{});
+}
 function renderKpis(){
   const est=byEstado();
-  const atr=est['Atrasado']||0, disp=est['Disponible']||0;
+  const atr=est['Atrasado']||0, disp=est['Disponible']||0, tran=(est['En tránsito']||0)+(est['En CD']||0);
   const zonas=Object.keys(byZona()).filter(z=>z&&z!=='—').length;
+  const tu=totUSD();
+  const dolarKpi = DOLAR
+    ? kpi('teal','Dólar observado','$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}),'BCCh · '+DOLAR_FECHA)
+    : kpi('teal','Dólar observado','…','fuente Banco Central');
+  const clp = DOLAR ? kpi('pp','Valor en CLP','$'+Math.round(tu*DOLAR).toLocaleString('es-CL'),'equivalente a '+fmtMoney(tu)) : '';
   $('kpis').innerHTML=`
     ${kpi('teal','PO activas',ROWS.length,'órdenes en seguimiento')}
-    ${kpi('ok','USD total',fmtMoney(totUSD()),'valor importado')}
-    ${kpi('pp','Unidades',totUnid().toLocaleString('es-CL'),'total de unidades')}
+    ${kpi('ok','USD total',fmtMoney(tu),'valor importado')}
+    ${dolarKpi}
+    ${clp}
+    ${kpi('pp','Unidades',fmtUnid(totUnid()),'total de unidades')}
     ${kpi('','Zonas de origen',zonas,'mercados activos')}
     ${kpi('ok','Disponibles',disp,'en inventario final')}
+    ${kpi('teal','En tránsito',tran,'camino / en CD')}
     ${kpi(atr>0?'bad':'ok','Atrasadas',atr,'posterior a ETA sin llegada')}
     ${kpi('warn','Tiempo total prom.',avgTiempo()+' días','ciclo confirmación→inventario')}
+    ${kpi('','Ticket prom.',fmtMoney(totUnid()?tu/totUnid():0),'USD por unidad')}
   `;
 }
 function kpi(cls,lb,vl,dt){return `<div class="kpi ${cls}"><div class="lb">${lb}</div><div class="vl">${vl}</div><div class="dt">${dt}</div></div>`;}
@@ -674,7 +740,7 @@ function renderAlerts(){
   ROWS.forEach(r=>{
     const e=estado(r);
     if(e==='Atrasado') out.push(al('bad','r',r.po,`Embarque de ${r.prov||'proveedor'} (${r.zona||'—'}) superó su ETA (${r.eta}) sin registrar llegada a CD.`,'ATRASADO'));
-    else if(e==='Pendiente') out.push(al('','y',r.po,`PO sin ETA definida — ${r.prov||'proveedor'}, confirmada el ${r.fconf||'—'}.`,'PENDIENTE'));
+    else if(e==='Pendiente') out.push(al('','y',r.po,`PO sin fecha de disponibilidad — ${r.prov||'proveedor'}, ${fmtMoney(r.usd)}.`,'PENDIENTE'));
   });
   const prov=byProv();const tu=totUSD();
   Object.entries(prov).forEach(([p,v])=>{if(tu>0&&v/tu>0.4) out.push(al('','y','CONC',`Concentración de riesgo: ${p} representa el ${Math.round(v/tu*100)}% del valor USD total.`,'RIESGO'));});
@@ -685,35 +751,58 @@ function al(cls,tag,po,txt,lbl){return `<div class="alert ${cls}"><span class="p
 /* ===== Charts ===== */
 const CH={};
 function mk(id,cfg){if(CH[id])CH[id].destroy();const el=$(id);if(!el)return;CH[id]=new Chart(el,cfg);}
-Chart.defaults.font.family="'Segoe UI',system-ui,Arial";Chart.defaults.color='#475569';
+Chart.defaults.font.family="'Segoe UI',system-ui,Arial";Chart.defaults.color='#475569';Chart.defaults.font.size=12;
 function sortEnt(m){return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
-function drawMini(){
-  const z=byZona();mk('cZonaMini',{type:'doughnut',data:{labels:Object.keys(z),datasets:[{data:Object.values(z),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'}},maintainAspectRatio:false,cutout:'58%'}});
-  const e=byEstado();mk('cEstadoMini',{type:'bar',data:{labels:Object.keys(e),datasets:[{data:Object.values(e),backgroundColor:'#2563eb',borderRadius:5}]},options:{plugins:{legend:{display:false}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
-}
+function chip(host,lb,val){const el=$(host);if(el)el.insertAdjacentHTML('beforeend',`<div class="chip"><span>${lb}</span><b>${val}</b></div>`);}
+function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mMes','mMix','mTicket'].forEach(id=>{if($(id))$(id).innerHTML='';});}
+function unidByProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+numClean(r.unid);});return m;}
+function ticketByZona(){const u=unidByZona(),z=byZona(),m={};Object.keys(z).forEach(k=>{m[k]=u[k]?z[k]/u[k]:0;});return m;}
 function drawCharts(){
-  const z=byZona();mk('cZona',{type:'doughnut',data:{labels:Object.keys(z),datasets:[{data:Object.values(z),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmtMoney(c.parsed)}}},maintainAspectRatio:false,cutout:'56%'}});
-  const p=sortEnt(byProv());mk('cProv',{type:'bar',data:{labels:p.map(x=>x[0]),datasets:[{data:p.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:5}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.x)}}},maintainAspectRatio:false,scales:{x:{ticks:{callback:v=>'$'+(v/1000)+'k'}}}}});
-  const e=byEstado();mk('cEstado',{type:'polarArea',data:{labels:Object.keys(e),datasets:[{data:Object.values(e),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'}},maintainAspectRatio:false}});
-  const t=ROWS.filter(r=>numClean(r.ttot)>0);mk('cTiempo',{type:'bar',data:{labels:t.map(r=>r.po),datasets:[{label:'Días',data:t.map(r=>numClean(r.ttot)),backgroundColor:'#0e7490',borderRadius:5}]},options:{plugins:{legend:{display:false}},maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}});
-  const u=unidByZona();mk('cUnid',{type:'bar',data:{labels:Object.keys(u),datasets:[{label:'Unidades',data:Object.values(u),backgroundColor:'#7c3aed',borderRadius:5}]},options:{plugins:{legend:{display:false}},maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}});
-  const mEnt=Object.entries(byMes()).sort();mk('cMes',{type:'line',data:{labels:mEnt.map(x=>x[0]),datasets:[{label:'USD',data:mEnt.map(x=>x[1]),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',fill:true,tension:.3,pointRadius:4}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.y)}}},maintainAspectRatio:false,scales:{y:{ticks:{callback:v=>'$'+(v/1000)+'k'}}}}});
+  clearChips();
+  const kUSD={ticks:{callback:v=>'U$'+(v/1000).toLocaleString('en-US')+'k'}};
+  const z=byZona(),tu=totUSD();
+  mk('cZona',{type:'doughnut',data:{labels:Object.keys(z),datasets:[{data:Object.values(z),backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmtMoney(c.parsed)}}},maintainAspectRatio:false,cutout:'55%'}});
+  sortEnt(z).slice(0,3).forEach(([k,v])=>chip('mZona',k,fmtMoney(v)));
+  const p=sortEnt(byProv());
+  mk('cProv',{type:'bar',data:{labels:p.map(x=>x[0]),datasets:[{data:p.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:5}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.x)}}},maintainAspectRatio:false,scales:{x:kUSD}}});
+  chip('mProv','Proveedores',p.length);if(p[0])chip('mProv','Top',p[0][0]);if(p[0]&&tu)chip('mProv','Part.',Math.round(p[0][1]/tu*100)+'%');
+  const e=byEstado();
+  mk('cEstado',{type:'polarArea',data:{labels:Object.keys(e),datasets:[{data:Object.values(e),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'}},maintainAspectRatio:false}});
+  Object.entries(e).forEach(([k,v])=>chip('mEstado',k,v));
+  const t=ROWS.filter(r=>numClean(r.ttot)>0);
+  mk('cTiempo',{type:'bar',data:{labels:t.map(r=>r.po),datasets:[{label:'Días',data:t.map(r=>numClean(r.ttot)),backgroundColor:'#0e7490',borderRadius:5}]},options:{plugins:{legend:{display:false}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'días'}}}}});
+  chip('mTiempo','Promedio',avgTiempo()+' d');chip('mTiempo','PO con dato',t.length);
+  const u=unidByZona();
+  mk('cUnid',{type:'bar',data:{labels:Object.keys(u),datasets:[{label:'Unidades',data:Object.values(u),backgroundColor:'#7c3aed',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtUnid(c.parsed.y)+' u'}}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>fmtUnid(v)}}}}});
+  chip('mUnid','Total u',fmtUnid(totUnid()));sortEnt(u).slice(0,1).forEach(([k,v])=>chip('mUnid','Mayor',k+' ('+fmtUnid(v)+')'));
+  const mEnt=Object.entries(byMes()).sort();
+  mk('cMes',{type:'line',data:{labels:mEnt.map(x=>x[0]),datasets:[{label:'USD',data:mEnt.map(x=>x[1]),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.14)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#2563eb'}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.y)}}},maintainAspectRatio:false,scales:{y:kUSD}}});
+  if(mEnt.length){chip('mMes','Meses',mEnt.length);const pk=mEnt.reduce((a,b)=>b[1]>a[1]?b:a);chip('mMes','Pico',pk[0]);}
+  const pm=sortEnt(byProv()).slice(0,8),up=unidByProv();
+  mk('cMix',{type:'bar',data:{labels:pm.map(x=>x[0]),datasets:[{label:'USD',data:pm.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y'},{label:'Unidades',type:'line',data:pm.map(x=>up[x[0]]||0),borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.3,pointRadius:3}]},options:{plugins:{tooltip:{callbacks:{label:c=>c.dataset.label==='USD'?fmtMoney(c.parsed.y):fmtUnid(c.parsed.y)+' u'}}},maintainAspectRatio:false,scales:{y:{position:'left',ticks:{callback:v=>'U$'+(v/1000)+'k'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>fmtUnid(v)}}}}});
+  chip('mMix','Compara','USD vs unidades');
+  const tk=ticketByZona();
+  mk('cTicket',{type:'bar',data:{labels:Object.keys(tk),datasets:[{label:'USD/u',data:Object.values(tk),backgroundColor:'#16a34a',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.y)+' / u'}}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>'U$'+v.toFixed(0)}}}}});
+  sortEnt(tk).slice(0,2).forEach(([k,v])=>chip('mTicket',k,fmtMoney(v)));
   fillExplains();
 }
 function tgEx(id){$(id).classList.toggle('on');}
 function fillExplains(){
   const z=sortEnt(byZona()),tu=totUSD();
   const topZ=z[0]?`${z[0][0]} lidera con ${fmtMoney(z[0][1])} (${Math.round(z[0][1]/tu*100)}% del total)`:'—';
-  $('exZona').innerHTML=`<b>Qué mide:</b> distribución del valor USD importado según la zona de origen. <b>Lectura:</b> ${topZ}. Permite ver la dependencia geográfica del abastecimiento y balancear riesgo entre mercados.`;
+  $('exZona').innerHTML=`<b>Qué mide:</b> distribución del valor USD importado según la zona de origen. <b>Lectura:</b> ${topZ}. <b>Indicador logístico:</b> mide la dependencia geográfica del abastecimiento; una zona sobre el 50% expone al negocio a riesgo cambiario, arancelario y de flete concentrado en un corredor.`;
   const p=sortEnt(byProv());
-  $('exProv').innerHTML=`<b>Qué mide:</b> concentración de compra por proveedor. <b>Lectura:</b> ${p[0]?p[0][0]+' concentra '+Math.round(p[0][1]/tu*100)+'% del gasto':'—'}. Un proveedor sobre 40% implica riesgo de dependencia; conviene diversificar o asegurar contratos.`;
+  $('exProv').innerHTML=`<b>Qué mide:</b> concentración de compra por proveedor (Pareto de gasto). <b>Lectura:</b> ${p[0]?p[0][0]+' concentra '+Math.round(p[0][1]/tu*100)+'% del gasto':'—'}. <b>KPI:</b> índice de concentración de proveedores; sobre 40% en un solo proveedor eleva el riesgo de continuidad de suministro y reduce poder de negociación.`;
   const e=byEstado();
-  $('exEstado').innerHTML=`<b>Qué mide:</b> en qué etapa logística está cada embarque. <b>Lectura:</b> ${Object.entries(e).map(x=>x[0]+': '+x[1]).join(' · ')}. Los estados “Atrasado” exigen acción inmediata con el forwarder.`;
-  $('exTiempo').innerHTML=`<b>Qué mide:</b> días totales desde confirmación hasta disponibilidad en inventario por PO. <b>Lectura:</b> promedio de ${avgTiempo()} días. POs muy por encima del promedio revelan cuellos de botella (aduana, naviera o retiro).`;
+  $('exEstado').innerHTML=`<b>Qué mide:</b> en qué etapa logística está cada embarque. <b>Lectura:</b> ${Object.entries(e).map(x=>x[0]+': '+x[1]).join(' · ')}. <b>KPI:</b> “fill rate” de pipeline; el objetivo es minimizar “Atrasado” y “Pendiente” y mantener flujo hacia “Disponible”.`;
+  $('exTiempo').innerHTML=`<b>Qué mide:</b> lead time total (días) desde confirmación comercial hasta disponibilidad de inventario por PO. <b>Lectura:</b> promedio de ${avgTiempo()} días. <b>KPI:</b> “order-to-availability”; POs sobre el promedio revelan cuellos de botella en aduana, naviera o retiro P/A que impactan la rotación y el costo financiero del stock en tránsito.`;
   const u=sortEnt(unidByZona());
-  $('exUnid').innerHTML=`<b>Qué mide:</b> volumen físico (unidades) por zona. <b>Lectura:</b> ${u[0]?u[0][0]+' aporta '+u[0][1].toLocaleString('es-CL')+' unidades':'—'}. Contrastar con el gráfico de USD revela dónde el valor unitario es mayor.`;
+  $('exUnid').innerHTML=`<b>Qué mide:</b> volumen físico (unidades) por zona. <b>Lectura:</b> ${u[0]?u[0][0]+' aporta '+fmtUnid(u[0][1])+' unidades':'—'}. <b>Indicador:</b> al cruzar con el gráfico de USD revela dónde el valor unitario es mayor y ayuda a dimensionar capacidad de bodega y manejo de carga.`;
   const m=Object.entries(byMes()).sort();
-  $('exMes').innerHTML=`<b>Qué mide:</b> USD que arriba (ETA) por mes. <b>Lectura:</b> ${m.length?'pico en '+m.reduce((a,b)=>b[1]>a[1]?b:a)[0]:'—'}. Útil para planificar flujo de caja y capacidad de bodega.`;
+  $('exMes').innerHTML=`<b>Qué mide:</b> USD planificado por mes según ETA / costeo. <b>Lectura:</b> ${m.length?'pico en '+m.reduce((a,b)=>b[1]>a[1]?b:a)[0]:'—'}. <b>KPI:</b> estacionalidad de arribos; clave para planificar flujo de caja, cobertura cambiaria y capacidad de recepción en CD.`;
+  $('exMix').innerHTML=`<b>Qué mide:</b> relación entre valor (USD) y volumen (unidades) por proveedor. <b>Lectura:</b> proveedores con mucho USD y pocas unidades manejan artículos de alto valor; a la inversa, alto volumen y bajo USD son commodities. <b>Indicador:</b> orienta la priorización de seguros, controles de calidad y condiciones de pago.`;
+  const tk=sortEnt(ticketByZona());
+  $('exTicket').innerHTML=`<b>Qué mide:</b> ticket promedio = USD / unidad por zona. <b>Lectura:</b> ${tk[0]?tk[0][0]+' con '+fmtMoney(tk[0][1])+' por unidad':'—'}. <b>KPI:</b> valor unitario de la mercadería; a mayor ticket, mayor impacto financiero de un atraso o merma y mayor justificación para modos de transporte más rápidos.`;
 }
 /* ===== Reporte ===== */
 function heatColor(v,max){if(!v)return '#f8fafc';const t=max?v/max:0;const r=Math.round(219-(219-15)*t),g=Math.round(234-(234-51)*t),b=Math.round(251-(251-90)*t);return `rgb(${r},${g},${b})`;}
@@ -730,69 +819,97 @@ function heatmapTable(){
 function generarReporte(){
   drawCharts();
   setTimeout(()=>{
-    const z=sortEnt(byZona()),p=sortEnt(byProv()),tu=totUSD(),e=byEstado();
-    const atr=e['Atrasado']||0;
+    const z=sortEnt(byZona()),p=sortEnt(byProv()),tu=totUSD(),e=byEstado(),u=sortEnt(unidByZona());
+    const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
+    const tk=sortEnt(ticketByZona());
     const img=id=>CH[id]?`<img src="${CH[id].toBase64Image()}">`:'';
+    const clpTxt=DOLAR?` Al tipo de cambio observado del Banco Central (${'$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2})} al ${DOLAR_FECHA}), el portafolio equivale a aproximadamente <b>$${Math.round(tu*DOLAR).toLocaleString('es-CL')} CLP</b>.`:'';
+    const concTop=p[0]&&tu?Math.round(p[0][1]/tu*100):0;
     const html=`<div class="report" id="reportDoc">
       <h1>Reporte de Control de Importaciones — COMEX QD</h1>
-      <div class="meta">Generado el ${new Date().toLocaleString('es-CL')} por ${esc(CURRENT.name)} · Quintec</div>
+      <div class="meta">Generado el ${new Date().toLocaleString('es-CL')} por ${esc(CURRENT.name)} · Quintec · Suite Logística</div>
       <div class="rk">
         <div class="b"><div class="l">PO activas</div><div class="v">${ROWS.length}</div></div>
         <div class="b"><div class="l">USD total</div><div class="v">${fmtMoney(tu)}</div></div>
-        <div class="b"><div class="l">Unidades</div><div class="v">${totUnid().toLocaleString('es-CL')}</div></div>
+        <div class="b"><div class="l">Unidades</div><div class="v">${fmtUnid(totUnid())}</div></div>
+        <div class="b"><div class="l">Ticket prom.</div><div class="v">${fmtMoney(totUnid()?tu/totUnid():0)}</div></div>
+        <div class="b"><div class="l">Lead time prom.</div><div class="v">${avgTiempo()} d</div></div>
         <div class="b"><div class="l">Atrasadas</div><div class="v">${atr}</div></div>
       </div>
       <h3>1. Resumen ejecutivo</h3>
-      <p>El portafolio bajo seguimiento comprende <b>${ROWS.length} órdenes de compra</b> por un valor total de <b>${fmtMoney(tu)}</b> y ${totUnid().toLocaleString('es-CL')} unidades. ${z[0]?'La zona <b>'+z[0][0]+'</b> concentra el '+Math.round(z[0][1]/tu*100)+'% del valor importado':''}. El ciclo promedio desde confirmación hasta disponibilidad de inventario es de <b>${avgTiempo()} días</b>. ${atr>0?'Actualmente hay <b>'+atr+' embarque(s) atrasado(s)</b> que requieren gestión prioritaria.':'No se registran embarques atrasados.'}</p>
-      <h3>2. Distribución por zona y proveedor</h3>
-      <p>${p[0]?'El proveedor <b>'+p[0][0]+'</b> representa el '+Math.round(p[0][1]/tu*100)+'% del gasto, '+(p[0][1]/tu>0.4?'lo que constituye una concentración de riesgo a mitigar mediante diversificación de origen.':'dentro de un rango de diversificación razonable.'):''}</p>
-      <div class="imgs">${img('cZona')}${img('cProv')}</div>
-      <h3>3. Estado operativo de los embarques</h3>
-      <p>Distribución de etapas: ${Object.entries(e).map(x=>x[0]+' ('+x[1]+')').join(', ')}. Los embarques en estado “Atrasado” deben escalarse al forwarder y la naviera.</p>
+      <p>El portafolio de importaciones bajo seguimiento comprende <b>${ROWS.length} órdenes de compra (PO)</b> por un valor total de <b>${fmtMoney(tu)}</b> y <b>${fmtUnid(totUnid())} unidades</b>, con un ticket promedio de <b>${fmtMoney(totUnid()?tu/totUnid():0)} por unidad</b>.${clpTxt} ${z[0]?'La zona <b>'+z[0][0]+'</b> concentra el <b>'+Math.round(z[0][1]/tu*100)+'%</b> del valor importado':''}. El ciclo promedio desde la confirmación comercial hasta la disponibilidad de inventario (lead time “order-to-availability”) es de <b>${avgTiempo()} días</b>. En cuanto al estado del pipeline, hay ${disp} PO disponibles, ${pend} pendientes y <b>${atr} atrasada(s)</b>${atr>0?', que requieren gestión prioritaria con la naviera y el agente de aduana.':'.'}</p>
+      <h3>2. Análisis de abastecimiento: zona de origen</h3>
+      <p>La estructura geográfica del abastecimiento es un factor crítico de riesgo. ${z[0]?'Actualmente <b>'+z[0][0]+'</b> lidera con '+fmtMoney(z[0][1])+' ('+Math.round(z[0][1]/tu*100)+'%)':''}${z[1]?', seguida de <b>'+z[1][0]+'</b> con '+fmtMoney(z[1][1])+' ('+Math.round(z[1][1]/tu*100)+'%)':''}. Una concentración elevada en una sola zona expone al negocio a riesgo cambiario, arancelario, de congestión portuaria y de variación de fletes en un único corredor. Se recomienda monitorear la relación valor/volumen por zona para decidir estrategias de nearshoring o doble origen.</p>
+      <div class="imgs">${img('cZona')}${img('cUnid')}</div>
+      <h3>3. Concentración de proveedores (Pareto)</h3>
+      <p>${p[0]?'El proveedor <b>'+p[0][0]+'</b> representa el <b>'+concTop+'%</b> del gasto total ('+fmtMoney(p[0][1])+'). '+(concTop>40?'Esto constituye una <b>concentración de riesgo</b> sobre el umbral recomendado (40%): una interrupción de este proveedor afectaría gran parte del flujo. Se sugiere homologar un segundo proveedor y negociar acuerdos de respaldo con lead time garantizado.':'Se encuentra dentro de un rango de diversificación razonable.'):''} El gráfico combinado USD vs. unidades permite distinguir proveedores de alto valor unitario (pocas unidades, mucho USD) de proveedores de commodities (alto volumen, bajo USD), orientando la priorización de seguros, inspecciones y condiciones de pago.</p>
+      <div class="imgs">${img('cProv')}${img('cMix')}</div>
+      <h3>4. Estado operativo y tiempos de tránsito</h3>
+      <p>Distribución de etapas del pipeline: ${Object.entries(e).map(x=>x[0]+' ('+x[1]+')').join(', ')}. El lead time promedio es de <b>${avgTiempo()} días</b>; las PO muy por encima de ese promedio revelan cuellos de botella (aduana, naviera o retiro P/A) que impactan la rotación de inventario y el costo financiero del stock en tránsito. ${atr>0?'Las '+atr+' PO atrasadas deben escalarse de inmediato.':'No hay atrasos registrados en este corte.'}</p>
       <div class="imgs">${img('cEstado')}${img('cTiempo')}</div>
-      <h3>4. Volumen y estacionalidad</h3>
-      <div class="imgs">${img('cUnid')}${img('cMes')}</div>
-      <h3>5. Campo de calor — Zona vs. Estado</h3>
-      <p>Cantidad de PO por combinación de zona de origen y etapa logística; las celdas más intensas concentran mayor cantidad de órdenes.</p>
+      <h3>5. Estacionalidad y valor unitario</h3>
+      <p>El perfil mensual de arribos (según ETA / costeo) es clave para planificar flujo de caja, cobertura cambiaria y capacidad de recepción en el CD. ${tk[0]?'El ticket promedio más alto corresponde a <b>'+tk[0][0]+'</b> con '+fmtMoney(tk[0][1])+' por unidad, lo que justifica mayor control de calidad y, eventualmente, modos de transporte más rápidos para esa mercadería de alto valor.':''}</p>
+      <div class="imgs">${img('cMes')}${img('cTicket')}</div>
+      <h3>6. Campo de calor — Zona vs. Estado</h3>
+      <p>Cantidad de PO por combinación de zona de origen y etapa logística. Las celdas más intensas concentran mayor cantidad de órdenes y ayudan a detectar si los atrasos se concentran en una zona u origen específico.</p>
       <div class="hmwrap">${heatmapTable()}</div>
+      <h3>7. Conclusiones y recomendaciones</h3>
+      <p>En síntesis, el foco de gestión debe estar en: (1) ${concTop>40?'diversificar al proveedor '+p[0][0]+' ('+concTop+'% del gasto)':'mantener la diversificación actual de proveedores'}; (2) ${z[0]&&z[0][1]/tu>0.5?'reducir la dependencia de la zona '+z[0][0]:'equilibrar las zonas de origen'}; (3) ${atr>0?'resolver los '+atr+' embarques atrasados':'sostener el cumplimiento de ETAs'}; y (4) completar las fechas de las ${pend} PO pendientes para mejorar la trazabilidad y la exactitud de los KPIs. El detalle y las acciones concretas priorizadas se encuentran en la pestaña <b>Sugerencias IA</b>.</p>
     </div>`;
     $('reportHost').innerHTML=html;
     logAct('reporte','Generó el reporte de importaciones');
-  },450);
+  },500);
 }
 /* ===== Sugerencias IA (solo analista) ===== */
 function renderSug(){
-  const tu=totUSD(),p=sortEnt(byProv()),z=sortEnt(byZona()),e=byEstado();
-  const atr=e['Atrasado']||0,pend=e['Pendiente']||0;
+  const tu=totUSD(),p=sortEnt(byProv()),z=sortEnt(byZona()),e=byEstado(),u=sortEnt(unidByZona()),tk=sortEnt(ticketByZona());
+  const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
+  const avg=avgTiempo(),ticket=totUnid()?tu/totUnid():0,concTop=p[0]&&tu?Math.round(p[0][1]/tu*100):0;
   let S=[];
-  if(p[0]&&tu>0&&p[0][1]/tu>0.4) S.push(['hi','Diversificar proveedor crítico',`<b>${p[0][0]}</b> concentra el ${Math.round(p[0][1]/tu*100)}% del valor importado (${fmtMoney(p[0][1])}). Una interrupción de este proveedor detendría gran parte del abastecimiento.`,'Evaluar un segundo proveedor homologado para las líneas clave y negociar acuerdos de respaldo con lead time garantizado.']);
-  if(atr>0) S.push(['hi','Gestionar embarques atrasados',`Hay ${atr} PO que superaron su ETA sin registrar llegada a CD.`,'Escalar con la naviera/forwarder, actualizar ETA real y comunicar a comercial el impacto en disponibilidad de inventario.']);
-  if(avgTiempo()>70) S.push(['md','Reducir el ciclo total de importación',`El tiempo promedio confirmación→inventario es de ${avgTiempo()} días, elevado para carga marítima.`,'Analizar por etapa (tránsito, puerto, aduana, retiro) dónde se pierde tiempo y adelantar la gestión documental antes del arribo.']);
-  if(z[0]&&tu>0&&z[0][1]/tu>0.5) S.push(['md','Balancear dependencia geográfica',`La zona ${z[0][0]} aporta el ${Math.round(z[0][1]/tu*100)}% del valor.`,'Explorar orígenes alternativos (nearshoring LATAM/EEUU) para mitigar riesgo cambiario, arancelario y de flete.']);
-  if(pend>0) S.push(['lo','Completar datos de PO pendientes',`${pend} orden(es) no tienen ETA definida.`,'Confirmar fechas con el proveedor para habilitar el seguimiento completo y mejorar la exactitud de los KPIs.']);
-  S.push(['lo','Automatizar alertas de hitos',`El seguimiento actual es manual sobre la planilla.`,'Configurar alertas automáticas por hito (disp. origen, ETA, llegada CD) para anticipar desvíos sin revisión diaria.']);
-  $('sugHost').innerHTML=S.map(s=>`<div class="sug ${s[0]}"><div class="h"><span class="pr ${s[0]}">${s[0]==='hi'?'ALTA':s[0]==='md'?'MEDIA':'BAJA'}</span><span class="ti">${esc(s[1])}</span></div><p>${s[2]}</p><div class="act"><b>Acción sugerida:</b> ${esc(s[3])}</div></div>`).join('');
+  if(p[0]&&concTop>40) S.push(['hi','Diversificar al proveedor crítico',`<b>${p[0][0]}</b> concentra el <b>${concTop}%</b> del valor importado (${fmtMoney(p[0][1])}). El índice de concentración de proveedores supera el umbral prudente del 40%, por lo que una interrupción (quiebre, disputa comercial, problema de capacidad) detendría una parte sustancial del abastecimiento.`,'Homologar un segundo proveedor para las líneas clave, repartir volúmenes (p. ej. 70/30) y pactar acuerdos marco con lead time y capacidad garantizados. KPI a vigilar: % de gasto del proveedor top y número de proveedores que cubren el 80% del gasto.']);
+  if(atr>0) S.push(['hi','Resolver embarques atrasados',`Hay <b>${atr} PO</b> que superaron su ETA sin registrar llegada a CD. Cada día de atraso incrementa el costo financiero del stock en tránsito y el riesgo de quiebre de stock en destino.`,'Escalar con naviera/forwarder, confirmar ETA real, activar plan de contingencia (transbordo o modo aéreo si el ticket lo justifica) y comunicar a comercial. KPI: On-Time Delivery (OTD) y días de desviación vs. ETA original.']);
+  if(avg>70) S.push(['md','Reducir el lead time total',`El tiempo promedio confirmación→inventario es de <b>${avg} días</b>, elevado para carga marítima. Un lead time largo obliga a mayores inventarios de seguridad y encarece el capital de trabajo.`,'Mapear el ciclo por etapa (origen, tránsito, puerto, aduana, retiro P/A) y atacar la etapa más lenta; adelantar la gestión documental y el pre-costeo antes del arribo. KPI: lead time por etapa y variabilidad (desviación estándar).']);
+  if(z[0]&&tu>0&&z[0][1]/tu>0.5) S.push(['md','Balancear la dependencia geográfica',`La zona <b>${z[0][0]}</b> aporta el <b>${Math.round(z[0][1]/tu*100)}%</b> del valor. Una concentración alta expone a riesgo cambiario, arancelario y de congestión portuaria en un único corredor.`,'Evaluar nearshoring (LATAM/EEUU) para las líneas de reposición frecuente y mantener Asia para productos de alto valor/baja urgencia. KPI: % de valor por zona y lead time comparado entre orígenes.']);
+  if(ticket>0) S.push(['md','Segmentar la gestión por valor unitario (ABC)',`El ticket promedio del portafolio es de <b>${fmtMoney(ticket)} por unidad</b>${tk[0]?'; la zona '+tk[0][0]+' presenta el mayor valor unitario ('+fmtMoney(tk[0][1])+'/u)':''}. No todas las PO merecen el mismo nivel de control.`,'Aplicar clasificación ABC: foco intensivo (seguros, inspección, seguimiento diario) en los artículos “A” de alto valor y gestión por excepción en los “C”. KPI: valor en riesgo por PO y cobertura de seguro.']);
+  if(pend>0) S.push(['lo','Completar datos de PO pendientes',`<b>${pend} orden(es)</b> no tienen fecha de disponibilidad/ETA definida, lo que degrada la exactitud de los KPIs y la trazabilidad.`,'Solicitar al proveedor y al forwarder las fechas faltantes y bloquear el guardado sin campos críticos. KPI: % de completitud de datos por PO.']);
+  S.push(['lo','Instrumentar indicadores y alertas',`La gestión actual se apoya en la planilla. Un tablero de control con KPIs y alertas por hito profesionaliza el seguimiento.`,'Definir y monitorear un set mínimo: OTD, lead time por etapa, índice de concentración (proveedor/zona), ticket promedio, % PO atrasadas y días de inventario en tránsito. Configurar alertas automáticas por hito (disp. origen, ETA, llegada CD).']);
+  const intro=`<div class="sug" style="border-left-color:#0f2744"><div class="h"><span class="pr lo" style="background:#e2e8f0;color:#0f2744">RESUMEN</span><span class="ti">Diagnóstico logístico del portafolio</span></div><p>Análisis experto sobre <b>${ROWS.length} PO</b> por <b>${fmtMoney(tu)}</b> y <b>${fmtUnid(totUnid())} unidades</b>. Lead time promedio <b>${avg} días</b>, ticket promedio <b>${fmtMoney(ticket)}/u</b>, concentración del proveedor líder <b>${concTop}%</b>, estado del pipeline: ${disp} disponibles · ${pend} pendientes · ${atr} atrasadas. A continuación, las recomendaciones priorizadas por impacto y urgencia.</p></div>`;
+  $('sugHost').innerHTML=intro+S.map(s=>`<div class="sug ${s[0]}"><div class="h"><span class="pr ${s[0]}">${s[0]==='hi'?'ALTA':s[0]==='md'?'MEDIA':'BAJA'}</span><span class="ti">${esc(s[1])}</span></div><p>${s[2]}</p><div class="act"><b>Acción sugerida:</b> ${s[3]}</div></div>`).join('');
 }
 
-/* ===== Actividad (solo analista) ===== */
+/* ===== Actividad (solo admin eduardo) ===== */
+let ACT_BYU={};
+const AC_LABEL={sesion:'Sesión',guardar:'Guardar',eliminar:'Eliminar',exportar:'Exportar',importar:'Importar',imprimir:'Imprimir',reporte:'Reporte'};
 function loadActividad(){
   $('actStatus').textContent='Cargando…';
-  db.ref('comex_qd_actividad').limitToLast(400).once('value').then(s=>{
+  db.ref('comex_qd_actividad').limitToLast(1000).once('value').then(s=>{
     const d=s.val()||{};
-    const list=Object.values(d).sort((a,b)=>b.ts-a.ts);
-    const byU={};list.forEach(x=>{(byU[x.email]=byU[x.email]||[]).push(x);});
-    const AC={sesion:'Sesión',guardar:'Guardar',eliminar:'Eliminar',exportar:'Exportar',imprimir:'Imprimir',reporte:'Reporte'};
+    const list=Object.values(d);
+    ACT_BYU={};
+    list.forEach(x=>{(ACT_BYU[x.email]=ACT_BYU[x.email]||[]).push(x);});
     let html='';
-    Object.entries(byU).forEach(([em,ev])=>{
+    Object.entries(ACT_BYU).forEach(([em,ev],i)=>{
+      ev.sort((a,b)=>a.ts-b.ts); // de inicio a final
       const u=USERS.find(x=>x.email===em)||{name:em,color:'#1b4b7a'};
-      html+=`<div class="actuser"><div class="hd"><div class="avatar" style="width:30px;height:30px;font-size:12px;background:${u.color}">${initials(u.name)}</div>${esc(u.name)} <span style="font-weight:400;opacity:.7;font-size:12px">${esc(em)}</span><span class="cnt">${ev.length} evento(s)</span></div><div class="actlog">`;
-      html+=ev.map(x=>`<div class="actrow"><span class="tm">${new Date(x.ts).toLocaleString('es-CL')}</span><span class="ac">${AC[x.action]||x.action}</span><span class="de">${esc(x.detail||'')}</span></div>`).join('');
-      html+='</div></div>';
+      const first=ev[0]?new Date(ev[0].ts).toLocaleString('es-CL'):'—';
+      const last=ev[ev.length-1]?new Date(ev[ev.length-1].ts).toLocaleString('es-CL'):'—';
+      html+=`<div class="actuser">
+        <div class="hd">
+          <div class="avatar" style="width:32px;height:32px;font-size:12px;background:${u.color}">${initials(u.name)}</div>
+          <div style="line-height:1.25"><div>${esc(u.name)}</div><div style="font-weight:400;opacity:.65;font-size:11px">${esc(em)} · ${first} → ${last}</div></div>
+          <span class="cnt">${ev.length} evento(s)</span>
+          <button class="det-btn" onclick="toggleDet('det${i}')">Detalle</button>
+        </div>
+        <div class="actlog" id="det${i}" style="display:none">
+          ${ev.map((x,n)=>`<div class="actrow"><span class="tm">#${n+1} · ${new Date(x.ts).toLocaleString('es-CL')}</span><span class="ac">${AC_LABEL[x.action]||x.action}</span><span class="de">${esc(x.detail||'')}</span></div>`).join('')}
+        </div>
+      </div>`;
     });
     $('actHost').innerHTML=html||'<div class="empty"><h3>Sin actividad registrada</h3><p>Aún no hay eventos en el registro.</p></div>';
-    $('actStatus').textContent=list.length+' evento(s)';
+    $('actStatus').textContent=list.length+' evento(s) · '+Object.keys(ACT_BYU).length+' usuario(s)';
   }).catch(e=>{$('actStatus').textContent='Error: '+e.message;});
 }
+function toggleDet(id){const el=$(id);if(!el)return;const open=el.style.display==='none';el.style.display=open?'block':'none';const b=el.previousElementSibling.querySelector('.det-btn');if(b)b.textContent=open?'Ocultar':'Detalle';}
 
 /* ===== Init ===== */
 renderUsers();
