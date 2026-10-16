@@ -120,12 +120,16 @@ h2.sec::before{content:'';width:4px;height:15px;background:var(--teal);border-ra
 .toolbar .st{margin-left:auto;font-size:12px;color:var(--muted)}
 .tbsep{width:1px;align-self:stretch;background:var(--line);margin:2px 4px}
 /* botones de icono con tooltip */
-.ib{position:relative;width:40px;height:40px;border:1px solid var(--line);background:#fff;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--navy);transition:.15s}
-.ib:hover{background:#f1f5fb;border-color:var(--steel);transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.08)}
+/* botones de la planilla: todos en tonos del MISMO color (azul de marca) */
+.ib{position:relative;width:40px;height:40px;border:1px solid #cbdcf0;background:#eaf1fa;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:#1b4b7a;transition:.15s}
+.ib:hover{background:#d8e6f6;border-color:#9cc0e6;transform:translateY(-1px);box-shadow:0 3px 10px rgba(27,75,122,.12)}
 .ib .ic{font-size:18px;line-height:1}
-.ib.act-save:hover{background:#e7f3ec;border-color:var(--ok)}
-.ib.act-clean:hover{background:#fdf6e3;border-color:var(--warn)}
-.ib.act-del:hover{background:#fdeaea;border-color:var(--bad)}
+.ib.act-save{background:#dcebfb;border-color:#aacdf0}
+.ib.act-save:hover{background:#c2dcf7;border-color:#6ba8e0}
+.ib.act-clean{background:#cfe2f8;border-color:#9fc3ec}
+.ib.act-clean:hover{background:#b2d2f3;border-color:#7cb0e6}
+.ib.act-del{background:#bcd6f3;border-color:#8fb8e6}
+.ib.act-del:hover{background:#9ec4ee;border-color:#5f9bdd}
 .ib::after{content:attr(title);position:absolute;bottom:-34px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:11px;font-weight:600;padding:5px 9px;border-radius:7px;white-space:nowrap;opacity:0;pointer-events:none;transition:.15s;z-index:40;max-width:240px;overflow:hidden;text-overflow:ellipsis}
 .ib:hover::after{opacity:1;bottom:-30px}
 /* chips de métricas sobre cada gráfico */
@@ -143,7 +147,7 @@ table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px so
 table.plan td input,table.plan td select{width:100%;border:none;background:transparent;padding:8px 9px;font-size:12px;font-family:inherit;color:var(--txt)}
 table.plan td input:focus,table.plan td select:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#eff5ff}
 table.plan tr:nth-child(even) td{background:#f8fafc}
-table.plan td.rown{background:#eef1f6;color:var(--muted);text-align:center;font-weight:600;position:sticky;left:0;z-index:1}
+table.plan td.rown{background:#fff;color:var(--muted);text-align:center;font-weight:600;position:sticky;left:0;z-index:1}
 table.plan td.del-c{text-align:center}
 .rowdel{background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:4px 8px}
 .rowdel:hover{background:var(--badbg);border-radius:5px}
