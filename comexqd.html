@@ -103,10 +103,21 @@ h2.sec::before{content:'';width:4px;height:15px;background:var(--teal);border-ra
 .cc{position:relative;height:280px}
 .explain-btn{background:#eef2f7;border:1px solid var(--line);color:var(--steel);border-radius:7px;padding:5px 11px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
 .explain-btn:hover{background:var(--steel);color:#fff}
+.det-chart{background:#1b4b7a;border:1px solid #1b4b7a;color:#fff;border-radius:7px;padding:5px 11px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin-right:7px}
+.det-chart:hover{background:#0f2744;border-color:#0f2744}
+.detbox{width:min(820px,95vw)!important;text-align:left}
+.detbox .dethd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.detbox .dethd h3{flex:1;margin:0}
+.detbox .dethd .x{background:#eef2f7;border:1px solid var(--line);border-radius:8px;width:30px;height:30px;font-size:15px;color:var(--navy)}
+table.dett{width:100%;border-collapse:collapse;margin-top:14px;font-size:12.5px}
+table.dett th{background:#0f2744;color:#fff;padding:7px 10px;text-align:left}
+table.dett td{border-bottom:1px solid var(--line);padding:6px 10px}
+table.dett tbody tr:nth-child(even){background:#f6f9fd}
+table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(--navy)}
 .explain-box{margin-top:12px;background:#f1f5fb;border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:8px;padding:11px 13px;font-size:12.5px;color:#334155;line-height:1.55;display:none}
 .explain-box.on{display:block}
 /* toolbar botones de la planilla */
-.toolbar{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px;align-items:center}
+.toolbar{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px;align-items:center;position:relative;z-index:20}
 .tbtn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700}
 .tbtn:hover{filter:brightness(.98);box-shadow:0 2px 8px rgba(0,0,0,.07)}
 .tbtn .ic{font-size:14px}
@@ -140,7 +151,7 @@ h2.sec::before{content:'';width:4px;height:15px;background:var(--teal);border-ra
 .grid.g2{grid-template-columns:repeat(auto-fit,minmax(440px,1fr))}
 .cc.big{height:340px}
 /* planilla editable */
-.plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh}
+.plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh;margin-top:30px}
 table.plan{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;table-layout:auto}
 table.plan th{background:var(--navy);color:#e8eef7;padding:11px 9px;text-align:left;position:sticky;top:0;white-space:nowrap;font-weight:700;font-size:11px;letter-spacing:.3px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
 table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
@@ -214,7 +225,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 @media(max-width:860px){.side{width:62px}.side .logo .t,.side .logo .d,.nav button span.lbl,.side .foot{display:none}.nav button{justify-content:center}.main{margin-left:62px}.report .imgs{grid-template-columns:1fr}}
 /* print */
 @media print{
-  .side,.topbar,.toolbar,.nav,.explain-btn{display:none!important}
+  .side,.topbar,.toolbar,.nav,.explain-btn,.det-chart{display:none!important}
   .main{margin-left:0}
   body{background:#fff}
   .tabpane{display:none!important}.tabpane.printing{display:block!important}
@@ -284,6 +295,10 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 
 <!-- GRAFICOS & KPIS -->
 <section class="tabpane on" id="tab-graficos">
+  <div class="toolbar">
+    <button class="ib" onclick="limpiarTodo()" title="Limpiar todos los datos y gráficos (conserva el Dólar Observado, que se actualiza desde internet)"><span class="ic">🧹</span></button>
+    <span class="st">Limpiar todo · el <b>Dólar Observado</b> se conserva y se actualiza a diario desde internet</span>
+  </div>
   <h2 class="sec">Indicadores clave &amp; métricas</h2>
   <div class="kpis" id="kpis"></div>
   <h2 class="sec">Alertas operativas</h2>
@@ -291,49 +306,49 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <h2 class="sec">Análisis gráfico de importaciones</h2>
   <div class="grid g2">
     <div class="panel">
-      <div class="ph"><h3>USD por zona de origen</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exZona')">ℹ Análisis</button></div>
+      <div class="ph"><h3>USD por zona de origen</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cZona')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exZona')">ℹ Análisis</button></div>
       <div class="metrow" id="mZona"></div>
       <div class="cc big"><canvas id="cZona"></canvas></div>
       <div class="explain-box" id="exZona"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Top proveedores por USD</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exProv')">ℹ Análisis</button></div>
+      <div class="ph"><h3>Top proveedores por USD</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProv')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exProv')">ℹ Análisis</button></div>
       <div class="metrow" id="mProv"></div>
       <div class="cc big"><canvas id="cProv"></canvas></div>
       <div class="explain-box" id="exProv"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Estado de embarques</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exEstado')">ℹ Análisis</button></div>
+      <div class="ph"><h3>Estado de embarques</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cEstado')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exEstado')">ℹ Análisis</button></div>
       <div class="metrow" id="mEstado"></div>
       <div class="cc big"><canvas id="cEstado"></canvas></div>
       <div class="explain-box" id="exEstado"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Tiempo total de tránsito por PO (días)</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exTiempo')">ℹ Análisis</button></div>
+      <div class="ph"><h3>Tiempo total de tránsito por PO (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTiempo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTiempo')">ℹ Análisis</button></div>
       <div class="metrow" id="mTiempo"></div>
       <div class="cc big"><canvas id="cTiempo"></canvas></div>
       <div class="explain-box" id="exTiempo"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Unidades por zona</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exUnid')">ℹ Análisis</button></div>
+      <div class="ph"><h3>Unidades por zona</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cUnid')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exUnid')">ℹ Análisis</button></div>
       <div class="metrow" id="mUnid"></div>
       <div class="cc big"><canvas id="cUnid"></canvas></div>
       <div class="explain-box" id="exUnid"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>USD por mes (ETA / costeo)</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exMes')">ℹ Análisis</button></div>
+      <div class="ph"><h3>USD por mes (ETA / costeo)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cMes')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exMes')">ℹ Análisis</button></div>
       <div class="metrow" id="mMes"></div>
       <div class="cc big"><canvas id="cMes"></canvas></div>
       <div class="explain-box" id="exMes"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>USD vs. Unidades por proveedor</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exMix')">ℹ Análisis</button></div>
+      <div class="ph"><h3>USD vs. Unidades por proveedor</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cMix')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exMix')">ℹ Análisis</button></div>
       <div class="metrow" id="mMix"></div>
       <div class="cc big"><canvas id="cMix"></canvas></div>
       <div class="explain-box" id="exMix"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Ticket promedio (USD/unidad) por zona</h3><div class="sp"></div><button class="explain-btn" onclick="tgEx('exTicket')">ℹ Análisis</button></div>
+      <div class="ph"><h3>Ticket promedio (USD/unidad) por zona</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTicket')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTicket')">ℹ Análisis</button></div>
       <div class="metrow" id="mTicket"></div>
       <div class="cc big"><canvas id="cTicket"></canvas></div>
       <div class="explain-box" id="exTicket"></div>
@@ -370,12 +385,21 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <div class="modal-box">
     <h3>Confirmar eliminación</h3>
     <p>Esta acción eliminará los datos guardados en la nube. Ingrese la clave de autorización para continuar.</p>
-    <input type="password" id="delKey" maxlength="8" inputmode="numeric" placeholder="####">
+    <input type="text" id="delKey" maxlength="8" inputmode="numeric" autocomplete="off" placeholder="####">
     <div id="delErr"></div>
     <div class="rowf">
       <button class="btn btn-g" onclick="closeDel()">Cancelar</button>
       <button class="btn btn-p" style="background:var(--bad)" onclick="confirmDel()">Eliminar</button>
     </div>
+  </div>
+</div>
+
+<!-- modal DETALLE de gráfico -->
+<div class="modal" id="detModal">
+  <div class="modal-box detbox">
+    <div class="dethd"><h3 id="detTitle">Detalle</h3><button class="x" onclick="closeDet()">✕</button></div>
+    <div class="cc" style="height:340px"><canvas id="detCanvas"></canvas></div>
+    <div id="detTable"></div>
   </div>
 </div>
 <script>
@@ -498,6 +522,7 @@ function startApp(u){
   $('navAct').style.display=priv?'flex':'none';
   loadCloud();
   fetchDolar();
+  if(!window._dolarTimer)window._dolarTimer=setInterval(fetchDolar,6*60*60*1000); // reconecta a internet (dólar observado) a diario
   go('graficos');
   logAct('sesion','Inicio de sesión');
 }
@@ -512,6 +537,7 @@ function go(tab){
   if(tab==='graficos'){renderKpis();renderAlerts();drawCharts();}
   if(tab==='sugerencias') renderSug();
   if(tab==='actividad') loadActividad();
+  logAct('navegar','Abrió la pestaña '+(TITLES[tab]||tab));
 }
 
 /* ===== Planilla editable ===== */
@@ -579,19 +605,37 @@ function loadCloud(){
     renderPlanilla();renderKpis();renderAlerts();
   }).catch(()=>{ROWS=SEED.map(a=>rowObj(a));renderPlanilla();});
 }
-/* clave ELIMINAR = 1234, enmascarada con # y nunca revelada */
-function openDel(){$('delKey').value='';$('delErr').textContent='';$('delModal').classList.add('on');setTimeout(()=>$('delKey').focus(),80);}
+/* clave ELIMINAR enmascarada con # y nunca revelada */
+function openDel(){const dk=$('delKey');dk.value='';dk.dataset.real='';$('delErr').textContent='';$('delModal').classList.add('on');setTimeout(()=>dk.focus(),80);}
 function closeDel(){$('delModal').classList.remove('on');}
-$('delKey').addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'');this.dataset.real=this.value;this.setAttribute('type','text');this.value='#'.repeat(this.dataset.real.length);});
+(function(){
+  const dk=$('delKey');
+  dk.setAttribute('type','text');
+  dk.setAttribute('autocomplete','off');
+  dk.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();confirmDel();return;}
+    let real=dk.dataset.real||'';
+    if(e.key==='Backspace'){real=real.slice(0,-1);e.preventDefault();}
+    else if(/^[0-9]$/.test(e.key)){if(real.length<8)real+=e.key;e.preventDefault();}
+    else if(e.key.length===1){e.preventDefault();return;} // bloquea no-dígitos
+    else {return;} // permite flechas, tab, etc.
+    dk.dataset.real=real;
+    dk.value='#'.repeat(real.length);
+  });
+  dk.addEventListener('paste',e=>{
+    e.preventDefault();
+    const t=((e.clipboardData||window.clipboardData).getData('text')||'').replace(/[^0-9]/g,'').slice(0,8);
+    dk.dataset.real=t;dk.value='#'.repeat(t.length);
+  });
+})();
 function confirmDel(){
   const real=$('delKey').dataset.real||'';
   if(real!=='1234'){$('delErr').textContent='Clave incorrecta.';return;}
   db.ref('comex_qd').remove().then(()=>{
-    ROWS=[];renderPlanilla();closeDel();$('planStatus').textContent='Datos eliminados de la nube';
+    ROWS=[];renderPlanilla();renderKpis();renderAlerts();closeDel();$('planStatus').textContent='Datos eliminados de la nube';
     logAct('eliminar','Eliminó los datos de comex_qd');
   }).catch(e=>{$('delErr').textContent='Error: '+e.message;});
 }
-$('delKey').addEventListener('keydown',e=>{if(e.key==='Enter')confirmDel();});
 
 /* ===== Log de actividad por usuario ===== */
 function logAct(action,detail){
@@ -754,6 +798,43 @@ function renderAlerts(){
 function al(cls,tag,po,txt,lbl){return `<div class="alert ${cls}"><span class="po">${esc(po)}</span><span class="sp">${esc(txt)}</span><span class="tag ${tag}">${lbl}</span></div>`;}
 /* ===== Charts ===== */
 const CH={};
+const DET={};
+let detChart=null;
+function detalle(id){
+  const d=DET[id];if(!d){alert('Primero genera los gráficos.');return;}
+  $('detTitle').textContent=d.title;
+  if(d.series){
+    const rows=d.labels.map((l,i)=>`<tr><td>${esc(l)}</td>${d.series.map(s=>`<td style="text-align:right">${s.fmt(s.vals[i])}</td>`).join('')}</tr>`).join('');
+    $('detTable').innerHTML=`<table class="dett"><thead><tr><th>${esc(d.catLabel||'Categoría')}</th>${d.series.map(s=>`<th style="text-align:right">${esc(s.name)}</th>`).join('')}</tr></thead><tbody>${rows||'<tr><td colspan="3">Sin datos</td></tr>'}</tbody></table>`;
+  } else {
+    const tot=d.vals.reduce((a,b)=>a+(+b||0),0);
+    const rows=d.labels.map((l,i)=>`<tr><td>${esc(l)}</td><td style="text-align:right">${d.fmt(d.vals[i])}</td><td style="text-align:right">${tot?Math.round((+d.vals[i]||0)/tot*100):0}%</td></tr>`).join('');
+    $('detTable').innerHTML=`<table class="dett"><thead><tr><th>${esc(d.catLabel||'Categoría')}</th><th style="text-align:right">${esc(d.valLabel||'Valor')}</th><th style="text-align:right">%</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Sin datos</td></tr>'}</tbody><tfoot><tr><td>Total</td><td style="text-align:right">${d.fmt(tot)}</td><td style="text-align:right">100%</td></tr></tfoot></table>`;
+  }
+  $('detModal').classList.add('on');
+  if(detChart){detChart.destroy();detChart=null;}
+  setTimeout(()=>{
+    let cfg;
+    if(d.series){
+      cfg={type:'bar',data:{labels:d.labels,datasets:d.series.map((s,i)=>({label:s.name,data:s.vals,backgroundColor:i?'#d97706':'#1b4b7a',borderRadius:4}))},options:{maintainAspectRatio:false,plugins:{legend:{position:'top'}}}};
+    } else if(d.type==='doughnut'||d.type==='polarArea'){
+      cfg={type:d.type,data:{labels:d.labels,datasets:[{data:d.vals,backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'}}}};
+    } else {
+      cfg={type:'bar',data:{labels:d.labels,datasets:[{label:d.valLabel||'Valor',data:d.vals,backgroundColor:'#1b4b7a',borderRadius:5}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}}}};
+    }
+    detChart=new Chart($('detCanvas'),cfg);
+  },70);
+  logAct('detalle','Vio el detalle del gráfico: '+d.title);
+}
+function closeDet(){$('detModal').classList.remove('on');if(detChart){detChart.destroy();detChart=null;}}
+function limpiarTodo(){
+  if(!confirm('¿Limpiar todos los datos y gráficos? El DÓLAR OBSERVADO se conserva y se actualiza desde internet. (No afecta la nube hasta Guardar)'))return;
+  ROWS=[];
+  renderPlanilla();renderKpis();renderAlerts();drawCharts();
+  fetchDolar();
+  $('planStatus').textContent='Datos y gráficos limpiados (dólar observado conservado)';
+  logAct('limpiar','Limpió datos y gráficos (dólar observado conservado)');
+}
 function mk(id,cfg){if(CH[id])CH[id].destroy();const el=$(id);if(!el)return;CH[id]=new Chart(el,cfg);}
 Chart.defaults.font.family="'Segoe UI',system-ui,Arial";Chart.defaults.color='#475569';Chart.defaults.font.size=12;
 function sortEnt(m){return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
@@ -788,6 +869,15 @@ function drawCharts(){
   const tk=ticketByZona();
   mk('cTicket',{type:'bar',data:{labels:Object.keys(tk),datasets:[{label:'USD/u',data:Object.values(tk),backgroundColor:'#16a34a',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.y)+' / u'}}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>'U$'+v.toFixed(0)}}}}});
   sortEnt(tk).slice(0,2).forEach(([k,v])=>chip('mTicket',k,fmtMoney(v)));
+  // registrar datos para la vista DETALLE de cada gráfico
+  DET['cZona']={title:'USD por zona de origen',labels:Object.keys(z),vals:Object.values(z),fmt:fmtMoney,type:'doughnut',catLabel:'Zona',valLabel:'USD'};
+  DET['cProv']={title:'Top proveedores por USD',labels:p.map(x=>x[0]),vals:p.map(x=>x[1]),fmt:fmtMoney,type:'bar',catLabel:'Proveedor',valLabel:'USD'};
+  DET['cEstado']={title:'Estado de embarques',labels:Object.keys(e),vals:Object.values(e),fmt:v=>v+' PO',type:'polarArea',catLabel:'Estado',valLabel:'PO'};
+  DET['cTiempo']={title:'Tiempo total de tránsito por PO (días)',labels:t.map(r=>r.po),vals:t.map(r=>numClean(r.ttot)),fmt:v=>v+' d',type:'bar',catLabel:'PO',valLabel:'Días'};
+  DET['cUnid']={title:'Unidades por zona',labels:Object.keys(u),vals:Object.values(u),fmt:fmtUnid,type:'bar',catLabel:'Zona',valLabel:'Unidades'};
+  DET['cMes']={title:'USD por mes (ETA / costeo)',labels:mEnt.map(x=>x[0]),vals:mEnt.map(x=>x[1]),fmt:fmtMoney,type:'bar',catLabel:'Mes',valLabel:'USD'};
+  DET['cMix']={title:'USD vs. Unidades por proveedor',labels:pm.map(x=>x[0]),catLabel:'Proveedor',series:[{name:'USD',vals:pm.map(x=>x[1]),fmt:fmtMoney},{name:'Unidades',vals:pm.map(x=>up[x[0]]||0),fmt:fmtUnid}]};
+  DET['cTicket']={title:'Ticket promedio (USD/unidad) por zona',labels:Object.keys(tk),vals:Object.values(tk),fmt:fmtMoney,type:'bar',catLabel:'Zona',valLabel:'USD/u'};
   fillExplains();
 }
 function tgEx(id){$(id).classList.toggle('on');}
@@ -883,7 +973,7 @@ function renderSug(){
 
 /* ===== Actividad (solo admin eduardo) ===== */
 let ACT_BYU={};
-const AC_LABEL={sesion:'Sesión',guardar:'Guardar',eliminar:'Eliminar',exportar:'Exportar',importar:'Importar',imprimir:'Imprimir',reporte:'Reporte'};
+const AC_LABEL={sesion:'Sesión',guardar:'Guardar',eliminar:'Eliminar',exportar:'Exportar',importar:'Importar',imprimir:'Imprimir',reporte:'Reporte',navegar:'Navegación',detalle:'Detalle gráfico',limpiar:'Limpiar'};
 function loadActividad(){
   $('actStatus').textContent='Cargando…';
   db.ref('comex_qd_actividad').limitToLast(1000).once('value').then(s=>{
@@ -917,7 +1007,7 @@ function toggleDet(id){const el=$(id);if(!el)return;const open=el.style.display=
 
 /* ===== Init ===== */
 renderUsers();
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDel();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDel();closeDet();}});
 
 </script>
 </body>
