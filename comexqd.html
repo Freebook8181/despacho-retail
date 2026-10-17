@@ -155,7 +155,7 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 /* planilla editable */
 .plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh;margin-top:4px}
 table.plan{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;table-layout:auto}
-table.plan th{background:var(--navy);color:#e8eef7;padding:8px 9px;text-align:left;position:sticky;top:0;white-space:pre-line;word-break:break-word;vertical-align:middle;line-height:1.22;font-weight:700;font-size:11px;letter-spacing:.2px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
+table.plan th{background:var(--navy);color:#e8eef7;padding:8px 9px;text-align:center;position:sticky;top:0;white-space:pre-line;word-break:break-word;vertical-align:middle;line-height:1.22;font-weight:700;font-size:11px;letter-spacing:.2px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
 table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
 table.plan td input,table.plan td select{width:100%;border:none;background:transparent;padding:8px 9px;font-size:12px;font-family:inherit;color:var(--txt)}
 table.plan td input:focus,table.plan td select:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#eff5ff}
@@ -438,7 +438,7 @@ const COLS=[
   {k:"fconf",t:"FECHA CONFIRMACION (COMERCIAL)", sh:"FECHA CONFIRMACION\n(COMERCIAL)", xls:"FECHA CONFIRMACION (COMERCIAL)", date:true},
   {k:"dorig",t:"DISPONIBILIDAD ORIGEN (FECHA)", sh:"DISPONIBILIDAD ORIGEN\n(FECHA)", xls:"DISPONIBILIDAD ORIGEN (FECHA)", date:true},
   {k:"rorig",t:"RETIRO EN ORIGEN", sh:"RETIRO EN ORIGEN", xls:"RETIRO EN ORIGEN", date:true},
-  {k:"diast",t:"DIAS T (ORIGEN)", sh:"DIAS T\n(ORIGEN)", xls:"DIAS T (ORIGEN)", num:true},
+  {k:"diast",t:"DIAS T (ORIGEN)", sh:"DIAS T\n(ORIGEN)", xls:"DIAS T (ORIGEN)", date:true},
   {k:"eta",  t:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", sh:"ETA\n(FECHA ESTIMADA DE LLEGADA CHL)", xls:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", date:true},
   {k:"fdisp",t:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", sh:"FECHA DISPONIBILIDAD\nPUERTO -AEROPUERTO", xls:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", date:true},
   {k:"rpa",  t:"RETIRO P/A", sh:"RETIRO P/A", xls:"RETIRO P/A", date:true},
@@ -1022,24 +1022,39 @@ function generarReporte(){
     logAct('reporte','Generó el reporte de importaciones');
   },500);
 }
-/* Exporta el reporte a PDF (varias páginas A4) usando html2canvas + jsPDF */
+/* Exporta el reporte a PDF en tamaño CARTA, por bloques, para que ningún gráfico quede cortado entre páginas */
 function exportarPDF(){
   const el=$('reportDoc');
   if(!el){alert('Primero genere el reporte con el botón “Generar / actualizar reporte”.');return;}
   const jsPDFns=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
   if(!window.html2canvas||!jsPDFns){alert('No se pudieron cargar las librerías de PDF. Verifique su conexión a internet.');return;}
-  html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:el.scrollWidth}).then(canvas=>{
-    const img=canvas.toDataURL('image/jpeg',0.95);
-    const pdf=new jsPDFns('p','mm','a4');
-    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
-    const iw=pw-16,ih=iw*canvas.height/canvas.width;
-    let left=ih,pos=8;
-    pdf.addImage(img,'JPEG',8,pos,iw,ih);
-    left-=(ph-16);
-    while(left>0){pdf.addPage();pos=8-(ih-left);pdf.addImage(img,'JPEG',8,pos,iw,ih);left-=(ph-16);}
+  const pdf=new jsPDFns('p','mm','letter');
+  const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
+  const M=12, cw=pw-2*M;              // márgenes de 12mm, tamaño carta (215.9 x 279.4mm)
+  // Armar la lista de bloques atómicos: cada gráfico se trata por separado para no cortarlo a la mitad
+  const blocks=[];
+  Array.from(el.children).forEach(ch=>{
+    if(ch.classList&&ch.classList.contains('imgs')){
+      const ims=Array.from(ch.querySelectorAll('img'));
+      if(ims.length) ims.forEach(im=>blocks.push(im)); else blocks.push(ch);
+    } else blocks.push(ch);
+  });
+  const opt={scale:2,backgroundColor:'#ffffff',useCORS:true};
+  let y=M;
+  (async()=>{
+    for(const b of blocks){
+      if(!b.offsetWidth&&!b.offsetHeight) continue;
+      const canvas=await html2canvas(b,opt);
+      let w=cw, h=cw*canvas.height/canvas.width;
+      if(h>ph-2*M){ h=ph-2*M; w=h*canvas.width/canvas.height; }  // bloque muy alto: se escala para que entre completo en una página
+      if(y+h>ph-M){ pdf.addPage(); y=M; }                        // si no cabe en lo que queda, pasa a página nueva (sin cortar)
+      const x=M+(cw-w)/2;                                         // centrado horizontal
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',x,y,w,h);
+      y+=h+4;
+    }
     pdf.save('Reporte_COMEX_QD_'+new Date().toISOString().slice(0,10)+'.pdf');
-    logAct('reporte','Exportó el reporte a PDF');
-  }).catch(e=>{alert('Error al exportar PDF: '+(e&&e.message||e));});
+    logAct('reporte','Exportó el reporte a PDF (carta)');
+  })().catch(e=>{alert('Error al exportar PDF: '+(e&&e.message||e));});
 }
 /* ===== Sugerencias IA (solo analista) ===== */
 function renderSug(){
