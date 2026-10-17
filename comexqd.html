@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COMEX QD – Plataforma de Control de Importaciones</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -105,7 +107,7 @@ h2.sec::before{content:'';width:4px;height:15px;background:var(--teal);border-ra
 .explain-btn:hover{background:var(--steel);color:#fff}
 .det-chart{background:#1b4b7a;border:1px solid #1b4b7a;color:#fff;border-radius:7px;padding:5px 11px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin-right:7px}
 .det-chart:hover{background:#0f2744;border-color:#0f2744}
-.detbox{width:min(820px,95vw)!important;text-align:left}
+.detbox{width:min(1000px,96vw)!important;max-height:94vh;overflow:auto;text-align:left}
 .detbox .dethd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .detbox .dethd h3{flex:1;margin:0}
 .detbox .dethd .x{background:#eef2f7;border:1px solid var(--line);border-radius:8px;width:30px;height:30px;font-size:15px;color:var(--navy)}
@@ -131,18 +133,17 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 .toolbar .st{margin-left:auto;font-size:12px;color:var(--muted)}
 .tbsep{width:1px;align-self:stretch;background:var(--line);margin:2px 4px}
 /* botones de icono con tooltip */
-/* botones de la planilla: todos en tonos del MISMO color (azul de marca) */
-.ib{position:relative;width:40px;height:40px;border:1px solid #cbdcf0;background:#eaf1fa;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:#1b4b7a;transition:.15s}
+/* botones de la planilla: ícono + nombre debajo (en tonos del MISMO color azul) */
+.ib{position:relative;min-width:58px;padding:7px 9px 6px;border:1px solid #cbdcf0;background:#eaf1fa;border-radius:9px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#1b4b7a;transition:.15s}
 .ib:hover{background:#d8e6f6;border-color:#9cc0e6;transform:translateY(-1px);box-shadow:0 3px 10px rgba(27,75,122,.12)}
 .ib .ic{font-size:18px;line-height:1}
+.ib .ibl{font-size:10.5px;font-weight:700;color:#000;line-height:1.1;white-space:nowrap}
 .ib.act-save{background:#dcebfb;border-color:#aacdf0}
 .ib.act-save:hover{background:#c2dcf7;border-color:#6ba8e0}
 .ib.act-clean{background:#cfe2f8;border-color:#9fc3ec}
 .ib.act-clean:hover{background:#b2d2f3;border-color:#7cb0e6}
 .ib.act-del{background:#bcd6f3;border-color:#8fb8e6}
 .ib.act-del:hover{background:#9ec4ee;border-color:#5f9bdd}
-.ib::after{content:attr(title);position:absolute;bottom:-34px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:11px;font-weight:600;padding:5px 9px;border-radius:7px;white-space:nowrap;opacity:0;pointer-events:none;transition:.15s;z-index:40;max-width:240px;overflow:hidden;text-overflow:ellipsis}
-.ib:hover::after{opacity:1;bottom:-30px}
 /* chips de métricas sobre cada gráfico */
 .metrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .chip{background:#f1f5fb;border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:11.5px;line-height:1.2}
@@ -151,7 +152,7 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 .grid.g2{grid-template-columns:repeat(auto-fit,minmax(440px,1fr))}
 .cc.big{height:340px}
 /* planilla editable */
-.plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh;margin-top:30px}
+.plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh;margin-top:4px}
 table.plan{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;table-layout:auto}
 table.plan th{background:var(--navy);color:#e8eef7;padding:11px 9px;text-align:left;position:sticky;top:0;white-space:nowrap;font-weight:700;font-size:11px;letter-spacing:.3px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
 table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
@@ -197,7 +198,9 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 .report .rk .b .l{font-size:11px;color:var(--muted);text-transform:uppercase}
 .report .rk .b .v{font-size:20px;font-weight:800;color:var(--navy);margin-top:4px}
 .report img{max-width:100%;border:1px solid var(--line);border-radius:8px;margin:8px 0}
-.report .imgs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.report .imgs{display:block;margin:6px 0 18px}
+.report .imgs img{display:block;width:100%;max-width:760px;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;margin:0 auto 16px}
+.report .imgfail{border:1px dashed #cbd5e1;border-radius:10px;padding:18px;text-align:center;color:#94a3b8;font-size:12.5px;margin:0 auto 16px;max-width:760px}
 /* IA / sugerencias */
 .sug{background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px 20px;margin-bottom:13px;border-left:4px solid var(--teal)}
 .sug.hi{border-left-color:var(--bad)} .sug.md{border-left-color:var(--warn)}
@@ -222,7 +225,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 .empty{text-align:center;color:var(--muted);padding:60px 20px}
 .empty h3{color:var(--navy);font-size:17px;margin-bottom:8px}
 /* responsive */
-@media(max-width:860px){.side{width:62px}.side .logo .t,.side .logo .d,.nav button span.lbl,.side .foot{display:none}.nav button{justify-content:center}.main{margin-left:62px}.report .imgs{grid-template-columns:1fr}}
+@media(max-width:860px){.side{width:62px}.side .logo .t,.side .logo .d,.nav button span.lbl,.side .foot{display:none}.nav button{justify-content:center}.main{margin-left:62px}}
 /* print */
 @media print{
   .side,.topbar,.toolbar,.nav,.explain-btn,.det-chart{display:none!important}
@@ -278,16 +281,16 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 <!-- PLANILLA -->
 <section class="tabpane" id="tab-planilla">
   <div class="toolbar">
-    <button class="ib" onclick="addRow()" title="Agregar una nueva fila a la planilla"><span class="ic">➕</span></button>
-    <button class="ib" onclick="document.getElementById('impFile').click()" title="Importar datos desde un archivo Excel"><span class="ic">📥</span></button>
+    <button class="ib" onclick="addRow()" aria-label="Agregar fila"><span class="ic">➕</span><span class="ibl">Agregar</span></button>
+    <button class="ib" onclick="document.getElementById('impFile').click()" aria-label="Importar"><span class="ic">📥</span><span class="ibl">Importar</span></button>
     <input type="file" id="impFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this)">
-    <button class="ib" onclick="exportExcel()" title="Exportar la planilla a Excel con el mismo diseño"><span class="ic">📄</span></button>
-    <button class="ib" onclick="imprimir()" title="Imprimir la planilla"><span class="ic">🖨️</span></button>
-    <button class="ib" onclick="go('graficos')" title="Ver gráficos y KPIs"><span class="ic">📊</span></button>
+    <button class="ib" onclick="exportExcel()" aria-label="Exportar"><span class="ic">📄</span><span class="ibl">Exportar</span></button>
+    <button class="ib" onclick="imprimir()" aria-label="Imprimir"><span class="ic">🖨️</span><span class="ibl">Imprimir</span></button>
+    <button class="ib" onclick="go('graficos')" aria-label="Gráficos"><span class="ic">📊</span><span class="ibl">Gráficos</span></button>
     <span class="tbsep"></span>
-    <button class="ib act-save" onclick="saveCloud()" title="Guardar los cambios en la base de datos (Firebase)"><span class="ic">💾</span></button>
-    <button class="ib act-clean" onclick="limpiar()" title="Limpiar la planilla en pantalla (no afecta la nube)"><span class="ic">🧹</span></button>
-    <button class="ib act-del" onclick="openDel()" title="Eliminar los datos de la base de datos (requiere clave)"><span class="ic">🗑️</span></button>
+    <button class="ib act-save" onclick="saveCloud()" aria-label="Guardar"><span class="ic">💾</span><span class="ibl">Guardar</span></button>
+    <button class="ib act-clean" onclick="limpiar()" aria-label="Limpiar"><span class="ic">🧹</span><span class="ibl">Limpiar</span></button>
+    <button class="ib act-del" onclick="openDel()" aria-label="Eliminar"><span class="ic">🗑️</span><span class="ibl">Eliminar</span></button>
     <span class="st" id="planStatus">—</span>
   </div>
   <div class="plan-wrap"><table class="plan" id="planTable"><thead id="planHead"></thead><tbody id="planBody"></tbody></table></div>
@@ -296,7 +299,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 <!-- GRAFICOS & KPIS -->
 <section class="tabpane on" id="tab-graficos">
   <div class="toolbar">
-    <button class="ib" onclick="limpiarTodo()" title="Limpiar todos los datos y gráficos (conserva el Dólar Observado, que se actualiza desde internet)"><span class="ic">🧹</span></button>
+    <button class="ib" onclick="limpiarTodo()" aria-label="Limpiar todo"><span class="ic">🧹</span><span class="ibl">Limpiar</span></button>
     <span class="st">Limpiar todo · el <b>Dólar Observado</b> se conserva y se actualiza a diario desde internet</span>
   </div>
   <h2 class="sec">Indicadores clave &amp; métricas</h2>
@@ -353,6 +356,12 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
       <div class="cc big"><canvas id="cTicket"></canvas></div>
       <div class="explain-box" id="exTicket"></div>
     </div>
+    <div class="panel">
+      <div class="ph"><h3>Pareto de gasto — dónde se gasta más (por proveedor)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cPareto')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exPareto')">ℹ Análisis</button></div>
+      <div class="metrow" id="mPareto"></div>
+      <div class="cc big"><canvas id="cPareto"></canvas></div>
+      <div class="explain-box" id="exPareto"></div>
+    </div>
   </div>
 </section>
 
@@ -360,6 +369,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 <section class="tabpane" id="tab-reporte">
   <div class="toolbar">
     <button class="tbtn graf" onclick="generarReporte()"><span class="ic">⟳</span> Generar / actualizar reporte</button>
+    <button class="tbtn" onclick="exportarPDF()"><span class="ic">⬇</span> Exportar PDF</button>
     <button class="tbtn" onclick="imprimir('reporte')"><span class="ic">⎙</span> Imprimir reporte</button>
   </div>
   <div id="reportHost"><div class="empty"><h3>Sin reporte generado</h3><p>Presione “Generar / actualizar reporte” para construir el análisis con gráficos y campo de calor.</p></div></div>
@@ -398,7 +408,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 <div class="modal" id="detModal">
   <div class="modal-box detbox">
     <div class="dethd"><h3 id="detTitle">Detalle</h3><button class="x" onclick="closeDet()">✕</button></div>
-    <div class="cc" style="height:340px"><canvas id="detCanvas"></canvas></div>
+    <div class="cc" id="detCC" style="height:min(52vh,460px)"><canvas id="detCanvas"></canvas></div>
     <div id="detTable"></div>
   </div>
 </div>
@@ -457,8 +467,10 @@ const SEED=[
 ];
 /* ===== Helpers formato ===== */
 const $=id=>document.getElementById(id);
-/* USD: U$ 1,234,567.89  (miles con coma, 2 decimales con punto) */
-function fmtMoney(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return 'U$ '+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+/* USD: 1,234,567.89 USD  (miles con coma, 2 decimales con punto, sigla USD después del valor) */
+function fmtMoney(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' USD';}
+/* USD compacto para ejes/etiquetas: 1,234k USD */
+function fmtUSDk(v){v=+v||0;return (v/1000).toLocaleString('en-US',{maximumFractionDigits:0})+'k USD';}
 /* Unidades: 1.234.567 (miles con punto) */
 function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return Math.round(v).toLocaleString('es-CL');}
 function numClean(v){return parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;}
@@ -535,6 +547,7 @@ function go(tab){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   $('ptitle').textContent=TITLES[tab];
   if(tab==='graficos'){renderKpis();renderAlerts();drawCharts();}
+  if(tab==='reporte') generarReporte();
   if(tab==='sugerencias') renderSug();
   if(tab==='actividad') loadActividad();
   logAct('navegar','Abrió la pestaña '+(TITLES[tab]||tab));
@@ -816,17 +829,19 @@ function detalle(id){
   setTimeout(()=>{
     let cfg;
     if(d.series){
-      cfg={type:'bar',data:{labels:d.labels,datasets:d.series.map((s,i)=>({label:s.name,data:s.vals,backgroundColor:i?'#d97706':'#1b4b7a',borderRadius:4}))},options:{maintainAspectRatio:false,plugins:{legend:{position:'top'}}}};
+      cfg={type:'bar',data:{labels:d.labels,datasets:d.series.map((s,i)=>({label:s.name,data:s.vals,backgroundColor:i?'#d97706':'#1b4b7a',borderRadius:4}))},options:{maintainAspectRatio:false,plugins:{legend:{position:'top'},datalabels:{display:true,anchor:'end',align:'top',font:{weight:'700',size:11},color:ctx=>ctx.datasetIndex?'#b45309':'#0f2744',formatter:(v,ctx)=>d.series[ctx.datasetIndex].fmt(v)}}}};
     } else if(d.type==='doughnut'||d.type==='polarArea'){
-      cfg={type:d.type,data:{labels:d.labels,datasets:[{data:d.vals,backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'}}}};
+      cfg={type:d.type,data:{labels:d.labels,datasets:[{data:d.vals,backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'},datalabels:{display:true,color:d.type==='doughnut'?'#fff':'#0f2744',font:{weight:'800',size:13},formatter:(v)=>d.fmt(v)}}}};
     } else {
-      cfg={type:'bar',data:{labels:d.labels,datasets:[{label:d.valLabel||'Valor',data:d.vals,backgroundColor:'#1b4b7a',borderRadius:5}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}}}};
+      cfg={type:'bar',data:{labels:d.labels,datasets:[{label:d.valLabel||'Valor',data:d.vals,backgroundColor:'#1b4b7a',borderRadius:5}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',color:'#0f2744',font:{weight:'700',size:12},formatter:(v)=>d.fmt(v)}}}};
     }
     detChart=new Chart($('detCanvas'),cfg);
-  },70);
+    setTimeout(()=>{if(detChart)detChart.resize();},60);
+  },90);
   logAct('detalle','Vio el detalle del gráfico: '+d.title);
 }
 function closeDet(){$('detModal').classList.remove('on');if(detChart){detChart.destroy();detChart=null;}}
+window.addEventListener('resize',()=>{if(detChart&&$('detModal').classList.contains('on'))detChart.resize();});
 function limpiarTodo(){
   if(!confirm('¿Limpiar todos los datos y gráficos? El DÓLAR OBSERVADO se conserva y se actualiza desde internet. (No afecta la nube hasta Guardar)'))return;
   ROWS=[];
@@ -835,40 +850,71 @@ function limpiarTodo(){
   $('planStatus').textContent='Datos y gráficos limpiados (dólar observado conservado)';
   logAct('limpiar','Limpió datos y gráficos (dólar observado conservado)');
 }
-function mk(id,cfg){if(CH[id])CH[id].destroy();const el=$(id);if(!el)return;CH[id]=new Chart(el,cfg);}
+const CFG={};
+function mk(id,cfg){CFG[id]=cfg;if(CH[id])CH[id].destroy();const el=$(id);if(!el)return;CH[id]=new Chart(el,cfg);}
+/* genera la imagen de un gráfico en un lienzo fuera de pantalla, con tamaño real,
+   para que el reporte muestre los gráficos aunque la pestaña Gráficos esté oculta */
+function reportImg(id){
+  const cfg=CFG[id];if(!cfg)return '';
+  const wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-10000px;top:0;width:900px;height:460px;background:#fff;padding:10px';
+  const cv=document.createElement('canvas');cv.width=900;cv.height=460;
+  wrap.appendChild(cv);document.body.appendChild(wrap);
+  let data='';
+  try{
+    // clonar labels y datasets para NO reutilizar el config ya ligado al gráfico vivo (evita que salga en blanco/roto)
+    const data2={labels:(cfg.data.labels||[]).slice(),datasets:(cfg.data.datasets||[]).map(ds=>Object.assign({},ds,{data:(ds.data||[]).slice()}))};
+    const rc={type:cfg.type,data:data2,options:Object.assign({},cfg.options||{},{animation:false,responsive:false,maintainAspectRatio:false,devicePixelRatio:2})};
+    const c=new Chart(cv,rc);
+    c.update('none');
+    c.draw();
+    data=c.toBase64Image('image/png',1);
+    c.destroy();
+  }catch(e){}
+  document.body.removeChild(wrap);
+  return data?`<img src="${data}" alt="gráfico">`:'<div class="imgfail">No se pudo generar la imagen del gráfico.</div>';
+}
 Chart.defaults.font.family="'Segoe UI',system-ui,Arial";Chart.defaults.color='#475569';Chart.defaults.font.size=12;
+// Mostrar valores sobre los gráficos (plugin datalabels, desactivado por defecto y activado por gráfico)
+try{if(window.ChartDataLabels)Chart.register(window.ChartDataLabels);}catch(e){}
+Chart.defaults.set('plugins.datalabels',{display:false});
 function sortEnt(m){return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
 function chip(host,lb,val){const el=$(host);if(el)el.insertAdjacentHTML('beforeend',`<div class="chip"><span>${lb}</span><b>${val}</b></div>`);}
-function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mMes','mMix','mTicket'].forEach(id=>{if($(id))$(id).innerHTML='';});}
+function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mMes','mMix','mTicket','mPareto'].forEach(id=>{if($(id))$(id).innerHTML='';});}
 function unidByProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+numClean(r.unid);});return m;}
 function ticketByZona(){const u=unidByZona(),z=byZona(),m={};Object.keys(z).forEach(k=>{m[k]=u[k]?z[k]/u[k]:0;});return m;}
 function drawCharts(){
   clearChips();
-  const kUSD={ticks:{callback:v=>'U$'+(v/1000).toLocaleString('en-US')+'k'}};
+  const kUSD={ticks:{callback:v=>fmtUSDk(v)}};
   const z=byZona(),tu=totUSD();
-  mk('cZona',{type:'doughnut',data:{labels:Object.keys(z),datasets:[{data:Object.values(z),backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmtMoney(c.parsed)}}},maintainAspectRatio:false,cutout:'55%'}});
+  mk('cZona',{type:'doughnut',data:{labels:Object.keys(z),datasets:[{data:Object.values(z),backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmtMoney(c.parsed)}},datalabels:{display:true,color:'#fff',textAlign:'center',font:{weight:'800',size:10},formatter:(v,ctx)=>{const t=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+(+b||0),0);const lbl=ctx.chart.data.labels[ctx.dataIndex];return [lbl,fmtMoney(v),(t?Math.round(v/t*100)+'%':'')];}}},maintainAspectRatio:false,cutout:'55%'}});
   sortEnt(z).slice(0,3).forEach(([k,v])=>chip('mZona',k,fmtMoney(v)));
   const p=sortEnt(byProv());
-  mk('cProv',{type:'bar',data:{labels:p.map(x=>x[0]),datasets:[{data:p.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:5}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.x)}}},maintainAspectRatio:false,scales:{x:kUSD}}});
+  mk('cProv',{type:'bar',data:{labels:p.map(x=>x[0]),datasets:[{data:p.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:5}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.x)}},datalabels:{display:true,anchor:'end',align:'end',clamp:true,color:'#0f2744',font:{weight:'700',size:10},formatter:v=>fmtUSDk(v)}},maintainAspectRatio:false,scales:{x:kUSD}}});
   chip('mProv','Proveedores',p.length);if(p[0])chip('mProv','Top',p[0][0]);if(p[0]&&tu)chip('mProv','Part.',Math.round(p[0][1]/tu*100)+'%');
   const e=byEstado();
-  mk('cEstado',{type:'polarArea',data:{labels:Object.keys(e),datasets:[{data:Object.values(e),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'}},maintainAspectRatio:false}});
+  mk('cEstado',{type:'polarArea',data:{labels:Object.keys(e),datasets:[{data:Object.values(e),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'},datalabels:{display:true,color:'#0f2744',textAlign:'center',font:{weight:'800',size:11},formatter:(v,ctx)=>v?[ctx.chart.data.labels[ctx.dataIndex],v+' PO']:''}},maintainAspectRatio:false}});
   Object.entries(e).forEach(([k,v])=>chip('mEstado',k,v));
   const t=ROWS.filter(r=>numClean(r.ttot)>0);
-  mk('cTiempo',{type:'bar',data:{labels:t.map(r=>r.po),datasets:[{label:'Días',data:t.map(r=>numClean(r.ttot)),backgroundColor:'#0e7490',borderRadius:5}]},options:{plugins:{legend:{display:false}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'días'}}}}});
+  mk('cTiempo',{type:'bar',data:{labels:t.map(r=>r.po),datasets:[{label:'Días',data:t.map(r=>numClean(r.ttot)),backgroundColor:'#0e7490',borderRadius:5}]},options:{plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',color:'#0e7490',font:{weight:'700',size:10},formatter:v=>v}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'días'}}}}});
   chip('mTiempo','Promedio',avgTiempo()+' d');chip('mTiempo','PO con dato',t.length);
   const u=unidByZona();
-  mk('cUnid',{type:'bar',data:{labels:Object.keys(u),datasets:[{label:'Unidades',data:Object.values(u),backgroundColor:'#7c3aed',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtUnid(c.parsed.y)+' u'}}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>fmtUnid(v)}}}}});
+  mk('cUnid',{type:'bar',data:{labels:Object.keys(u),datasets:[{label:'Unidades',data:Object.values(u),backgroundColor:'#7c3aed',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtUnid(c.parsed.y)+' u'}},datalabels:{display:true,anchor:'end',align:'top',color:'#7c3aed',font:{weight:'700',size:10},formatter:v=>fmtUnid(v)}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>fmtUnid(v)}}}}});
   chip('mUnid','Total u',fmtUnid(totUnid()));sortEnt(u).slice(0,1).forEach(([k,v])=>chip('mUnid','Mayor',k+' ('+fmtUnid(v)+')'));
   const mEnt=Object.entries(byMes()).sort();
-  mk('cMes',{type:'line',data:{labels:mEnt.map(x=>x[0]),datasets:[{label:'USD',data:mEnt.map(x=>x[1]),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.14)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#2563eb'}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.y)}}},maintainAspectRatio:false,scales:{y:kUSD}}});
+  mk('cMes',{type:'line',data:{labels:mEnt.map(x=>x[0]),datasets:[{label:'USD',data:mEnt.map(x=>x[1]),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.14)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#2563eb'}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.y)}},datalabels:{display:true,align:'top',color:'#2563eb',font:{weight:'700',size:10},formatter:v=>fmtUSDk(v)}},maintainAspectRatio:false,scales:{y:kUSD}}});
   if(mEnt.length){chip('mMes','Meses',mEnt.length);const pk=mEnt.reduce((a,b)=>b[1]>a[1]?b:a);chip('mMes','Pico',pk[0]);}
   const pm=sortEnt(byProv()).slice(0,8),up=unidByProv();
-  mk('cMix',{type:'bar',data:{labels:pm.map(x=>x[0]),datasets:[{label:'USD',data:pm.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y'},{label:'Unidades',type:'line',data:pm.map(x=>up[x[0]]||0),borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.3,pointRadius:3}]},options:{plugins:{tooltip:{callbacks:{label:c=>c.dataset.label==='USD'?fmtMoney(c.parsed.y):fmtUnid(c.parsed.y)+' u'}}},maintainAspectRatio:false,scales:{y:{position:'left',ticks:{callback:v=>'U$'+(v/1000)+'k'}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>fmtUnid(v)}}}}});
+  mk('cMix',{type:'bar',data:{labels:pm.map(x=>x[0]),datasets:[{label:'USD',data:pm.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y'},{label:'Unidades',type:'line',data:pm.map(x=>up[x[0]]||0),borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.3,pointRadius:3}]},options:{plugins:{tooltip:{callbacks:{label:c=>c.dataset.label==='USD'?fmtMoney(c.parsed.y):fmtUnid(c.parsed.y)+' u'}},datalabels:{display:true,anchor:'end',align:'top',font:{weight:'700',size:9},color:ctx=>ctx.datasetIndex?'#b45309':'#0f2744',formatter:(v,ctx)=>ctx.datasetIndex?fmtUnid(v):fmtUSDk(v)}},maintainAspectRatio:false,scales:{y:{position:'left',ticks:{callback:v=>fmtUSDk(v)}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>fmtUnid(v)}}}}});
   chip('mMix','Compara','USD vs unidades');
   const tk=ticketByZona();
-  mk('cTicket',{type:'bar',data:{labels:Object.keys(tk),datasets:[{label:'USD/u',data:Object.values(tk),backgroundColor:'#16a34a',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.y)+' / u'}}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>'U$'+v.toFixed(0)}}}}});
+  mk('cTicket',{type:'bar',data:{labels:Object.keys(tk),datasets:[{label:'USD/u',data:Object.values(tk),backgroundColor:'#16a34a',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.y)+' / u'}},datalabels:{display:true,anchor:'end',align:'top',color:'#15803d',font:{weight:'700',size:10},formatter:v=>v.toFixed(0)+' USD'}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>v.toFixed(0)+' USD'}}}}});
   sortEnt(tk).slice(0,2).forEach(([k,v])=>chip('mTicket',k,fmtMoney(v)));
+  // Pareto de gasto por proveedor: barras USD (desc) + línea de % acumulado (dónde se gasta más)
+  const pa=sortEnt(byProv()),paTot=pa.reduce((a,b)=>a+(+b[1]||0),0);let paAcc=0;const paCum=pa.map(x=>{paAcc+=x[1];return paTot?Math.round(paAcc/paTot*100):0;});
+  mk('cPareto',{type:'bar',data:{labels:pa.map(x=>x[0]),datasets:[{type:'bar',label:'USD',data:pa.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y',order:2},{type:'line',label:'% acumulado',data:paCum,borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.2,pointRadius:3,order:1}]},options:{plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label==='USD'?fmtMoney(c.parsed.y):c.parsed.y+'% acumulado'}},datalabels:{display:true,anchor:'end',align:'top',font:{weight:'700',size:9},color:ctx=>ctx.datasetIndex?'#b45309':'#0f2744',formatter:(v,ctx)=>ctx.datasetIndex?v+'%':fmtUSDk(v)}},maintainAspectRatio:false,scales:{y:{position:'left',beginAtZero:true,ticks:{callback:v=>fmtUSDk(v)}},y1:{position:'right',beginAtZero:true,max:100,grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}}});
+  if(pa[0])chip('mPareto','Mayor gasto',pa[0][0]+' ('+fmtMoney(pa[0][1])+')');
+  {let a2=0,n80=0;for(const x of pa){a2+=x[1];n80++;if(paTot&&a2/paTot>=0.8)break;}chip('mPareto','80% del gasto',n80+' proveedor(es)');}
   // registrar datos para la vista DETALLE de cada gráfico
   DET['cZona']={title:'USD por zona de origen',labels:Object.keys(z),vals:Object.values(z),fmt:fmtMoney,type:'doughnut',catLabel:'Zona',valLabel:'USD'};
   DET['cProv']={title:'Top proveedores por USD',labels:p.map(x=>x[0]),vals:p.map(x=>x[1]),fmt:fmtMoney,type:'bar',catLabel:'Proveedor',valLabel:'USD'};
@@ -878,6 +924,7 @@ function drawCharts(){
   DET['cMes']={title:'USD por mes (ETA / costeo)',labels:mEnt.map(x=>x[0]),vals:mEnt.map(x=>x[1]),fmt:fmtMoney,type:'bar',catLabel:'Mes',valLabel:'USD'};
   DET['cMix']={title:'USD vs. Unidades por proveedor',labels:pm.map(x=>x[0]),catLabel:'Proveedor',series:[{name:'USD',vals:pm.map(x=>x[1]),fmt:fmtMoney},{name:'Unidades',vals:pm.map(x=>up[x[0]]||0),fmt:fmtUnid}]};
   DET['cTicket']={title:'Ticket promedio (USD/unidad) por zona',labels:Object.keys(tk),vals:Object.values(tk),fmt:fmtMoney,type:'bar',catLabel:'Zona',valLabel:'USD/u'};
+  DET['cPareto']={title:'Pareto de gasto por proveedor',labels:pa.map(x=>x[0]),catLabel:'Proveedor',series:[{name:'USD',vals:pa.map(x=>x[1]),fmt:fmtMoney},{name:'% acumulado',vals:paCum,fmt:v=>v+'%'}]};
   fillExplains();
 }
 function tgEx(id){$(id).classList.toggle('on');}
@@ -897,6 +944,8 @@ function fillExplains(){
   $('exMix').innerHTML=`<b>Qué mide:</b> relación entre valor (USD) y volumen (unidades) por proveedor. <b>Lectura:</b> proveedores con mucho USD y pocas unidades manejan artículos de alto valor; a la inversa, alto volumen y bajo USD son commodities. <b>Indicador:</b> orienta la priorización de seguros, controles de calidad y condiciones de pago.`;
   const tk=sortEnt(ticketByZona());
   $('exTicket').innerHTML=`<b>Qué mide:</b> ticket promedio = USD / unidad por zona. <b>Lectura:</b> ${tk[0]?tk[0][0]+' con '+fmtMoney(tk[0][1])+' por unidad':'—'}. <b>KPI:</b> valor unitario de la mercadería; a mayor ticket, mayor impacto financiero de un atraso o merma y mayor justificación para modos de transporte más rápidos.`;
+  const pae=sortEnt(byProv()),paet=pae.reduce((a,b)=>a+(+b[1]||0),0);let pacc=0,pn80=0;for(const x of pae){pacc+=x[1];pn80++;if(paet&&pacc/paet>=0.8)break;}
+  $('exPareto').innerHTML=`<b>Qué mide:</b> principio de Pareto (80/20) aplicado al gasto en importaciones: ordena a los proveedores de mayor a menor USD y acumula su participación (línea naranja). <b>Lectura:</b> ${pae[0]?'donde más se gasta es <b>'+pae[0][0]+'</b> ('+fmtMoney(pae[0][1])+'); ':''}${pae.length?'<b>'+pn80+'</b> proveedor(es) concentran ~80% del gasto total':'—'}. <b>KPI:</b> foco de compra; permite priorizar negociación, control y planes de contingencia en los pocos proveedores que explican la mayor parte del desembolso.`;
 }
 /* ===== Reporte ===== */
 function heatColor(v,max){if(!v)return '#f8fafc';const t=max?v/max:0;const r=Math.round(219-(219-15)*t),g=Math.round(234-(234-51)*t),b=Math.round(251-(251-90)*t);return `rgb(${r},${g},${b})`;}
@@ -916,7 +965,7 @@ function generarReporte(){
     const z=sortEnt(byZona()),p=sortEnt(byProv()),tu=totUSD(),e=byEstado(),u=sortEnt(unidByZona());
     const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
     const tk=sortEnt(ticketByZona());
-    const img=id=>CH[id]?`<img src="${CH[id].toBase64Image()}">`:'';
+    const img=id=>reportImg(id);
     const clpTxt=DOLAR?` Al tipo de cambio observado del Banco Central (${'$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2})} al ${DOLAR_FECHA}), el portafolio equivale a aproximadamente <b>$${Math.round(tu*DOLAR).toLocaleString('es-CL')} CLP</b>.`:'';
     const concTop=p[0]&&tu?Math.round(p[0][1]/tu*100):0;
     const html=`<div class="report" id="reportDoc">
@@ -937,7 +986,7 @@ function generarReporte(){
       <div class="imgs">${img('cZona')}${img('cUnid')}</div>
       <h3>3. Concentración de proveedores (Pareto)</h3>
       <p>${p[0]?'El proveedor <b>'+p[0][0]+'</b> representa el <b>'+concTop+'%</b> del gasto total ('+fmtMoney(p[0][1])+'). '+(concTop>40?'Esto constituye una <b>concentración de riesgo</b> sobre el umbral recomendado (40%): una interrupción de este proveedor afectaría gran parte del flujo. Se sugiere homologar un segundo proveedor y negociar acuerdos de respaldo con lead time garantizado.':'Se encuentra dentro de un rango de diversificación razonable.'):''} El gráfico combinado USD vs. unidades permite distinguir proveedores de alto valor unitario (pocas unidades, mucho USD) de proveedores de commodities (alto volumen, bajo USD), orientando la priorización de seguros, inspecciones y condiciones de pago.</p>
-      <div class="imgs">${img('cProv')}${img('cMix')}</div>
+      <div class="imgs">${img('cProv')}${img('cMix')}${img('cPareto')}</div>
       <h3>4. Estado operativo y tiempos de tránsito</h3>
       <p>Distribución de etapas del pipeline: ${Object.entries(e).map(x=>x[0]+' ('+x[1]+')').join(', ')}. El lead time promedio es de <b>${avgTiempo()} días</b>; las PO muy por encima de ese promedio revelan cuellos de botella (aduana, naviera o retiro P/A) que impactan la rotación de inventario y el costo financiero del stock en tránsito. ${atr>0?'Las '+atr+' PO atrasadas deben escalarse de inmediato.':'No hay atrasos registrados en este corte.'}</p>
       <div class="imgs">${img('cEstado')}${img('cTiempo')}</div>
@@ -953,6 +1002,25 @@ function generarReporte(){
     $('reportHost').innerHTML=html;
     logAct('reporte','Generó el reporte de importaciones');
   },500);
+}
+/* Exporta el reporte a PDF (varias páginas A4) usando html2canvas + jsPDF */
+function exportarPDF(){
+  const el=$('reportDoc');
+  if(!el){alert('Primero genere el reporte con el botón “Generar / actualizar reporte”.');return;}
+  const jsPDFns=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
+  if(!window.html2canvas||!jsPDFns){alert('No se pudieron cargar las librerías de PDF. Verifique su conexión a internet.');return;}
+  html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,windowWidth:el.scrollWidth}).then(canvas=>{
+    const img=canvas.toDataURL('image/jpeg',0.95);
+    const pdf=new jsPDFns('p','mm','a4');
+    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+    const iw=pw-16,ih=iw*canvas.height/canvas.width;
+    let left=ih,pos=8;
+    pdf.addImage(img,'JPEG',8,pos,iw,ih);
+    left-=(ph-16);
+    while(left>0){pdf.addPage();pos=8-(ih-left);pdf.addImage(img,'JPEG',8,pos,iw,ih);left-=(ph-16);}
+    pdf.save('Reporte_COMEX_QD_'+new Date().toISOString().slice(0,10)+'.pdf');
+    logAct('reporte','Exportó el reporte a PDF');
+  }).catch(e=>{alert('Error al exportar PDF: '+(e&&e.message||e));});
 }
 /* ===== Sugerencias IA (solo analista) ===== */
 function renderSug(){
