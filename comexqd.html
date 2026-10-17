@@ -149,12 +149,13 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 .chip{background:#f1f5fb;border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:11.5px;line-height:1.2}
 .chip b{display:block;color:var(--navy);font-size:14px;font-weight:800;margin-top:2px}
 .chip span{color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;font-size:10px}
-.grid.g2{grid-template-columns:repeat(auto-fit,minmax(440px,1fr))}
-.cc.big{height:340px}
+.grid.g2{grid-template-columns:repeat(2,1fr)}
+.cc.big{height:440px}
+@media(max-width:900px){.grid.g2{grid-template-columns:1fr}}
 /* planilla editable */
 .plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh;margin-top:4px}
 table.plan{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;table-layout:auto}
-table.plan th{background:var(--navy);color:#e8eef7;padding:11px 9px;text-align:left;position:sticky;top:0;white-space:nowrap;font-weight:700;font-size:11px;letter-spacing:.3px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
+table.plan th{background:var(--navy);color:#e8eef7;padding:8px 9px;text-align:left;position:sticky;top:0;white-space:normal;word-break:break-word;vertical-align:middle;line-height:1.22;font-weight:700;font-size:11px;letter-spacing:.2px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
 table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
 table.plan td input,table.plan td select{width:100%;border:none;background:transparent;padding:8px 9px;font-size:12px;font-family:inherit;color:var(--txt)}
 table.plan td input:focus,table.plan td select:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#eff5ff}
@@ -428,23 +429,23 @@ let CURRENT=null, selEmail=null;
 
 /* ===== Columnas de la planilla (del Excel COMEX_QD) ===== */
 const COLS=[
-  {k:"po",   t:"PO (Orden de Compra)", xls:"PO (Orden de Compra)"},
-  {k:"prov", t:"Proveedor", xls:"Proveedor"},
-  {k:"tipo", t:"Tipo (Maritimo / Aereo)", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"]},
-  {k:"unid", t:"Unidades (Q de articulos en PO)", xls:"Unidades (Q de articulos en PO)", num:true},
-  {k:"usd",  t:"USD", xls:"USD", money:true},
-  {k:"zona", t:"ZONA", xls:"ZONA", opt:["ASIA","EEUU","EUROPA","LATAM"]},
-  {k:"fconf",t:"FECHA CONFIRMACION (COMERCIAL)", xls:"FECHA CONFIRMACION (COMERCIAL)", date:true},
-  {k:"dorig",t:"DISPONIBILIDAD ORIGEN (FECHA)", xls:"DISPONIBILIDAD ORIGEN (FECHA)", date:true},
-  {k:"rorig",t:"RETIRO EN ORIGEN", xls:"RETIRO EN ORIGEN", date:true},
-  {k:"diast",t:"DIAS T (ORIGEN)", xls:"DIAS T (ORIGEN)", num:true},
-  {k:"eta",  t:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", xls:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", date:true},
-  {k:"fdisp",t:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", xls:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", date:true},
-  {k:"rpa",  t:"RETIRO P/A", xls:"RETIRO P/A", date:true},
-  {k:"lcd",  t:"LLEGADA A CD", xls:"LLEGADA A CD", date:true},
-  {k:"cost", t:"COSTEO", xls:"COSTEO", date:true},
-  {k:"dinv", t:"DISPONIBILIDAD INVENTARIO (FINAL)", xls:"DISPONIBILIDAD INVENTARIO (FINAL)"},
-  {k:"ttot", t:"TIEMPO TOTAL", xls:"TIEMPO TOTAL", num:true}
+  {k:"po",   t:"PO (Orden de Compra)", sh:"PO", xls:"PO (Orden de Compra)"},
+  {k:"prov", t:"Proveedor", sh:"Proveedor", xls:"Proveedor"},
+  {k:"tipo", t:"Tipo (Maritimo / Aereo)", sh:"Tipo", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"]},
+  {k:"unid", t:"Unidades (Q de articulos en PO)", sh:"Unidades", xls:"Unidades (Q de articulos en PO)", num:true},
+  {k:"usd",  t:"USD", sh:"USD", xls:"USD", money:true},
+  {k:"zona", t:"ZONA", sh:"ZONA", xls:"ZONA", opt:["ASIA","EEUU","EUROPA","LATAM"]},
+  {k:"fconf",t:"FECHA CONFIRMACION (COMERCIAL)", sh:"Confirm. comercial", xls:"FECHA CONFIRMACION (COMERCIAL)", date:true},
+  {k:"dorig",t:"DISPONIBILIDAD ORIGEN (FECHA)", sh:"Disp. origen", xls:"DISPONIBILIDAD ORIGEN (FECHA)", date:true},
+  {k:"rorig",t:"RETIRO EN ORIGEN", sh:"Retiro origen", xls:"RETIRO EN ORIGEN", date:true},
+  {k:"diast",t:"DIAS T (ORIGEN)", sh:"Días T origen", xls:"DIAS T (ORIGEN)", num:true},
+  {k:"eta",  t:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", sh:"ETA", xls:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", date:true},
+  {k:"fdisp",t:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", sh:"Disp. puerto/aero", xls:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", date:true},
+  {k:"rpa",  t:"RETIRO P/A", sh:"Retiro P/A", xls:"RETIRO P/A", date:true},
+  {k:"lcd",  t:"LLEGADA A CD", sh:"Llegada CD", xls:"LLEGADA A CD", date:true},
+  {k:"cost", t:"COSTEO", sh:"Costeo", xls:"COSTEO", date:true},
+  {k:"dinv", t:"DISPONIBILIDAD INVENTARIO (FINAL)", sh:"Disp. inventario", xls:"DISPONIBILIDAD INVENTARIO (FINAL)"},
+  {k:"ttot", t:"TIEMPO TOTAL", sh:"Tiempo total", xls:"TIEMPO TOTAL", num:true}
 ];
 let ROWS=[];
 
@@ -557,12 +558,14 @@ function go(tab){
 /* ancho auto de columna según contenido (fijado en ch) */
 function dispVal(c,v){if(v==null||v==='')return '';if(c.money)return fmtMoney(v);if(c.k==='unid')return fmtUnid(v);return ''+v;}
 function colWidth(c){
-  let max=(''+c.t).length;
+  // Ancho autoajustable: se basa sobre todo en el contenido real; el encabezado corto no infla la columna (puede ir en 2 líneas).
+  const label=c.sh||c.t;
+  let max=Math.min((''+label).length,14);
   ROWS.forEach(r=>{const l=dispVal(c,r[c.k]).length;if(l>max)max=l;});
-  return Math.min(Math.max(max+2,8),40);
+  return Math.min(Math.max(max+2,7),26);
 }
 function renderHead(){
-  const ths=COLS.map(c=>`<th style="width:${colWidth(c)}ch">${esc(c.t)}</th>`).join('');
+  const ths=COLS.map(c=>`<th style="width:${colWidth(c)}ch" title="${esc(c.t)}">${esc(c.sh||c.t)}</th>`).join('');
   $('planHead').innerHTML='<tr><th style="width:4ch">#</th>'+ths+'<th style="width:4ch"></th></tr>';
 }
 function rowObj(arr){const o={};COLS.forEach((c,i)=>o[c.k]=arr?arr[i]:'' );return o;}
