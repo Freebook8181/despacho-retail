@@ -155,7 +155,7 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 /* planilla editable */
 .plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh;margin-top:4px}
 table.plan{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;table-layout:auto}
-table.plan th{background:var(--navy);color:#e8eef7;padding:8px 9px;text-align:left;position:sticky;top:0;white-space:normal;word-break:break-word;vertical-align:middle;line-height:1.22;font-weight:700;font-size:11px;letter-spacing:.2px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
+table.plan th{background:var(--navy);color:#e8eef7;padding:8px 9px;text-align:left;position:sticky;top:0;white-space:pre-line;word-break:break-word;vertical-align:middle;line-height:1.22;font-weight:700;font-size:11px;letter-spacing:.2px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
 table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
 table.plan td input,table.plan td select{width:100%;border:none;background:transparent;padding:8px 9px;font-size:12px;font-family:inherit;color:var(--txt)}
 table.plan td input:focus,table.plan td select:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#eff5ff}
@@ -429,23 +429,23 @@ let CURRENT=null, selEmail=null;
 
 /* ===== Columnas de la planilla (del Excel COMEX_QD) ===== */
 const COLS=[
-  {k:"po",   t:"PO (Orden de Compra)", sh:"PO", xls:"PO (Orden de Compra)"},
+  {k:"po",   t:"PO (Orden de Compra)", sh:"PO\n(Orden de Compra)", xls:"PO (Orden de Compra)"},
   {k:"prov", t:"Proveedor", sh:"Proveedor", xls:"Proveedor"},
-  {k:"tipo", t:"Tipo (Maritimo / Aereo)", sh:"Tipo", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"]},
-  {k:"unid", t:"Unidades (Q de articulos en PO)", sh:"Unidades", xls:"Unidades (Q de articulos en PO)", num:true},
+  {k:"tipo", t:"Tipo (Maritimo / Aereo)", sh:"Tipo\n(Maritimo / Aereo)", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"]},
+  {k:"unid", t:"Unidades (Q de articulos en PO)", sh:"Unidades\n(Q de articulos en PO)", xls:"Unidades (Q de articulos en PO)", num:true},
   {k:"usd",  t:"USD", sh:"USD", xls:"USD", money:true},
   {k:"zona", t:"ZONA", sh:"ZONA", xls:"ZONA", opt:["ASIA","EEUU","EUROPA","LATAM"]},
-  {k:"fconf",t:"FECHA CONFIRMACION (COMERCIAL)", sh:"Confirm. comercial", xls:"FECHA CONFIRMACION (COMERCIAL)", date:true},
-  {k:"dorig",t:"DISPONIBILIDAD ORIGEN (FECHA)", sh:"Disp. origen", xls:"DISPONIBILIDAD ORIGEN (FECHA)", date:true},
-  {k:"rorig",t:"RETIRO EN ORIGEN", sh:"Retiro origen", xls:"RETIRO EN ORIGEN", date:true},
-  {k:"diast",t:"DIAS T (ORIGEN)", sh:"Días T origen", xls:"DIAS T (ORIGEN)", num:true},
-  {k:"eta",  t:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", sh:"ETA", xls:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", date:true},
-  {k:"fdisp",t:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", sh:"Disp. puerto/aero", xls:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", date:true},
-  {k:"rpa",  t:"RETIRO P/A", sh:"Retiro P/A", xls:"RETIRO P/A", date:true},
-  {k:"lcd",  t:"LLEGADA A CD", sh:"Llegada CD", xls:"LLEGADA A CD", date:true},
-  {k:"cost", t:"COSTEO", sh:"Costeo", xls:"COSTEO", date:true},
-  {k:"dinv", t:"DISPONIBILIDAD INVENTARIO (FINAL)", sh:"Disp. inventario", xls:"DISPONIBILIDAD INVENTARIO (FINAL)"},
-  {k:"ttot", t:"TIEMPO TOTAL", sh:"Tiempo total", xls:"TIEMPO TOTAL", num:true}
+  {k:"fconf",t:"FECHA CONFIRMACION (COMERCIAL)", sh:"FECHA CONFIRMACION\n(COMERCIAL)", xls:"FECHA CONFIRMACION (COMERCIAL)", date:true},
+  {k:"dorig",t:"DISPONIBILIDAD ORIGEN (FECHA)", sh:"DISPONIBILIDAD ORIGEN\n(FECHA)", xls:"DISPONIBILIDAD ORIGEN (FECHA)", date:true},
+  {k:"rorig",t:"RETIRO EN ORIGEN", sh:"RETIRO EN ORIGEN", xls:"RETIRO EN ORIGEN", date:true},
+  {k:"diast",t:"DIAS T (ORIGEN)", sh:"DIAS T\n(ORIGEN)", xls:"DIAS T (ORIGEN)", num:true},
+  {k:"eta",  t:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", sh:"ETA\n(FECHA ESTIMADA DE LLEGADA CHL)", xls:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", date:true},
+  {k:"fdisp",t:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", sh:"FECHA DISPONIBILIDAD\nPUERTO -AEROPUERTO", xls:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", date:true},
+  {k:"rpa",  t:"RETIRO P/A", sh:"RETIRO P/A", xls:"RETIRO P/A", date:true},
+  {k:"lcd",  t:"LLEGADA A CD", sh:"LLEGADA A CD", xls:"LLEGADA A CD", date:true},
+  {k:"cost", t:"COSTEO", sh:"COSTEO", xls:"COSTEO", date:true},
+  {k:"dinv", t:"DISPONIBILIDAD INVENTARIO (FINAL)", sh:"DISPONIBILIDAD INVENTARIO\n(FINAL)", xls:"DISPONIBILIDAD INVENTARIO (FINAL)"},
+  {k:"ttot", t:"TIEMPO TOTAL", sh:"TIEMPO TOTAL", xls:"TIEMPO TOTAL", num:true}
 ];
 let ROWS=[];
 
@@ -558,11 +558,12 @@ function go(tab){
 /* ancho auto de columna según contenido (fijado en ch) */
 function dispVal(c,v){if(v==null||v==='')return '';if(c.money)return fmtMoney(v);if(c.k==='unid')return fmtUnid(v);return ''+v;}
 function colWidth(c){
-  // Ancho autoajustable: se basa sobre todo en el contenido real; el encabezado corto no infla la columna (puede ir en 2 líneas).
+  // Ancho autoajustable: el encabezado se muestra completo en varias líneas (sh con saltos), por eso solo cuenta la línea más larga del título, no el total.
   const label=c.sh||c.t;
-  let max=Math.min((''+label).length,14);
+  let hdr=(''+label).split('\n').reduce((m,s)=>Math.max(m,s.trim().length),0);
+  let max=Math.min(hdr,22);
   ROWS.forEach(r=>{const l=dispVal(c,r[c.k]).length;if(l>max)max=l;});
-  return Math.min(Math.max(max+2,7),26);
+  return Math.min(Math.max(max+2,7),28);
 }
 function renderHead(){
   const ths=COLS.map(c=>`<th style="width:${colWidth(c)}ch" title="${esc(c.t)}">${esc(c.sh||c.t)}</th>`).join('');
