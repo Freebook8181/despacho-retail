@@ -431,9 +431,9 @@ let CURRENT=null, selEmail=null;
 const COLS=[
   {k:"po",   t:"PO (Orden de Compra)", sh:"PO\n(Orden de Compra)", xls:"PO (Orden de Compra)", big:true},
   {k:"prov", t:"PROVEEDOR", sh:"PROVEEDOR", xls:"Proveedor", minw:28},
-  {k:"tipo", t:"Tipo (Maritimo / Aereo)", sh:"Tipo\n(Maritimo / Aereo)", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"], maxw:13},
-  {k:"unid", t:"Unidades (Q de articulos en PO)", sh:"Unidades\n(Q de articulos en PO)", xls:"Unidades (Q de articulos en PO)", num:true},
-  {k:"usd",  t:"USD", sh:"USD", xls:"USD", money:true},
+  {k:"tipo", t:"Tipo (Maritimo / Aereo)", sh:"Tipo\n(Maritimo / Aereo)", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"], maxw:16},
+  {k:"unid", t:"Unidades (Q de articulos en PO)", sh:"Unidades\n(Q de articulos en PO)", xls:"Unidades (Q de articulos en PO)", num:true, big:true},
+  {k:"usd",  t:"USD", sh:"USD", xls:"USD", money:true, big:true, minw:16},
   {k:"zona", t:"ZONA", sh:"ZONA", xls:"ZONA", opt:["ASIA","EEUU","EUROPA","LATAM"]},
   {k:"fconf",t:"FECHA CONFIRMACION (COMERCIAL)", sh:"FECHA CONFIRMACION\n(COMERCIAL)", xls:"FECHA CONFIRMACION (COMERCIAL)", date:true},
   {k:"dorig",t:"DISPONIBILIDAD ORIGEN (FECHA)", sh:"DISPONIBILIDAD ORIGEN\n(FECHA)", xls:"DISPONIBILIDAD ORIGEN (FECHA)", date:true},
@@ -474,8 +474,8 @@ function fmtMoney(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return v.to
 function fmtMoneyExact(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('en-US',{maximumFractionDigits:20})+' USD';}
 /* USD compacto para ejes/etiquetas: 1,234k USD */
 function fmtUSDk(v){v=+v||0;return (v/1000).toLocaleString('en-US',{maximumFractionDigits:0})+'k USD';}
-/* Unidades: 1.234.567 (miles con punto) */
-function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return Math.round(v).toLocaleString('es-CL');}
+/* Unidades: 1.234.567 (miles con punto), SIN redondear (conserva decimales si los hubiera) */
+function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('es-CL',{maximumFractionDigits:20});}
 function numClean(v){return parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;}
 function initials(n){return n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();}
 function esc(s){return (s==null?'':''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -558,7 +558,7 @@ function go(tab){
 
 /* ===== Planilla editable ===== */
 /* ancho auto de columna según contenido (fijado en ch) */
-function dispVal(c,v){if(v==null||v==='')return '';if(c.money)return fmtMoneyExact(v);if(c.k==='unid')return fmtUnid(v);return ''+v;}
+function dispVal(c,v){if(v==null||v==='')return '';if(c.money)return fmtMoney(v);if(c.k==='unid')return fmtUnid(v);return ''+v;}
 function colWidth(c){
   // Ancho autoajustable: el encabezado se muestra completo en varias líneas (sh con saltos), por eso solo cuenta la línea más larga del título, no el total.
   const label=c.sh||c.t;
