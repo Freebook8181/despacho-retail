@@ -159,6 +159,11 @@ table.plan th{background:var(--navy);color:#e8eef7;padding:10px 10px;text-align:
 table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
 table.plan td input,table.plan td select{width:100%;border:none;background:transparent;padding:10px 10px;font-size:12.5px;font-family:inherit;color:var(--txt)}
 table.plan td input:focus,table.plan td select:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#eff5ff}
+/* Cuadros de fecha VACíOS: ocultar el texto "dd-mm-aaaa" dejando solo el icono de calendario; al enfocar/elegir fecha sí se muestra */
+table.plan td input[type="date"].date-empty::-webkit-datetime-edit{color:transparent}
+table.plan td input[type="date"].date-empty:focus::-webkit-datetime-edit{color:var(--txt)}
+table.plan td input[type="date"].date-empty{color:transparent}
+table.plan td input[type="date"].date-empty:focus{color:var(--txt)}
 table.plan tr:nth-child(even) td{background:#f8fafc}
 table.plan td.rown{background:#fff;color:var(--muted);text-align:center;font-weight:600;position:sticky;left:0;z-index:1}
 table.plan td.del-c{text-align:center}
@@ -616,11 +621,12 @@ function renderPlanilla(){
       }
       const t=c.date?'date':'text';
       const disp=t==='date'?(''+v):dispVal(c,v);
+      const dcls=(t==='date'&&!isDateStr(v))?' date-empty':'';
       let sty=[];
       if(c.money||c.num)sty.push('text-align:right');
       if(c.big)sty.push('font-size:15px;font-weight:700');
       const al=sty.length?` style="${sty.join(';')}"`:'';
-      return `<td><input id="c_${ri}_${c.k}" type="${t}" value="${esc(disp)}"${al} onfocus="focusCell(${ri},'${c.k}',this)" onblur="renderOne(${ri},'${c.k}',this)" oninput="upd(${ri},'${c.k}',this.value)" ${c.num||c.money?'inputmode="numeric"':''}></td>`;
+      return `<td><input id="c_${ri}_${c.k}" type="${t}" value="${esc(disp)}"${al} class="${dcls.trim()}" onfocus="focusCell(${ri},'${c.k}',this)" onblur="renderOne(${ri},'${c.k}',this)" oninput="upd(${ri},'${c.k}',this.value)" ${c.num||c.money?'inputmode="numeric"':''}></td>`;
     }).join('');
     return `<tr><td class="rown">${ri+1}</td>${tds}<td class="del-c"><button class="rowdel" title="Quitar fila" onclick="delRow(${ri})">✕</button></td></tr>`;
   }).join('');
@@ -654,6 +660,7 @@ function upd(ri,k,val){
   else if(c&&c.k==='unid'){ROWS[ri][k]=val===''?'':cleanUnid(val);}
   else if(c&&(c.money||c.num)){ROWS[ri][k]=val===''?'':numClean(val);}
   else ROWS[ri][k]=val;
+  if(c&&c.date){const de=$('c_'+ri+'_'+k);if(de)de.classList.toggle('date-empty',!isDateStr(val));} // mostrar/ocultar el "dd-mm-aaaa"
   // Al cambiar una fecha NO se re-dibuja toda la planilla (eso reiniciaba el calendario y "saltaba" de mes).
   // Solo se recalcula y actualiza la celda TIEMPO TOTAL, dejando intacto el selector de fecha nativo.
   if(k==='fconf'||k==='dinv'){
