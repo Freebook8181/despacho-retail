@@ -2149,7 +2149,7 @@ function ventasHTML(k){
  h+=`<div id="${p}body">`;
  h+=`<div class="kgrid">${mkpi(p+'k_tot',IC.money,'Venta Total')}${mkpi(p+'k_sant',IC.map,'Venta Santiago')}${mkpi(p+'k_reg',IC.map,'Venta Regiones')}${mkpi(p+'k_tie',IC.grid,'Tiendas')}</div>`;
  h+=`<div class="grid g-1">${mcard(p+'c_mes',IC.line,'Ventas por Mes','Monto vendido por mes (según la zona elegida)')}</div>`;
- h+=`<div class="grid g-2"><div class="card"><h3 style="display:flex;align-items:center;justify-content:space-between;gap:8px">${IC.chart} Ventas por Tienda <button class="htool" id="${p}tieDet" style="font-size:11px;padding:4px 10px;cursor:pointer">DETALLE</button></h3><div class="cs">Top 6 tiendas · pulsa DETALLE para ver todas</div><div class="chart tall" id="${p}c_tie"></div><div class="insight" id="${p}c_tie_i"></div></div>${mcard(p+'c_zona',IC.pie,'Santiago vs Regiones','Participación por zona','tall')}</div>`;
+ h+=`<div class="grid g-2">${mcard(p+'c_tie',IC.chart,'Ventas por Tienda','Top 6 tiendas · pulsa Ver análisis para ver todas','tall')}${mcard(p+'c_zona',IC.pie,'Santiago vs Regiones','Participación por zona','tall')}</div>`;
  h+=`<div class="card"><h3>${IC.grid} Detalle por Tienda</h3><div class="cs">Monto por tienda, comuna y zona</div><div id="${p}table" style="overflow:auto"></div></div>`;
  h+=`</div>`;
  return h;
@@ -2178,14 +2178,16 @@ function renderVentas(k){
  const santi=all.filter(r=>r.zona==='Santiago').reduce((a,r)=>a+vVal(k,r),0);
  const regio=all.filter(r=>r.zona==='Regiones').reduce((a,r)=>a+vVal(k,r),0);
  const denom=(santi+regio)||1;
- var _fit=function(id,s){var e=document.getElementById(id);if(e)e.style.fontSize=(s.length>13?'15px':(s.length>10?'18px':'22px'));};
+ var _fit=function(id,s){var e=document.getElementById(id);if(e){e.style.fontWeight='800';e.style.fontSize=(s.length>13?'19px':(s.length>10?'23px':'28px'));}};
  setKV(p+'k_tot',fm(total),fmShort(total));_fit(p+'k_tot',fm(total));
  setKV(p+'k_sant',fm(santi),(100*santi/denom).toFixed(0)+'% del total');_fit(p+'k_sant',fm(santi));
  setKV(p+'k_reg',fm(regio),(100*regio/denom).toFixed(0)+'% del total');_fit(p+'k_reg',fm(regio));
  setKV(p+'k_tie',fi(fRows.filter(r=>vVal(k,r)>0).length),`de ${fi(fRows.length)} tiendas`);
+ (function(){var e=document.getElementById(p+'k_tie');if(e){e.style.fontWeight='800';e.style.fontSize='32px';}})();
  const zRows=all.filter(r=>VF[k].zona==='all'||r.zona===VF[k].zona);
  const mLabels=D.months.map(mi=>MESES_FULL[mi]);
- const ZCOL={Santiago:col,Regiones:'#c88a6a'};
+ const ZCOL={Santiago:'#8e44ad',Regiones:'#c88a6a'};
+ const zc=(VF[k].zona==='all')?col:(ZCOL[VF[k].zona]||col);
  const semSel=(VF[k].mes!=='all'&&VF[k].sem&&VF[k].sem!=='all');
  {const mcEl=document.getElementById(p+'c_mes');if(mcEl){const card=mcEl.closest('.card');if(card){const _h=card.querySelector('h3');const _cs=card.querySelector('.cs');if(semSel){if(_h)_h.innerHTML=IC.line+' Ventas por Semana';if(_cs)_cs.textContent='Monto vendido por semana del mes (semana elegida resaltada)';}else{if(_h)_h.innerHTML=IC.line+' Ventas por Mes';if(_cs)_cs.textContent='Monto vendido por mes (según la zona elegida)';}}}}
  if(semSel){
@@ -2204,7 +2206,7 @@ function renderVentas(k){
    ]});
   }else{
    const wV=_wks.map(w=>zRows.reduce((a,r)=>a+((r.w&&r.w[w])||0),0));
-   setC(p+'c_mes',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Ventas: <b>${fm(x[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:_wLab},axCfg(),{axisLabel:{interval:0,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:_wks.map((w,i)=>({value:wV[i],itemStyle:{color:col,borderRadius:[4,4,0,0],opacity:_op(w)}})),barWidth:'52%',label:{show:true,position:'top',color:col,fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
+   setC(p+'c_mes',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Ventas: <b>${fm(x[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:_wLab},axCfg(),{axisLabel:{interval:0,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:_wks.map((w,i)=>({value:wV[i],itemStyle:{color:zc,borderRadius:[4,4,0,0],opacity:_op(w)}})),barWidth:'52%',label:{show:true,position:'top',color:zc,fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
   }
  }else if(VF[k].zona==='all'){
   /* Ventas por Mes = barra apilada Santiago + Regiones, con valor por color y total encima */
@@ -2218,11 +2220,11 @@ function renderVentas(k){
   ]});
  }else{
   const mVals=D.months.map(mi=>zRows.reduce((a,r)=>a+(r.m[mi]||0),0));
-  setC(p+'c_mes',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Ventas: <b>${fm(x[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:mLabels},axCfg(),{axisLabel:{interval:0,rotate:28,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:mVals,barWidth:'52%',itemStyle:{color:col,borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:col,fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
+  setC(p+'c_mes',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Ventas: <b>${fm(x[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:mLabels},axCfg(),{axisLabel:{interval:0,rotate:28,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:mVals,barWidth:'52%',itemStyle:{color:zc,borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:zc,fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
  }
  const tie=fRows.map(r=>({k:r.tienda,v:vVal(k,r),z:r.zona})).filter(x=>x.v>0).sort((a,b)=>a.v-b.v).slice(-6);
- setC(p+'c_tie',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){var i=ps[0].dataIndex;return '<b>'+ps[0].name+'</b><br/>Zona: '+tie[i].z+'<br/>Ventas: <b>'+fm(ps[0].value)+'</b>';}},TT),grid:{left:4,right:70,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),yAxis:Object.assign({type:'category',data:tie.map(x=>x.k),axisLabel:{color:'#6b7684',fontSize:10,width:180,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:tie.map(x=>({value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[0,4,4,0]}})),barWidth:'62%',label:{show:true,position:'right',color:'#2b3a4a',fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
- setC(p+'c_zona',{tooltip:Object.assign({trigger:'item',formatter:x=>`<b>${x.name}</b><br/>Ventas: <b>${fm(x.value)}</b> (${x.percent}%)`},TT),legend:{bottom:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:9,itemHeight:9},series:[{type:'pie',radius:['48%','72%'],center:['50%','44%'],itemStyle:{borderColor:'#fff',borderWidth:2},label:{show:true,position:'outside',formatter:x=>`${x.name}\n${x.percent}%`,color:'#111',fontFamily:'IBM Plex Mono',fontSize:11,fontWeight:600},data:[{name:'Santiago',value:santi,itemStyle:{color:col}},{name:'Regiones',value:regio,itemStyle:{color:'#c88a6a'}}]}]});
+ setC(p+'c_tie',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){var i=ps[0].dataIndex;return '<b>'+ps[0].name+'</b><br/>Zona: '+tie[i].z+'<br/>Ventas: <b>'+fm(ps[0].value)+'</b>';}},TT),grid:{left:4,right:70,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),yAxis:Object.assign({type:'category',data:tie.map(x=>x.k),axisLabel:{color:'#6b7684',fontSize:10,width:180,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:tie.map(x=>({value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[0,4,4,0]}})),barWidth:'62%',label:{show:true,position:'right',color:'#2b3a4a',fontFamily:'IBM Plex Mono',fontSize:11,fontWeight:600,formatter:x=>fmShort(x.value)}}]});
+ setC(p+'c_zona',{tooltip:Object.assign({trigger:'item',formatter:x=>`<b>${x.name}</b><br/>Ventas: <b>${fm(x.value)}</b> (${x.percent}%)`},TT),legend:{bottom:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:9,itemHeight:9},series:[{type:'pie',radius:['48%','72%'],center:['50%','44%'],itemStyle:{borderColor:'#fff',borderWidth:2},label:{show:true,position:'outside',formatter:x=>`${x.name}\n${x.percent}%`,color:'#111',fontFamily:'IBM Plex Mono',fontSize:11,fontWeight:600},data:[{name:'Santiago',value:santi,itemStyle:{color:ZCOL.Santiago}},{name:'Regiones',value:regio,itemStyle:{color:ZCOL.Regiones}}]}]});
  const tv=document.getElementById(p+'table');
  if(tv){const srt=[...fRows].sort((a,b)=>vVal(k,b)-vVal(k,a));
   let th=`<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="text-align:left;color:#5a6672;border-bottom:2px solid #e3e7ec"><th style="padding:7px 8px">Tienda</th><th style="padding:7px 8px">Comuna</th><th style="padding:7px 8px">Zona</th><th style="padding:7px 8px;text-align:right">Ventas</th></tr></thead><tbody>`;
@@ -2303,32 +2305,16 @@ function vClear(k){
   }catch(e){done();}
  });
 }
-/* ---- Detalle: gráfico completo de Ventas por Tienda (todas las tiendas) ---- */
-function openTieDetail(k){
- const D=VSTORE[k];if(!D||!D.rows.length){alert('Aún no hay datos de ventas cargados.');return;}
- const col=MOD_COLOR[k];const ZCOL={Santiago:col,Regiones:'#c88a6a'};
+/* ---- Opción de gráfico con TODAS las tiendas (usada por "Ver análisis") ---- */
+window.__tieFullOption=function(k){
+ const D=VSTORE[k];if(!D||!D.rows.length)return null;
+ const col=MOD_COLOR[k];const ZCOL={Santiago:'#8e44ad',Regiones:'#c88a6a'};
  const fRows=D.rows.filter(r=>VF[k].zona==='all'||r.zona===VF[k].zona);
  const data=fRows.map(r=>({k:r.tienda,v:vVal(k,r),z:r.zona})).filter(x=>x.v>0).sort((a,b)=>a.v-b.v);
- var yr=vMesYear(D,VF[k].mes);
- var mesTxt=VF[k].mes==='all'?('Todos los meses '+D.year):(MESES_FULL[VF[k].mes]+' '+yr);
- var semTxt=(VF[k].mes!=='all'&&VF[k].sem&&VF[k].sem!=='all')?(' · Semana S'+VF[k].sem):'';
- var zonaTxt=VF[k].zona==='all'?'Todas las zonas':VF[k].zona;
- var old=document.getElementById('tieDetOv');if(old)old.remove();
- var ov=document.createElement('div');ov.id='tieDetOv';
- ov.style.cssText='position:fixed;inset:0;background:rgba(15,25,40,.6);z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px';
- var hpx=Math.max(360,data.length*26+120);
- ov.innerHTML='<div style="background:#fff;border-radius:16px;width:min(920px,96vw);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(10,20,35,.45)">'+
-  '<div style="padding:16px 20px;border-bottom:1px solid #e3e7ec;display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3 style="margin:0;font-family:Sora;font-size:17px;color:#1f3a59">Ventas por Tienda — '+VLABEL[k]+'</h3><div style="font-size:12px;color:#5a6672;margin-top:3px">Todas las tiendas ('+data.length+') · '+zonaTxt+' · '+mesTxt+semTxt+'</div></div><button id="tieDetX" style="border:0;background:#eef0f3;width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer;flex:none">✕</button></div>'+
-  '<div style="padding:12px 18px"><div id="tieDetChart" style="width:100%;height:'+hpx+'px"></div></div></div>';
- document.body.appendChild(ov);
- function close(){if(CH['tieDetChart']){try{CH['tieDetChart'].dispose();}catch(_){}delete CH['tieDetChart'];}ov.remove();}
- ov.addEventListener('click',function(e){if(e.target===ov)close();});
- document.getElementById('tieDetX').addEventListener('click',close);
- setTimeout(function(){
-  setC('tieDetChart',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){var i=ps[0].dataIndex;return '<b>'+ps[0].name+'</b><br/>Zona: '+data[i].z+'<br/>Ventas: <b>'+fm(ps[0].value)+'</b>';}},TT),grid:{left:4,right:90,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684',fontSize:10}},axCfg()),yAxis:Object.assign({type:'category',data:data.map(function(x){return x.k;}),axisLabel:{color:'#6b7684',fontSize:10,width:230,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:data.map(function(x){return {value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[0,4,4,0]}};}),barWidth:'64%',label:{show:true,position:'right',color:'#2b3a4a',fontFamily:'IBM Plex Mono',fontSize:10,formatter:function(x){return fmShort(x.value);}}}]});
-  if(CH['tieDetChart'])CH['tieDetChart'].resize();
- },60);
-}
+ if(!data.length)return null;
+ var opt={tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){var i=ps[0].dataIndex;return '<b>'+ps[0].name+'</b><br/>Zona: '+data[i].z+'<br/>Ventas: <b>'+fm(ps[0].value)+'</b>';}},TT),grid:{left:4,right:98,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684',fontSize:11}},axCfg()),yAxis:Object.assign({type:'category',data:data.map(function(x){return x.k;}),axisLabel:{color:'#45505c',fontSize:11,width:240,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:data.map(function(x){return {value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[0,4,4,0]}};}),barWidth:'66%',label:{show:true,position:'right',color:'#2b3a4a',fontFamily:'IBM Plex Mono',fontSize:12,fontWeight:600,formatter:function(x){return fmShort(x.value);}}}]};
+ return {opt:opt,count:data.length};
+};
 /* ---- Wire + init (por unidad) ---- */
 function initVentasFor(k){
  const sec=document.getElementById('s-'+k);if(!sec)return;
@@ -2348,7 +2334,6 @@ function initVentasFor(k){
  const semEl=document.getElementById(p+'sem');if(semEl)semEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;VF[k].sem=(b.dataset.w==='all')?'all':+b.dataset.w;renderVentas(k);});
  const up=document.getElementById(p+'upBtn'),fin=document.getElementById(p+'fileInp');if(up&&fin){up.addEventListener('click',()=>fin.click());fin.addEventListener('change',ev=>handleVentasUpload(ev,k));}
  const del=document.getElementById(p+'delBtn');if(del)del.addEventListener('click',()=>vClear(k));
- const td=document.getElementById(p+'tieDet');if(td)td.addEventListener('click',()=>openTieDetail(k));
 }
 function initVentas(){vLoadLocal();['mac','ver'].forEach(k=>{try{initVentasFor(k);}catch(e){console.error('initVentasFor',k,e);}});try{if(typeof fbReady!=='undefined'&&fbReady)vFbSubscribe();}catch(e){console.error('vFbSubscribe',e);}try{if(typeof applyRole==='function')applyRole();}catch(e){}}
 try{initVentas();}catch(e){console.error('initVentas',e);}
@@ -2405,7 +2390,15 @@ try{initVentas();}catch(e){console.error('initVentas',e);}
   var x=document.getElementById('anX');if(x)x.addEventListener('click',closeAn);
   var box=document.getElementById('anChartBox');
   try{
-   if(typeof CH!=='undefined'&&CH[chartId]&&typeof echarts!=='undefined'){
+   var full=null;
+   if(/_c_tie$/.test(chartId)&&typeof window.__tieFullOption==='function'){var mm=chartId.match(/^v(.+?)_c_tie$/);if(mm){try{full=window.__tieFullOption(mm[1]);}catch(e){}}}
+   if(full&&full.opt&&typeof echarts!=='undefined'){
+    box.style.height=Math.max(380,full.count*26+90)+'px';
+    anChart=echarts.init(box,null,{renderer:'canvas'});
+    anChart.setOption(full.opt,true);
+    setTimeout(anResize,60);
+    window.addEventListener('resize',anResize);
+   }else if(typeof CH!=='undefined'&&CH[chartId]&&typeof echarts!=='undefined'){
     var opt=CH[chartId].getOption();
     anChart=echarts.init(box,null,{renderer:'canvas'});
     anChart.setOption(opt,true);
