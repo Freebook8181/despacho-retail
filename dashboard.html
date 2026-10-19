@@ -412,6 +412,32 @@ function buildMarkup(){
 /* ===== app3.js ===== */
 /* ====== FILTERS ====== */
 function uniq(a){return [...new Set(a)];}
+/* ---- Calendario de semanas (lunes a viernes) para mostrar DESDE/HASTA ---- */
+const MES_ABBR=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const DOW_FULL_L=['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+function fmtDM(d){return d.getDate()+' '+MES_ABBR[d.getMonth()];}
+function fmtFull(d){return DOW_FULL_L[(d.getDay()+6)%7]+', '+d.getDate()+' de '+String(MESES_FULL[d.getMonth()]).toLowerCase()+' de '+d.getFullYear();}
+/* Rango lunes–viernes de la semana nº w del mes (w = semana del mes, 1..6).
+   La semana 1 es la semana (lun–dom) que contiene el día 1; puede empezar el mes anterior. */
+function semRange(year,m0,w){
+ const first=new Date(year,m0,1);
+ const off=(first.getDay()+6)%7; // lunes=0
+ const monday=new Date(year,m0,1-off+(w-1)*7);
+ const friday=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+4);
+ return {desde:monday,hasta:friday};
+}
+/* Construye los botones de Semana. Si hay un mes concreto (mk='YYYY-MM') cada botón
+   muestra S{w} con su rango DESDE–HASTA (lunes a viernes) y el detalle completo en el tooltip. */
+function semBtns(mk,sems,curSem){
+ let out='<button data-s="all" class="'+(curSem==='all'?'on':'')+'">Mes</button>';
+ const hasMonth=mk&&/^\d{4}-\d{2}$/.test(mk);let yy,m0;if(hasMonth){yy=+mk.slice(0,4);m0=+mk.slice(5,7)-1;}
+ sems.forEach(function(w){
+  var lbl='S'+w,title='Semana '+w;
+  if(hasMonth){var r=semRange(yy,m0,w);lbl='S'+w+'<small style="display:block;font-size:9px;opacity:.82;font-weight:500;line-height:1.15;margin-top:1px">'+fmtDM(r.desde)+'–'+fmtDM(r.hasta)+'</small>';title='Semana '+w+'  ·  DESDE '+fmtFull(r.desde)+'   →   HASTA '+fmtFull(r.hasta);}
+  out+='<button data-s="'+w+'" class="'+(curSem==w?'on':'')+'" title="'+title+'" style="text-align:center">'+lbl+'</button>';
+ });
+ return out;
+}
 const LS_KEY='quintec_meses_v2';
 // Limpia cache antigua: meses de demo (Jul-Dic) quedaron guardados por una versi\u00f3n previa.
 try{localStorage.removeItem('quintec_meses_v1');}catch(e){}
@@ -429,9 +455,7 @@ function buildFilters(){
  aSel.innerHTML=yo;aSel.value=curY;
  // semana
  const sems=uniq(rowsM.map(r=>r.sem)).filter(s=>s>0).sort((a,b)=>a-b);
- let s='<button data-s="all" class="'+(F.sem==='all'?'on':'')+'">Mes</button>';
- sems.forEach(w=>s+=`<button data-s="${w}" class="${F.sem==w?'on':''}">S${w}</button>`);
- document.getElementById('fSem').innerHTML=s;
+ document.getElementById('fSem').innerHTML=semBtns(F.mes,sems,F.sem);
  // transporte
  const tps=uniq(rowsM.map(r=>r.tp)).filter(t=>t!=='Sin dato').sort();
  document.getElementById('fTp').innerHTML='<option value="all">Flota completa</option>'+tps.map(t=>`<option value="${t}">${t}</option>`).join('');
@@ -1539,8 +1563,7 @@ function buildModFilters(k){
  let sc=modScopeRows(k).filter(r=>(f.ano==='all'||r.mk.slice(0,4)===f.ano)&&(f.mes==='all'||r.mk===f.mes));
  // Semana
  const sems=[...new Set(sc.map(r=>r.sem))].filter(s=>s>0).sort((a,b)=>a-b);
- let s='<button data-s="all" class="'+(f.sem==='all'?'on':'')+'">Mes</button>';sems.forEach(w=>s+=`<button data-s="${w}" class="${f.sem==w?'on':''}">S${w}</button>`);
- const semEl=document.getElementById(k+'_fSem');if(semEl)semEl.innerHTML=s;
+ const semEl=document.getElementById(k+'_fSem');if(semEl)semEl.innerHTML=semBtns(f.mes==='all'?null:f.mes,sems,f.sem);
  // Vehículo
  const tps=[...new Set(sc.map(r=>r.tp))].filter(t=>t!=='Sin dato').sort();
  const tpEl=document.getElementById(k+'_fTp');if(tpEl){tpEl.innerHTML='<option value="all">Flota completa</option>'+tps.map(t=>`<option value="${t}">${t}</option>`).join('');tpEl.value=tps.includes(f.tp)?f.tp:(f.tp='all');}
