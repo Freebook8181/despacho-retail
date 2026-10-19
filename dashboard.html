@@ -1818,6 +1818,18 @@ function applyRole(){
   // cretamac: ocultar las pestañas Auditoría y Diagnóstico
   document.querySelectorAll('.tab[data-t="aud"]').forEach(function(el){el.style.display=cm?'none':'';});
   // (la pestaña Diagnóstico ya es adminonly, así que queda oculta para cretamac y ops)
+  // Usuarios NO admin: dejar visibles SOLO los módulos MacOnline, Vertical y Devoluciones
+  var modOnly=['mac','ver','devo'];
+  document.querySelectorAll('#tabs .tab').forEach(function(el){
+   var t=el.getAttribute('data-t');
+   if(admin){el.style.display='';}
+   else{el.style.display=(modOnly.indexOf(t)>=0)?'':'none';}
+  });
+  if(!admin){
+   var at=document.querySelector('#tabs .tab.on');
+   var atk=at?at.getAttribute('data-t'):null;
+   if(modOnly.indexOf(atk)<0){var macTab=document.querySelector('#tabs .tab[data-t="mac"]');if(macTab)macTab.click();}
+  }
   var lo=document.getElementById('btnLogout');if(lo)lo.style.display=SESSION?'':'none';
   var w=document.getElementById('whoami');if(w)w.textContent=SESSION?('Salir · '+SESSION.name):'';
  }catch(err){console.error('applyRole11',err);}
