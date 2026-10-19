@@ -477,6 +477,9 @@ function fmtUSDk(v){v=+v||0;return (v/1000).toLocaleString('en-US',{maximumFract
 /* Unidades: 1.234.567 (miles con punto), SIN redondear (conserva decimales si los hubiera) */
 function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('es-CL',{maximumFractionDigits:20});}
 function numClean(v){return parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;}
+/* UNIDADES en formato chileno: el punto es separador de miles y la coma es decimal.
+   Ej: "21.550" -> 21550 (no se pierde ningún dígito). */
+function cleanUnid(v){let s=(''+v).replace(/[^0-9.,-]/g,'').replace(/\./g,'').replace(/,/g,'.');const n=parseFloat(s);return isNaN(n)?'':n;}
 function initials(n){return n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();}
 function esc(s){return (s==null?'':''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -612,7 +615,8 @@ function renderPlanilla(){
 }
 function upd(ri,k,val){
   const c=COLS.find(x=>x.k===k);
-  if(c&&(c.money||c.num)){ROWS[ri][k]=val===''?'':numClean(val);}
+  if(c&&c.k==='unid'){ROWS[ri][k]=val===''?'':cleanUnid(val);}
+  else if(c&&(c.money||c.num)){ROWS[ri][k]=val===''?'':numClean(val);}
   else ROWS[ri][k]=val;
   if(k==='fconf'||k==='dinv'){ROWS[ri].ttot=computeTtot(ROWS[ri]);renderPlanilla();}
 }
