@@ -1924,16 +1924,22 @@ const VMESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO',
 const VLABEL={mac:'MacOnline Distribución',ver:'Vertical Tiendas'};
 function vNum(x){if(x==null)return 0;if(typeof x==='number')return x;const n=parseFloat(String(x).replace(/[^0-9.-]/g,''));return isNaN(n)?0:n;}
 /* ---- Parser de la matriz (recibe matriz de filas) ---- */
+function vMesIdx(c){
+ // c ya viene en MAYUSCULAS sin acentos y recortado; soporta "DICIEMBRE 2025"
+ var base=String(c).replace(/\s*20\d\d\s*$/,'').trim();
+ return VMESES.indexOf(base);
+}
 function cleanSheetVentas(aoa,fname){
- const rows=[];let headerRow=-1,tiendaCol=-1,comunaCol=-1;const monthCols=[];
+ const rows=[];let headerRow=-1,tiendaCol=-1,comunaCol=-1,zonaCol=-1;const monthCols=[];
  for(let i=0;i<aoa.length;i++){
   const r=aoa[i]||[];
-  for(let j=0;j<r.length;j++){if(stripAcc(String(r[j]==null?'':r[j])).toUpperCase().trim()==='TIENDA'){headerRow=i;tiendaCol=j;}}
+  for(let j=0;j<r.length;j++){const h=stripAcc(String(r[j]==null?'':r[j])).toUpperCase().trim();if(h==='TIENDA'||h==='CLIENTE'){headerRow=i;tiendaCol=j;}}
   if(headerRow===i){
    for(let j=0;j<r.length;j++){
     const c=stripAcc(String(r[j]==null?'':r[j])).toUpperCase().trim();
-    if(c==='COMUNA')comunaCol=j;
-    const mi=VMESES.indexOf(c);if(mi>=0)monthCols.push({mi:mi,col:j});
+    if(c==='COMUNA'||c==='REGION')comunaCol=j;
+    if(c==='ZONA')zonaCol=j;
+    const mi=vMesIdx(c);if(mi>=0)monthCols.push({mi:mi,col:j});
    }
    break;
   }
@@ -1943,18 +1949,25 @@ function cleanSheetVentas(aoa,fname){
  for(let i=headerRow+1;i<aoa.length;i++){
   const r=aoa[i]||[];
   const c0=stripAcc(String(r[0]==null?'':r[0])).toUpperCase().trim();
-  if(c0==='SANTIAGO'){curZona='Santiago';continue;}
-  if(c0==='REGIONES'){curZona='Regiones';continue;}
+  // marcadores de sección (formato antiguo, sin columna ZONA)
+  if(zonaCol<0){
+   if(c0==='SANTIAGO'){curZona='Santiago';continue;}
+   if(c0==='REGIONES'){curZona='Regiones';continue;}
+  }
   const tRaw=r[tiendaCol];
   if(tRaw==null||String(tRaw).trim()==='')continue;
   const tUp=stripAcc(String(tRaw)).toUpperCase().trim();
-  if(/SUBTOTAL/.test(tUp)||tUp.indexOf('TOTAL MACONLINE')>=0||tUp.indexOf('TOTAL VERTICAL')>=0||/^TOTAL\b/.test(tUp))continue;
+  // saltar encabezados repetidos y filas de totales
+  if(tUp==='TIENDA'||tUp==='CLIENTE')continue;
+  if(/SUBTOTAL/.test(tUp)||/^TOTAL\b/.test(tUp)||/^CONTROL\b/.test(tUp)||tUp.indexOf('TOTAL MACONLINE')>=0||tUp.indexOf('TOTAL VERTICAL')>=0||tUp.indexOf('TOTAL SANTIAGO')>=0||tUp.indexOf('TOTAL REGIONES')>=0||tUp.indexOf('TOTAL GENERAL')>=0)continue;
+  let zona=curZona||'Sin dato';
+  if(zonaCol>=0){const zv=stripAcc(String(r[zonaCol]==null?'':r[zonaCol])).toUpperCase();if(zv.indexOf('SANTIAGO')>=0)zona='Santiago';else if(zv.indexOf('REGION')>=0)zona='Regiones';}
   const m={};let total=0;
   monthCols.forEach(mc=>{const v=vNum(r[mc.col]);m[mc.mi]=Math.round(v);total+=v;});
-  rows.push({tienda:String(tRaw).trim(),comuna:comunaCol>=0&&r[comunaCol]!=null?String(r[comunaCol]).trim():'',zona:curZona||'Sin dato',m:m,total:Math.round(total)});
+  rows.push({tienda:String(tRaw).trim(),comuna:comunaCol>=0&&r[comunaCol]!=null?String(r[comunaCol]).trim():'',zona:zona,m:m,total:Math.round(total)});
  }
  if(!rows.length)return null;
- const months=monthCols.map(x=>x.mi).sort((a,b)=>a-b);
+ const months=monthCols.map(x=>x.mi).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b);
  const txt=stripAcc(String(fname||'')).toUpperCase();let year=2026;const my=txt.match(/(20\d\d)/);if(my)year=+my[1];
  return {year:year,rows:rows,months:months};
 }
@@ -1966,6 +1979,14 @@ function vExtract(wb,fname,unitKey){
  for(const nm of wb.SheetNames){const n=stripAcc(nm).toUpperCase();if(want.every(w=>n.indexOf(w)>=0)){const r=cleanSheetVentas(vSheetAoa(wb,nm),fname);if(r)return r;}}
  // 2) para MacOnline: una sola palabra basta si no hubo match exacto
  if(unitKey!=='ver'){for(const nm of wb.SheetNames){const n=stripAcc(nm).toUpperCase();if(n.indexOf('MACONLINE')>=0){const r=cleanSheetVentas(vSheetAoa(wb,nm),fname);if(r)return r;}}}
+ // 3) por nombre de ARCHIVO: todo el libro pertenece a una sola unidad
+ //    (ej: "RESUMEN MacOnline Distribucion.xlsx" → unidad MacOnline, hoja única "Resumen")
+ const fup=stripAcc(String(fname||'')).toUpperCase();
+ const fileVer=fup.indexOf('VERTICAL')>=0;
+ const fileMac=(fup.indexOf('MACONLINE')>=0||fup.indexOf('MAC ONLINE')>=0||fup.indexOf('DISTRIBUCION')>=0)&&!fileVer;
+ if((unitKey==='ver'&&fileVer)||(unitKey!=='ver'&&fileMac)){
+  for(const nm of wb.SheetNames){const r=cleanSheetVentas(vSheetAoa(wb,nm),fname);if(r)return r;}
+ }
  return null;
 }
 /* ---- Persistencia local ---- */
