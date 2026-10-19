@@ -429,9 +429,9 @@ let CURRENT=null, selEmail=null;
 
 /* ===== Columnas de la planilla (del Excel COMEX_QD) ===== */
 const COLS=[
-  {k:"po",   t:"PO (Orden de Compra)", sh:"PO\n(Orden de Compra)", xls:"PO (Orden de Compra)"},
-  {k:"prov", t:"PROVEEDOR", sh:"PROVEEDOR", xls:"Proveedor"},
-  {k:"tipo", t:"Tipo (Maritimo / Aereo)", sh:"Tipo\n(Maritimo / Aereo)", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"]},
+  {k:"po",   t:"PO (Orden de Compra)", sh:"PO\n(Orden de Compra)", xls:"PO (Orden de Compra)", big:true},
+  {k:"prov", t:"PROVEEDOR", sh:"PROVEEDOR", xls:"Proveedor", minw:28},
+  {k:"tipo", t:"Tipo (Maritimo / Aereo)", sh:"Tipo\n(Maritimo / Aereo)", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"], maxw:13},
   {k:"unid", t:"Unidades (Q de articulos en PO)", sh:"Unidades\n(Q de articulos en PO)", xls:"Unidades (Q de articulos en PO)", num:true},
   {k:"usd",  t:"USD", sh:"USD", xls:"USD", money:true},
   {k:"zona", t:"ZONA", sh:"ZONA", xls:"ZONA", opt:["ASIA","EEUU","EUROPA","LATAM"]},
@@ -470,6 +470,8 @@ const SEED=[
 const $=id=>document.getElementById(id);
 /* USD: 1,234,567.89 USD  (miles con coma, 2 decimales con punto, sigla USD después del valor) */
 function fmtMoney(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' USD';}
+/* USD exacto para la planilla: muestra el valor tal cual, SIN redondear (conserva los decimales ingresados) */
+function fmtMoneyExact(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('en-US',{maximumFractionDigits:20})+' USD';}
 /* USD compacto para ejes/etiquetas: 1,234k USD */
 function fmtUSDk(v){v=+v||0;return (v/1000).toLocaleString('en-US',{maximumFractionDigits:0})+'k USD';}
 /* Unidades: 1.234.567 (miles con punto) */
@@ -556,7 +558,7 @@ function go(tab){
 
 /* ===== Planilla editable ===== */
 /* ancho auto de columna según contenido (fijado en ch) */
-function dispVal(c,v){if(v==null||v==='')return '';if(c.money)return fmtMoney(v);if(c.k==='unid')return fmtUnid(v);return ''+v;}
+function dispVal(c,v){if(v==null||v==='')return '';if(c.money)return fmtMoneyExact(v);if(c.k==='unid')return fmtUnid(v);return ''+v;}
 function colWidth(c){
   // Ancho autoajustable: el encabezado se muestra completo en varias líneas (sh con saltos), por eso solo cuenta la línea más larga del título, no el total.
   const label=c.sh||c.t;
@@ -564,7 +566,8 @@ function colWidth(c){
   let max=Math.min(hdr,26);
   ROWS.forEach(r=>{const l=dispVal(c,r[c.k]).length;if(l>max)max=l;});
   if(c.opt){c.opt.forEach(o=>{if((''+o).length>max)max=(''+o).length;}); max+=4;} // espacio extra para la flecha del desplegable, así se ve el valor (ej. ZONA)
-  return Math.min(Math.max(max+3,10),34);
+  const lo=c.minw||10, hi=c.maxw||34;
+  return Math.min(Math.max(max+3,lo),hi);
 }
 function renderHead(){
   const ths=COLS.map(c=>`<th style="width:${colWidth(c)}ch" title="${esc(c.t)}">${esc(c.sh||c.t)}</th>`).join('');
@@ -597,7 +600,10 @@ function renderPlanilla(){
       }
       const t=c.date?'date':'text';
       const disp=t==='date'?(''+v):dispVal(c,v);
-      const al=(c.money||c.num)?' style="text-align:right"':'';
+      let sty=[];
+      if(c.money||c.num)sty.push('text-align:right');
+      if(c.big)sty.push('font-size:15px;font-weight:700');
+      const al=sty.length?` style="${sty.join(';')}"`:'';
       return `<td><input type="${t}" value="${esc(disp)}"${al} onfocus="focusCell(${ri},'${c.k}',this)" onblur="renderOne(${ri},'${c.k}',this)" oninput="upd(${ri},'${c.k}',this.value)" ${c.num||c.money?'inputmode="numeric"':''}></td>`;
     }).join('');
     return `<tr><td class="rown">${ri+1}</td>${tds}<td class="del-c"><button class="rowdel" title="Quitar fila" onclick="delRow(${ri})">✕</button></td></tr>`;
