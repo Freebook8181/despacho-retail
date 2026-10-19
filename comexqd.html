@@ -608,7 +608,7 @@ function renderPlanilla(){
       const v=r[c.k]==null?'':r[c.k];
       if(c.calc){
         const val=computeTtot(r);
-        return `<td><input type="text" value="${esc(val===''?'':val+' días')}" readonly style="text-align:right;background:#eef3f9;color:#0f2744;font-weight:700;cursor:default" title="Cálculo automático: días entre FECHA CONFIRMACION (COMERCIAL) y DISPONIBILIDAD INVENTARIO (FINAL)"></td>`;
+        return `<td><input id="ttot${ri}" type="text" value="${esc(val===''?'':val+' días')}" readonly style="text-align:right;background:#eef3f9;color:#0f2744;font-weight:700;cursor:default" title="Cálculo automático: días entre FECHA CONFIRMACION (COMERCIAL) y DISPONIBILIDAD INVENTARIO (FINAL)"></td>`;
       }
       if(c.opt){
         return `<td><select onchange="upd(${ri},'${c.k}',this.value)">`+
@@ -620,11 +620,33 @@ function renderPlanilla(){
       if(c.money||c.num)sty.push('text-align:right');
       if(c.big)sty.push('font-size:15px;font-weight:700');
       const al=sty.length?` style="${sty.join(';')}"`:'';
-      return `<td><input type="${t}" value="${esc(disp)}"${al} onfocus="focusCell(${ri},'${c.k}',this)" onblur="renderOne(${ri},'${c.k}',this)" oninput="upd(${ri},'${c.k}',this.value)" ${c.num||c.money?'inputmode="numeric"':''}></td>`;
+      return `<td><input id="c_${ri}_${c.k}" type="${t}" value="${esc(disp)}"${al} onfocus="focusCell(${ri},'${c.k}',this)" onblur="renderOne(${ri},'${c.k}',this)" oninput="upd(${ri},'${c.k}',this.value)" ${c.num||c.money?'inputmode="numeric"':''}></td>`;
     }).join('');
     return `<tr><td class="rown">${ri+1}</td>${tds}<td class="del-c"><button class="rowdel" title="Quitar fila" onclick="delRow(${ri})">✕</button></td></tr>`;
   }).join('');
   $('planStatus').textContent=ROWS.length+' registro(s) · '+fmtMoney(ROWS.reduce((a,r)=>a+usdNum(r.usd),0))+' total';
+  ROWS.forEach((_,i)=>revalRow(i)); // resaltar fechas incoherentes ya existentes
+}
+/* ===== Validación de secuencia de fechas (cada hito no puede ser anterior al hito previo) ===== */
+const DATE_CHAIN=['eta','fdisp','rpa','lcd','cost','dinv'];
+const DATE_LBL={eta:'ETA (FECHA ESTIMADA DE LLEGADA CHL)',fdisp:'FECHA DISPONIBILIDAD PUERTO -AEROPUERTO',rpa:'RETIRO P/A',lcd:'LLEGADA A CD',cost:'COSTEO',dinv:'DISPONIBILIDAD INVENTARIO (FINAL)'};
+function isDateStr(v){return /^\d{4}-\d{2}-\d{2}$/.test((''+(v||'')).trim());}
+function markCell(ri,k,bad){const el=$('c_'+ri+'_'+k);if(!el)return;el.style.outline=bad?'2px solid #c62828':'';el.style.background=bad?'#ffebee':'';el.title=bad?('⚠ «Fecha menor que el hito anterior; revisar '+(DATE_LBL[k]||k)+'»'):'';}
+function revalRow(ri){
+  const r=ROWS[ri];
+  for(let i=0;i<DATE_CHAIN.length;i++){
+    const k=DATE_CHAIN[i];let bad=false;
+    if(i>0){const p=DATE_CHAIN[i-1];if(isDateStr(r[k])&&isDateStr(r[p])&&r[k]<r[p])bad=true;}
+    markCell(ri,k,bad);
+  }
+}
+function validateDates(ri,k){
+  const r=ROWS[ri];const idx=DATE_CHAIN.indexOf(k);if(idx<0)return;
+  revalRow(ri);
+  const msgs=[];
+  if(idx>0){const p=DATE_CHAIN[idx-1];if(isDateStr(r[k])&&isDateStr(r[p])&&r[k]<r[p])msgs.push('«'+DATE_LBL[k]+'» ('+r[k]+') no puede ser menor que «'+DATE_LBL[p]+'» ('+r[p]+').');}
+  if(idx<DATE_CHAIN.length-1){const n=DATE_CHAIN[idx+1];if(isDateStr(r[k])&&isDateStr(r[n])&&r[n]<r[k])msgs.push('«'+DATE_LBL[n]+'» ('+r[n]+') no puede ser menor que «'+DATE_LBL[k]+'» ('+r[k]+').');}
+  if(msgs.length)alert('⚠ ALERTA DE FECHAS — Fila '+(ri+1)+'\n\n'+msgs.join('\n'));
 }
 function upd(ri,k,val){
   const c=COLS.find(x=>x.k===k);
@@ -632,7 +654,14 @@ function upd(ri,k,val){
   else if(c&&c.k==='unid'){ROWS[ri][k]=val===''?'':cleanUnid(val);}
   else if(c&&(c.money||c.num)){ROWS[ri][k]=val===''?'':numClean(val);}
   else ROWS[ri][k]=val;
-  if(k==='fconf'||k==='dinv'){ROWS[ri].ttot=computeTtot(ROWS[ri]);renderPlanilla();}
+  // Al cambiar una fecha NO se re-dibuja toda la planilla (eso reiniciaba el calendario y "saltaba" de mes).
+  // Solo se recalcula y actualiza la celda TIEMPO TOTAL, dejando intacto el selector de fecha nativo.
+  if(k==='fconf'||k==='dinv'){
+    ROWS[ri].ttot=computeTtot(ROWS[ri]);
+    const tcell=$('ttot'+ri);
+    if(tcell){const v=ROWS[ri].ttot;tcell.value=(v===''||v==null)?'':v+' días';}
+  }
+  if(DATE_CHAIN.indexOf(k)>=0)validateDates(ri,k); // alarma si la fecha es menor que el hito anterior/siguiente
 }
 function renderOne(ri,k,el){
   const c=COLS.find(x=>x.k===k);const v=ROWS[ri][k];
@@ -834,21 +863,51 @@ function poActivas(){return ROWS.filter(rowComplete).length;}
 function poPendientes(){return ROWS.filter(r=>!rowComplete(r)).length;}
 
 /* ===== KPIs ===== */
-let DOLAR=null, DOLAR_FECHA=null;
+let DOLAR=null, DOLAR_FECHA=null, DOLAR_ERR=false, DOLAR_MANUAL=false;
+function _applyDolar(valor,fecha,manual){DOLAR=valor;DOLAR_FECHA=fecha;DOLAR_ERR=false;DOLAR_MANUAL=!!manual;if($('kpis')&&$('kpis').innerHTML)renderKpis();}
 function fetchDolar(){
-  // Valor dólar observado oficial (Banco Central de Chile, vía mindicador.cl)
-  fetch('https://mindicador.cl/api/dolar').then(r=>r.json()).then(d=>{
-    if(d&&d.serie&&d.serie[0]){DOLAR=d.serie[0].valor;DOLAR_FECHA=d.serie[0].fecha.slice(0,10);if($('kpis').innerHTML)renderKpis();}
-  }).catch(()=>{});
+  if(DOLAR_MANUAL)return; // respetar el valor ingresado manualmente
+  // Dólar observado oficial del Banco Central de Chile. La página si3.bcentral.cl NO se
+  // puede leer directo desde el navegador (bloqueo CORS + token de sesión que expira), por
+  // eso se consume el MISMO indicador publicado por el BCCh a través de servicios con CORS.
+  const sources=[
+    {url:'https://mindicador.cl/api/dolar',pick:d=>(d&&d.serie&&d.serie[0])?{v:d.serie[0].valor,f:(''+d.serie[0].fecha).slice(0,10)}:null},
+    {url:'https://cl.dolarapi.com/v1/cotizaciones/usd',pick:d=>(d&&d.venta)?{v:d.venta,f:(''+(d.fechaActualizacion||'')).slice(0,10)}:null}
+  ];
+  let i=0;
+  (function tryNext(){
+    if(i>=sources.length){DOLAR_ERR=true;if($('kpis')&&$('kpis').innerHTML)renderKpis();return;}
+    const s=sources[i++];
+    let done=false;const to=setTimeout(()=>{if(!done){done=true;tryNext();}},9000);
+    fetch(s.url,{cache:'no-store'})
+      .then(r=>{if(!r.ok)throw 0;return r.json();})
+      .then(j=>{const o=s.pick(j);if(done)return;done=true;clearTimeout(to);if(o&&o.v)_applyDolar(o.v,o.f||new Date().toISOString().slice(0,10),false);else tryNext();})
+      .catch(()=>{if(done)return;done=true;clearTimeout(to);tryNext();});
+  })();
 }
+function setManualDolar(){
+  const t=prompt('No se pudo conectar automáticamente al indicador del Banco Central.\n\nIngrese el valor del DÓLAR OBSERVADO (ej: 950,25):', DOLAR?(''+DOLAR):'');
+  if(t==null)return;
+  const v=parseFloat((''+t).replace(/\./g,'').replace(',','.'));
+  if(isNaN(v)||v<=0){alert('Valor no válido.');return;}
+  _applyDolar(v,new Date().toISOString().slice(0,10),true);
+}
+function reintentarDolar(){DOLAR_MANUAL=false;DOLAR_ERR=false;if($('kpis')&&$('kpis').innerHTML)renderKpis();fetchDolar();}
 function renderKpis(){
   const est=byEstado();
   const atr=est['Atrasado']||0, disp=est['Disponible']||0, tran=(est['En tránsito']||0)+(est['En CD']||0);
   const zonas=Object.keys(byZona()).filter(z=>z&&z!=='—').length;
   const tu=totUSD();
-  const dolarKpi = DOLAR
-    ? kpi('teal','Dólar observado',DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2})+' USD','BCCh · '+DOLAR_FECHA)
-    : kpi('teal','Dólar observado','…','fuente Banco Central');
+  const _ml='background:none;border:none;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;padding:0';
+  let dolarKpi;
+  if(DOLAR){
+    const sub=(DOLAR_MANUAL?'ingreso manual':'BCCh')+' · '+DOLAR_FECHA+` <button style="${_ml}" onclick="setManualDolar()">editar</button>`;
+    dolarKpi=kpi('teal','Dólar observado','$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}),sub);
+  }else if(DOLAR_ERR){
+    dolarKpi=kpi('warn','Dólar observado','sin conexión',`<button style="${_ml}" onclick="reintentarDolar()">reintentar</button> · <button style="${_ml}" onclick="setManualDolar()">ingresar</button>`);
+  }else{
+    dolarKpi=kpi('teal','Dólar observado','…','conectando al Banco Central');
+  }
   const clp = DOLAR ? kpi('pp','Valor en CLP','$'+Math.round(tu*DOLAR).toLocaleString('es-CL'),'equivalente a '+fmtMoney(tu)) : '';
   const nAct=poActivas(), nPend=poPendientes();
   $('kpis').innerHTML=`
