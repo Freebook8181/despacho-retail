@@ -155,9 +155,9 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 /* planilla editable */
 .plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh;margin-top:4px}
 table.plan{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;table-layout:auto}
-table.plan th{background:var(--navy);color:#e8eef7;padding:8px 9px;text-align:center;position:sticky;top:0;white-space:pre-line;word-break:break-word;vertical-align:middle;line-height:1.22;font-weight:700;font-size:11px;letter-spacing:.2px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
+table.plan th{background:var(--navy);color:#e8eef7;padding:10px 10px;text-align:center;position:sticky;top:0;white-space:pre-line;word-break:break-word;vertical-align:middle;line-height:1.3;font-weight:700;font-size:11.5px;letter-spacing:.2px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
 table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
-table.plan td input,table.plan td select{width:100%;border:none;background:transparent;padding:8px 9px;font-size:12px;font-family:inherit;color:var(--txt)}
+table.plan td input,table.plan td select{width:100%;border:none;background:transparent;padding:10px 10px;font-size:12.5px;font-family:inherit;color:var(--txt)}
 table.plan td input:focus,table.plan td select:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#eff5ff}
 table.plan tr:nth-child(even) td{background:#f8fafc}
 table.plan td.rown{background:#fff;color:var(--muted);text-align:center;font-weight:600;position:sticky;left:0;z-index:1}
@@ -430,7 +430,7 @@ let CURRENT=null, selEmail=null;
 /* ===== Columnas de la planilla (del Excel COMEX_QD) ===== */
 const COLS=[
   {k:"po",   t:"PO (Orden de Compra)", sh:"PO\n(Orden de Compra)", xls:"PO (Orden de Compra)"},
-  {k:"prov", t:"Proveedor", sh:"Proveedor", xls:"Proveedor"},
+  {k:"prov", t:"PROVEEDOR", sh:"PROVEEDOR", xls:"Proveedor"},
   {k:"tipo", t:"Tipo (Maritimo / Aereo)", sh:"Tipo\n(Maritimo / Aereo)", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"]},
   {k:"unid", t:"Unidades (Q de articulos en PO)", sh:"Unidades\n(Q de articulos en PO)", xls:"Unidades (Q de articulos en PO)", num:true},
   {k:"usd",  t:"USD", sh:"USD", xls:"USD", money:true},
@@ -438,14 +438,14 @@ const COLS=[
   {k:"fconf",t:"FECHA CONFIRMACION (COMERCIAL)", sh:"FECHA CONFIRMACION\n(COMERCIAL)", xls:"FECHA CONFIRMACION (COMERCIAL)", date:true},
   {k:"dorig",t:"DISPONIBILIDAD ORIGEN (FECHA)", sh:"DISPONIBILIDAD ORIGEN\n(FECHA)", xls:"DISPONIBILIDAD ORIGEN (FECHA)", date:true},
   {k:"rorig",t:"RETIRO EN ORIGEN", sh:"RETIRO EN ORIGEN", xls:"RETIRO EN ORIGEN", date:true},
-  {k:"diast",t:"DIAS T (ORIGEN)", sh:"DIAS T\n(ORIGEN)", xls:"DIAS T (ORIGEN)", date:true},
+  {k:"diast",t:"DIAS T (origen)", sh:"DIAS T\n(origen)", xls:"DIAS T (ORIGEN)", date:true},
   {k:"eta",  t:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", sh:"ETA\n(FECHA ESTIMADA DE LLEGADA CHL)", xls:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", date:true},
   {k:"fdisp",t:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", sh:"FECHA DISPONIBILIDAD\nPUERTO -AEROPUERTO", xls:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", date:true},
   {k:"rpa",  t:"RETIRO P/A", sh:"RETIRO P/A", xls:"RETIRO P/A", date:true},
   {k:"lcd",  t:"LLEGADA A CD", sh:"LLEGADA A CD", xls:"LLEGADA A CD", date:true},
   {k:"cost", t:"COSTEO", sh:"COSTEO", xls:"COSTEO", date:true},
-  {k:"dinv", t:"DISPONIBILIDAD INVENTARIO (FINAL)", sh:"DISPONIBILIDAD INVENTARIO\n(FINAL)", xls:"DISPONIBILIDAD INVENTARIO (FINAL)"},
-  {k:"ttot", t:"TIEMPO TOTAL", sh:"TIEMPO TOTAL", xls:"TIEMPO TOTAL", num:true}
+  {k:"dinv", t:"DISPONIBILIDAD INVENTARIO (FINAL)", sh:"DISPONIBILIDAD INVENTARIO\n(FINAL)", xls:"DISPONIBILIDAD INVENTARIO (FINAL)", date:true},
+  {k:"ttot", t:"TIEMPO TOTAL", sh:"TIEMPO TOTAL", xls:"TIEMPO TOTAL", num:true, calc:true}
 ];
 let ROWS=[];
 
@@ -561,20 +561,36 @@ function colWidth(c){
   // Ancho autoajustable: el encabezado se muestra completo en varias líneas (sh con saltos), por eso solo cuenta la línea más larga del título, no el total.
   const label=c.sh||c.t;
   let hdr=(''+label).split('\n').reduce((m,s)=>Math.max(m,s.trim().length),0);
-  let max=Math.min(hdr,22);
+  let max=Math.min(hdr,26);
   ROWS.forEach(r=>{const l=dispVal(c,r[c.k]).length;if(l>max)max=l;});
-  return Math.min(Math.max(max+2,7),28);
+  if(c.opt){c.opt.forEach(o=>{if((''+o).length>max)max=(''+o).length;}); max+=4;} // espacio extra para la flecha del desplegable, así se ve el valor (ej. ZONA)
+  return Math.min(Math.max(max+3,10),34);
 }
 function renderHead(){
   const ths=COLS.map(c=>`<th style="width:${colWidth(c)}ch" title="${esc(c.t)}">${esc(c.sh||c.t)}</th>`).join('');
   $('planHead').innerHTML='<tr><th style="width:4ch">#</th>'+ths+'<th style="width:4ch"></th></tr>';
 }
 function rowObj(arr){const o={};COLS.forEach((c,i)=>o[c.k]=arr?arr[i]:'' );return o;}
+/* TIEMPO TOTAL = días transcurridos desde FECHA CONFIRMACION (COMERCIAL) hasta DISPONIBILIDAD INVENTARIO (FINAL) */
+function diffDias(a,b){
+  const p=s=>{const x=(''+s).match(/^(\d{4})-(\d{2})-(\d{2})/);return x?new Date(+x[1],+x[2]-1,+x[3]):null;};
+  const d1=p(a),d2=p(b);
+  if(!d1||!d2)return '';
+  const d=Math.round((d2-d1)/86400000);
+  return d>=0?d:'';
+}
+function computeTtot(r){return diffDias(r.fconf,r.dinv);}
+function recalcTtot(){ROWS.forEach(r=>{r.ttot=computeTtot(r);});}
 function renderPlanilla(){
   renderHead();
+  recalcTtot();
   $('planBody').innerHTML=ROWS.map((r,ri)=>{
     let tds=COLS.map(c=>{
       const v=r[c.k]==null?'':r[c.k];
+      if(c.calc){
+        const val=computeTtot(r);
+        return `<td><input type="text" value="${esc(val===''?'':val+' días')}" readonly style="text-align:right;background:#eef3f9;color:#0f2744;font-weight:700;cursor:default" title="Cálculo automático: días entre FECHA CONFIRMACION (COMERCIAL) y DISPONIBILIDAD INVENTARIO (FINAL)"></td>`;
+      }
       if(c.opt){
         return `<td><select onchange="upd(${ri},'${c.k}',this.value)">`+
           `<option value=""></option>`+c.opt.map(o=>`<option ${o===v?'selected':''}>${esc(o)}</option>`).join('')+`</select></td>`;
@@ -592,6 +608,7 @@ function upd(ri,k,val){
   const c=COLS.find(x=>x.k===k);
   if(c&&(c.money||c.num)){ROWS[ri][k]=val===''?'':numClean(val);}
   else ROWS[ri][k]=val;
+  if(k==='fconf'||k==='dinv'){ROWS[ri].ttot=computeTtot(ROWS[ri]);renderPlanilla();}
 }
 function renderOne(ri,k,el){
   const c=COLS.find(x=>x.k===k);const v=ROWS[ri][k];
@@ -777,7 +794,7 @@ function byEstado(){const m={};ROWS.forEach(r=>{const e=estado(r);m[e]=(m[e]||0)
 function byMes(){const m={};ROWS.forEach(r=>{const d=r.eta||r.cost||r.lcd||'';const dd=(''+d).match(/^\d{4}-\d{2}/);if(dd){m[dd[0]]=(m[dd[0]]||0)+numClean(r.usd);}});return m;}
 function totUSD(){return ROWS.reduce((a,r)=>a+numClean(r.usd),0);}
 function totUnid(){return ROWS.reduce((a,r)=>a+numClean(r.unid),0);}
-function avgTiempo(){const v=ROWS.map(r=>numClean(r.ttot)).filter(x=>x>0);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0;}
+function avgTiempo(){const v=ROWS.map(r=>numClean(computeTtot(r))).filter(x=>x>0);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0;}
 
 /* ===== KPIs ===== */
 let DOLAR=null, DOLAR_FECHA=null;
@@ -904,6 +921,7 @@ function unidByProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[
 function ticketByZona(){const u=unidByZona(),z=byZona(),m={};Object.keys(z).forEach(k=>{m[k]=u[k]?z[k]/u[k]:0;});return m;}
 function drawCharts(){
   clearChips();
+  recalcTtot();
   const kUSD={ticks:{callback:v=>fmtUSDk(v)}};
   const z=byZona(),tu=totUSD();
   mk('cZona',{type:'doughnut',data:{labels:Object.keys(z),datasets:[{data:Object.values(z),backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmtMoney(c.parsed)}},datalabels:{display:true,color:'#fff',textAlign:'center',font:{weight:'800',size:9},textStrokeColor:'#0f2744',textStrokeWidth:3,formatter:(v,ctx)=>{const t=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+(+b||0),0);const lbl=ctx.chart.data.labels[ctx.dataIndex];return [lbl,fmtMoney(v),(t?Math.round(v/t*100)+'%':'')];}}},maintainAspectRatio:false,cutout:'55%'}});
