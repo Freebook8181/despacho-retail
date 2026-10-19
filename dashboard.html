@@ -438,6 +438,18 @@ function semBtns(mk,sems,curSem){
  });
  return out;
 }
+/* Panel informativo de semanas (lunes–viernes) de un mes concreto, para la vista
+   Ventas por tienda y mes. Muestra S1,S2... con su rango DESDE–HASTA. Solo informativo. */
+function semInfoHTML(year,m0,col){
+ if(year==null||m0==null)return '';
+ const first=new Date(year,m0,1);const off=(first.getDay()+6)%7;
+ const lastDay=new Date(year,m0+1,0).getDate();
+ const maxW=Math.floor((lastDay-1+off)/7)+1;
+ let chips='';
+ for(var w=1;w<=maxW;w++){var r=semRange(year,m0,w);
+  chips+='<div title="DESDE '+fmtFull(r.desde)+'   →   HASTA '+fmtFull(r.hasta)+'" style="border:1.5px solid '+(col||'#1f3a59')+';border-radius:9px;padding:6px 11px;background:'+(col||'#1f3a59')+'12;text-align:center;min-width:92px"><div style="font-weight:700;color:'+(col||'#1f3a59')+';font-size:13px">S'+w+'</div><div style="font-size:10.5px;color:#5a6672;margin-top:1px;line-height:1.2">'+fmtDM(r.desde)+' – '+fmtDM(r.hasta)+'</div></div>';}
+ return '<div style="margin-top:10px"><div style="font-size:11.5px;font-weight:700;color:#5a6672;letter-spacing:.03em;margin-bottom:6px">SEMANAS DEL MES (lunes a viernes)</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+chips+'</div></div>';
+}
 const LS_KEY='quintec_meses_v2';
 // Limpia cache antigua: meses de demo (Jul-Dic) quedaron guardados por una versi\u00f3n previa.
 try{localStorage.removeItem('quintec_meses_v1');}catch(e){}
@@ -2040,6 +2052,7 @@ function ventasHTML(k){
    <button class="htool adminonly" id="${p}delBtn" style="background:#b4442f;border-color:#b4442f;color:#fff">🗑 Borrar Excel</button>
   </div>
   <div class="active-scope" id="${p}scope" style="margin-top:8px"></div>
+  <div id="${p}sem"></div>
  </div>`;
  h+=`<div id="${p}empty" style="display:none;margin:4px 0 16px;padding:26px 24px;background:#fff;border:1px solid #e3e7ec;border-left:5px solid ${col};border-radius:12px;box-shadow:0 6px 22px rgba(23,42,67,.07)"></div>`;
  h+=`<div id="${p}body">`;
@@ -2062,6 +2075,7 @@ function renderVentas(k){
  const col=MOD_COLOR[k];const p='v'+k+'_';const D=VSTORE[k];
  const body=document.getElementById(p+'body');const empty=document.getElementById(p+'empty');const scope=document.getElementById(p+'scope');
  if(scope){const mesTxt=VF[k].mes==='all'?('Todos los meses '+D.year):(MESES_FULL[VF[k].mes]+' '+D.year);const zonaTxt=VF[k].zona==='all'?'Todas':VF[k].zona;scope.innerHTML=`<b>Vista:</b> Ventas por tienda y mes &nbsp;·&nbsp; <b>Zona:</b> ${zonaTxt} &nbsp;·&nbsp; <b>Mes:</b> ${mesTxt}`;}
+ const semEl=document.getElementById(p+'sem');if(semEl)semEl.innerHTML=(VF[k].mes==='all'?'':semInfoHTML(D.year,VF[k].mes,col));
  if(!D.rows.length){
   if(empty){empty.style.display='';empty.innerHTML=`<div style="font-size:16px;font-weight:700;color:#1f3a59;margin-bottom:6px">Aún no has cargado el Excel de ventas</div><div style="color:#5a6672;font-size:13.5px;line-height:1.65">Si eres administrador, usa el botón <b>“Subir Excel de Ventas”</b> y sube el archivo con las hojas de ventas (por ejemplo <i>2026_Tiendas_por_tienda_y_unidad</i>). Se leerá automáticamente la hoja de <b>${VLABEL[k]}</b>.</div>`;}
   if(body)body.style.display='none';return;
