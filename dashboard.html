@@ -477,7 +477,7 @@ function semInfoHTML(year,m0,col,curW){
  wk.forEach(function(r){
   var on=(String(curW)===String(r.w));var bg=on?col:(col+'12');var fg=on?'#fff':col;var sub=on?'#eaf0f7':'#5a6672';
   out+='<button data-w="'+r.w+'" title="DESDE '+fmtFull(r.desde)+'   →   HASTA '+fmtFull(r.hasta)+'" style="cursor:pointer;border:1.5px solid '+col+';border-radius:9px;padding:6px 11px;background:'+bg+';text-align:center;min-width:92px;font-family:inherit"><div style="font-weight:700;color:'+fg+';font-size:13px">S'+r.w+'</div><div style="font-size:10.5px;color:'+sub+';margin-top:1px;line-height:1.2">'+fmtDM(r.desde)+' – '+fmtDM(r.hasta)+'</div></button>';});
- return '<div style="margin-top:10px"><div style="font-size:11.5px;font-weight:700;color:#5a6672;letter-spacing:.03em;margin-bottom:6px">SEMANAS DEL MES (haz clic en una semana · lunes a viernes)</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">'+out+'</div></div>';
+ return '<div style="margin-top:10px"><div style="font-size:11.5px;font-weight:700;color:#5a6672;letter-spacing:.03em;margin-bottom:6px">SEMANAS DEL MES (haz clic en una semana · lunes a viernes)</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">'+out+'</div><div style="font-size:11px;color:#8a95a1;margin-top:7px;line-height:1.5">Haz clic en una semana para que <b>todos los gráficos y totales</b> muestren solo esa semana. Pulsa <b>“Mes completo”</b> para volver a ver el mes entero.</div></div>';
 }
 const LS_KEY='quintec_meses_v2';
 // Limpia cache antigua: meses de demo (Jul-Dic) quedaron guardados por una versi\u00f3n previa.
@@ -1997,7 +1997,7 @@ function vMesIdx(c){
  var base=String(c).replace(/\s*20\d\d\s*$/,'').trim();
  return VMESES.indexOf(base);
 }
-function cleanSheetVentas(aoa,fname){
+function cleanSheetVentasFlat(aoa,fname){
  const rows=[];let headerRow=-1,tiendaCol=-1,comunaCol=-1,zonaCol=-1;const monthCols=[];
  for(let i=0;i<aoa.length;i++){
   const r=aoa[i]||[];
@@ -2032,13 +2032,70 @@ function cleanSheetVentas(aoa,fname){
   if(zonaCol>=0){const zv=stripAcc(String(r[zonaCol]==null?'':r[zonaCol])).toUpperCase();if(zv.indexOf('SANTIAGO')>=0)zona='Santiago';else if(zv.indexOf('REGION')>=0)zona='Regiones';}
   const m={};let total=0;
   monthCols.forEach(mc=>{const v=vNum(r[mc.col]);m[mc.mi]=Math.round(v);total+=v;});
-  rows.push({tienda:String(tRaw).trim(),comuna:comunaCol>=0&&r[comunaCol]!=null?String(r[comunaCol]).trim():'',zona:zona,m:m,total:Math.round(total)});
+  rows.push({tienda:String(tRaw).trim(),comuna:comunaCol>=0&&r[comunaCol]!=null?String(r[comunaCol]).trim():'',zona:zona,m:m,w:{},total:Math.round(total)});
  }
  if(!rows.length)return null;
  const months=monthCols.map(x=>x.mi).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b);
  const txt=stripAcc(String(fname||'')).toUpperCase();let year=2026;const my=txt.match(/(20\d\d)/);if(my)year=+my[1];
  const monthYears={};monthCols.forEach(mc=>{monthYears[mc.mi]=mc.yr||year;});
- return {year:year,rows:rows,months:months,monthYears:monthYears};
+ return {year:year,rows:rows,months:months,monthYears:monthYears,weeks:[]};
+}
+/* ---- Lee un bloque de tabla CLIENTE x (MES|SEMANA). mode='mes'|'sem'.
+   Devuelve [{tienda,comuna,zona,vals:{clave:monto}}]. clave = indice de mes (0..11)
+   o numero de semana global (1..53). ---- */
+function parseClientBlock(aoa,i0,i1,mode){
+ const rows=[];let cols=null,tiendaCol=-1,comunaCol=-1,zonaCol=-1;
+ for(let i=i0;i<i1;i++){
+  const r=aoa[i]||[];
+  let isHdr=false;
+  for(let j=0;j<r.length;j++){const h=stripAcc(String(r[j]==null?'':r[j])).toUpperCase().trim();if(h==='TIENDA'||h==='CLIENTE'){isHdr=true;break;}}
+  if(isHdr){
+   cols=[];tiendaCol=-1;comunaCol=-1;zonaCol=-1;
+   for(let j=0;j<r.length;j++){
+    const c=stripAcc(String(r[j]==null?'':r[j])).toUpperCase().trim();
+    if(c==='TIENDA'||c==='CLIENTE')tiendaCol=j;
+    else if(c==='COMUNA'||c==='REGION')comunaCol=j;
+    else if(c==='ZONA')zonaCol=j;
+    else if(mode==='mes'){const mi=vMesIdx(c);if(mi>=0)cols.push({key:mi,col:j});}
+    else {const mm=c.match(/^SEMANA\s*(\d+)$/);if(mm)cols.push({key:+mm[1],col:j});}
+   }
+   continue;
+  }
+  if(!cols||tiendaCol<0)continue;
+  const tRaw=r[tiendaCol];
+  if(tRaw==null||String(tRaw).trim()==='')continue;
+  const tUp=stripAcc(String(tRaw)).toUpperCase().trim();
+  if(tUp==='TIENDA'||tUp==='CLIENTE')continue;
+  if(/SUBTOTAL/.test(tUp)||tUp.indexOf('TOTAL')>=0||tUp.indexOf('CONTROL')>=0)continue;
+  let zona='Sin dato';
+  if(zonaCol>=0){const zv=stripAcc(String(r[zonaCol]==null?'':r[zonaCol])).toUpperCase();if(zv.indexOf('SANTIAGO')>=0)zona='Santiago';else if(zv.indexOf('REGION')>=0)zona='Regiones';}
+  const vals={};cols.forEach(mc=>{vals[mc.key]=Math.round(vNum(r[mc.col]));});
+  rows.push({tienda:String(tRaw).trim(),comuna:comunaCol>=0&&r[comunaCol]!=null?String(r[comunaCol]).trim():'',zona:zona,vals:vals});
+ }
+ return rows;
+}
+/* ---- Parser principal: usa las secciones "VALOR POR CLIENTE Y MES" y
+   "VALOR POR CLIENTE Y SEMANA". Si no existen, cae al parser plano antiguo. ---- */
+function cleanSheetVentas(aoa,fname){
+ const findRow=(re)=>{for(let i=0;i<aoa.length;i++){const c=stripAcc(String((aoa[i]||[])[0]==null?'':aoa[i][0])).toUpperCase().trim();if(re.test(c))return i;}return -1;};
+ const mesA=findRow(/VALOR POR CLIENTE Y MES/);
+ const semA=findRow(/VALOR POR CLIENTE Y SEMANA/);
+ if(mesA<0)return cleanSheetVentasFlat(aoa,fname);
+ const mesRows=parseClientBlock(aoa,mesA+1,semA>=0?semA:aoa.length,'mes');
+ const semRows=semA>=0?parseClientBlock(aoa,semA+1,aoa.length,'sem'):[];
+ if(!mesRows.length)return cleanSheetVentasFlat(aoa,fname);
+ const byName={};
+ mesRows.forEach(r=>{const key=stripAcc(r.tienda).toUpperCase();byName[key]={tienda:r.tienda,comuna:r.comuna,zona:r.zona,m:r.vals,w:{}};});
+ semRows.forEach(r=>{const key=stripAcc(r.tienda).toUpperCase();if(byName[key]){byName[key].w=r.vals;if(!byName[key].comuna)byName[key].comuna=r.comuna;}else{byName[key]={tienda:r.tienda,comuna:r.comuna,zona:r.zona,m:{},w:r.vals};}});
+ const rows=Object.keys(byName).map(key=>{const o=byName[key];let t=0;Object.keys(o.m).forEach(mi=>{t+=o.m[mi]||0;});return {tienda:o.tienda,comuna:o.comuna,zona:o.zona,m:o.m,w:o.w,total:Math.round(t)};});
+ if(!rows.length)return cleanSheetVentasFlat(aoa,fname);
+ const mset={};rows.forEach(r=>Object.keys(r.m).forEach(mi=>{mset[+mi]=1;}));
+ const months=Object.keys(mset).map(Number).sort((a,b)=>a-b);
+ const wset={};rows.forEach(r=>Object.keys(r.w).forEach(w=>{wset[+w]=1;}));
+ const weeks=Object.keys(wset).map(Number).sort((a,b)=>a-b);
+ const txt=stripAcc(String(fname||'')).toUpperCase();let year=2026;const my=txt.match(/(20\d\d)/);if(my)year=+my[1];
+ const monthYears={};months.forEach(mi=>{monthYears[mi]=year;});
+ return {year:year,rows:rows,months:months,monthYears:monthYears,weeks:weeks};
 }
 /* ---- Elegir la hoja correcta de un libro con varias hojas ---- */
 function vSheetAoa(wb,name){const ws=wb.Sheets[name];if(!ws)return null;return XLSX.utils.sheet_to_json(ws,{header:1,defval:null});}
@@ -2104,7 +2161,7 @@ function fillVentasControls(k){
  sel.innerHTML=o;sel.value=(VF[k].mes==='all'?'all':String(VF[k].mes));
 }
 /* ---- Render ---- */
-function vVal(k,r){return VF[k].mes==='all'?r.total:(r.m[VF[k].mes]||0);}
+function vVal(k,r){const f=VF[k];if(f.mes!=='all'&&f.sem&&f.sem!=='all'){return (r.w&&r.w[+f.sem])||0;}return f.mes==='all'?r.total:(r.m[f.mes]||0);}
 function renderVentas(k){
  const col=MOD_COLOR[k];const p='v'+k+'_';const D=VSTORE[k];
  const body=document.getElementById(p+'body');const empty=document.getElementById(p+'empty');const scope=document.getElementById(p+'scope');
@@ -2128,7 +2185,27 @@ function renderVentas(k){
  const zRows=all.filter(r=>VF[k].zona==='all'||r.zona===VF[k].zona);
  const mLabels=D.months.map(mi=>MESES_FULL[mi]);
  const ZCOL={Santiago:col,Regiones:'#c88a6a'};
- if(VF[k].zona==='all'){
+ const semSel=(VF[k].mes!=='all'&&VF[k].sem&&VF[k].sem!=='all');
+ {const mcEl=document.getElementById(p+'c_mes');if(mcEl){const card=mcEl.closest('.card');if(card){const _h=card.querySelector('h3');const _cs=card.querySelector('.cs');if(semSel){if(_h)_h.innerHTML=IC.line+' Ventas por Semana';if(_cs)_cs.textContent='Monto vendido por semana del mes (semana elegida resaltada)';}else{if(_h)_h.innerHTML=IC.line+' Ventas por Mes';if(_cs)_cs.textContent='Monto vendido por mes (según la zona elegida)';}}}}
+ if(semSel){
+  const _wks=monthWeeks(vMesYear(D,VF[k].mes),VF[k].mes).map(x=>x.w);
+  const _curW=+VF[k].sem;
+  const _wLab=_wks.map(w=>'S'+w);
+  const _op=w=>w===_curW?1:0.3;
+  if(VF[k].zona==='all'){
+   const wS=_wks.map(w=>all.filter(r=>r.zona==='Santiago').reduce((a,r)=>a+((r.w&&r.w[w])||0),0));
+   const wR=_wks.map(w=>all.filter(r=>r.zona==='Regiones').reduce((a,r)=>a+((r.w&&r.w[w])||0),0));
+   const wT=_wks.map((w,i)=>wS[i]+wR[i]);
+   setC(p+'c_mes',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){var s='<b>'+ps[0].name+'</b>';var t=0;ps.forEach(function(x){s+='<br/>'+x.marker+x.seriesName+': <b>'+fm(x.value)+'</b>';t+=x.value||0;});s+='<br/>Total: <b>'+fm(t)+'</b>';return s;}},TT),legend:{top:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:11,itemHeight:11},grid:{left:4,right:14,top:30,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:_wLab},axCfg(),{axisLabel:{interval:0,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[
+    {name:'Santiago',type:'bar',stack:'z',data:_wks.map((w,i)=>({value:wS[i],itemStyle:{color:ZCOL.Santiago,opacity:_op(w)}})),barWidth:'52%',label:{show:true,color:'#fff',fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>x.value?fmShort(x.value):''}},
+    {name:'Regiones',type:'bar',stack:'z',data:_wks.map((w,i)=>({value:wR[i],itemStyle:{color:ZCOL.Regiones,borderRadius:[4,4,0,0],opacity:_op(w)}})),label:{show:true,color:'#fff',fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>x.value?fmShort(x.value):''}},
+    {name:'Total',type:'bar',stack:'z',data:_wks.map(()=>0),label:{show:true,position:'top',color:'#1f3a59',fontFamily:'IBM Plex Mono',fontWeight:600,fontSize:10,formatter:function(x){return wT[x.dataIndex]?fmShort(wT[x.dataIndex]):'';}},tooltip:{show:false},silent:true}
+   ]});
+  }else{
+   const wV=_wks.map(w=>zRows.reduce((a,r)=>a+((r.w&&r.w[w])||0),0));
+   setC(p+'c_mes',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:x=>`<b>${x[0].name}</b><br/>Ventas: <b>${fm(x[0].value)}</b>`},TT),grid:{left:4,right:14,top:28,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:_wLab},axCfg(),{axisLabel:{interval:0,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'bar',data:_wks.map((w,i)=>({value:wV[i],itemStyle:{color:col,borderRadius:[4,4,0,0],opacity:_op(w)}})),barWidth:'52%',label:{show:true,position:'top',color:col,fontFamily:'IBM Plex Mono',fontSize:9,formatter:x=>fmShort(x.value)}}]});
+  }
+ }else if(VF[k].zona==='all'){
   /* Ventas por Mes = barra apilada Santiago + Regiones, con valor por color y total encima */
   const mSant=D.months.map(mi=>all.filter(r=>r.zona==='Santiago').reduce((a,r)=>a+(r.m[mi]||0),0));
   const mRegi=D.months.map(mi=>all.filter(r=>r.zona==='Regiones').reduce((a,r)=>a+(r.m[mi]||0),0));
@@ -2163,8 +2240,8 @@ function handleVentasUpload(e,fromK){
    const rMac=vExtract(wb,f.name,'mac');const rVer=vExtract(wb,f.name,'ver');
    if(!rMac&&!rVer){alert('No pude leer ninguna hoja de “Ventas por tienda y mes” en este archivo. Revisa que exista una hoja con la fila “Tienda”, los meses en columnas y las secciones SANTIAGO / REGIONES.');return;}
    let msg=[];
-   if(rMac){VSTORE.mac=rMac;VF.mac={zona:'all',mes:'all'};msg.push('MacOnline: '+rMac.rows.length+' tiendas, '+rMac.months.length+' meses');}
-   if(rVer){VSTORE.ver=rVer;VF.ver={zona:'all',mes:'all'};msg.push('Vertical: '+rVer.rows.length+' tiendas, '+rVer.months.length+' meses');}
+   if(rMac){VSTORE.mac=rMac;VF.mac={zona:'all',mes:'all',sem:'all'};msg.push('MacOnline: '+rMac.rows.length+' tiendas, '+rMac.months.length+' meses');}
+   if(rVer){VSTORE.ver=rVer;VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical: '+rVer.rows.length+' tiendas, '+rVer.months.length+' meses');}
    vSaveLocal();
    ['mac','ver'].forEach(k=>{fillVentasControls(k);const z=document.getElementById('v'+k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+k+'_body'))renderVentas(k);});
    if(fbReady){vFbPush();alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n☁ Guardado en la nube (Firebase).');}
@@ -2204,7 +2281,7 @@ function vClear(k){
   var deleteAll=all||chks.length>=D.months.length;
   if(deleteAll){
    if(!confirm('¿Confirmas borrar TODO el Excel de ventas de '+VLABEL[k]+' ('+D.year+')?\n\nSe borrará de la plataforma y de la nube. No se puede deshacer.'))return;
-   VSTORE[k]={year:2026,rows:[],months:[]};VF[k]={zona:'all',mes:'all'};
+   VSTORE[k]={year:2026,rows:[],months:[]};VF[k]={zona:'all',mes:'all',sem:'all'};
   }else{
    var selMi={};chks.forEach(function(c){selMi[+c.getAttribute('data-mi')]=1;});
    var labels=chks.map(function(c){return MESES_FULL[+c.getAttribute('data-mi')];});
@@ -2213,7 +2290,7 @@ function vClear(k){
    D.rows.forEach(function(r){Object.keys(selMi).forEach(function(mi){delete r.m[mi];});var t=0;Object.keys(r.m).forEach(function(mi){t+=r.m[mi]||0;});r.total=Math.round(t);});
    D.rows=D.rows.filter(function(r){return r.total>0||D.months.some(function(mi){return r.m[mi]!=null;});});
    if(!D.months.length){VSTORE[k]={year:2026,rows:[],months:[]};}
-   VF[k]={zona:'all',mes:'all'};
+   VF[k]={zona:'all',mes:'all',sem:'all'};
   }
   vSaveLocal();
   var done=function(){fillVentasControls(k);if(document.getElementById('v'+k+'_body'))renderVentas(k);close();alert('Listo. Se borró el Excel de ventas seleccionado de la plataforma y de la nube.');};
