@@ -426,28 +426,53 @@ function semRange(year,m0,w){
  const friday=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+4);
  return {desde:monday,hasta:friday};
 }
+/* Nº de semana GLOBAL del año (ISO-8601, lunes a domingo): 1..53. La semana 1 es
+   la que contiene el primer jueves del año, por eso el lunes 29-dic-2025 cae en la
+   semana 1 de 2026 (su jueves es el 1-ene-2026). Coincide con el "Calendario de
+   Semanas 2026" del usuario. */
+function isoWeekNum(d){
+ var date=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+ var day=(date.getDay()+6)%7; // lunes=0
+ date.setDate(date.getDate()-day+3); // jueves de esta semana
+ var firstThu=new Date(date.getFullYear(),0,4);
+ var ftDay=(firstThu.getDay()+6)%7;firstThu.setDate(firstThu.getDate()-ftDay+3);
+ return 1+Math.round((date-firstThu)/6048e5);
+}
+/* Semanas (lunes-viernes) que PERTENECEN a un mes: una semana es de un mes si su
+   jueves cae en ese mes (regla ISO). Así el 29-dic se suma a enero y diciembre no
+   aparece aparte. Devuelve {w: nº global 1..53, desde:lunes, hasta:viernes}. */
+function monthWeeks(year,m0){
+ var res=[];var d=new Date(year,m0,1);var off=(d.getDay()+6)%7;d.setDate(d.getDate()-off);
+ for(var i=0;i<6;i++){
+  var mon=new Date(d.getFullYear(),d.getMonth(),d.getDate()+i*7);
+  var thu=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+3);
+  if(thu.getMonth()===m0&&thu.getFullYear()===year){
+   var fri=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+4);
+   res.push({w:isoWeekNum(mon),desde:mon,hasta:fri});
+  }
+ }
+ return res;
+}
 /* Construye los botones de Semana. Si hay un mes concreto (mk='YYYY-MM') cada botón
-   muestra S{w} con su rango DESDE–HASTA (lunes a viernes) y el detalle completo en el tooltip. */
+   muestra S{nº global} con su rango DESDE–HASTA (lunes a viernes) y el detalle completo
+   en el tooltip. El valor de filtrado (data-s) sigue siendo la semana-del-mes del dato. */
 function semBtns(mk,sems,curSem){
  let out='<button data-s="all" class="'+(curSem==='all'?'on':'')+'">Mes</button>';
  const hasMonth=mk&&/^\d{4}-\d{2}$/.test(mk);let yy,m0;if(hasMonth){yy=+mk.slice(0,4);m0=+mk.slice(5,7)-1;}
  sems.forEach(function(w){
   var lbl='S'+w,title='Semana '+w;
-  if(hasMonth){var r=semRange(yy,m0,w);lbl='S'+w+'<small style="display:block;font-size:9px;opacity:.82;font-weight:500;line-height:1.15;margin-top:1px">'+fmtDM(r.desde)+'–'+fmtDM(r.hasta)+'</small>';title='Semana '+w+'  ·  DESDE '+fmtFull(r.desde)+'   →   HASTA '+fmtFull(r.hasta);}
+  if(hasMonth){var r=semRange(yy,m0,w);var gw=isoWeekNum(r.desde);lbl='S'+gw+'<small style="display:block;font-size:9px;opacity:.82;font-weight:500;line-height:1.15;margin-top:1px">'+fmtDM(r.desde)+'–'+fmtDM(r.hasta)+'</small>';title='Semana '+gw+'  ·  DESDE '+fmtFull(r.desde)+'   →   HASTA '+fmtFull(r.hasta);}
   out+='<button data-s="'+w+'" class="'+(curSem==w?'on':'')+'" title="'+title+'" style="text-align:center">'+lbl+'</button>';
  });
  return out;
 }
 /* Panel informativo de semanas (lunes–viernes) de un mes concreto, para la vista
-   Ventas por tienda y mes. Muestra S1,S2... con su rango DESDE–HASTA. Solo informativo. */
+   Ventas por tienda y mes. Muestra S{nº global} con su rango DESDE–HASTA. Solo informativo. */
 function semInfoHTML(year,m0,col){
  if(year==null||m0==null)return '';
- const first=new Date(year,m0,1);const off=(first.getDay()+6)%7;
- const lastDay=new Date(year,m0+1,0).getDate();
- const maxW=Math.floor((lastDay-1+off)/7)+1;
- let chips='';
- for(var w=1;w<=maxW;w++){var r=semRange(year,m0,w);
-  chips+='<div title="DESDE '+fmtFull(r.desde)+'   →   HASTA '+fmtFull(r.hasta)+'" style="border:1.5px solid '+(col||'#1f3a59')+';border-radius:9px;padding:6px 11px;background:'+(col||'#1f3a59')+'12;text-align:center;min-width:92px"><div style="font-weight:700;color:'+(col||'#1f3a59')+';font-size:13px">S'+w+'</div><div style="font-size:10.5px;color:#5a6672;margin-top:1px;line-height:1.2">'+fmtDM(r.desde)+' – '+fmtDM(r.hasta)+'</div></div>';}
+ var wk=monthWeeks(year,m0);var chips='';
+ wk.forEach(function(r){
+  chips+='<div title="DESDE '+fmtFull(r.desde)+'   →   HASTA '+fmtFull(r.hasta)+'" style="border:1.5px solid '+(col||'#1f3a59')+';border-radius:9px;padding:6px 11px;background:'+(col||'#1f3a59')+'12;text-align:center;min-width:92px"><div style="font-weight:700;color:'+(col||'#1f3a59')+';font-size:13px">S'+r.w+'</div><div style="font-size:10.5px;color:#5a6672;margin-top:1px;line-height:1.2">'+fmtDM(r.desde)+' – '+fmtDM(r.hasta)+'</div></div>';});
  return '<div style="margin-top:10px"><div style="font-size:11.5px;font-weight:700;color:#5a6672;letter-spacing:.03em;margin-bottom:6px">SEMANAS DEL MES (lunes a viernes)</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+chips+'</div></div>';
 }
 const LS_KEY='quintec_meses_v2';
