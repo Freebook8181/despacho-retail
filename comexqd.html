@@ -321,7 +321,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
       <div class="explain-box" id="exZona"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Top 3 proveedores por USD</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProv')">⤢ Detalle (todos)</button><button class="explain-btn" onclick="tgEx('exProv')">ℹ Análisis</button></div>
+      <div class="ph"><h3>USD por proveedor</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProv')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exProv')">ℹ Análisis</button></div>
       <div class="metrow" id="mProv"></div>
       <div class="cc big"><canvas id="cProv"></canvas></div>
       <div class="explain-box" id="exProv"></div>
@@ -345,10 +345,10 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
       <div class="explain-box" id="exUnid"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>USD por mes (ETA / costeo)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cMes')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exMes')">ℹ Análisis</button></div>
-      <div class="metrow" id="mMes"></div>
-      <div class="cc big"><canvas id="cMes"></canvas></div>
-      <div class="explain-box" id="exMes"></div>
+      <div class="ph"><h3>Tiempo promedio por proveedor (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProvT')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exProvT')">ℹ Análisis</button></div>
+      <div class="metrow" id="mProvT"></div>
+      <div class="cc big"><canvas id="cProvT"></canvas></div>
+      <div class="explain-box" id="exProvT"></div>
     </div>
     <div class="panel">
       <div class="ph"><h3>USD vs. Unidades por proveedor</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cMix')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exMix')">ℹ Análisis</button></div>
@@ -450,20 +450,20 @@ let ROWS=[];
 
 /* datos semilla (COMEX_QD.xlsx) */
 const SEED=[
-  [709392,"Changzhou ZYC","Marítimo",21950,103156,"ASIA","","","","","","","","","","Pendiente de disponibilidad",""],
-  [707674,"Zagg Inc","Marítimo",500,27000,"EEUU","","","","","","","","","2026-10-07","2026-07-28",""],
-  [708924,"Viastara, LLC","Marítimo",1250,123893,"EUROPA","","","","","","","","","2026-10-12","2026-07-30",""],
-  [708718,"LETOUCH HONG KONG","Marítimo",2280,19790,"ASIA","","","","","","","","","2026-10-24","2026-08-08",""],
-  [709007,"Ningbo SKL International","Marítimo",3000,2110,"EEUU","","","","","","","","","2026-11-26","2026-09-23",""],
-  [709231,"Forida Electronic","Marítimo",1100,13750,"EUROPA","","","","","","","","","2026-11-09","2026-08-20",""],
-  [709295,"Elmarc B.V.","Marítimo",4640,59856,"ASIA","","","","","","","","","2026-11-09","2026-08-26",""],
-  [709296,"Elmarc B.V.","Marítimo",1900,26600,"EEUU","","","","","","","","","2026-11-18","2026-08-17",""],
-  [709010,"Forida Electronic","Marítimo",3000,13800,"EUROPA","","","","","","","","","2029-11-21","2026-09-04",""],
-  [709059,"QD Brands","Marítimo",1902,29296,"ASIA","","","","","","","","","2026-10-24","2026-08-03",""],
-  [709060,"Elmarc B.V.","Marítimo",150,7650,"EEUU","","","","","","","","","2026-12-02","2026-07-30",""],
-  [708222,"Telco Accesories B.V.","Marítimo",1000,54002,"EUROPA","","","","","","","","","2026-11-02","2026-09-09",""],
-  [709318,"Viastara, LLC","Marítimo",2234,380201,"ASIA","","","","","","","","","2026-11-02","2026-08-20",""],
-  [709196,"Shenzhen SNP Industrial Group Corporation","Marítimo",1000,7000,"EEUU","","","","","","","","","2026-11-12","2026-09-01",""]
+  [709392,"Changzhou ZYC","Marítimo",21950,103156,"ASIA","","","","","","","","","","",""],
+  [707674,"Zagg Inc","Marítimo",500,27000,"EEUU","","","","","","","","","","",""],
+  [708924,"Viastara, LLC","Marítimo",1250,123893,"EUROPA","","","","","","","","","","",""],
+  [708718,"LETOUCH HONG KONG","Marítimo",2280,19790,"ASIA","","","","","","","","","","",""],
+  [709007,"Ningbo SKL International","Marítimo",3000,2110,"EEUU","","","","","","","","","","",""],
+  [709231,"Forida Electronic","Marítimo",1100,13750,"EUROPA","","","","","","","","","","",""],
+  [709295,"Elmarc B.V.","Marítimo",4640,59856,"ASIA","","","","","","","","","","",""],
+  [709296,"Elmarc B.V.","Marítimo",1900,26600,"EEUU","","","","","","","","","","",""],
+  [709010,"Forida Electronic","Marítimo",3000,13800,"EUROPA","","","","","","","","","","",""],
+  [709059,"QD Brands","Marítimo",1902,29296,"ASIA","","","","","","","","","","",""],
+  [709060,"Elmarc B.V.","Marítimo",150,7650,"EEUU","","","","","","","","","","",""],
+  [708222,"Telco Accesories B.V.","Marítimo",1000,54002,"EUROPA","","","","","","","","","","",""],
+  [709318,"Viastara, LLC","Marítimo",2234,380201,"ASIA","","","","","","","","","","",""],
+  [709196,"Shenzhen SNP Industrial Group Corporation","Marítimo",1000,7000,"EEUU","","","","","","","","","","",""]
 ];
 /* ===== Helpers formato ===== */
 const $=id=>document.getElementById(id);
@@ -668,36 +668,63 @@ function upd(ri,k,val){
     const tcell=$('ttot'+ri);
     if(tcell){const v=ROWS[ri].ttot;tcell.value=(v===''||v==null)?'':v+' días';}
   }
-  if(DATE_CHAIN.indexOf(k)>=0)validateDates(ri,k); // alarma si la fecha es menor que el hito anterior/siguiente
+  if(DATE_CHAIN.indexOf(k)>=0)revalRow(ri); // solo resaltado visual mientras se edita; la alarma sale al salir del campo (no interrumpe el calendario)
+  scheduleAutoSave(); // guardar y propagar el cambio a todos los usuarios
 }
 function renderOne(ri,k,el){
   const c=COLS.find(x=>x.k===k);const v=ROWS[ri][k];
   if(c&&c.k==='unid')el.value=dispVal(c,v);
   $('planStatus').textContent=ROWS.length+' registro(s) · '+fmtMoney(ROWS.reduce((a,r)=>a+usdNum(r.usd),0));
+  if(DATE_CHAIN.indexOf(k)>=0)validateDates(ri,k); // la alarma se muestra al terminar de editar la fecha
+  maybeApplyRemote(); // si llegó un cambio de otro usuario mientras editábamos, aplicarlo ahora
 }
 function focusCell(ri,k,el){
   const c=COLS.find(x=>x.k===k);if(c&&c.k==='unid'){const v=ROWS[ri][k];el.value=(v===''||v==null)?'':numClean(v);}
 }
-function addRow(){ROWS.push(rowObj());renderPlanilla();}
-function delRow(ri){ROWS.splice(ri,1);renderPlanilla();}
+function addRow(){ROWS.push(rowObj());renderPlanilla();scheduleAutoSave();}
+function delRow(ri){ROWS.splice(ri,1);renderPlanilla();scheduleAutoSave();}
 function limpiar(){
   if(!confirm('¿Limpiar toda la planilla en pantalla? (no afecta la nube hasta Guardar)'))return;
   ROWS=[];renderPlanilla();$('planStatus').textContent='Planilla limpia';
 }
 /* ===== Firebase: guardar / cargar / eliminar ===== */
-function saveCloud(){
-  $('planStatus').textContent='Guardando…';
-  db.ref('comex_qd').set({rows:ROWS,updatedBy:CURRENT.email,updatedAt:Date.now()})
-    .then(()=>{$('planStatus').textContent='Guardado en la nube · '+new Date().toLocaleString('es-CL');logAct('guardar','Guardó '+ROWS.length+' registro(s)');})
+/* ===== Firebase: guardar / cargar / eliminar (sincronización en tiempo real entre usuarios) ===== */
+let MY_SAVE_AT=0, MY_EDIT_AT=0, REMOTE_PENDING=null, _saveTimer=null, FIRST_SNAP=true, _cloudSub=false;
+function isEditingPlan(){const a=document.activeElement;return !!(a&&a.closest&&a.closest('#planBody'));}
+function scheduleAutoSave(){MY_EDIT_AT=Date.now();clearTimeout(_saveTimer);_saveTimer=setTimeout(()=>saveCloud(true),1200);}
+function applyRemote(newRows){ROWS=newRows;renderPlanilla();renderKpis();renderAlerts();drawCharts();}
+function maybeApplyRemote(){
+  if(!REMOTE_PENDING)return;
+  setTimeout(()=>{
+    if(!REMOTE_PENDING||isEditingPlan())return;
+    const p=REMOTE_PENDING;REMOTE_PENDING=null;
+    if(p.at>MY_SAVE_AT){applyRemote(p.rows);$('planStatus').textContent='Planilla actualizada con cambios de otro usuario · '+new Date().toLocaleString('es-CL');}
+  },60);
+}
+function saveCloud(silent){
+  $('planStatus').textContent=silent?'Sincronizando cambios…':'Guardando…';
+  const at=Date.now();MY_SAVE_AT=at;
+  db.ref('comex_qd').set({rows:ROWS,updatedBy:CURRENT.email,updatedAt:at})
+    .then(()=>{$('planStatus').textContent=(silent?'Cambios sincronizados para todos · ':'Guardado en la nube · ')+new Date().toLocaleString('es-CL');if(!silent)logAct('guardar','Guardó '+ROWS.length+' registro(s)');})
     .catch(e=>{$('planStatus').textContent='Error al guardar: '+e.message;});
 }
 function loadCloud(){
-  db.ref('comex_qd').once('value').then(s=>{
+  if(_cloudSub)return; // ya suscrito a los cambios en tiempo real
+  _cloudSub=true;
+  db.ref('comex_qd').on('value',s=>{
     const d=s.val();
-    if(d&&d.rows&&d.rows.length){ROWS=d.rows.map(r=>Object.assign(rowObj(),r));}
-    else{ROWS=SEED.map(a=>rowObj(a));}
-    renderPlanilla();renderKpis();renderAlerts();
-  }).catch(()=>{ROWS=SEED.map(a=>rowObj(a));renderPlanilla();});
+    let newRows;
+    if(d&&d.rows&&d.rows.length){newRows=d.rows.map(r=>Object.assign(rowObj(),r));}
+    else{newRows=FIRST_SNAP?SEED.map(a=>rowObj(a)):[];}
+    FIRST_SNAP=false;
+    const inAt=(d&&d.updatedAt)||0;
+    if(inAt&&inAt===MY_SAVE_AT)return; // ignorar el eco de nuestro propio guardado
+    if(isEditingPlan()){REMOTE_PENDING={rows:newRows,at:inAt};$('planStatus').textContent='Hay cambios de otro usuario; se aplicarán al terminar de editar.';return;}
+    REMOTE_PENDING=null;
+    applyRemote(newRows);
+  },err=>{
+    if(!ROWS.length){ROWS=SEED.map(a=>rowObj(a));renderPlanilla();renderKpis();renderAlerts();}
+  });
 }
 /* clave ELIMINAR enmascarada con # y nunca revelada */
 function openDel(){const dk=$('delKey');dk.value='';dk.dataset.real='';$('delErr').textContent='';$('delModal').classList.add('on');setTimeout(()=>dk.focus(),80);}
@@ -1017,42 +1044,43 @@ function reportImg(id){
 Chart.defaults.font.family="'Segoe UI',system-ui,Arial";Chart.defaults.color='#475569';Chart.defaults.font.size=12;
 // Mostrar valores sobre los gráficos (plugin datalabels, desactivado por defecto y activado por gráfico)
 try{if(window.ChartDataLabels)Chart.register(window.ChartDataLabels);}catch(e){}
-Chart.defaults.set('plugins.datalabels',{display:false,clamp:true,clip:false,textStrokeColor:'rgba(255,255,255,.95)',textStrokeWidth:3});
+Chart.defaults.set('plugins.datalabels',{display:false,clamp:true,clip:false,font:{weight:'700',size:13}});
 function sortEnt(m){return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
 function chip(host,lb,val){const el=$(host);if(el)el.insertAdjacentHTML('beforeend',`<div class="chip"><span>${lb}</span><b>${val}</b></div>`);}
-function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mMes','mMix','mTicket','mPareto'].forEach(id=>{if($(id))$(id).innerHTML='';});}
+function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mProvT','mMix','mTicket','mPareto'].forEach(id=>{if($(id))$(id).innerHTML='';});}
 function unidByProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+numClean(r.unid);});return m;}
+function tiempoByProv(){const sum={},cnt={};ROWS.forEach(r=>{const d=numClean(r.ttot);if(d>0){const p=r.prov||'—';sum[p]=(sum[p]||0)+d;cnt[p]=(cnt[p]||0)+1;}});const m={};Object.keys(sum).forEach(p=>{m[p]=Math.round(sum[p]/cnt[p]);});return m;}
 function ticketByZona(){const u=unidByZona(),z=byZona(),m={};Object.keys(z).forEach(k=>{m[k]=u[k]?z[k]/u[k]:0;});return m;}
 function drawCharts(){
   clearChips();
   recalcTtot();
   const kUSD={ticks:{callback:v=>fmtUSDk(v)}};
   const z=byZona(),tu=totUSD();
-  mk('cZona',{type:'doughnut',data:{labels:Object.keys(z),datasets:[{data:Object.values(z),backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmtMoney(c.parsed)}},datalabels:{display:true,color:'#fff',textAlign:'center',font:{weight:'800',size:9},textStrokeColor:'#0f2744',textStrokeWidth:3,formatter:(v,ctx)=>{const t=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+(+b||0),0);const lbl=ctx.chart.data.labels[ctx.dataIndex];return [lbl,fmtMoney(v),(t?Math.round(v/t*100)+'%':'')];}}},maintainAspectRatio:false,cutout:'55%'}});
+  mk('cZona',{type:'doughnut',data:{labels:Object.keys(z),datasets:[{data:Object.values(z),backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmtMoney(c.parsed)}},datalabels:{display:true,color:'#fff',textAlign:'center',font:{weight:'800',size:12},formatter:(v,ctx)=>{const t=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+(+b||0),0);const lbl=ctx.chart.data.labels[ctx.dataIndex];return [lbl,fmtMoney(v),(t?Math.round(v/t*100)+'%':'')];}}},maintainAspectRatio:false,cutout:'55%'}});
   sortEnt(z).slice(0,3).forEach(([k,v])=>chip('mZona',k,fmtMoney(v)));
   const p=sortEnt(byProv());
   // Vista principal: TOP 3 proveedores. El botón "Detalle (todos)" abre el gráfico y la tabla con TODOS.
-  const provBarCfg=list=>({type:'bar',data:{labels:list.map(x=>x[0]),datasets:[{data:list.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:5}]},options:{indexAxis:'y',layout:{padding:{right:72}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.x)}},datalabels:{display:true,anchor:'end',align:'end',clamp:true,clip:false,color:'#0f2744',font:{weight:'800',size:10},formatter:v=>v.toLocaleString('en-US')}},maintainAspectRatio:false,scales:{x:kUSD}}});
-  mk('cProv',provBarCfg(p.slice(0,3)));
+  const provBarCfg=list=>({type:'bar',data:{labels:list.map(x=>x[0]),datasets:[{data:list.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:5}]},options:{indexAxis:'y',layout:{padding:{right:72}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.x)}},datalabels:{display:true,anchor:'end',align:'end',clamp:true,clip:false,color:'#0f2744',font:{weight:'800',size:14},formatter:v=>v.toLocaleString('en-US')}},maintainAspectRatio:false,scales:{x:kUSD}}});
+  mk('cProv',provBarCfg(p));
   chip('mProv','Proveedores',p.length);if(p[0])chip('mProv','Top',p[0][0]);if(p[0]&&tu)chip('mProv','Part.',Math.round(p[0][1]/tu*100)+'%');
   const e=byEstado();
-  mk('cEstado',{type:'polarArea',data:{labels:Object.keys(e),datasets:[{data:Object.values(e),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'},datalabels:{display:true,color:'#0f2744',textAlign:'center',font:{weight:'800',size:10},formatter:(v,ctx)=>v?[ctx.chart.data.labels[ctx.dataIndex],v+' PO']:''}},maintainAspectRatio:false}});
+  mk('cEstado',{type:'polarArea',data:{labels:Object.keys(e),datasets:[{data:Object.values(e),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'},datalabels:{display:true,color:'#0f2744',textAlign:'center',font:{weight:'800',size:13},formatter:(v,ctx)=>v?[ctx.chart.data.labels[ctx.dataIndex],v+' PO']:''}},maintainAspectRatio:false}});
   Object.entries(e).forEach(([k,v])=>chip('mEstado',k,v));
   const t=ROWS.filter(r=>numClean(r.ttot)>0);
-  mk('cTiempo',{type:'bar',data:{labels:t.map(r=>r.po),datasets:[{label:'Días',data:t.map(r=>numClean(r.ttot)),backgroundColor:'#0e7490',borderRadius:5}]},options:{plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',color:'#0e7490',font:{weight:'700',size:9},formatter:v=>v}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'días'}}}}});
+  mk('cTiempo',{type:'bar',data:{labels:t.map(r=>r.po),datasets:[{label:'Días',data:t.map(r=>numClean(r.ttot)),backgroundColor:'#0e7490',borderRadius:5}]},options:{plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',color:'#0e7490',font:{weight:'800',size:13},formatter:v=>v}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'días'}}}}});
   chip('mTiempo','Promedio',avgTiempo()+' d');chip('mTiempo','PO con dato',t.length);
   const u=unidByZona();
-  mk('cUnid',{type:'bar',data:{labels:Object.keys(u),datasets:[{label:'Unidades',data:Object.values(u),backgroundColor:'#7c3aed',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtUnid(c.parsed.y)+' u'}},datalabels:{display:true,anchor:'end',align:'top',color:'#7c3aed',font:{weight:'700',size:9},formatter:v=>fmtUnid(v)}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>fmtUnid(v)}}}}});
+  mk('cUnid',{type:'bar',data:{labels:Object.keys(u),datasets:[{label:'Unidades',data:Object.values(u),backgroundColor:'#7c3aed',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtUnid(c.parsed.y)+' u'}},datalabels:{display:true,anchor:'end',align:'top',color:'#7c3aed',font:{weight:'800',size:14},formatter:v=>fmtUnid(v)}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>fmtUnid(v)}}}}});
   chip('mUnid','Total u',fmtUnid(totUnid()));sortEnt(u).slice(0,1).forEach(([k,v])=>chip('mUnid','Mayor',k+' ('+fmtUnid(v)+')'));
-  const mEnt=Object.entries(byMes()).sort();
-  mk('cMes',{type:'line',data:{labels:mEnt.map(x=>x[0]),datasets:[{label:'USD',data:mEnt.map(x=>x[1]),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.14)',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:'#2563eb'}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtMoney(c.parsed.y)}},datalabels:{display:true,align:'top',color:'#2563eb',font:{weight:'700',size:9},formatter:v=>fmtUSDk(v)}},maintainAspectRatio:false,scales:{y:kUSD}}});
-  if(mEnt.length){chip('mMes','Meses',mEnt.length);const pk=mEnt.reduce((a,b)=>b[1]>a[1]?b:a);chip('mMes','Pico',pk[0]);}
+  const tp=sortEnt(tiempoByProv());
+  mk('cProvT',{type:'bar',data:{labels:tp.map(x=>x[0]),datasets:[{label:'Días promedio',data:tp.map(x=>x[1]),backgroundColor:'#0d9488',borderRadius:5}]},options:{indexAxis:'y',layout:{padding:{right:64}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+' días'}},datalabels:{display:true,anchor:'end',align:'end',color:'#0f2744',font:{weight:'800',size:13},formatter:v=>v+' d'}},maintainAspectRatio:false,scales:{x:{beginAtZero:true,title:{display:true,text:'días'}}}}});
+  if(tp.length){chip('mProvT','Proveedores',tp.length);chip('mProvT','Mayor demora',tp[0][0]+' ('+tp[0][1]+' d)');}
   const pm=sortEnt(byProv()).slice(0,8),up=unidByProv();
-  mk('cMix',{type:'bar',data:{labels:pm.map(x=>x[0]),datasets:[{label:'USD',data:pm.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y'},{label:'Unidades',type:'line',data:pm.map(x=>up[x[0]]||0),borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.3,pointRadius:3}]},options:{plugins:{tooltip:{callbacks:{label:c=>c.dataset.label==='USD'?fmtMoney(c.parsed.y):fmtUnid(c.parsed.y)+' u'}},datalabels:{display:true,anchor:'end',align:'top',font:{weight:'700',size:8},color:ctx=>ctx.datasetIndex?'#b45309':'#0f2744',formatter:(v,ctx)=>ctx.datasetIndex?fmtUnid(v):fmtUSDk(v)}},maintainAspectRatio:false,scales:{y:{position:'left',ticks:{callback:v=>fmtUSDk(v)}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>fmtUnid(v)}}}}});
+  mk('cMix',{type:'bar',data:{labels:pm.map(x=>x[0]),datasets:[{label:'USD',data:pm.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y'},{label:'Unidades',type:'line',data:pm.map(x=>up[x[0]]||0),borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.3,pointRadius:3}]},options:{plugins:{tooltip:{callbacks:{label:c=>c.dataset.label==='USD'?fmtMoney(c.parsed.y):fmtUnid(c.parsed.y)+' u'}},datalabels:{display:true,anchor:'end',align:'top',font:{weight:'800',size:12},color:ctx=>ctx.datasetIndex?'#b45309':'#0f2744',formatter:(v,ctx)=>ctx.datasetIndex?fmtUnid(v):fmtUSDk(v)}},maintainAspectRatio:false,scales:{y:{position:'left',ticks:{callback:v=>fmtUSDk(v)}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>fmtUnid(v)}}}}});
   chip('mMix','Compara','USD vs unidades');
   // Pareto de gasto por proveedor: barras USD (desc) + línea de % acumulado (dónde se gasta más)
   const pa=sortEnt(byProv()),paTot=pa.reduce((a,b)=>a+(+b[1]||0),0);let paAcc=0;const paCum=pa.map(x=>{paAcc+=x[1];return paTot?Math.round(paAcc/paTot*100):0;});
-  mk('cPareto',{type:'bar',data:{labels:pa.map(x=>x[0]),datasets:[{type:'bar',label:'USD',data:pa.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y',order:2},{type:'line',label:'% acumulado',data:paCum,borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.2,pointRadius:3,order:1}]},options:{plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label==='USD'?fmtMoney(c.parsed.y):c.parsed.y+'% acumulado'}},datalabels:{display:true,anchor:'end',align:'top',font:{weight:'700',size:8},color:ctx=>ctx.datasetIndex?'#b45309':'#0f2744',formatter:(v,ctx)=>ctx.datasetIndex?v+'%':fmtUSDk(v)}},maintainAspectRatio:false,scales:{y:{position:'left',beginAtZero:true,ticks:{callback:v=>fmtUSDk(v)}},y1:{position:'right',beginAtZero:true,max:100,grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}}});
+  mk('cPareto',{type:'bar',data:{labels:pa.map(x=>x[0]),datasets:[{type:'bar',label:'USD',data:pa.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y',order:2},{type:'line',label:'% acumulado',data:paCum,borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.2,pointRadius:3,order:1}]},options:{plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label==='USD'?fmtMoney(c.parsed.y):c.parsed.y+'% acumulado'}},datalabels:{display:true,anchor:'end',align:'top',font:{weight:'800',size:12},color:ctx=>ctx.datasetIndex?'#b45309':'#0f2744',formatter:(v,ctx)=>ctx.datasetIndex?v+'%':fmtUSDk(v)}},maintainAspectRatio:false,scales:{y:{position:'left',beginAtZero:true,ticks:{callback:v=>fmtUSDk(v)}},y1:{position:'right',beginAtZero:true,max:100,grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%'}}}}});
   if(pa[0])chip('mPareto','Mayor gasto',pa[0][0]+' ('+fmtMoney(pa[0][1])+')');
   {let a2=0,n80=0;for(const x of pa){a2+=x[1];n80++;if(paTot&&a2/paTot>=0.8)break;}chip('mPareto','80% del gasto',n80+' proveedor(es)');}
   // registrar datos para la vista DETALLE de cada gráfico
@@ -1061,7 +1089,7 @@ function drawCharts(){
   DET['cEstado']={title:'Estado de embarques',labels:Object.keys(e),vals:Object.values(e),fmt:v=>v+' PO',type:'polarArea',catLabel:'Estado',valLabel:'PO'};
   DET['cTiempo']={title:'Tiempo total de tránsito por PO (días)',labels:t.map(r=>r.po),vals:t.map(r=>numClean(r.ttot)),fmt:v=>v+' d',type:'bar',catLabel:'PO',valLabel:'Días'};
   DET['cUnid']={title:'Unidades por zona',labels:Object.keys(u),vals:Object.values(u),fmt:fmtUnid,type:'bar',catLabel:'Zona',valLabel:'Unidades'};
-  DET['cMes']={title:'USD por mes (ETA / costeo)',labels:mEnt.map(x=>x[0]),vals:mEnt.map(x=>x[1]),fmt:fmtMoney,type:'bar',catLabel:'Mes',valLabel:'USD'};
+  DET['cProvT']={title:'Tiempo promedio por proveedor (días)',labels:tp.map(x=>x[0]),vals:tp.map(x=>x[1]),fmt:v=>v+' d',type:'bar',catLabel:'Proveedor',valLabel:'Días promedio'};
   DET['cMix']={title:'USD vs. Unidades por proveedor',labels:pm.map(x=>x[0]),catLabel:'Proveedor',series:[{name:'USD',vals:pm.map(x=>x[1]),fmt:fmtMoney},{name:'Unidades',vals:pm.map(x=>up[x[0]]||0),fmt:fmtUnid}]};
   DET['cPareto']={title:'Pareto de gasto por proveedor',labels:pa.map(x=>x[0]),catLabel:'Proveedor',series:[{name:'USD',vals:pa.map(x=>x[1]),fmt:fmtMoney},{name:'% acumulado',vals:paCum,fmt:v=>v+'%'}]};
   fillExplains();
@@ -1078,8 +1106,8 @@ function fillExplains(){
   $('exTiempo').innerHTML=`<b>Qué mide:</b> lead time total (días) desde confirmación comercial hasta disponibilidad de inventario por PO. <b>Lectura:</b> promedio de ${avgTiempo()} días. <b>KPI:</b> “order-to-availability”; POs sobre el promedio revelan cuellos de botella en aduana, naviera o retiro P/A que impactan la rotación y el costo financiero del stock en tránsito.`;
   const u=sortEnt(unidByZona());
   $('exUnid').innerHTML=`<b>Qué mide:</b> volumen físico (unidades) por zona. <b>Lectura:</b> ${u[0]?u[0][0]+' aporta '+fmtUnid(u[0][1])+' unidades':'—'}. <b>Indicador:</b> al cruzar con el gráfico de USD revela dónde el valor unitario es mayor y ayuda a dimensionar capacidad de bodega y manejo de carga.`;
-  const m=Object.entries(byMes()).sort();
-  $('exMes').innerHTML=`<b>Qué mide:</b> USD planificado por mes según ETA / costeo. <b>Lectura:</b> ${m.length?'pico en '+m.reduce((a,b)=>b[1]>a[1]?b:a)[0]:'—'}. <b>KPI:</b> estacionalidad de arribos; clave para planificar flujo de caja, cobertura cambiaria y capacidad de recepción en CD.`;
+  const tpx=sortEnt(tiempoByProv());
+  $('exProvT').innerHTML=`<b>Qué mide:</b> lead time promedio (días) por proveedor, desde la confirmación comercial hasta la disponibilidad de inventario. <b>Lectura:</b> ${tpx[0]?'mayor demora: <b>'+tpx[0][0]+'</b> con '+tpx[0][1]+' días':'—'}. <b>KPI:</b> desempeño de entrega por proveedor; los que superan ampliamente el promedio son candidatos a renegociar plazos o activar un origen alternativo.`;
   $('exMix').innerHTML=`<b>Qué mide:</b> relación entre valor (USD) y volumen (unidades) por proveedor. <b>Lectura:</b> proveedores con mucho USD y pocas unidades manejan artículos de alto valor; a la inversa, alto volumen y bajo USD son commodities. <b>Indicador:</b> orienta la priorización de seguros, controles de calidad y condiciones de pago.`;
   const pae=sortEnt(byProv()),paet=pae.reduce((a,b)=>a+(+b[1]||0),0);let pacc=0,pn80=0;for(const x of pae){pacc+=x[1];pn80++;if(paet&&pacc/paet>=0.8)break;}
   $('exPareto').innerHTML=`<b>Qué mide:</b> principio de Pareto (80/20) aplicado al gasto en importaciones: ordena a los proveedores de mayor a menor USD y acumula su participación (línea naranja). <b>Lectura:</b> ${pae[0]?'donde más se gasta es <b>'+pae[0][0]+'</b> ('+fmtMoney(pae[0][1])+'); ':''}${pae.length?'<b>'+pn80+'</b> proveedor(es) concentran ~80% del gasto total':'—'}. <b>KPI:</b> foco de compra; permite priorizar negociación, control y planes de contingencia en los pocos proveedores que explican la mayor parte del desembolso.`;
@@ -1127,9 +1155,9 @@ function generarReporte(){
       <h3>4. Estado operativo y tiempos de tránsito</h3>
       <p>Distribución de etapas del pipeline: ${Object.entries(e).map(x=>x[0]+' ('+x[1]+')').join(', ')}. El lead time promedio es de <b>${avgTiempo()} días</b>; las PO muy por encima de ese promedio revelan cuellos de botella (aduana, naviera o retiro P/A) que impactan la rotación de inventario y el costo financiero del stock en tránsito. ${atr>0?'Las '+atr+' PO atrasadas deben escalarse de inmediato.':'No hay atrasos registrados en este corte.'}</p>
       <div class="imgs">${img('cEstado')}${img('cTiempo')}</div>
-      <h3>5. Estacionalidad y valor unitario</h3>
-      <p>El perfil mensual de arribos (según ETA / costeo) es clave para planificar flujo de caja, cobertura cambiaria y capacidad de recepción en el CD. ${tk[0]?'El ticket promedio más alto corresponde a <b>'+tk[0][0]+'</b> con '+fmtMoney(tk[0][1])+' por unidad, lo que justifica mayor control de calidad y, eventualmente, modos de transporte más rápidos para esa mercadería de alto valor.':''}</p>
-      <div class="imgs">${img('cMes')}</div>
+      <h3>5. Tiempos por proveedor y valor unitario</h3>
+      <p>El lead time promedio por proveedor permite identificar qué proveedores tardan más en poner la mercadería disponible, clave para planificar flujo de caja y capacidad de recepción en el CD. ${tk[0]?'El ticket promedio más alto corresponde a <b>'+tk[0][0]+'</b> con '+fmtMoney(tk[0][1])+' por unidad, lo que justifica mayor control de calidad y, eventualmente, modos de transporte más rápidos para esa mercadería de alto valor.':''}</p>
+      <div class="imgs">${img('cProvT')}</div>
       <h3>6. Campo de calor — Zona vs. Estado</h3>
       <p>Cantidad de PO por combinación de zona de origen y etapa logística. Las celdas más intensas concentran mayor cantidad de órdenes y ayudan a detectar si los atrasos se concentran en una zona u origen específico.</p>
       <div class="hmwrap">${heatmapTable()}</div>
