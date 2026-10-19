@@ -812,7 +812,8 @@ function importExcel(inp){
   const rd=new FileReader();
   rd.onload=ev=>{
     try{
-      const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+      // cellFormula:false → se importan únicamente los VALORES calculados, nunca las fórmulas del Excel
+      const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true,cellFormula:false});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
       // localizar fila de encabezados
@@ -835,7 +836,8 @@ function importExcel(inp){
         const o=rowObj();
         COLS.forEach((c,ci)=>{
           const src=idxFor[ci]>=0?r[idxFor[ci]]:(r[ci]!==undefined?r[ci]:'');
-          if(c.money||c.num)o[c.k]=src===''?'':numClean(src);
+          if(c.k==='usd')o[c.k]=(src===''||src==null)?'':Math.round(usdNum(src)).toLocaleString('en-US'); // USD: valor del Excel con miles (coma) y SIN decimales
+          else if(c.money||c.num)o[c.k]=src===''?'':numClean(src);
           else if(c.date)o[c.k]=xdate(src);
           else o[c.k]=src==null?'':(''+src).trim();
         });
