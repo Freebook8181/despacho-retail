@@ -313,6 +313,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <h2 class="sec" style="cursor:pointer;user-select:none" onclick="toggleAlerts()">Alertas operativas<span id="alertsArrow" style="margin-left:auto;font-size:13px;transition:transform .2s">▼</span></h2>
   <div class="alerts" id="alerts"></div>
   <h2 class="sec">Control de tiempos del ciclo COMEX</h2>
+  <div id="chartNotice" style="display:none"></div>
   <div class="grid g2">
     <div class="panel">
       <div class="ph"><h3>Cascada del TIEMPO TOTAL por tramo (días promedio)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTramo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTramo')">ℹ Análisis</button></div>
@@ -637,13 +638,33 @@ function renderPlanilla(){
 const DATE_CHAIN=['eta','fdisp','rpa','lcd','cost','dinv'];
 const DATE_LBL={eta:'ETA (FECHA ESTIMADA DE LLEGADA CHL)',fdisp:'FECHA DISPONIBILIDAD PUERTO -AEROPUERTO',rpa:'RETIRO P/A',lcd:'LLEGADA A CD',cost:'COSTEO',dinv:'DISPONIBILIDAD INVENTARIO (FINAL)'};
 function isDateStr(v){return /^\d{4}-\d{2}-\d{2}$/.test((''+(v||'')).trim());}
-function markCell(ri,k,bad){const el=$('c_'+ri+'_'+k);if(!el)return;el.style.outline=bad?'2px solid #c62828':'';el.style.background=bad?'#ffebee':'';el.title=bad?('⚠ «Fecha menor que el hito anterior; revisar '+(DATE_LBL[k]||k)+'»'):'';}
+function markCell(ri,k,bad,msg){const el=$('c_'+ri+'_'+k);if(!el)return;el.style.outline=bad?'2px solid #c62828':'';el.style.background=bad?'#ffebee':'';el.title=bad?(msg||('⚠ «Fecha menor que el hito anterior; revisar '+(DATE_LBL[k]||k)+'»')):'';}
 function revalRow(ri){
   const r=ROWS[ri];
   for(let i=0;i<DATE_CHAIN.length;i++){
     const k=DATE_CHAIN[i];let bad=false;
     if(i>0){const p=DATE_CHAIN[i-1];if(isDateStr(r[k])&&isDateStr(r[p])&&r[k]<r[p])bad=true;}
     markCell(ri,k,bad);
+  }
+  // REGLA: «FECHA CONFIRMACION (COMERCIAL)» no puede ser MAYOR que «DISPONIBILIDAD ORIGEN (FECHA)» → se marca en rojo
+  const confBad=isDateStr(r.fconf)&&isDateStr(r.dorig)&&r.fconf>r.dorig;
+  markCell(ri,'fconf',confBad,confBad?('⚠ «FECHA CONFIRMACION (COMERCIAL)» ('+r.fconf+') es mayor que «DISPONIBILIDAD ORIGEN (FECHA)» ('+r.dorig+'); corrija la fecha.'):'');
+}
+/* ===== Detección de celdas en rojo y de PO completas (reglas para gráficos y exportación) ===== */
+function rowRedKeys(r){
+  const red=[];
+  for(let i=1;i<DATE_CHAIN.length;i++){const k=DATE_CHAIN[i],p=DATE_CHAIN[i-1];if(isDateStr(r[k])&&isDateStr(r[p])&&r[k]<r[p])red.push(k);}
+  if(isDateStr(r.fconf)&&isDateStr(r.dorig)&&r.fconf>r.dorig)red.push('fconf');
+  return red;
+}
+function rowHasRed(r){return rowRedKeys(r).length>0;}
+function anyRed(){return ROWS.some(rowHasRed);}
+function rowComplete(r){return COLS.every(c=>c.calc?true:(''+(r[c.k]==null?'':r[c.k])).trim()!=='');}
+function rowsParaGraficos(){return ROWS.filter(r=>rowComplete(r)&&!rowHasRed(r));}
+function validateConf(ri){
+  const r=ROWS[ri];revalRow(ri);
+  if(isDateStr(r.fconf)&&isDateStr(r.dorig)&&r.fconf>r.dorig){
+    alert('⚠ ALERTA DE FECHAS — Fila '+(ri+1)+'\n\n«FECHA CONFIRMACION (COMERCIAL)» ('+r.fconf+') no puede ser mayor que «DISPONIBILIDAD ORIGEN (FECHA)» ('+r.dorig+').');
   }
 }
 function validateDates(ri,k){
@@ -668,7 +689,7 @@ function upd(ri,k,val){
     const tcell=$('ttot'+ri);
     if(tcell){const v=ROWS[ri].ttot;tcell.value=(v===''||v==null)?'':v+' días';}
   }
-  if(DATE_CHAIN.indexOf(k)>=0)revalRow(ri); // solo resaltado visual mientras se edita; la alarma sale al salir del campo (no interrumpe el calendario)
+  if(DATE_CHAIN.indexOf(k)>=0||k==='fconf'||k==='dorig')revalRow(ri); // solo resaltado visual mientras se edita; la alarma sale al salir del campo (no interrumpe el calendario)
   scheduleAutoSave(); // guardar y propagar el cambio a todos los usuarios
 }
 function renderOne(ri,k,el){
@@ -676,6 +697,7 @@ function renderOne(ri,k,el){
   if(c&&c.k==='unid')el.value=dispVal(c,v);
   $('planStatus').textContent=ROWS.length+' registro(s) · '+fmtMoney(ROWS.reduce((a,r)=>a+usdNum(r.usd),0));
   if(DATE_CHAIN.indexOf(k)>=0)validateDates(ri,k); // la alarma se muestra al terminar de editar la fecha
+  if(k==='fconf'||k==='dorig')validateConf(ri); // alarma de la regla confirmación vs disponibilidad origen
   maybeApplyRemote(); // si llegó un cambio de otro usuario mientras editábamos, aplicarlo ahora
 }
 function focusCell(ri,k,el){
@@ -765,6 +787,7 @@ function logAct(action,detail){
 }
 /* ===== Exportar Excel (tabla HTML con estilo -> .xls) ===== */
 function exportExcel(){
+  if(anyRed()){alert('⛔ No se puede exportar: hay fechas en ROJO en la planilla.\n\nCorrija las celdas marcadas en rojo (FECHA CONFIRMACION mayor que DISPONIBILIDAD ORIGEN, o fechas fuera de secuencia) antes de exportar.');return;}
   const head=COLS.map(c=>`<th style="background:#0f2744;color:#fff;border:1px solid #16304f;padding:7px 9px;font-family:Segoe UI;font-size:11px;text-align:left">${esc(c.t)}</th>`).join('');
   const body=ROWS.map((r,i)=>{
     const bg=i%2?'#f1f5fb':'#ffffff';
@@ -855,6 +878,7 @@ function importExcel(inp){
 
 /* ===== Imprimir ===== */
 function imprimir(which){
+  if(which==='reporte'&&anyRed()){alert('⛔ No se puede imprimir/exportar el reporte: hay fechas en ROJO en la planilla. Corrija las celdas marcadas antes de continuar.');return;}
   const target=which==='reporte'?'tab-reporte':'tab-planilla';
   document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('printing'));
   $(target).classList.add('printing');
@@ -1092,6 +1116,18 @@ function ticketByZona(){const u=unidByZona(),z=byZona(),m={};Object.keys(z).forE
 function drawCharts(){
   clearChips();
   recalcTtot();
+  // REGLA: a los gráficos SOLO pasan las PO con TODOS los cuadros llenos y SIN celdas en rojo
+  const _ALL_ROWS=ROWS, _VALID=rowsParaGraficos(), _EXCL=_ALL_ROWS.length-_VALID.length;
+  const _nt=$('chartNotice');
+  if(_nt){
+    const base='margin:2px 0 12px;padding:9px 13px;border-radius:9px;font-size:13px;font-weight:600;line-height:1.4;';
+    if(!_ALL_ROWS.length){_nt.style.cssText='display:none';}
+    else if(!_VALID.length){_nt.style.cssText=base+'display:block;background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a;';_nt.innerHTML='⚠ Ninguna PO pasó a los gráficos: todas tienen cuadros vacíos o fechas en rojo. Complete todos los campos y corrija las fechas marcadas para visualizar los gráficos.';}
+    else if(_EXCL>0){_nt.style.cssText=base+'display:block;background:#fff8e1;color:#8a6d00;border:1px solid #ffe082;';_nt.innerHTML='ℹ Se graficaron <b>'+_VALID.length+'</b> PO completas y válidas; se excluyeron <b>'+_EXCL+'</b> por tener cuadros vacíos o fechas en rojo.';}
+    else{_nt.style.cssText=base+'display:block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;';_nt.innerHTML='✓ Se graficaron las <b>'+_VALID.length+'</b> PO (todas completas y sin fechas en rojo).';}
+  }
+  ROWS=_VALID;
+  try{
   const kUSD={ticks:{callback:v=>fmtUSDk(v)}};
   const z=byZona(),tu=totUSD();
   mk('cZona',{type:'doughnut',data:{labels:Object.keys(z),datasets:[{data:Object.values(z),backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmtMoney(c.parsed)}},datalabels:{display:true,color:'#fff',textAlign:'center',font:{weight:'800',size:12},formatter:(v,ctx)=>{const t=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+(+b||0),0);const lbl=ctx.chart.data.labels[ctx.dataIndex];return [lbl,fmtMoney(v),(t?Math.round(v/t*100)+'%':'')];}}},maintainAspectRatio:false,cutout:'55%'}});
@@ -1132,6 +1168,7 @@ function drawCharts(){
   DET['cPareto']={title:'Pareto de gasto por proveedor',labels:pa.map(x=>x[0]),catLabel:'Proveedor',series:[{name:'USD',vals:pa.map(x=>x[1]),fmt:fmtMoney},{name:'% acumulado',vals:paCum,fmt:v=>v+'%'}]};
   drawTimeCharts();
   fillExplains();
+  }finally{ROWS=_ALL_ROWS;} // restaurar el conjunto completo tras graficar solo las PO válidas
 }
 function tgEx(id){$(id).classList.toggle('on');}
 /* ===== Gráficos de tiempos/cumplimiento (pestaña GRÁFICOS) ===== */
@@ -1284,6 +1321,7 @@ function generarReporte(){
 }
 /* Exporta el reporte a PDF en tamaño CARTA, por bloques, para que ningún gráfico quede cortado entre páginas */
 function exportarPDF(){
+  if(anyRed()){alert('⛔ No se puede exportar a PDF: hay fechas en ROJO en la planilla.\n\nCorrija todas las celdas marcadas en rojo (FECHA CONFIRMACION mayor que DISPONIBILIDAD ORIGEN, o fechas fuera de secuencia) y vuelva a intentar.');return;}
   const el=$('reportDoc');
   if(!el){alert('Primero genere el reporte con el botón “Generar / actualizar reporte”.');return;}
   const jsPDFns=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
