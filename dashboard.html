@@ -2162,6 +2162,8 @@ function ventasHTML(k){
  h+=`<div class="kgrid">${mkpi(p+'k_tot',IC.money,'Venta Total')}${mkpi(p+'k_sant',IC.map,'Venta Santiago')}${mkpi(p+'k_reg',IC.map,'Venta Regiones')}${mkpi(p+'k_tie',IC.grid,'Tiendas')}</div>`;
  h+=`<div class="grid g-1">${mcard(p+'c_mes',IC.line,'Ventas por Mes','Monto vendido por mes (según la zona elegida)')}</div>`;
  h+=`<div class="grid g-2">${mcard(p+'c_tie',IC.chart,'Ventas por Tienda','Top 6 tiendas · pulsa Ver análisis para ver todas','tall')}${mcard(p+'c_zona',IC.pie,'Santiago vs Regiones','Participación por zona','tall')}</div>`;
+ h+=`<div class="kgrid">${mkpi(p+'k_prom',IC.money,'Venta Promedio x Tienda')}${mkpi(p+'k_mejor',IC.line,'Mejor Mes')}${mkpi(p+'k_top5',IC.chart,'Participación Top 5')}${mkpi(p+'k_conc',IC.grid,'Concentración 80%')}</div>`;
+ h+=`<div class="grid g-2">${mcard(p+'c_pareto',IC.chart,'Pareto de Tiendas (80/20)','Pocas tiendas concentran la mayor parte de las ventas','tall')}${mcard(p+'c_crec',IC.line,'Crecimiento Mensual','Variación % de cada mes respecto al mes anterior','tall')}</div>`;
  h+=`<div class="card"><h3>${IC.grid} Detalle por Tienda</h3><div class="cs">Monto por tienda, comuna y zona</div><div id="${p}table" style="overflow:auto"></div></div>`;
  h+=`</div>`;
  return h;
@@ -2243,7 +2245,29 @@ function renderVentas(k){
   srt.forEach(r=>{th+=`<tr style="border-bottom:1px solid #f0f2f5"><td style="padding:6px 8px;font-weight:600;color:#2b3a4a">${r.tienda}</td><td style="padding:6px 8px;color:#5a6672">${r.comuna||'—'}</td><td style="padding:6px 8px;color:#5a6672">${r.zona}</td><td style="padding:6px 8px;text-align:right;font-family:'IBM Plex Mono'">${fm(vVal(k,r))}</td></tr>`;});
   th+=`</tbody></table>`;tv.innerHTML=th;}
  setI(p+'c_tie',tie.length?`La tienda con más ventas es <b>${tie[tie.length-1].k}</b> con <span class="up">${fmShort(tie[tie.length-1].v)}</span>.`:'Sin datos.');
- setTimeout(()=>{[p+'c_mes',p+'c_tie',p+'c_zona'].forEach(id=>{if(CH[id])CH[id].resize();});},60);
+ /* ===== KPIs e indicadores profesionales ===== */
+ const tieFull=fRows.map(r=>({k:r.tienda,v:vVal(k,r),z:r.zona})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+ const nAct=tieFull.length;
+ const prom=nAct?total/nAct:0;
+ setKV(p+'k_prom',fm(prom),'por tienda activa');_fit(p+'k_prom',fm(prom));
+ const top5v=tieFull.slice(0,5).reduce((a,x)=>a+x.v,0);
+ setKV(p+'k_top5',(total?100*top5v/total:0).toFixed(0)+'%',`Top 5 de ${fi(nAct)} tiendas`);
+ (function(){var e=document.getElementById(p+'k_top5');if(e){e.style.fontWeight='800';e.style.fontSize='32px';}})();
+ let _acc=0,c80=0;for(const x of tieFull){_acc+=x.v;c80++;if(total&&_acc>=0.8*total)break;}
+ setKV(p+'k_conc',fi(c80),`tiendas = 80% de las ventas`);
+ (function(){var e=document.getElementById(p+'k_conc');if(e){e.style.fontWeight='800';e.style.fontSize='32px';}})();
+ let bestMi=-1,bestV=-1;D.months.forEach(mi=>{const v=zRows.reduce((a,r)=>a+(r.m[mi]||0),0);if(v>bestV){bestV=v;bestMi=mi;}});
+ if(bestMi>=0){setKV(p+'k_mejor',MESES_FULL[bestMi],fmShort(bestV));var _em=document.getElementById(p+'k_mejor');if(_em){_em.style.fontWeight='800';_em.style.fontSize=(MESES_FULL[bestMi].length>8?'22px':'26px');}}
+ /* ===== Pareto de tiendas (80/20) ===== */
+ const par=tieFull.slice(0,12);let _cum=0;const parCum=par.map(x=>{_cum+=x.v;return total?+(100*_cum/total).toFixed(1):0;});
+ setC(p+'c_pareto',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){var i=ps[0].dataIndex;return '<b>'+par[i].k+'</b><br/>Zona: '+par[i].z+'<br/>Ventas: <b>'+fm(par[i].v)+'</b><br/>Acumulado: <b>'+parCum[i]+'%</b>';}},TT),legend:{top:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:11,itemHeight:11},grid:{left:4,right:46,top:30,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:par.map(x=>x.k)},axCfg(),{axisLabel:{interval:0,rotate:34,color:'#6b7684',fontSize:9,width:72,overflow:'truncate'}}),yAxis:[Object.assign({type:'value',axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),{type:'value',max:100,position:'right',axisLabel:{formatter:'{value}%',color:'#c0392b',fontSize:10},splitLine:{show:false}}],series:[{name:'Ventas',type:'bar',data:par.map(x=>({value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[4,4,0,0]}})),barWidth:'55%'},{name:'% Acumulado',type:'line',yAxisIndex:1,data:parCum,smooth:true,symbol:'circle',symbolSize:6,lineStyle:{color:'#c0392b',width:2},itemStyle:{color:'#c0392b'},markLine:{silent:true,symbol:'none',data:[{yAxis:80}],lineStyle:{color:'#c0392b',type:'dashed',opacity:.55},label:{formatter:'80%',color:'#c0392b',fontSize:10}}}]});
+ setI(p+'c_pareto',nAct?`<b>${fi(c80)}</b> de <b>${fi(nAct)}</b> tiendas concentran el <span class="up">80%</span> de las ventas.`:'Sin datos.');
+ /* ===== Crecimiento mensual (variación %) ===== */
+ const mSerie=D.months.map(mi=>zRows.reduce((a,r)=>a+(r.m[mi]||0),0));
+ const grow=mSerie.map((v,i)=>i===0?null:(mSerie[i-1]?+(100*(v-mSerie[i-1])/mSerie[i-1]).toFixed(1):null));
+ setC(p+'c_crec',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'line'},formatter:function(ps){var i=ps[0].dataIndex;var g=grow[i];return '<b>'+mLabels[i]+'</b><br/>Ventas: <b>'+fm(mSerie[i])+'</b>'+(g==null?'<br/>Variación: —':'<br/>Variación: <b>'+(g>0?'+':'')+g+'%</b>');}},TT),grid:{left:4,right:14,top:26,bottom:4,containLabel:true},xAxis:Object.assign({type:'category',data:mLabels},axCfg(),{axisLabel:{interval:0,rotate:28,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',axisLabel:{formatter:'{value}%',color:'#6b7684',fontSize:10}},axCfg()),series:[{type:'line',data:grow,smooth:true,symbol:'circle',symbolSize:7,connectNulls:true,lineStyle:{color:zc,width:2.5},itemStyle:{color:zc},areaStyle:{color:zc,opacity:.08},label:{show:true,color:zc,fontFamily:'IBM Plex Mono',fontSize:9,formatter:function(x){return x.value==null?'':((x.value>0?'+':'')+x.value+'%');}},markLine:{silent:true,symbol:'none',data:[{yAxis:0}],lineStyle:{color:'#9aa7b4',type:'dashed'}}}]});
+ (function(){var _gi=grow.map((g,i)=>({g:g,i:i})).filter(o=>o.g!=null);if(_gi.length){var _best=_gi.reduce((a,b)=>b.g>a.g?b:a);setI(p+'c_crec',`El mayor crecimiento fue en <b>${mLabels[_best.i]}</b> con <span class="up">${_best.g>0?'+':''}${_best.g}%</span> respecto al mes anterior.`);}else{setI(p+'c_crec','Sin datos suficientes para calcular variación.');}})();
+ setTimeout(()=>{[p+'c_mes',p+'c_tie',p+'c_zona',p+'c_pareto',p+'c_crec'].forEach(id=>{if(CH[id])CH[id].resize();});},60);
 }
 /* ---- Subir / borrar (un solo archivo carga mac y ver si existen) ---- */
 function handleVentasUpload(e,fromK){
