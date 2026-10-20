@@ -829,26 +829,39 @@ function logAct(action,detail){
   if(!CURRENT)return;
   db.ref('comex_qd_actividad').push({email:CURRENT.email,name:CURRENT.name,action:action,detail:detail,ts:Date.now()}).catch(()=>{});
 }
-/* ===== Exportar Excel (tabla HTML con estilo -> .xls) ===== */
+/* ===== Exportar planilla a Excel REAL (.xlsx con SheetJS) ===== */
 function exportExcel(){
   if(anyRed()){alert('⛔ No se puede exportar: hay fechas en ROJO en la planilla.\n\nCorrija las celdas marcadas en rojo (FECHA CONFIRMACION mayor que DISPONIBILIDAD ORIGEN, o fechas fuera de secuencia) antes de exportar.');return;}
-  const head=COLS.map(c=>`<th style="background:#0f2744;color:#fff;border:1px solid #16304f;padding:7px 9px;font-family:Segoe UI;font-size:11px;text-align:left">${esc(c.t)}</th>`).join('');
-  const body=ROWS.map((r,i)=>{
-    const bg=i%2?'#f1f5fb':'#ffffff';
-    const tds=COLS.map(c=>{
-      let v=r[c.k]==null?'':r[c.k];
-      if(c.money&&v!=='')v=fmtMoney(v);
-      else if(c.num&&v!=='')v=fmtUnid(v);
-      const al=(c.num||c.money)?'right':'left';
-      return `<td style="background:${bg};border:1px solid #dde3ec;padding:6px 9px;font-family:Segoe UI;font-size:11px;text-align:${al}">${esc(v)}</td>`;
-    }).join('');
-    return `<tr>${tds}</tr>`;
-  }).join('');
-  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body><table border="0" cellspacing="0"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></body></html>`;
-  const blob=new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'});
-  const fname='COMEX_QD_'+new Date().toISOString().slice(0,10)+'.xls';
-  saveBlob(blob,fname,'application/vnd.ms-excel','.xls','Hoja de Excel');
-  logAct('exportar','Exportó planilla a Excel');
+  // Encabezados + filas; los montos y cantidades van como NÚMERO para que Excel permita fórmulas
+  const aoa=[COLS.map(c=>c.t)];
+  ROWS.forEach(r=>{
+    aoa.push(COLS.map(c=>{
+      let v=(r[c.k]==null?'':r[c.k]);
+      if(v==='')return '';
+      if(c.money)return usdNum(v);
+      if(c.num)return numClean(v);
+      return ''+v;
+    }));
+  });
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=COLS.map(c=>({wch:Math.max(12,(''+(c.t||'')).length+2)}));
+  // formato de número para columnas de dinero (#,##0) y cantidades
+  const nrows=ROWS.length;
+  COLS.forEach((c,ci)=>{
+    if(!c.money&&!c.num)return;
+    for(let ri=1;ri<=nrows;ri++){
+      const addr=XLSX.utils.encode_cell({r:ri,c:ci});const cell=ws[addr];
+      if(cell&&typeof cell.v==='number'){cell.t='n';cell.z=c.money?'#,##0.00':'#,##0';}
+    }
+  });
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'COMEX_QD');
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const blob=new Blob([out],{type:mime});
+  const fname='COMEX_QD_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  saveBlob(blob,fname,mime,'.xlsx','Libro de Excel');
+  logAct('exportar','Exportó planilla a Excel (.xlsx)');
 }
 /* Guarda un Blob: si el navegador soporta el selector de carpeta (File System Access API)
    deja ELEGIR dónde guardar; si no, cae a la descarga normal del navegador. */
@@ -1219,6 +1232,7 @@ function drawCharts(){
 function tgEx(id){$(id).classList.toggle('on');}
 /* ===== Gráficos de tiempos/cumplimiento (pestaña GRÁFICOS) ===== */
 function setT(id,txt){const el=$('t'+id);if(el)el.textContent=txt;}
+function chartTitle(id,title,sub){const ch=CH[id];if(!ch)return;ch.options.plugins=ch.options.plugins||{};ch.options.plugins.title={display:true,text:title,color:'#0f2744',font:{size:13.5,weight:'800'},padding:{top:2,bottom:sub?1:9}};ch.options.plugins.subtitle={display:!!sub,text:sub||'',color:'#5b6b7f',font:{size:11,weight:'600'},padding:{bottom:9}};ch.update('none');}
 function verdict(id,level,html){const el=$('v'+id);if(!el)return;el.className='verdict '+level;const tx=el.querySelector('.vtx');if(tx)tx.innerHTML=html;else el.innerHTML='<span class="dot"></span><span class="vtx">'+html+'</span>';}
 function drawTimeCharts(){
   // 1) Cascada del TIEMPO TOTAL por tramo (días promedio)
@@ -1262,7 +1276,8 @@ function drawTimeCharts(){
 
   // 8) Pipeline por etapa (N° de PO)
   const epipe=byEstado();
-  mk('cEstado',{type:'polarArea',data:{labels:Object.keys(epipe),datasets:[{data:Object.values(epipe),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'},datalabels:{display:true,color:'#0f2744',textAlign:'center',font:{weight:'800',size:13},formatter:(v,ctx)=>v?[ctx.chart.data.labels[ctx.dataIndex],v+' PO']:''}},maintainAspectRatio:false}});
+  const _epk=Object.keys(epipe),_colEst=_epk.map(k=>/atras/i.test(k)?'#dc2626':(/disp/i.test(k)?'#16a34a':(/tr[aá]ns/i.test(k)?'#2563eb':'#d97706')));
+  mk('cEstado',{type:'bar',data:{labels:_epk,datasets:[{label:'N° de PO',data:Object.values(epipe),backgroundColor:_colEst,borderRadius:6}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' PO'}},datalabels:{display:true,anchor:'end',align:'top',color:'#0f2744',font:{weight:'800',size:15},formatter:v=>v+' PO'}},maintainAspectRatio:false,scales:{x:{ticks:{font:{size:11,weight:'600'}}},y:{beginAtZero:true,ticks:{precision:0},title:{display:true,text:'N° de PO'}}}}});
   Object.entries(epipe).forEach(([k,v])=>chip('mEstado',k,v));
 
   // 9) Tendencia mensual (valor importado + tiempo de ciclo)
@@ -1299,6 +1314,17 @@ function drawTimeCharts(){
   // 9) Tendencia
   if(trend.length>=2){const a=trend[0],b=trend[trend.length-1];const dU=b.usd-a.usd,dD=b.dias-a.dias;const upU=dU>=0;const okD=dD<=0;const lv=okD?'ok':'warn';setT('Trend','Valor '+(upU?'al alza':'a la baja')+' y ciclo '+(okD?'estable/mejorando':'al alza')+' ('+a.lb+' → '+b.lb+')');verdict('Trend',lv,'Entre <b>'+a.lb+'</b> y <b>'+b.lb+'</b>: valor '+(upU?'subió':'bajó')+' de '+fmtDual(a.usd)+' a '+fmtDual(b.usd)+'; ciclo pasó de '+a.dias+' a '+b.dias+' días ('+(dD>0?'+':'')+dD+' d). '+(okD?'Tendencia favorable en tiempos.':'Vigilar el alza del tiempo de ciclo.'));}
   else{setT('Trend','Tendencia mensual — se necesitan ≥2 meses');verdict('Trend','info','Aún no hay suficientes meses con fecha de disponibilidad para trazar una tendencia.');}
+
+  // ===== Títulos ejecutivos dentro de cada gráfico (para gerencia / capturas de pantalla) =====
+  chartTitle('cEstado','Pipeline de importaciones por etapa','N° de órdenes de compra en cada etapa');
+  chartTitle('cEta','Confiabilidad de ETA del proveedor / ruta','Días de adelanto (verde) o atraso (rojo) por compra');
+  chartTitle('cTramo','¿Dónde se pierde el tiempo del ciclo?','Días promedio por tramo del proceso');
+  chartTitle('cProvT','Tiempo total promedio por proveedor','Días desde la compra hasta bodega');
+  chartTitle('cZonaT','Tiempo total promedio por zona de origen','Días según de dónde viene la carga');
+  chartTitle('cModo','Marítimo vs. Aéreo','Valor importado (USD y CLP) y días de ciclo');
+  chartTitle('cCostU','Costo unitario por proveedor','USD y CLP por unidad');
+  chartTitle('cTransit','Capital inmovilizado en importaciones','Valor en tránsito vs. ya disponible en bodega');
+  chartTitle('cTrend','Tendencia mensual del negocio','Valor importado (USD y CLP) y tiempo de ciclo');
 
   // Registro para la vista DETALLE
   DET['cTramo']={title:'Cascada del TIEMPO TOTAL por tramo (días promedio)',labels:trv.map(x=>x.lb.replace(/\n/g,' ')),vals:trv.map(x=>x.d),fmt:v=>v+' d',catLabel:'Tramo',valLabel:'Días promedio'};
