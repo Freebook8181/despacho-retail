@@ -146,6 +146,19 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 .ib.act-del:hover{background:#9ec4ee;border-color:#5f9bdd}
 /* chips de métricas sobre cada gráfico */
 .metrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.narr{background:#eef3fb;border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:8px;padding:11px 14px;font-size:13px;color:#334155;line-height:1.6;margin:0 0 16px}
+.narr b{color:var(--navy)}
+.verdict{display:flex;align-items:flex-start;gap:9px;margin:0 0 12px;padding:9px 12px;border-radius:9px;font-size:12.8px;font-weight:600;line-height:1.45;border:1px solid transparent}
+.verdict .dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;margin-top:3px}
+.verdict .vtx b{font-weight:800}
+.verdict.ok{background:#e8f5e9;color:#1b5e20;border-color:#a5d6a7}
+.verdict.ok .dot{background:#2e7d32}
+.verdict.warn{background:#fff8e1;color:#8a5a00;border-color:#ffe082}
+.verdict.warn .dot{background:#f59e0b}
+.verdict.bad{background:#ffebee;color:#b71c1c;border-color:#ef9a9a}
+.verdict.bad .dot{background:#d32f2f}
+.verdict.info{background:#eef3fb;color:#1b4b7a;border-color:#c3d4ea}
+.verdict.info .dot{background:#2563eb}
 .chip{background:#f1f5fb;border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:11.5px;line-height:1.2}
 .chip b{display:block;color:var(--navy);font-size:14px;font-weight:800;margin-top:2px}
 .chip span{color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;font-size:10px}
@@ -314,54 +327,70 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <div class="alerts" id="alerts"></div>
   <h2 class="sec">Control de tiempos del ciclo COMEX</h2>
   <div id="chartNotice" style="display:none"></div>
+  <p class="narr">Lectura ejecutiva de arriba hacia abajo: <b>dónde estamos</b> (pipeline) → <b>cumplimos los plazos</b> (OTIF) → <b>dónde se pierde tiempo</b> (tramos, proveedores, zonas) → <b>cómo y cuánto cuesta</b> (modo, costo unitario, capital inmovilizado) → <b>hacia dónde vamos</b> (tendencia mensual).</p>
   <div class="grid g2">
     <div class="panel">
-      <div class="ph"><h3>Cascada del TIEMPO TOTAL por tramo (días promedio)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTramo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTramo')">ℹ Análisis</button></div>
-      <div class="metrow" id="mTramo"></div>
-      <div class="cc big"><canvas id="cTramo"></canvas></div>
-      <div class="explain-box" id="exTramo"></div>
+      <div class="ph"><h3 id="tEstado">1. ¿Dónde está hoy la carga? — Pipeline por etapa</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cEstado')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exEstado')">ℹ Análisis</button></div>
+      <div class="verdict info" id="vEstado"><span class="dot"></span><span class="vtx">—</span></div>
+      <div class="metrow" id="mEstado"></div>
+      <div class="cc big"><canvas id="cEstado"></canvas></div>
+      <div class="explain-box" id="exEstado"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Cumplimiento de ETA — desviación por PO (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cEta')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exEta')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tEta">2. ¿Cumplimos los plazos? — OTIF / desviación de ETA</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cEta')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exEta')">ℹ Análisis</button></div>
+      <div class="verdict info" id="vEta"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mEta"></div>
       <div class="cc big"><canvas id="cEta"></canvas></div>
       <div class="explain-box" id="exEta"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>TIEMPO TOTAL promedio por proveedor (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProvT')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exProvT')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tTramo">3. ¿Dónde se pierde el tiempo? — Cascada por tramo</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTramo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTramo')">ℹ Análisis</button></div>
+      <div class="verdict info" id="vTramo"><span class="dot"></span><span class="vtx">—</span></div>
+      <div class="metrow" id="mTramo"></div>
+      <div class="cc big"><canvas id="cTramo"></canvas></div>
+      <div class="explain-box" id="exTramo"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 id="tProvT">4. ¿Qué proveedor nos atrasa? — Tiempo total por proveedor</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProvT')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exProvT')">ℹ Análisis</button></div>
+      <div class="verdict info" id="vProvT"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mProvT"></div>
       <div class="cc big"><canvas id="cProvT"></canvas></div>
       <div class="explain-box" id="exProvT"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>TIEMPO TOTAL promedio por zona (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cZonaT')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exZonaT')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tZonaT">5. ¿Qué zona tarda más? — Tiempo total por zona</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cZonaT')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exZonaT')">ℹ Análisis</button></div>
+      <div class="verdict info" id="vZonaT"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mZonaT"></div>
       <div class="cc big"><canvas id="cZonaT"></canvas></div>
       <div class="explain-box" id="exZonaT"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Costo unitario por proveedor (USD/unidad)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cCostU')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exCostU')">ℹ Análisis</button></div>
-      <div class="metrow" id="mCostU"></div>
-      <div class="cc big"><canvas id="cCostU"></canvas></div>
-      <div class="explain-box" id="exCostU"></div>
-    </div>
-    <div class="panel">
-      <div class="ph"><h3>Comparativa Marítimo vs. Aéreo (valor y tiempo)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cModo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exModo')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tModo">6. ¿Cómo traemos la carga? — Marítimo vs. Aéreo</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cModo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exModo')">ℹ Análisis</button></div>
+      <div class="verdict info" id="vModo"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mModo"></div>
       <div class="cc big"><canvas id="cModo"></canvas></div>
       <div class="explain-box" id="exModo"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Valor en tránsito vs. disponible (capital inmovilizado)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTransit')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTransit')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tCostU">7. ¿Cuánto cuesta por unidad? — Costo unitario por proveedor</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cCostU')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exCostU')">ℹ Análisis</button></div>
+      <div class="verdict info" id="vCostU"><span class="dot"></span><span class="vtx">—</span></div>
+      <div class="metrow" id="mCostU"></div>
+      <div class="cc big"><canvas id="cCostU"></canvas></div>
+      <div class="explain-box" id="exCostU"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3 id="tTransit">8. ¿Cuánto capital está detenido? — Valor en tránsito vs. disponible</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTransit')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTransit')">ℹ Análisis</button></div>
+      <div class="verdict info" id="vTransit"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mTransit"></div>
       <div class="cc big"><canvas id="cTransit"></canvas></div>
       <div class="explain-box" id="exTransit"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Pipeline por etapa (N° de PO)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cEstado')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exEstado')">ℹ Análisis</button></div>
-      <div class="metrow" id="mEstado"></div>
-      <div class="cc big"><canvas id="cEstado"></canvas></div>
-      <div class="explain-box" id="exEstado"></div>
+      <div class="ph"><h3 id="tTrend">9. ¿Hacia dónde vamos? — Tendencia mensual (valor y tiempo de ciclo)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTrend')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTrend')">ℹ Análisis</button></div>
+      <div class="verdict info" id="vTrend"><span class="dot"></span><span class="vtx">—</span></div>
+      <div class="metrow" id="mTrend"></div>
+      <div class="cc big"><canvas id="cTrend"></canvas></div>
+      <div class="explain-box" id="exTrend"></div>
     </div>
   </div>
 </section>
@@ -961,6 +990,8 @@ function etaDevAvg(){const d=etaDev();if(!d.length)return null;return Math.round
 function byModo(){const su={},st={},ct={};ROWS.forEach(r=>{const m=r.tipo||'—';su[m]=(su[m]||0)+usdNum(r.usd);const d=numClean(computeTtot(r));if(d>0){st[m]=(st[m]||0)+d;ct[m]=(ct[m]||0)+1;}});const modos=[...new Set(Object.keys(su).concat(Object.keys(st)))];return modos.map(m=>({modo:m,usd:su[m]||0,dias:ct[m]?Math.round(st[m]/ct[m]):0}));}
 // Valor en tránsito (capital inmovilizado) vs disponible en inventario
 function valorEnTransito(){let trans=0,disp=0;ROWS.forEach(r=>{const v=usdNum(r.usd);if(estado(r)==='Disponible')disp+=v;else trans+=v;});return {trans,disp};}
+function mesLabel(ym){const M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];const p=ym.split('-');const i=parseInt(p[1],10)-1;return (M[i]||p[1])+' '+p[0];}
+function trendByMonth(){const su={},sd={},ct={};ROWS.forEach(r=>{const d=(''+(r.dinv||'')).match(/^(\d{4}-\d{2})/);if(!d)return;const k=d[1];su[k]=(su[k]||0)+usdNum(r.usd);const t=numClean(computeTtot(r));if(t>0){sd[k]=(sd[k]||0)+t;ct[k]=(ct[k]||0)+1;}});const keys=Object.keys(su).sort();return keys.map(k=>({mes:k,lb:mesLabel(k),usd:su[k]||0,dias:ct[k]?Math.round(sd[k]/ct[k]):0,n:ct[k]||0}));}
 
 /* ===== KPIs ===== */
 let DOLAR=null, DOLAR_FECHA=null, DOLAR_ERR=false, DOLAR_MANUAL=false;
@@ -1016,7 +1047,7 @@ function renderKpis(){
   $('kpis').innerHTML=`
     ${kpi('teal','TIEMPO TOTAL prom.',avgTiempo()+' d','confirmación → inventario')}
     ${kpi('warn','Cuello de botella',cb?cb.d+' d':'—',cb?cb.lb.replace(/\n/g,' '):'sin datos de tramos')}
-    ${kpi(otp!=null&&otp>=80?'ok':'bad','Cumplimiento ETA',otp!=null?otp+'%':'—','PO en o antes de ETA')}
+    ${kpi(otp!=null&&otp>=80?'ok':'bad','OTIF (Cumplimiento ETA)',otp!=null?otp+'%':'—','PO en o antes de ETA')}
     ${kpi(dva!=null&&dva>0?'bad':'ok','Desviación ETA',dva!=null?((dva>0?'+':'')+dva+' d'):'—','atraso medio vs ETA')}
     ${kpi('pp','Valor en tránsito',fmtMoney(vt.trans),'capital inmovilizado')}
     ${dolarKpi}
@@ -1116,7 +1147,7 @@ try{if(window.ChartDataLabels)Chart.register(window.ChartDataLabels);}catch(e){}
 Chart.defaults.set('plugins.datalabels',{display:false,clamp:true,clip:false,font:{weight:'700',size:13}});
 function sortEnt(m){return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
 function chip(host,lb,val){const el=$(host);if(el)el.insertAdjacentHTML('beforeend',`<div class="chip"><span>${lb}</span><b>${val}</b></div>`);}
-function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mProvT','mMix','mTicket','mPareto','mTramo','mEta','mZonaT','mCostU','mModo','mTransit'].forEach(id=>{if($(id))$(id).innerHTML='';});}
+function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mProvT','mMix','mTicket','mPareto','mTramo','mEta','mZonaT','mCostU','mModo','mTransit','mTrend'].forEach(id=>{if($(id))$(id).innerHTML='';});}
 function unidByProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+numClean(r.unid);});return m;}
 function tiempoByProv(){const sum={},cnt={};ROWS.forEach(r=>{const d=numClean(r.ttot);if(d>0){const p=r.prov||'—';sum[p]=(sum[p]||0)+d;cnt[p]=(cnt[p]||0)+1;}});const m={};Object.keys(sum).forEach(p=>{m[p]=Math.round(sum[p]/cnt[p]);});return m;}
 function ticketByZona(){const u=unidByZona(),z=byZona(),m={};Object.keys(z).forEach(k=>{m[k]=u[k]?z[k]/u[k]:0;});return m;}
@@ -1179,6 +1210,8 @@ function drawCharts(){
 }
 function tgEx(id){$(id).classList.toggle('on');}
 /* ===== Gráficos de tiempos/cumplimiento (pestaña GRÁFICOS) ===== */
+function setT(id,txt){const el=$('t'+id);if(el)el.textContent=txt;}
+function verdict(id,level,html){const el=$('v'+id);if(!el)return;el.className='verdict '+level;const tx=el.querySelector('.vtx');if(tx)tx.innerHTML=html;else el.innerHTML='<span class="dot"></span><span class="vtx">'+html+'</span>';}
 function drawTimeCharts(){
   // 1) Cascada del TIEMPO TOTAL por tramo (días promedio)
   const trv=tramoAvg();
@@ -1224,6 +1257,41 @@ function drawTimeCharts(){
   mk('cEstado',{type:'polarArea',data:{labels:Object.keys(epipe),datasets:[{data:Object.values(epipe),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'},datalabels:{display:true,color:'#0f2744',textAlign:'center',font:{weight:'800',size:13},formatter:(v,ctx)=>v?[ctx.chart.data.labels[ctx.dataIndex],v+' PO']:''}},maintainAspectRatio:false}});
   Object.entries(epipe).forEach(([k,v])=>chip('mEstado',k,v));
 
+  // 9) Tendencia mensual (valor importado + tiempo de ciclo)
+  const trend=trendByMonth();
+  mk('cTrend',{type:'bar',data:{labels:trend.map(x=>x.lb),datasets:[{label:'USD importado',data:trend.map(x=>x.usd),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y',order:2},{label:'Tiempo de ciclo (días)',type:'line',data:trend.map(x=>x.dias),borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.3,pointRadius:4,order:1}]},options:{plugins:{tooltip:{callbacks:{label:c=>c.dataset.label==='USD importado'?fmtMoney(c.parsed.y):c.parsed.y+' días (ciclo prom.)'}},datalabels:{display:true,anchor:ctx=>ctx.datasetIndex?'center':'end',align:'top',font:{weight:'800',size:11.5},color:ctx=>ctx.datasetIndex?'#b45309':'#0f2744',formatter:(v,ctx)=>ctx.datasetIndex?v+' d':fmtMoney(v)}},maintainAspectRatio:false,scales:{y:{position:'left',beginAtZero:true,ticks:{callback:v=>fmtUSDk(v)},title:{display:true,text:'USD importado'}},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'días de ciclo'}}}}});
+  if(trend.length){chip('mTrend','Meses',trend.length);chip('mTrend','Últ. mes',trend[trend.length-1].lb+' · '+fmtMoney(trend[trend.length-1].usd));}
+
+  // ===== Títulos de conclusión + semáforos de lectura (vista gerencial) =====
+  const totPO=ROWS.length;
+  // 1) Pipeline
+  const atr=epipe['Atrasado']||0, pend=epipe['Pendiente']||0, disp0=epipe['Disponible']||0;
+  setT('Estado',atr>0?('⚠ Hay '+atr+' PO atrasada(s) en el pipeline'):(pend>0?('Pipeline en flujo: '+pend+' PO pendiente(s), 0 atrasadas'):'Pipeline sano: ninguna PO atrasada'));
+  verdict('Estado',atr>0?'bad':(pend>0?'warn':'ok'),atr>0?('<b>'+atr+'</b> de '+totPO+' PO están <b>atrasadas</b> — requieren acción inmediata.'):(pend>0?('<b>'+disp0+'</b> disponibles y <b>'+pend+'</b> en curso, <b>sin atrasos</b>.'):'<b>Sin PO atrasadas</b>; el flujo avanza hacia disponibilidad.'));
+  // 2) OTIF / ETA
+  if(otp!=null){const lv=otp>=90?'ok':(otp>=75?'warn':'bad');setT('Eta','OTIF '+otp+'% — '+(otp>=90?'cumplimiento sólido de plazos':(otp>=75?'cumplimiento aceptable, con margen de mejora':'cumplimiento bajo: revisar transporte'))); verdict('Eta',lv,'<b>'+otp+'%</b> de las PO llegan en o antes de la ETA; desviación promedio <b>'+(dva>0?'+':'')+dva+' día(s)</b>. '+(otp>=90?'Buen desempeño.':(otp>=75?'Vigilar las PO con atraso.':'Renegociar naviera o ampliar buffer.')));}
+  else{setT('Eta','OTIF — sin datos suficientes de ETA');verdict('Eta','info','Aún no hay suficientes PO con ETA y llegada para medir OTIF.');}
+  // 3) Cascada tramo
+  if(cbot){setT('Tramo','El cuello de botella es '+cbot.lb.replace(/\n/g,' ')+' ('+cbot.d+' días)');verdict('Tramo','warn','El tramo <b>'+cbot.lb.replace(/\n/g,' ')+'</b> concentra la mayor demora con <b>'+cbot.d+' días</b>. Es la palanca prioritaria para reducir el ciclo total.');}
+  else{setT('Tramo','Cascada por tramo — sin datos');verdict('Tramo','info','No hay fechas suficientes para descomponer el ciclo por tramo.');}
+  // 4) Proveedor
+  if(ttprov.length){const avgp=Math.round(ttprov.reduce((a,b)=>a+b[1],0)/ttprov.length);const lv=ttprov[0][1]>avgp*1.5?'bad':'warn';setT('ProvT',ttprov[0][0]+' es el proveedor que más atrasa ('+ttprov[0][1]+' días)');verdict('ProvT',lv,'<b>'+ttprov[0][0]+'</b> promedia <b>'+ttprov[0][1]+' días</b> (prom. general '+avgp+' d). Candidato a renegociar plazos o activar un origen alternativo.');}
+  else{setT('ProvT','Tiempo por proveedor — sin datos');verdict('ProvT','info','Sin datos de tiempo por proveedor.');}
+  // 5) Zona
+  if(ttzona.length){const avgz=Math.round(ttzona.reduce((a,b)=>a+b[1],0)/ttzona.length);const lv=ttzona[0][1]>avgz*1.4?'bad':'warn';setT('ZonaT',ttzona[0][0]+' es la zona más lenta ('+ttzona[0][1]+' días)');verdict('ZonaT',lv,'<b>'+ttzona[0][0]+'</b> es el corredor más lento con <b>'+ttzona[0][1]+' días</b> (prom. '+avgz+' d). Evaluar doble origen o nearshoring si concentra volumen.');}
+  else{setT('ZonaT','Tiempo por zona — sin datos');verdict('ZonaT','info','Sin datos de tiempo por zona.');}
+  // 6) Modo
+  if(modos.length){const tot6=modos.reduce((a,b)=>a+b.usd,0);const mar=modos.find(x=>/mar/i.test(x.modo));const pMar=tot6&&mar?Math.round(mar.usd/tot6*100):null;setT('Modo',pMar!=null?('El '+pMar+'% del valor viene por vía marítima'):'Mix de modos de transporte');verdict('Modo','info',modos.map(x=>'<b>'+x.modo+'</b>: '+fmtMoney(x.usd)+' / '+x.dias+' d').join(' · ')+'. Trade-off costo vs. velocidad: reservar aéreo para carga crítica o de alto valor.');}
+  else{setT('Modo','Marítimo vs. Aéreo — sin datos');verdict('Modo','info','Sin datos de modo de transporte.');}
+  // 7) Costo unitario
+  if(cuni.length){setT('CostU',cuni[0][0]+' tiene el costo unitario más alto ($'+cuni[0][1].toLocaleString('en-US',{maximumFractionDigits:2})+'/u)');verdict('CostU','info','<b>'+cuni[0][0]+'</b> es el más caro por unidad ($'+cuni[0][1].toLocaleString('en-US',{maximumFractionDigits:2})+'). Base para negociar precio y priorizar controles de calidad/seguro.');}
+  else{setT('CostU','Costo unitario — sin datos');verdict('CostU','info','Sin datos de costo unitario (falta USD o unidades).');}
+  // 8) Capital en tránsito
+  const ttv=vtr.trans+vtr.disp;const pTr=ttv?Math.round(vtr.trans/ttv*100):0;{const lv=pTr>=70?'bad':(pTr>=40?'warn':'ok');setT('Transit',fmtMoney(vtr.trans)+' en capital inmovilizado ('+pTr+'%)');verdict('Transit',lv,'<b>'+fmtMoney(vtr.trans)+'</b> ('+pTr+'%) está <b>en tránsito</b> frente a '+fmtMoney(vtr.disp)+' disponible. '+(pTr>=70?'Alto capital de trabajo detenido.':(pTr>=40?'Capital inmovilizado moderado.':'Mayoría ya disponible en inventario.')));}
+  // 9) Tendencia
+  if(trend.length>=2){const a=trend[0],b=trend[trend.length-1];const dU=b.usd-a.usd,dD=b.dias-a.dias;const upU=dU>=0;const okD=dD<=0;const lv=okD?'ok':'warn';setT('Trend','Valor '+(upU?'al alza':'a la baja')+' y ciclo '+(okD?'estable/mejorando':'al alza')+' ('+a.lb+' → '+b.lb+')');verdict('Trend',lv,'Entre <b>'+a.lb+'</b> y <b>'+b.lb+'</b>: valor '+(upU?'subió':'bajó')+' de '+fmtMoney(a.usd)+' a '+fmtMoney(b.usd)+'; ciclo pasó de '+a.dias+' a '+b.dias+' días ('+(dD>0?'+':'')+dD+' d). '+(okD?'Tendencia favorable en tiempos.':'Vigilar el alza del tiempo de ciclo.'));}
+  else{setT('Trend','Tendencia mensual — se necesitan ≥2 meses');verdict('Trend','info','Aún no hay suficientes meses con fecha de disponibilidad para trazar una tendencia.');}
+
   // Registro para la vista DETALLE
   DET['cTramo']={title:'Cascada del TIEMPO TOTAL por tramo (días promedio)',labels:trv.map(x=>x.lb.replace(/\n/g,' ')),vals:trv.map(x=>x.d),fmt:v=>v+' d',catLabel:'Tramo',valLabel:'Días promedio'};
   DET['cEta']={title:'Cumplimiento de ETA — desviación por PO (días)',labels:edev.map(x=>x.po),vals:edev.map(x=>x.dev),fmt:v=>(v>0?'+':'')+v+' d',catLabel:'PO',valLabel:'Desviación (días)'};
@@ -1233,6 +1301,7 @@ function drawTimeCharts(){
   DET['cModo']={title:'Comparativa Marítimo vs. Aéreo',labels:modos.map(x=>x.modo),catLabel:'Modo',series:[{name:'USD',vals:modos.map(x=>x.usd),fmt:fmtMoney},{name:'Días prom.',vals:modos.map(x=>x.dias),fmt:v=>v+' d'}]};
   DET['cTransit']={title:'Valor en tránsito vs. disponible',labels:['En tránsito','Disponible'],vals:[vtr.trans,vtr.disp],fmt:fmtMoney,catLabel:'Estado',valLabel:'USD'};
   DET['cEstado']={title:'Pipeline por etapa',labels:Object.keys(epipe),vals:Object.values(epipe),fmt:v=>v+' PO',catLabel:'Estado',valLabel:'PO'};
+  DET['cTrend']={title:'Tendencia mensual (valor y tiempo de ciclo)',labels:trend.map(x=>x.lb),catLabel:'Mes',series:[{name:'USD importado',vals:trend.map(x=>x.usd),fmt:fmtMoney},{name:'Ciclo (días)',vals:trend.map(x=>x.dias),fmt:v=>v+' d'}]};
 }
 function fillExplains(){
   const S=(id,h)=>{const el=$(id);if(el)el.innerHTML=h;};
@@ -1252,6 +1321,8 @@ function fillExplains(){
   S('exTransit',`<b>Qué mide:</b> porción del valor USD que aún no está disponible en inventario (capital inmovilizado en el pipeline) frente al ya disponible. <b>Lectura:</b> ${tt?fmtMoney(vt.trans)+' en tránsito ('+Math.round(vt.trans/tt*100)+'%) vs '+fmtMoney(vt.disp)+' disponible':'—'}. <b>KPI:</b> capital de trabajo inmovilizado; mientras mayor sea, mayor es el costo financiero del stock en camino.`);
   const e=byEstado();
   S('exEstado',`<b>Qué mide:</b> cuántas PO hay en cada etapa logística. <b>Lectura:</b> ${Object.entries(e).map(x=>x[0]+': '+x[1]).join(' · ')||'—'}. <b>KPI:</b> salud del pipeline; el objetivo es minimizar “Atrasado” y “Pendiente” y mantener el flujo hacia “Disponible”.`);
+  const tm=trendByMonth();
+  S('exTrend',`<b>Qué mide:</b> evolución mes a mes del valor importado (USD, barras) y del tiempo de ciclo promedio (días, línea), según la fecha de disponibilidad en inventario. <b>Lectura:</b> ${tm.length?tm.map(x=>x.lb+': '+fmtMoney(x.usd)+' / '+x.dias+' d').join(' · '):'se necesitan al menos 2 meses con fecha de disponibilidad'}. <b>KPI:</b> dirección del negocio; muestra si el volumen importado crece y si el ciclo logístico mejora o se deteriora en el tiempo.`);
 }
 function fillExplainsLegacy(){
   const z=sortEnt(byZona()),tu=totUSD();
