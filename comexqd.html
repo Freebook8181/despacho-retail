@@ -87,6 +87,20 @@ h2.sec::before{content:'';width:4px;height:15px;background:var(--teal);border-ra
 .kpi.ok::after{background:var(--ok)} .kpi.warn::after{background:var(--warn)}
 .kpi.bad::after{background:var(--bad)} .kpi.teal::after{background:var(--teal)}
 .kpi.pp::after{background:#7c3aed}
+/* ===== Lámina ejecutiva: KPIs de alto nivel (tarjetas hero) ===== */
+.kpiboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.hk{position:relative;overflow:hidden;border-radius:14px;padding:19px 21px;color:#fff;box-shadow:0 6px 18px rgba(15,39,68,.14)}
+.hk .hlb{font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;opacity:.95}
+.hk .hvl{font-size:29px;font-weight:800;line-height:1.08;margin-top:9px;letter-spacing:-.4px;word-break:break-word}
+.hk .hsub{font-size:14px;font-weight:700;margin-top:3px;opacity:.96;word-break:break-word}
+.hk .hdt{font-size:12px;font-weight:600;margin-top:10px;opacity:.9;line-height:1.4}
+.hk .hico{position:absolute;right:13px;top:12px;font-size:30px;opacity:.26;line-height:1}
+.hk.g1{background:linear-gradient(135deg,#0f2744,#1b4b7a)}
+.hk.g-ok{background:linear-gradient(135deg,#15803d,#22a357)}
+.hk.g-warn{background:linear-gradient(135deg,#b45309,#e08a16)}
+.hk.g-bad{background:linear-gradient(135deg,#b71c1c,#e23b3b)}
+.hk.g-pp{background:linear-gradient(135deg,#5b21b6,#7c3aed)}
+.hk.g-teal{background:linear-gradient(135deg,#0f766e,#14a79b)}
 /* alerts */
 .alerts{display:grid;gap:9px}
 .alert{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:9px;padding:11px 15px;font-size:13.5px}
@@ -321,7 +335,9 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
     <button class="ib" onclick="limpiarTodo()" aria-label="Limpiar todo"><span class="ic">🧹</span><span class="ibl">Limpiar</span></button>
     <span class="st">Limpiar todo · el <b>Dólar Observado</b> se conserva y se actualiza a diario desde internet</span>
   </div>
-  <h2 class="sec">Indicadores clave &amp; métricas</h2>
+  <h2 class="sec">Lámina ejecutiva · indicadores clave de alto nivel</h2>
+  <div class="kpiboard" id="kpiBoard"></div>
+  <h2 class="sec">Métricas de detalle</h2>
   <div class="kpis" id="kpis"></div>
   <h2 class="sec" style="cursor:pointer;user-select:none" onclick="toggleAlerts()">Alertas operativas<span id="alertsArrow" style="margin-left:auto;font-size:13px;transition:transform .2s">▼</span></h2>
   <div class="alerts" id="alerts"></div>
@@ -1076,8 +1092,32 @@ function renderKpis(){
     ${kpi('ok','USD total',fmtMoney(tu),'valor importado')}
     ${kpi('teal','PO activas / pend.',nAct+' / '+nPend,'completas / con datos faltantes')}
   `;
+  renderKpiBoard();
 }
 function kpi(cls,lb,vl,dt){return `<div class="kpi ${cls}"><div class="lb">${lb}</div><div class="vl">${vl}</div><div class="dt">${dt}</div></div>`;}
+/* ===== Lámina ejecutiva de KPIs de alto nivel ===== */
+function hk(cls,ico,lb,vl,sub,dt){return `<div class="hk ${cls}"><div class="hico">${ico}</div><div class="hlb">${lb}</div><div class="hvl">${vl}</div>${sub?`<div class="hsub">${sub}</div>`:''}<div class="hdt">${dt}</div></div>`;}
+function renderKpiBoard(){
+  const el=$('kpiBoard');if(!el)return;
+  const tu=totUSD();
+  const est=byEstado();const atr=est['Atrasado']||0;
+  const nAct=poActivas();
+  const vt=valorEnTransito();const ttv=vt.trans+vt.disp;const pTr=ttv?Math.round(vt.trans/ttv*100):0;
+  const cb=cuelloBotella();
+  const otp=etaOnTimePct(),dva=etaDevAvg();
+  const clpTu=fmtCLPg(tu),clpTr=fmtCLPg(vt.trans);
+  const lvTr=pTr>=70?'g-bad':(pTr>=40?'g-warn':'g-ok');
+  const lvEta=otp==null?'g-teal':(otp>=90?'g-ok':(otp>=75?'g-warn':'g-bad'));
+  const cards=[
+    hk('g1','📦','Valor total importado',fmtUSDg(tu),clpTu||'','Monto total de las importaciones de la planilla'),
+    hk(lvTr,'⏳','Capital inmovilizado',fmtUSDg(vt.trans),(clpTr?clpTr+' · ':'')+pTr+'% en tránsito','Valor que aún viene en camino y no está disponible'),
+    hk(atr>0?'g-bad':'g-ok','📋','Órdenes de compra',nAct+' PO activas',atr>0?(atr+' atrasada(s)'):'sin atrasos','Compras en curso hacia bodega'),
+    hk('g-teal','⏱️','Tiempo de ciclo',avgTiempo()+' días',cb?('cuello: '+cb.lb.replace(/\n/g,' ')+' · '+cb.d+' d'):'','Promedio desde la compra hasta disponibilidad'),
+    hk(lvEta,'🎯','Confiabilidad de ETA',otp!=null?otp+'%':'—',dva!=null?('desviación '+(dva>0?'+':'')+dva+' d'):'','Proveedor/ruta que llega en o antes de la fecha'),
+    hk('g-pp','💱','Dólar observado',DOLAR?('$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2})):'…',DOLAR?(DOLAR_MANUAL?'ingreso manual':'BCCh'):'',DOLAR?('actualizado '+DOLAR_FECHA):'conectando al Banco Central')
+  ];
+  el.innerHTML=cards.join('');
+}
 
 /* ===== Alertas ===== */
 function renderAlerts(){
