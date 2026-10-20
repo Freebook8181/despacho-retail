@@ -312,55 +312,55 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <div class="kpis" id="kpis"></div>
   <h2 class="sec" style="cursor:pointer;user-select:none" onclick="toggleAlerts()">Alertas operativas<span id="alertsArrow" style="margin-left:auto;font-size:13px;transition:transform .2s">▼</span></h2>
   <div class="alerts" id="alerts"></div>
-  <h2 class="sec">Análisis gráfico de importaciones</h2>
+  <h2 class="sec">Control de tiempos del ciclo COMEX</h2>
   <div class="grid g2">
     <div class="panel">
-      <div class="ph"><h3>USD por zona de origen</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cZona')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exZona')">ℹ Análisis</button></div>
-      <div class="metrow" id="mZona"></div>
-      <div class="cc big"><canvas id="cZona"></canvas></div>
-      <div class="explain-box" id="exZona"></div>
+      <div class="ph"><h3>Cascada del TIEMPO TOTAL por tramo (días promedio)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTramo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTramo')">ℹ Análisis</button></div>
+      <div class="metrow" id="mTramo"></div>
+      <div class="cc big"><canvas id="cTramo"></canvas></div>
+      <div class="explain-box" id="exTramo"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>USD por proveedor</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProv')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exProv')">ℹ Análisis</button></div>
-      <div class="metrow" id="mProv"></div>
-      <div class="cc big"><canvas id="cProv"></canvas></div>
-      <div class="explain-box" id="exProv"></div>
+      <div class="ph"><h3>Cumplimiento de ETA — desviación por PO (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cEta')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exEta')">ℹ Análisis</button></div>
+      <div class="metrow" id="mEta"></div>
+      <div class="cc big"><canvas id="cEta"></canvas></div>
+      <div class="explain-box" id="exEta"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Estado de embarques</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cEstado')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exEstado')">ℹ Análisis</button></div>
-      <div class="metrow" id="mEstado"></div>
-      <div class="cc big"><canvas id="cEstado"></canvas></div>
-      <div class="explain-box" id="exEstado"></div>
-    </div>
-    <div class="panel">
-      <div class="ph"><h3>Tiempo total de tránsito por PO (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTiempo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTiempo')">ℹ Análisis</button></div>
-      <div class="metrow" id="mTiempo"></div>
-      <div class="cc big"><canvas id="cTiempo"></canvas></div>
-      <div class="explain-box" id="exTiempo"></div>
-    </div>
-    <div class="panel">
-      <div class="ph"><h3>Unidades por zona</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cUnid')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exUnid')">ℹ Análisis</button></div>
-      <div class="metrow" id="mUnid"></div>
-      <div class="cc big"><canvas id="cUnid"></canvas></div>
-      <div class="explain-box" id="exUnid"></div>
-    </div>
-    <div class="panel">
-      <div class="ph"><h3>Tiempo promedio por proveedor (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProvT')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exProvT')">ℹ Análisis</button></div>
+      <div class="ph"><h3>TIEMPO TOTAL promedio por proveedor (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProvT')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exProvT')">ℹ Análisis</button></div>
       <div class="metrow" id="mProvT"></div>
       <div class="cc big"><canvas id="cProvT"></canvas></div>
       <div class="explain-box" id="exProvT"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>USD vs. Unidades por proveedor</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cMix')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exMix')">ℹ Análisis</button></div>
-      <div class="metrow" id="mMix"></div>
-      <div class="cc big"><canvas id="cMix"></canvas></div>
-      <div class="explain-box" id="exMix"></div>
+      <div class="ph"><h3>TIEMPO TOTAL promedio por zona (días)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cZonaT')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exZonaT')">ℹ Análisis</button></div>
+      <div class="metrow" id="mZonaT"></div>
+      <div class="cc big"><canvas id="cZonaT"></canvas></div>
+      <div class="explain-box" id="exZonaT"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3>Pareto de gasto — dónde se gasta más (por proveedor)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cPareto')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exPareto')">ℹ Análisis</button></div>
-      <div class="metrow" id="mPareto"></div>
-      <div class="cc big"><canvas id="cPareto"></canvas></div>
-      <div class="explain-box" id="exPareto"></div>
+      <div class="ph"><h3>Costo unitario por proveedor (USD/unidad)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cCostU')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exCostU')">ℹ Análisis</button></div>
+      <div class="metrow" id="mCostU"></div>
+      <div class="cc big"><canvas id="cCostU"></canvas></div>
+      <div class="explain-box" id="exCostU"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3>Comparativa Marítimo vs. Aéreo (valor y tiempo)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cModo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exModo')">ℹ Análisis</button></div>
+      <div class="metrow" id="mModo"></div>
+      <div class="cc big"><canvas id="cModo"></canvas></div>
+      <div class="explain-box" id="exModo"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3>Valor en tránsito vs. disponible (capital inmovilizado)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTransit')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTransit')">ℹ Análisis</button></div>
+      <div class="metrow" id="mTransit"></div>
+      <div class="cc big"><canvas id="cTransit"></canvas></div>
+      <div class="explain-box" id="exTransit"></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><h3>Pipeline por etapa (N° de PO)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cEstado')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exEstado')">ℹ Análisis</button></div>
+      <div class="metrow" id="mEstado"></div>
+      <div class="cc big"><canvas id="cEstado"></canvas></div>
+      <div class="explain-box" id="exEstado"></div>
     </div>
   </div>
 </section>
@@ -897,6 +897,39 @@ function rowComplete(r){
 }
 function poActivas(){return ROWS.filter(rowComplete).length;}
 function poPendientes(){return ROWS.filter(r=>!rowComplete(r)).length;}
+/* ===== Métricas de tiempos del ciclo COMEX ===== */
+// diferencia firmada en días (puede ser negativa); '' si falta algún dato
+function diffSign(a,b){
+  const p=s=>{const x=(''+s).match(/^(\d{4})-(\d{2})-(\d{2})/);return x?new Date(+x[1],+x[2]-1,+x[3]):null;};
+  const d1=p(a),d2=p(b);if(!d1||!d2)return '';
+  return Math.round((d2-d1)/86400000);
+}
+// Tramos (hitos consecutivos) que componen el TIEMPO TOTAL
+const TRAMOS=[
+  {a:'fconf',b:'dorig',lb:'Confirmación→\nDisp. origen'},
+  {a:'dorig',b:'rorig',lb:'Disp. origen→\nRetiro origen'},
+  {a:'rorig',b:'eta',  lb:'Retiro origen→\nETA (tránsito int.)'},
+  {a:'eta',  b:'fdisp',lb:'ETA→\nDisp. puerto/aerop.'},
+  {a:'fdisp',b:'rpa',  lb:'Disp. puerto→\nRetiro P/A'},
+  {a:'rpa',  b:'lcd',  lb:'Retiro P/A→\nLlegada a CD'},
+  {a:'lcd',  b:'dinv', lb:'Llegada CD→\nDisp. inventario'}
+];
+function tramoAvg(){return TRAMOS.map(t=>{let s=0,n=0;ROWS.forEach(r=>{const d=diffDias(r[t.a],r[t.b]);if(d!==''){s+=d;n++;}});return {lb:t.lb,d:n?Math.round(s/n):0,n};});}
+function cuelloBotella(){const t=tramoAvg().filter(x=>x.n>0);if(!t.length)return null;return t.reduce((a,b)=>b.d>a.d?b:a);}
+// TIEMPO TOTAL promedio por clave (proveedor / zona)
+function ttotByKey(key){const sum={},cnt={};ROWS.forEach(r=>{const d=numClean(computeTtot(r));if(d>0){const k=r[key]||'—';sum[k]=(sum[k]||0)+d;cnt[k]=(cnt[k]||0)+1;}});const m={};Object.keys(sum).forEach(k=>m[k]=Math.round(sum[k]/cnt[k]));return m;}
+function ttotByProv(){return ttotByKey('prov');}
+function ttotByZona(){return ttotByKey('zona');}
+// Costo unitario (USD/unidad) por proveedor
+function costUnitByProv(){const su={},sd={};ROWS.forEach(r=>{const p=r.prov||'—';su[p]=(su[p]||0)+usdNum(r.usd);sd[p]=(sd[p]||0)+numClean(r.unid);});const m={};Object.keys(su).forEach(p=>{if(sd[p]>0)m[p]=su[p]/sd[p];});return m;}
+// Desviación de ETA (llegada a CD − ETA) por PO, con signo (+atraso / −adelanto)
+function etaDev(){return ROWS.map(r=>({po:r.po,dev:diffSign(r.eta,r.lcd)})).filter(x=>x.dev!=='');}
+function etaOnTimePct(){const d=etaDev();if(!d.length)return null;return Math.round(d.filter(x=>x.dev<=0).length/d.length*100);}
+function etaDevAvg(){const d=etaDev();if(!d.length)return null;return Math.round(d.reduce((a,b)=>a+b.dev,0)/d.length);}
+// Comparativa por modo de transporte (Marítimo / Aéreo): USD total y días promedio
+function byModo(){const su={},st={},ct={};ROWS.forEach(r=>{const m=r.tipo||'—';su[m]=(su[m]||0)+usdNum(r.usd);const d=numClean(computeTtot(r));if(d>0){st[m]=(st[m]||0)+d;ct[m]=(ct[m]||0)+1;}});const modos=[...new Set(Object.keys(su).concat(Object.keys(st)))];return modos.map(m=>({modo:m,usd:su[m]||0,dias:ct[m]?Math.round(st[m]/ct[m]):0}));}
+// Valor en tránsito (capital inmovilizado) vs disponible en inventario
+function valorEnTransito(){let trans=0,disp=0;ROWS.forEach(r=>{const v=usdNum(r.usd);if(estado(r)==='Disponible')disp+=v;else trans+=v;});return {trans,disp};}
 
 /* ===== KPIs ===== */
 let DOLAR=null, DOLAR_FECHA=null, DOLAR_ERR=false, DOLAR_MANUAL=false;
@@ -946,16 +979,19 @@ function renderKpis(){
   }
   const clp = DOLAR ? kpi('pp','Valor en CLP','$'+Math.round(tu*DOLAR).toLocaleString('es-CL'),'equivalente a '+fmtMoney(tu)) : '';
   const nAct=poActivas(), nPend=poPendientes();
+  const cb=cuelloBotella();
+  const otp=etaOnTimePct(), dva=etaDevAvg();
+  const vt=valorEnTransito();
   $('kpis').innerHTML=`
-    ${kpi('teal','PO activas',nAct,'con todos los datos completos')}
-    ${kpi('warn','PO pendiente',nPend,'faltan datos en la planilla')}
-    ${kpi('ok','USD total',fmtMoney(tu),'valor importado')}
+    ${kpi('teal','TIEMPO TOTAL prom.',avgTiempo()+' d','confirmación → inventario')}
+    ${kpi('warn','Cuello de botella',cb?cb.d+' d':'—',cb?cb.lb.replace(/\n/g,' '):'sin datos de tramos')}
+    ${kpi(otp!=null&&otp>=80?'ok':'bad','Cumplimiento ETA',otp!=null?otp+'%':'—','PO en o antes de ETA')}
+    ${kpi(dva!=null&&dva>0?'bad':'ok','Desviación ETA',dva!=null?((dva>0?'+':'')+dva+' d'):'—','atraso medio vs ETA')}
+    ${kpi('pp','Valor en tránsito',fmtMoney(vt.trans),'capital inmovilizado')}
     ${dolarKpi}
     ${clp}
-    ${kpi('pp','Unidades',fmtUnid(totUnid()),'total de unidades')}
-    ${kpi('ok','Disponibles',disp,'en inventario final')}
-    ${kpi('teal','En tránsito',tran,'camino / en CD')}
-    ${kpi(atr>0?'bad':'ok','Atrasadas',atr,'posterior a ETA sin llegada')}
+    ${kpi('ok','USD total',fmtMoney(tu),'valor importado')}
+    ${kpi('teal','PO activas / pend.',nAct+' / '+nPend,'completas / con datos faltantes')}
   `;
 }
 function kpi(cls,lb,vl,dt){return `<div class="kpi ${cls}"><div class="lb">${lb}</div><div class="vl">${vl}</div><div class="dt">${dt}</div></div>`;}
@@ -1049,7 +1085,7 @@ try{if(window.ChartDataLabels)Chart.register(window.ChartDataLabels);}catch(e){}
 Chart.defaults.set('plugins.datalabels',{display:false,clamp:true,clip:false,font:{weight:'700',size:13}});
 function sortEnt(m){return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
 function chip(host,lb,val){const el=$(host);if(el)el.insertAdjacentHTML('beforeend',`<div class="chip"><span>${lb}</span><b>${val}</b></div>`);}
-function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mProvT','mMix','mTicket','mPareto'].forEach(id=>{if($(id))$(id).innerHTML='';});}
+function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mProvT','mMix','mTicket','mPareto','mTramo','mEta','mZonaT','mCostU','mModo','mTransit'].forEach(id=>{if($(id))$(id).innerHTML='';});}
 function unidByProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+numClean(r.unid);});return m;}
 function tiempoByProv(){const sum={},cnt={};ROWS.forEach(r=>{const d=numClean(r.ttot);if(d>0){const p=r.prov||'—';sum[p]=(sum[p]||0)+d;cnt[p]=(cnt[p]||0)+1;}});const m={};Object.keys(sum).forEach(p=>{m[p]=Math.round(sum[p]/cnt[p]);});return m;}
 function ticketByZona(){const u=unidByZona(),z=byZona(),m={};Object.keys(z).forEach(k=>{m[k]=u[k]?z[k]/u[k]:0;});return m;}
@@ -1094,10 +1130,86 @@ function drawCharts(){
   DET['cProvT']={title:'Tiempo promedio por proveedor (días)',labels:tp.map(x=>x[0]),vals:tp.map(x=>x[1]),fmt:v=>v+' d',type:'bar',catLabel:'Proveedor',valLabel:'Días promedio'};
   DET['cMix']={title:'USD vs. Unidades por proveedor',labels:pm.map(x=>x[0]),catLabel:'Proveedor',series:[{name:'USD',vals:pm.map(x=>x[1]),fmt:fmtMoney},{name:'Unidades',vals:pm.map(x=>up[x[0]]||0),fmt:fmtUnid}]};
   DET['cPareto']={title:'Pareto de gasto por proveedor',labels:pa.map(x=>x[0]),catLabel:'Proveedor',series:[{name:'USD',vals:pa.map(x=>x[1]),fmt:fmtMoney},{name:'% acumulado',vals:paCum,fmt:v=>v+'%'}]};
+  drawTimeCharts();
   fillExplains();
 }
 function tgEx(id){$(id).classList.toggle('on');}
+/* ===== Gráficos de tiempos/cumplimiento (pestaña GRÁFICOS) ===== */
+function drawTimeCharts(){
+  // 1) Cascada del TIEMPO TOTAL por tramo (días promedio)
+  const trv=tramoAvg();
+  mk('cTramo',{type:'bar',data:{labels:trv.map(x=>x.lb.split('\n')),datasets:[{label:'Días promedio',data:trv.map(x=>x.d),backgroundColor:'#1b4b7a',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>{const i=items[0].dataIndex;return TRAMOS[i].lb.replace(/\n/g,' ');},label:c=>c.parsed.y+' días (prom.)'}},datalabels:{display:true,anchor:'end',align:'top',color:'#0f2744',font:{weight:'800',size:13},formatter:v=>v+' d'}},maintainAspectRatio:false,scales:{x:{ticks:{autoSkip:false,font:{size:10}}},y:{beginAtZero:true,title:{display:true,text:'días promedio'}}}}});
+  const cbot=cuelloBotella();
+  if(cbot)chip('mTramo','Cuello de botella',cbot.lb.replace(/\n/g,' ')+' ('+cbot.d+' d)');
+  chip('mTramo','TIEMPO TOTAL prom.',avgTiempo()+' d');
+
+  // 2) Cumplimiento de ETA — desviación por PO (llegada CD − ETA)
+  const edev=etaDev();
+  mk('cEta',{type:'bar',data:{labels:edev.map(x=>x.po),datasets:[{label:'Desviación (días)',data:edev.map(x=>x.dev),backgroundColor:edev.map(x=>x.dev>0?'#dc2626':'#16a34a'),borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const v=c.parsed.y;return v>0?v+' días de atraso':(v<0?(-v)+' días de adelanto':'en fecha');}}},datalabels:{display:true,anchor:'end',align:ctx=>((ctx.dataset.data[ctx.dataIndex]||0)<0?'bottom':'top'),color:'#0f2744',font:{weight:'800',size:12},formatter:v=>v>0?'+'+v:''+v}},maintainAspectRatio:false,scales:{y:{title:{display:true,text:'días (+atraso / −adelanto)'}}}}});
+  const otp=etaOnTimePct(),dva=etaDevAvg();
+  if(otp!=null)chip('mEta','On-time',otp+'%');
+  if(dva!=null)chip('mEta','Desv. prom.',(dva>0?'+':'')+dva+' d');
+
+  // 3) TIEMPO TOTAL promedio por proveedor
+  const ttprov=sortEnt(ttotByProv());
+  mk('cProvT',{type:'bar',data:{labels:ttprov.map(x=>x[0]),datasets:[{label:'Días',data:ttprov.map(x=>x[1]),backgroundColor:'#0d9488',borderRadius:5}]},options:{indexAxis:'y',layout:{padding:{right:64}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+' días'}},datalabels:{display:true,anchor:'end',align:'end',color:'#0f2744',font:{weight:'800',size:13},formatter:v=>v+' d'}},maintainAspectRatio:false,scales:{x:{beginAtZero:true,title:{display:true,text:'días promedio'}}}}});
+  if(ttprov.length){chip('mProvT','Proveedores',ttprov.length);chip('mProvT','Mayor demora',ttprov[0][0]+' ('+ttprov[0][1]+' d)');}
+
+  // 4) TIEMPO TOTAL promedio por zona
+  const ttzona=sortEnt(ttotByZona());
+  mk('cZonaT',{type:'bar',data:{labels:ttzona.map(x=>x[0]),datasets:[{label:'Días',data:ttzona.map(x=>x[1]),backgroundColor:'#2563eb',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' días'}},datalabels:{display:true,anchor:'end',align:'top',color:'#0f2744',font:{weight:'800',size:13},formatter:v=>v+' d'}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'días promedio'}}}}});
+  if(ttzona.length){chip('mZonaT','Zonas',ttzona.length);chip('mZonaT','Mayor demora',ttzona[0][0]+' ('+ttzona[0][1]+' d)');}
+
+  // 5) Costo unitario por proveedor (USD/unidad)
+  const cuni=sortEnt(costUnitByProv());
+  mk('cCostU',{type:'bar',data:{labels:cuni.map(x=>x[0]),datasets:[{label:'USD/unidad',data:cuni.map(x=>x[1]),backgroundColor:'#7c3aed',borderRadius:5}]},options:{indexAxis:'y',layout:{padding:{right:80}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.x.toLocaleString('en-US',{maximumFractionDigits:2})+' /u'}},datalabels:{display:true,anchor:'end',align:'end',color:'#0f2744',font:{weight:'800',size:12},formatter:v=>'$'+v.toLocaleString('en-US',{maximumFractionDigits:2})}},maintainAspectRatio:false,scales:{x:{beginAtZero:true,ticks:{callback:v=>'$'+v}}}}});
+  if(cuni.length)chip('mCostU','Más caro/u',cuni[0][0]+' ($'+cuni[0][1].toLocaleString('en-US',{maximumFractionDigits:2})+')');
+
+  // 6) Comparativa Marítimo vs Aéreo (USD barras + días línea)
+  const modos=byModo();
+  mk('cModo',{type:'bar',data:{labels:modos.map(x=>x.modo),datasets:[{label:'USD',data:modos.map(x=>x.usd),backgroundColor:'#1b4b7a',borderRadius:4,yAxisID:'y'},{label:'Días promedio',type:'line',data:modos.map(x=>x.dias),borderColor:'#d97706',backgroundColor:'#d97706',yAxisID:'y1',tension:.3,pointRadius:4}]},options:{plugins:{tooltip:{callbacks:{label:c=>c.dataset.label==='USD'?fmtMoney(c.parsed.y):c.parsed.y+' días'}},datalabels:{display:true,anchor:'end',align:'top',font:{weight:'800',size:12},color:ctx=>ctx.datasetIndex?'#b45309':'#0f2744',formatter:(v,ctx)=>ctx.datasetIndex?v+' d':fmtUSDk(v)}},maintainAspectRatio:false,scales:{y:{position:'left',beginAtZero:true,ticks:{callback:v=>fmtUSDk(v)}},y1:{position:'right',beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:'días'}}}}});
+  modos.forEach(x=>chip('mModo',x.modo,fmtMoney(x.usd)+' · '+x.dias+' d'));
+
+  // 7) Valor en tránsito vs disponible (capital inmovilizado)
+  const vtr=valorEnTransito();
+  mk('cTransit',{type:'doughnut',data:{labels:['En tránsito (inmovilizado)','Disponible'],datasets:[{data:[vtr.trans,vtr.disp],backgroundColor:['#d97706','#16a34a'],borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmtMoney(c.parsed)}},datalabels:{display:true,color:'#fff',textAlign:'center',font:{weight:'800',size:12},formatter:(v,ctx)=>{const t=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+(+b||0),0);return v?[fmtMoney(v),(t?Math.round(v/t*100)+'%':'')]:'';}}},maintainAspectRatio:false,cutout:'55%'}});
+  chip('mTransit','En tránsito',fmtMoney(vtr.trans));chip('mTransit','Disponible',fmtMoney(vtr.disp));
+
+  // 8) Pipeline por etapa (N° de PO)
+  const epipe=byEstado();
+  mk('cEstado',{type:'polarArea',data:{labels:Object.keys(epipe),datasets:[{data:Object.values(epipe),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'},datalabels:{display:true,color:'#0f2744',textAlign:'center',font:{weight:'800',size:13},formatter:(v,ctx)=>v?[ctx.chart.data.labels[ctx.dataIndex],v+' PO']:''}},maintainAspectRatio:false}});
+  Object.entries(epipe).forEach(([k,v])=>chip('mEstado',k,v));
+
+  // Registro para la vista DETALLE
+  DET['cTramo']={title:'Cascada del TIEMPO TOTAL por tramo (días promedio)',labels:trv.map(x=>x.lb.replace(/\n/g,' ')),vals:trv.map(x=>x.d),fmt:v=>v+' d',catLabel:'Tramo',valLabel:'Días promedio'};
+  DET['cEta']={title:'Cumplimiento de ETA — desviación por PO (días)',labels:edev.map(x=>x.po),vals:edev.map(x=>x.dev),fmt:v=>(v>0?'+':'')+v+' d',catLabel:'PO',valLabel:'Desviación (días)'};
+  DET['cProvT']={title:'TIEMPO TOTAL promedio por proveedor (días)',labels:ttprov.map(x=>x[0]),vals:ttprov.map(x=>x[1]),fmt:v=>v+' d',catLabel:'Proveedor',valLabel:'Días promedio'};
+  DET['cZonaT']={title:'TIEMPO TOTAL promedio por zona (días)',labels:ttzona.map(x=>x[0]),vals:ttzona.map(x=>x[1]),fmt:v=>v+' d',catLabel:'Zona',valLabel:'Días promedio'};
+  DET['cCostU']={title:'Costo unitario por proveedor (USD/unidad)',labels:cuni.map(x=>x[0]),vals:cuni.map(x=>x[1]),fmt:fmtMoney,catLabel:'Proveedor',valLabel:'USD/unidad'};
+  DET['cModo']={title:'Comparativa Marítimo vs. Aéreo',labels:modos.map(x=>x.modo),catLabel:'Modo',series:[{name:'USD',vals:modos.map(x=>x.usd),fmt:fmtMoney},{name:'Días prom.',vals:modos.map(x=>x.dias),fmt:v=>v+' d'}]};
+  DET['cTransit']={title:'Valor en tránsito vs. disponible',labels:['En tránsito','Disponible'],vals:[vtr.trans,vtr.disp],fmt:fmtMoney,catLabel:'Estado',valLabel:'USD'};
+  DET['cEstado']={title:'Pipeline por etapa',labels:Object.keys(epipe),vals:Object.values(epipe),fmt:v=>v+' PO',catLabel:'Estado',valLabel:'PO'};
+}
 function fillExplains(){
+  const S=(id,h)=>{const el=$(id);if(el)el.innerHTML=h;};
+  const cbot=cuelloBotella();
+  S('exTramo',`<b>Qué mide:</b> descompone el TIEMPO TOTAL (confirmación comercial → disponibilidad de inventario) en sus tramos logísticos y muestra el promedio de días de cada etapa. <b>Lectura:</b> ${cbot?'el tramo más lento es <b>'+cbot.lb.replace(/\n/g,' ')+'</b> con '+cbot.d+' días':'—'}. <b>KPI:</b> análisis de cuello de botella; enfoque la mejora en el tramo más largo (normalmente tránsito internacional o espera en origen).`);
+  const dva=etaDevAvg(),otp=etaOnTimePct();
+  S('exEta',`<b>Qué mide:</b> diferencia en días entre la llegada real a CD y la ETA comprometida, por PO (rojo = atraso, verde = adelanto). <b>Lectura:</b> ${otp!=null?otp+'% de las PO llegan en o antes de la ETA; desviación promedio '+(dva>0?'+':'')+dva+' días':'—'}. <b>KPI:</b> confiabilidad / OTIF del transporte; desviaciones positivas recurrentes obligan a revisar la naviera o ampliar el buffer de planificación.`);
+  const ttp=sortEnt(ttotByProv());
+  S('exProvT',`<b>Qué mide:</b> TIEMPO TOTAL promedio (días) por proveedor. <b>Lectura:</b> ${ttp[0]?'mayor demora: <b>'+ttp[0][0]+'</b> con '+ttp[0][1]+' días':'—'}. <b>KPI:</b> desempeño de entrega por proveedor; los que superan el promedio son candidatos a renegociar plazos o activar un origen alternativo.`);
+  const ttz=sortEnt(ttotByZona());
+  S('exZonaT',`<b>Qué mide:</b> TIEMPO TOTAL promedio (días) por zona de origen. <b>Lectura:</b> ${ttz[0]?'<b>'+ttz[0][0]+'</b> es la zona más lenta con '+ttz[0][1]+' días':'—'}. <b>Indicador:</b> permite comparar corredores logísticos y evaluar nearshoring o doble origen cuando una zona concentra los mayores tiempos.`);
+  const cu=sortEnt(costUnitByProv());
+  S('exCostU',`<b>Qué mide:</b> costo unitario (USD por unidad) por proveedor = USD / unidades. <b>Lectura:</b> ${cu[0]?'<b>'+cu[0][0]+'</b> es el más caro con $'+cu[0][1].toLocaleString('en-US',{maximumFractionDigits:2})+'/u':'—'}. <b>KPI:</b> competitividad de precio; sirve para negociar, priorizar seguros / controles de calidad y decidir el modo de transporte según el valor de la mercadería.`);
+  const md=byModo();
+  S('exModo',`<b>Qué mide:</b> compara el valor importado (USD, barras) y el tiempo total promedio (días, línea) entre Marítimo y Aéreo. <b>Lectura:</b> ${md.map(x=>x.modo+': '+fmtMoney(x.usd)+' / '+x.dias+' d').join(' · ')||'—'}. <b>Indicador:</b> trade-off costo vs. velocidad; ayuda a decidir cuándo conviene aéreo para mercadería crítica o de alto valor.`);
+  const vt=valorEnTransito(),tt=vt.trans+vt.disp;
+  S('exTransit',`<b>Qué mide:</b> porción del valor USD que aún no está disponible en inventario (capital inmovilizado en el pipeline) frente al ya disponible. <b>Lectura:</b> ${tt?fmtMoney(vt.trans)+' en tránsito ('+Math.round(vt.trans/tt*100)+'%) vs '+fmtMoney(vt.disp)+' disponible':'—'}. <b>KPI:</b> capital de trabajo inmovilizado; mientras mayor sea, mayor es el costo financiero del stock en camino.`);
+  const e=byEstado();
+  S('exEstado',`<b>Qué mide:</b> cuántas PO hay en cada etapa logística. <b>Lectura:</b> ${Object.entries(e).map(x=>x[0]+': '+x[1]).join(' · ')||'—'}. <b>KPI:</b> salud del pipeline; el objetivo es minimizar “Atrasado” y “Pendiente” y mantener el flujo hacia “Disponible”.`);
+}
+function fillExplainsLegacy(){
   const z=sortEnt(byZona()),tu=totUSD();
   const topZ=z[0]?`${z[0][0]} lidera con ${fmtMoney(z[0][1])} (${Math.round(z[0][1]/tu*100)}% del total)`:'—';
   $('exZona').innerHTML=`<b>Qué mide:</b> distribución del valor USD importado según la zona de origen. <b>Lectura:</b> ${topZ}. <b>Indicador logístico:</b> mide la dependencia geográfica del abastecimiento; una zona sobre el 50% expone al negocio a riesgo cambiario, arancelario y de flete concentrado en un corredor.`;
