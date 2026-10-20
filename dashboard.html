@@ -403,6 +403,7 @@ function buildMarkup(){
  h+=`<div class="grid g-2e">${card('c_mesvol',IC.chart,'Pedidos por Mes','Volumen total despachado en cada mes','tall')}${card('c_mesval',IC.money,'Valor Movilizado por Mes','Capital transportado mes a mes','tall')}</div>`;
  h+=`<div class="grid g-1">${card('c_mesheat',IC.grid,'Campo de Calor Mes × Semana','Concentración de pedidos por semana en cada mes')}</div>`;
  h+=`<div class="grid g-1">${card('c_mesun',IC.layers,'Mezcla de Unidades por Mes','Participación (%) de cada unidad de negocio')}</div>`;
+ h+=`<div class="grid g-2e">${card('cmp_c_sem',IC.chart,'Pedidos y Valor por Semana','Totales por semana del mes (todos los meses)','tall')}${card('cmp_c_ampm',IC.clock,'Pedidos AM vs PM por Mes','Reparto de turno mañana / tarde en cada mes','tall')}</div>`;
  h+=`</section>`;
  // ===== DIAGNOSTICO & CAUSAS (Ishikawa) =====
  h+=`<section class="section" id="s-diag"><div class="sec-head"><h2>Diagnóstico & Análisis de Causas</h2><p>Causa-raíz de las incidencias y focos de concentración</p></div>`;
@@ -1248,6 +1249,13 @@ function exportReporte(sel){
 /* ===== app9.js ===== */
 /* ====== TENDENCIAS & COMPARATIVO (multi-mes) ====== */
 /* CMPA/CMPB/LASTAGG/LASTISH declarados como globales en app.js */
+try{
+ CTITLE['cmp_c_sem']='Pedidos y Valor por Semana';CTITLE['cmp_c_ampm']='Pedidos AM vs PM por Mes';
+ CDESC['cmp_c_sem']='Suma los pedidos y el valor movilizado por semana del mes (Semana 1 a 5), juntando todos los meses visibles. Permite ver que semana del ciclo mensual concentra mas carga: por ejemplo si el cierre de mes (semanas 4-5) siempre se satura. Las barras son la cantidad de pedidos y la linea el valor en pesos, de modo que se distingue una semana de muchos envios baratos de otra de pocos envios muy valiosos.';
+ CDESC['cmp_c_ampm']='Compara, mes a mes, cuantos pedidos se despacharon en el turno de la manana (AM) frente al de la tarde (PM). Cada barra apilada muestra el reparto del dia en ese mes, para ver si el peso de los turnos se mantiene estable o si una franja se va cargando mas con el tiempo. Sirve para dimensionar dotacion y vehiculos por turno a lo largo del periodo.';
+ CANALYSIS['cmp_c_sem']='Leo esta vista para planificar por ciclo mensual: si una o dos semanas concentran la carga de forma recurrente, programo refuerzos de flota y personal justo en esas semanas y aprovecho las semanas flojas para mantenimiento. Cuando el valor sube mas que los pedidos en una semana, hay carga premium concentrada que exige reforzar seguros y trazabilidad en esas fechas.';
+ CANALYSIS['cmp_c_ampm']='Vigilo el balance AM/PM en el tiempo: un desplazamiento sostenido hacia una franja indica que debo reasignar dotacion y moviles a ese turno para evitar horas extra y entregas fuera de ventana. Si la manana se satura mes a mes, recomiendo mover entregas flexibles a la tarde y nivelar la jornada.';
+}catch(e){}
 function cmpRows(){return DATA.rows.filter(r=>(F.tp==='all'||r.tp===F.tp)&&(F.rg==='all'||r.rg===F.rg)&&(F.un==='all'||r.un===F.un));}
 function renderCmp(){
  const rows=cmpRows();
@@ -1291,6 +1299,19 @@ function renderCmp(){
  if(otros.some(x=>x>0))series.push({name:'Otros',type:'bar',stack:'t',data:otros,itemStyle:{color:'#c3cbd4'}});
  setC('c_mesun',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>{let s=`<b>${p[0].name}</b>`;p.forEach(x=>{if(x.value>0)s+=`<br/>${x.marker}${x.seriesName}: <b>${x.value}%</b>`;});return s;}},TT),legend:{type:'scroll',bottom:0,textStyle:{color:'#6b7684',fontSize:10},itemWidth:9,itemHeight:9},grid:{left:4,right:10,top:12,bottom:30,containLabel:true},xAxis:Object.assign({type:'category',data:agg.map(x=>x.short)},axCfg(),{axisLabel:{interval:0,rotate:30,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',max:100,axisLabel:{formatter:'{value}%',color:'#6b7684',fontSize:10}},axCfg()),series:series});
  setI('c_mesun','Muestra si la mezcla de clientes cambia en el tiempo. Si una unidad gana peso mes a mes, crece la dependencia comercial de esa línea.');
+ // cmp_c_sem (pedidos y valor por semana del mes, sumando todos los meses visibles)
+ const semKeys=[1,2,3,4,5];
+ const semN=semKeys.map(s=>rows.filter(r=>r.sem===s).length);
+ const semV=semKeys.map(s=>rows.filter(r=>r.sem===s).reduce((a,x)=>a+x.v,0));
+ const semBest=semN.indexOf(Math.max.apply(null,semN.length?semN:[0]));
+ setC('cmp_c_sem',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'cross',crossStyle:{color:'#aaa'}},formatter:p=>{let s=`<b>Semana ${p[0].axisValue.replace('Sem ','')}</b>`;p.forEach(x=>s+=`<br/>${x.marker}${x.seriesName}: <b>${x.seriesName.indexOf('Valor')>=0?fm(x.value):fi(x.value)}</b>`);return s;}},TT),legend:{top:0,right:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:12,itemHeight:8},grid:{left:4,right:8,top:34,bottom:24,containLabel:true},xAxis:Object.assign({type:'category',data:semKeys.map(s=>'Sem '+s)},axCfg()),yAxis:[Object.assign({type:'value',name:'Valor',nameTextStyle:{color:'#8a95a1',fontSize:10},axisLabel:{formatter:v=>fmShort(v),color:'#6b7684',fontSize:10}},axCfg()),Object.assign({type:'value',name:'Pedidos',nameTextStyle:{color:'#8a95a1',fontSize:10},splitLine:{show:false},axisLabel:{color:'#6b7684',fontSize:10}},axCfg())],series:[{name:'Pedidos',type:'bar',yAxisIndex:1,data:semN,barWidth:'48%',itemStyle:{color:'#3a5b80',borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:'#1f3a59',fontFamily:'IBM Plex Mono',fontSize:10,fontWeight:600,formatter:p=>fi(p.value)}},{name:'Valor movilizado',type:'line',smooth:true,yAxisIndex:0,data:semV,symbol:'circle',symbolSize:6,lineStyle:{color:'#2f7d6b',width:2.5},itemStyle:{color:'#2f7d6b'},areaStyle:{color:'rgba(47,125,107,.1)'},label:{show:true,position:'bottom',color:'#246153',fontFamily:'IBM Plex Mono',fontSize:9,formatter:p=>fmShort(p.value)}}]});
+ setI('cmp_c_sem',semN.some(x=>x>0)?`La <b>Semana ${semKeys[semBest]}</b> concentra la mayor carga con <span class="up">${fi(semN[semBest])} pedidos</span>. Suma los mismos días de la semana del mes a lo largo de todos los meses, para ver qué semana del ciclo mensual es la más intensa.`:'Sin datos.');
+ // cmp_c_ampm (AM vs PM por mes)
+ const amN=agg.map(m=>rows.filter(r=>r.mk===m.key&&r.rg==='AM').length);
+ const pmN=agg.map(m=>rows.filter(r=>r.mk===m.key&&r.rg==='PM').length);
+ const totAM=amN.reduce((a,b)=>a+b,0),totPM=pmN.reduce((a,b)=>a+b,0),totAP=totAM+totPM;
+ setC('cmp_c_ampm',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>{let s=`<b>${p[0].name}</b>`;let tt=0;p.forEach(x=>tt+=x.value);p.forEach(x=>s+=`<br/>${x.marker}${x.seriesName}: <b>${fi(x.value)}</b> (${tt?(100*x.value/tt).toFixed(0):0}%)`);return s;}},TT),legend:{top:0,right:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:9,itemHeight:9},grid:{left:4,right:10,top:30,bottom:24,containLabel:true},xAxis:Object.assign({type:'category',data:agg.map(x=>x.short)},axCfg(),{axisLabel:{interval:0,rotate:30,color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value'},axCfg()),series:[{name:'AM',type:'bar',stack:'ap',data:amN,itemStyle:{color:'#c89a4e',borderRadius:[0,0,0,0]},label:{show:true,color:'#fff',fontFamily:'IBM Plex Mono',fontSize:9,fontWeight:600,formatter:p=>p.value>0?fi(p.value):''}},{name:'PM',type:'bar',stack:'ap',data:pmN,itemStyle:{color:'#6a5a92',borderRadius:[4,4,0,0]},label:{show:true,color:'#fff',fontFamily:'IBM Plex Mono',fontSize:9,fontWeight:600,formatter:p=>p.value>0?fi(p.value):''}}]});
+ setI('cmp_c_ampm',totAP?`En todo el periodo: <span style="color:#9c7a2e;font-weight:600">AM ${fi(totAM)}</span> (${(100*totAM/totAP).toFixed(0)}%) vs <span style="color:#6a5a92;font-weight:600">PM ${fi(totPM)}</span> (${(100*totPM/totAP).toFixed(0)}%). Cada barra muestra cómo se reparte el turno mañana/tarde en ese mes.`:'Sin datos.');
  // c_radar (ultimos meses)
  const sel=agg.slice(-4);
  const maxN=Math.max(1,...sel.map(x=>x.n)),maxV=Math.max(1,...sel.map(x=>x.v)),maxT=Math.max(1,...sel.map(x=>x.tkt));
@@ -1823,8 +1844,10 @@ function applyRole(){
   // cretamac: ocultar las pestañas Auditoría y Diagnóstico
   document.querySelectorAll('.tab[data-t="aud"]').forEach(function(el){el.style.display=cm?'none':'';});
   // (la pestaña Diagnóstico ya es adminonly, así que queda oculta para cretamac y ops)
-  // Usuarios NO admin: dejar visibles SOLO los módulos MacOnline, Vertical y Devoluciones
-  var modOnly=['mac','ver','devo'];
+  // Usuarios NO admin: ven Operaciones & Flota, Finanzas & P&L, Logística & Rutas,
+  // Tendencias & Comparativo + MacOnline, Vertical y Devoluciones.
+  // Quedan ocultas SOLO Auditoría (aud) y Diagnóstico (diag), y el botón Subir Excel (adminonly).
+  var modOnly=['op','fin','log','cmp','mac','ver','devo'];
   document.querySelectorAll('#tabs .tab').forEach(function(el){
    var t=el.getAttribute('data-t');
    if(admin){el.style.display='';}
