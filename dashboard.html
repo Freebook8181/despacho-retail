@@ -1993,12 +1993,12 @@ try{applyRole();}catch(e){console.error('applyRole-init11',e);}
    SANTIAGO/REGIONES). Soporta un archivo con varias hojas: busca la hoja
    'MacOnline Distribucion' y la hoja 'Vertical Tiendas'. Independiente del
    modulo de despachos. */
-var VSTORE={mac:{year:2026,rows:[],months:[],monthYears:{}},ver:{year:2026,rows:[],months:[],monthYears:{}}};
-var VF={mac:{zona:'all',mes:'all',sem:'all'},ver:{zona:'all',mes:'all',sem:'all'}};
-var VCMP={mac:{mode:'mes',zona:'all',a:null,b:null},ver:{mode:'mes',zona:'all',a:null,b:null}};
+var VSTORE={mac:{year:2026,rows:[],months:[],monthYears:{}},ver:{year:2026,rows:[],months:[],monthYears:{}},devo:{year:2026,rows:[],months:[],monthYears:{},weeks:[]}};
+var VF={mac:{zona:'all',mes:'all',sem:'all'},ver:{zona:'all',mes:'all',sem:'all'},devo:{zona:'all',mes:'all',sem:'all'}};
+var VCMP={mac:{mode:'mes',zona:'all',a:null,b:null},ver:{mode:'mes',zona:'all',a:null,b:null},devo:{mode:'mes',zona:'all',a:null,b:null}};
 const VLS_KEY='quintec_ventas_v2';
 const VMESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-const VLABEL={mac:'MacOnline Distribución',ver:'Vertical Tiendas'};
+const VLABEL={mac:'MacOnline Distribución',ver:'Vertical Tiendas',devo:'Devoluciones'};
 /* Año real de cada mes: si la columna del Excel trae año (ej "DICIEMBRE 2025") se usa ese;
    si no, el año del archivo. Así "Diciembre 2025" NO se muestra como "Diciembre 2026". */
 function vMesYear(D,mi){return (D&&D.monthYears&&D.monthYears[mi])?D.monthYears[mi]:(D?D.year:2026);}
@@ -2366,10 +2366,16 @@ window.__paretoFullOption=function(k){
  return {opt:opt,count:data.length,height:480};
 };
 /* ====== COMPARATIVO (Años / Meses / Semanas) ====== */
+function isoWeekRange(year,w){
+ var jan4=new Date(year,0,4);var off=(jan4.getDay()+6)%7;
+ var monday=new Date(year,0,4-off+(w-1)*7);
+ var friday=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+4);
+ return {desde:monday,hasta:friday};
+}
 function cmpItems(k,mode){
  const D=VSTORE[k];if(!D||!D.rows.length)return [];
  if(mode==='ano'){var ys={};(D.months||[]).forEach(function(mi){ys[vMesYear(D,mi)]=1;});if(!Object.keys(ys).length)ys[D.year||2026]=1;return Object.keys(ys).map(Number).sort(function(a,b){return a-b;}).map(function(y){return {id:y,label:String(y)};});}
- if(mode==='sem'){return (D.weeks||[]).slice().sort(function(a,b){return a-b;}).map(function(w){return {id:w,label:'S'+w};});}
+ if(mode==='sem'){var yr=D.year||2026;return (D.weeks||[]).slice().sort(function(a,b){return a-b;}).map(function(w){var r=isoWeekRange(yr,w);return {id:w,label:'S'+w+' ('+fmtDM(r.desde)+'–'+fmtDM(r.hasta)+')'};});}
  return (D.months||[]).slice().map(function(mi){return {id:mi,label:MESES_FULL[mi]+' '+vMesYear(D,mi)};});
 }
 function cmpVal(k,r,mode,id){
@@ -2394,10 +2400,7 @@ function compHTML(k){
  </div>`;
  h+=`<div id="${q}empty" style="display:none;margin:4px 0 16px;padding:26px 24px;background:#fff;border:1px solid #e3e7ec;border-left:5px solid ${col};border-radius:12px;box-shadow:0 6px 22px rgba(23,42,67,.07)"></div>`;
  h+=`<div id="${q}body">`;
- h+=`<div class="kgrid">${mkpi(q+'k_a',IC.money,'Total A')}${mkpi(q+'k_b',IC.money,'Total B')}${mkpi(q+'k_var',IC.line,'Variación B vs A')}${mkpi(q+'k_best',IC.chart,'Tienda que más crece')}</div>`;
- h+=`<div class="grid g-2">${mcard(q+'c_cmptot',IC.chart,'Comparación de Ventas (A vs B)','Total por zona en cada periodo','tall')}${mcard(q+'c_cmpzona',IC.pie,'Zona en A vs B','Santiago y Regiones comparados entre periodos','tall')}</div>`;
- h+=`<div class="grid g-1">${mcard(q+'c_cmptie',IC.chart,'Ventas por Tienda (A vs B)','Top tiendas comparadas entre ambos periodos','tall')}</div>`;
- h+=`<div class="card"><h3>${IC.grid} Detalle comparativo por Tienda</h3><div class="cs">Ventas en A, en B y su variación</div><div id="${q}table" style="overflow:auto"></div></div>`;
+ h+=`<div class="card" style="border-left:5px solid ${col}"><h3 id="${q}ttl">${IC.grid} Tendencias &amp; Comparativo</h3><div class="cs" id="${q}sub">Comparando A (base) con B</div><div id="${q}table" style="overflow:auto"></div><div id="${q}lectura" style="margin-top:14px;padding:14px 16px;background:#f7f9fc;border:1px solid #e3e7ec;border-left:4px solid ${col};border-radius:10px;font-size:13.5px;line-height:1.6;color:#2a3b4d"></div></div>`;
  h+=`</div>`;
  return h;
 }
@@ -2430,8 +2433,11 @@ function renderComp(k){
  if(scope){const zonaTxt=S.zona==='all'?'Todas':S.zona;let warn='';if(items.length<2)warn=` &nbsp;·&nbsp; <span style="color:#C0392B">Solo hay un ${noun} cargado; carga otro ${noun} para comparar.</span>`;scope.innerHTML=`<b>Comparativo por ${noun}</b> &nbsp;·&nbsp; <b>${labA}</b> vs <b>${labB}</b> &nbsp;·&nbsp; <b>Zona:</b> ${zonaTxt}${warn}`;}
  const varPct=totA?(100*(totB-totA)/totA):0;
  const _fit=function(id,s){var e=document.getElementById(id);if(e){e.style.fontWeight='800';e.style.fontSize=(s.length>13?'19px':(s.length>10?'23px':'28px'));}};
- setKV(q+'k_a',fm(totA),labA);_fit(q+'k_a',fm(totA));
- setKV(q+'k_b',fm(totB),labB);_fit(q+'k_b',fm(totB));
+ const _kt=function(id,txt){var e=document.getElementById(id);if(e){var sp=e.closest('.kpi')&&e.closest('.kpi').querySelector('.kt span');if(sp)sp.textContent=txt;}};
+ _kt(q+'k_a','Total A · '+labA);
+ setKV(q+'k_a',fm(totA),'Ventas de <b>'+labA+'</b>');_fit(q+'k_a',fm(totA));
+ _kt(q+'k_b','Total B · '+labB);
+ setKV(q+'k_b',fm(totB),'Ventas de <b>'+labB+'</b>');_fit(q+'k_b',fm(totB));
  setKV(q+'k_var',(varPct>0?'+':'')+varPct.toFixed(1)+'%',totB>=totA?'B supera a A':'B baja respecto de A');
  (function(){var e=document.getElementById(q+'k_var');if(e){e.style.fontWeight='800';e.style.fontSize='30px';e.style.color=varPct>0?'#2F7D6B':(varPct<0?'#C0392B':'#1f3a59');}})();
  const perTie=fRows.map(r=>({k:r.tienda,a:val(r,aId),b:val(r,bId),z:r.zona})).filter(x=>x.a>0||x.b>0);
