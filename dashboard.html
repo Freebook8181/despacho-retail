@@ -255,6 +255,8 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
         <div class="userbox" style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
         <button class="htool logout" id="btnLogout" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg> <span id="whoami"></span></button>
         <button class="htool adminonly" id="btnEliminar" style="background:rgba(139,26,26,.85);border-color:rgba(192,80,70,.6);color:#ffe9e5;justify-content:center;font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14M10 11v6M14 11v6"/></svg> Eliminar todo</button>
+        <input type="file" id="fileInpFull" accept=".xlsx,.xls" multiple style="display:none"/>
+        <button class="htool adminonly" id="btnSubirExcel" style="background:rgba(47,125,107,.9);border-color:rgba(91,191,166,.55);color:#e9fff7;justify-content:center;font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></svg> Subir Excel</button>
         </div>
       </div>
     </div>
@@ -2664,6 +2666,67 @@ function eliminarTodoDespachos(){
 (function(){
  function wireEl(){var b=document.getElementById('btnEliminar');if(b&&!b._wired){b._wired=1;b.addEventListener('click',eliminarTodoDespachos);}}
  if(document.readyState!=='loading')wireEl();else document.addEventListener('DOMContentLoaded',wireEl);
+ try{if(typeof applyRole==='function')applyRole();}catch(e){}
+})();
+
+/* ====== BOTON "SUBIR EXCEL" (solo admin) ======
+   Sube un Excel y genera los graficos de los 6 modulos de Despachos
+   (Operaciones y Flota, Finanzas y P&L, Logistica y Rutas, Auditoria y
+   Excepciones, Tendencias y Comparativo, Diagnostico y Causas). Lee TODAS las
+   hojas de datos crudos (las que tienen columnas FECHA y VALOR, por ejemplo
+   "Datos SEPTIEMBRE", "Datos OCTUBRE", etc.) y las combina por mes. NO afecta a
+   MacOnline, Vertical ni Devoluciones (esos tienen su propio boton). */
+function handleUploadFull(e){
+ var files=[].slice.call(e.target.files||[]);
+ if(!files.length)return;
+ if(!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin')){alert('Solo el usuario administrador puede subir datos.');e.target.value='';return;}
+ var infoEl=document.getElementById('loadInfo');var info=infoEl?infoEl.querySelector('span'):null;if(info)info.textContent='Procesando Excel...';
+ var done=0,msgs=[];
+ files.forEach(function(file){
+  var rd=new FileReader();
+  rd.onload=function(ev){
+   try{
+    var wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+    var sheets=[];
+    wb.SheetNames.forEach(function(nm){
+     try{
+      var head=(XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:null})[0])||[];
+      var H=head.map(function(x){return stripAcc(String(x==null?'':x)).toUpperCase().trim();});
+      if(H.indexOf('FECHA')>=0&&H.indexOf('VALOR')>=0)sheets.push(nm);
+     }catch(_){}
+    });
+    if(!sheets.length)sheets=[wb.SheetNames[0]];
+    var lastMk=null,added=0;
+    sheets.forEach(function(nm){
+     try{
+      var json=XLSX.utils.sheet_to_json(wb.Sheets[nm],{defval:null});
+      // Ignorar la columna SEMANA global del Excel: se recalcula la semana del mes desde la FECHA
+      json.forEach(function(r){try{delete r['SEMANA'];delete r['Unnamed: 0'];}catch(_){}});
+      var res=cleanSheet(json,nm);
+      if(res){DATA.rows=DATA.rows.filter(function(x){return x.mk!==res.mk;}).concat(res.rows);msgs.push(res.label+': '+res.rows.length+' reg.');added+=res.rows.length;lastMk=res.mk;}
+     }catch(err2){msgs.push(nm+': error ('+err2.message+')');}
+    });
+    if(lastMk)F.mes=lastMk;
+    if(!added)msgs.push(file.name+': sin datos validos (se necesitan columnas FECHA y VALOR)');
+   }catch(err){msgs.push(file.name+': error ('+err.message+')');}
+   done++;
+   if(done===files.length){
+    try{recomputeMeta();}catch(_){}
+    var ok=false;try{ok=saveMonths();}catch(_){}
+    try{buildFilters();}catch(_){}
+    try{render();}catch(_){}
+    if(info)info.textContent=(DATA.meta&&DATA.meta.meses?DATA.meta.meses.length:0)+' mes(es) - '+fi(DATA.rows.length)+' reg.';
+    if(typeof fbReady!=='undefined'&&fbReady){try{fbPush();}catch(_){}alert('Carga completada:\n'+msgs.join('\n')+'\n\nLos datos se guardaron en la nube (Firebase): quedan disponibles al volver a abrir y los ven todos los usuarios.');}
+    else{alert('Carga completada:\n'+msgs.join('\n')+'\n\n'+(ok?'Los datos quedaron guardados en este navegador.':'No se pudieron guardar en este navegador (espacio lleno).'));}
+   }
+  };
+  rd.readAsArrayBuffer(file);
+ });
+ e.target.value='';
+}
+(function(){
+ function wireSub(){var b=document.getElementById('btnSubirExcel');var f=document.getElementById('fileInpFull');if(b&&f&&!b._wired){b._wired=1;b.addEventListener('click',function(){f.click();});f.addEventListener('change',handleUploadFull);}}
+ if(document.readyState!=='loading')wireSub();else document.addEventListener('DOMContentLoaded',wireSub);
  try{if(typeof applyRole==='function')applyRole();}catch(e){}
 })();
 
