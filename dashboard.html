@@ -1815,7 +1815,7 @@ function wireMod(){
  });
  const modTabs=['mac','ver','devo'];
  const tabsEl=document.getElementById('tabs');
- if(tabsEl)tabsEl.addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;const key=t.dataset.t;const fl=document.querySelector('.filters');if(fl)fl.style.display=modTabs.includes(key)?'none':'';if(key==='mac'||key==='ver')renderMod(key);});
+ if(tabsEl)tabsEl.addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;const key=t.dataset.t;const fl=document.querySelector('.filters');if(fl)fl.style.display=modTabs.includes(key)?'none':'';if(key==='mac'||key==='ver'){renderMod(key);try{if(typeof renderVentas==='function')renderVentas(key);}catch(_){}}});
 }
 /* ===== OVERRIDE: no ocultar #main en las pestañas de módulos ===== */
 function updateEmptyState(){
@@ -2546,12 +2546,12 @@ function initVentasFor(k){
  const sec=document.getElementById('s-'+k);if(!sec)return;
  const head=sec.querySelector('.sec-head');if(!head)return;const p='v'+k+'_';
  const sw=document.createElement('div');sw.id=k+'_vswitch';sw.className='wkbtns';sw.style.cssText='display:flex;gap:8px;margin:2px 0 14px';
- sw.innerHTML=`<button data-v="desp" class="on">Despachos</button><button data-v="vent">Ventas por tienda y mes</button><button data-v="comp">Comparativo</button>`;
+ sw.innerHTML=`<button data-v="vent" class="on">Ventas por tienda y mes</button><button data-v="comp">Comparativo</button>`;
  head.insertAdjacentElement('afterend',sw);
- const desp=document.createElement('div');desp.id=k+'_view_desp';
+ const desp=document.createElement('div');desp.id=k+'_view_desp';desp.style.display='none';
  let n=sw.nextElementSibling;const mv=[];while(n){mv.push(n);n=n.nextElementSibling;}mv.forEach(el=>desp.appendChild(el));
  sec.appendChild(desp);
- const vent=document.createElement('div');vent.id=k+'_view_vent';vent.style.display='none';vent.innerHTML=ventasHTML(k);
+ const vent=document.createElement('div');vent.id=k+'_view_vent';vent.style.display='';vent.innerHTML=ventasHTML(k);
  sec.appendChild(vent);
  const comp=document.createElement('div');comp.id=k+'_view_comp';comp.style.display='none';comp.innerHTML=compHTML(k);
  sec.appendChild(comp);
@@ -2564,6 +2564,7 @@ function initVentasFor(k){
  const up=document.getElementById(p+'upBtn'),fin=document.getElementById(p+'fileInp');if(up&&fin){up.addEventListener('click',()=>fin.click());fin.addEventListener('change',ev=>handleVentasUpload(ev,k));}
  const del=document.getElementById(p+'delBtn');if(del)del.addEventListener('click',()=>vClear(k));
  try{wireComp(k);}catch(_){}
+ try{renderVentas(k);}catch(_){}
 }
 function initVentas(){vLoadLocal();['mac','ver'].forEach(k=>{try{initVentasFor(k);}catch(e){console.error('initVentasFor',k,e);}});try{if(typeof fbReady!=='undefined'&&fbReady)vFbSubscribe();}catch(e){console.error('vFbSubscribe',e);}try{if(typeof applyRole==='function')applyRole();}catch(e){}}
 try{initVentas();}catch(e){console.error('initVentas',e);}
