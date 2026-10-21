@@ -1147,7 +1147,7 @@ const ESTCLASS={'Disponible':'disp','En CD':'tran','En tránsito':'tran','Pendie
 function byZona(){const m={};ROWS.forEach(r=>{const z=r.zona||'—';m[z]=(m[z]||0)+usdNum(r.usd);});return m;}
 function unidByZona(){const m={};ROWS.forEach(r=>{const z=r.zona||'—';m[z]=(m[z]||0)+numClean(r.unid);});return m;}
 function byProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+usdNum(r.usd);});return m;}
-function byEstado(){const m={};ROWS.forEach(r=>{const e=estado(r);m[e]=(m[e]||0)+1;});return m;}
+function byEstado(){const m={};ROWS.forEach(r=>{if(isEmptyRow(r))return;const e=estado(r);m[e]=(m[e]||0)+1;});return m;}
 function byMes(){const m={};ROWS.forEach(r=>{const d=r.eta||r.cost||r.lcd||'';const dd=(''+d).match(/^\d{4}-\d{2}/);if(dd){m[dd[0]]=(m[dd[0]]||0)+usdNum(r.usd);}});return m;}
 function totUSD(){return ROWS.reduce((a,r)=>a+usdNum(r.usd),0);}
 function totUnid(){return ROWS.reduce((a,r)=>a+numClean(r.unid),0);}
@@ -1163,8 +1163,11 @@ function rowComplete(r){
     return true;
   });
 }
-function poActivas(){return ROWS.filter(rowComplete).length;}
-function poPendientes(){return ROWS.filter(r=>!rowComplete(r)).length;}
+/* Una fila VACÍA (sin ningún dato escrito) no es una PO: no cuenta como activa ni como pendiente.
+   Esto evita que la primera fila en blanco aparezca como "1 pendiente" cuando no hay datos. */
+function isEmptyRow(r){return COLS.every(c=>c.calc?true:(''+(r[c.k]==null?'':r[c.k])).trim()==='');}
+function poActivas(){return ROWS.filter(r=>!isEmptyRow(r)&&rowComplete(r)).length;}
+function poPendientes(){return ROWS.filter(r=>!isEmptyRow(r)&&!rowComplete(r)).length;}
 /* ===== Métricas de tiempos del ciclo COMEX ===== */
 // diferencia firmada en días (puede ser negativa); '' si falta algún dato
 function diffSign(a,b){
@@ -1270,6 +1273,7 @@ function kpi(cls,lb,vl,dt){return `<div class="kpi ${cls}"><div class="lb">${lb}
 function renderAlerts(){
   let out=[];
   ROWS.forEach(r=>{
+    if(isEmptyRow(r))return; // una fila en blanco no genera alertas
     const e=estado(r);
     if(e==='Atrasado') out.push(al('bad','r',r.po,`Embarque de ${r.prov||'proveedor'} (${r.zona||'—'}) superó su ETA (${r.eta}) sin registrar llegada a CD.`,'ATRASADO'));
     else if(e==='Pendiente') out.push(al('','y',r.po,`PO sin fecha de disponibilidad — ${r.prov||'proveedor'}, ${fmtMoney(usdNum(r.usd))}.`,'PENDIENTE'));
@@ -1610,7 +1614,7 @@ function generarReporte(){
       <h1>Reporte de Control de Importaciones — COMEX QD</h1>
       <div class="meta">Generado el ${new Date().toLocaleString('es-CL')} por ${esc(CURRENT.name)} · Quintec · Suite Logística</div>
       <div class="rk">
-        <div class="b"><div class="l">PO activas</div><div class="v">${ROWS.length}</div></div>
+        <div class="b"><div class="l">PO activas</div><div class="v">${ROWS.filter(r=>!isEmptyRow(r)).length}</div></div>
         <div class="b"><div class="l">USD total</div><div class="v">${fmtMoney(tu)}</div></div>
         <div class="b"><div class="l">Unidades</div><div class="v">${fmtUnid(totUnid())}</div></div>
         <div class="b"><div class="l">Ticket prom.</div><div class="v">${fmtMoney(totUnid()?tu/totUnid():0)}</div></div>
@@ -1618,7 +1622,7 @@ function generarReporte(){
         <div class="b"><div class="l">Atrasadas</div><div class="v">${atr}</div></div>
       </div>
       <h3>1. Resumen ejecutivo</h3>
-      <p>El portafolio de importaciones bajo seguimiento comprende <b>${ROWS.length} órdenes de compra (PO)</b> por un valor total de <b>${fmtMoney(tu)}</b> y <b>${fmtUnid(totUnid())} unidades</b>, con un ticket promedio de <b>${fmtMoney(totUnid()?tu/totUnid():0)} por unidad</b>.${clpTxt} ${z[0]?'La zona <b>'+z[0][0]+'</b> concentra el <b>'+Math.round(z[0][1]/tu*100)+'%</b> del valor importado':''}. El ciclo promedio desde la confirmación comercial hasta la disponibilidad de inventario (lead time “order-to-availability”) es de <b>${avgTiempo()} días</b>. En cuanto al estado del pipeline, hay ${disp} PO disponibles, ${pend} pendientes y <b>${atr} atrasada(s)</b>${atr>0?', que requieren gestión prioritaria con la naviera y el agente de aduana.':'.'}</p>
+      <p>El portafolio de importaciones bajo seguimiento comprende <b>${ROWS.filter(r=>!isEmptyRow(r)).length} órdenes de compra (PO)</b> por un valor total de <b>${fmtMoney(tu)}</b> y <b>${fmtUnid(totUnid())} unidades</b>, con un ticket promedio de <b>${fmtMoney(totUnid()?tu/totUnid():0)} por unidad</b>.${clpTxt} ${z[0]?'La zona <b>'+z[0][0]+'</b> concentra el <b>'+Math.round(z[0][1]/tu*100)+'%</b> del valor importado':''}. El ciclo promedio desde la confirmación comercial hasta la disponibilidad de inventario (lead time “order-to-availability”) es de <b>${avgTiempo()} días</b>. En cuanto al estado del pipeline, hay ${disp} PO disponibles, ${pend} pendientes y <b>${atr} atrasada(s)</b>${atr>0?', que requieren gestión prioritaria con la naviera y el agente de aduana.':'.'}</p>
       <h3>2. Análisis de abastecimiento: zona de origen</h3>
       <p>La estructura geográfica del abastecimiento es un factor crítico de riesgo. ${z[0]?'Actualmente <b>'+z[0][0]+'</b> lidera con '+fmtMoney(z[0][1])+' ('+Math.round(z[0][1]/tu*100)+'%)':''}${z[1]?', seguida de <b>'+z[1][0]+'</b> con '+fmtMoney(z[1][1])+' ('+Math.round(z[1][1]/tu*100)+'%)':''}. Una concentración elevada en una sola zona expone al negocio a riesgo cambiario, arancelario, de congestión portuaria y de variación de fletes en un único corredor. Se recomienda monitorear la relación valor/volumen por zona para decidir estrategias de nearshoring o doble origen.</p>
       <div class="imgs">${img('cZona')}${img('cUnid')}</div>
