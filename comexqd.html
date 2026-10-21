@@ -1415,7 +1415,7 @@ function drawCharts(){
 }
 function tgEx(id){$(id).classList.toggle('on');}
 /* ===== Gráficos de tiempos/cumplimiento (pestaña GRÁFICOS) ===== */
-function setT(id,txt){const el=$('t'+id);if(el)el.textContent=txt;}
+function setT(id,txt){/* Los nombres de los gráficos se mantienen SIEMPRE fijos (los definidos en el encabezado de cada gráfico), tengan o no datos. No se renombran según el contenido. */}
 function chartTitle(id,title,sub){const ch=CH[id];if(!ch)return;ch.options.plugins=ch.options.plugins||{};ch.options.plugins.title={display:true,text:title,color:'#0f2744',font:{size:13.5,weight:'800'},padding:{top:2,bottom:sub?1:9}};ch.options.plugins.subtitle={display:!!sub,text:sub||'',color:'#5b6b7f',font:{size:11,weight:'600'},padding:{bottom:9}};ch.update('none');}
 function verdict(id,level,html){const el=$('v'+id);if(!el)return;el.className='verdict '+level;const tx=el.querySelector('.vtx');if(tx)tx.innerHTML=html;else el.innerHTML='<span class="dot"></span><span class="vtx">'+html+'</span>';}
 function drawTimeCharts(){
