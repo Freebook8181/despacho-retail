@@ -190,6 +190,9 @@ table.plan td input[type="date"].date-empty{color:transparent}
 table.plan td input[type="date"].date-empty:focus{color:var(--txt)}
 table.plan tr:nth-child(even) td{background:#f8fafc}
 table.plan td.rown{background:#fff;color:var(--muted);text-align:center;font-weight:600;position:sticky;left:0;z-index:1}
+/* Primera fila de datos SIEMPRE fija bajo los encabezados (el desplazamiento vertical no la oculta) */
+table.plan tbody tr.frow td{position:-webkit-sticky;position:sticky;z-index:4;background:#eaf1fb!important;box-shadow:0 2px 0 rgba(0,0,0,.10)}
+table.plan tbody tr.frow td.rown{position:-webkit-sticky;position:sticky;left:0;z-index:5;background:#eaf1fb!important}
 table.plan td.del-c{text-align:center}
 .rowdel{background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:4px 8px}
 .rowdel:hover{background:var(--badbg);border-radius:5px}
@@ -659,6 +662,7 @@ function go(tab){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   $('ptitle').textContent=TITLES[tab];
   if(tab==='graficos'){renderKpis();renderAlerts();drawCharts();}
+  if(tab==='planilla'){try{freezeFirstRow();}catch(e){}} // recalcular el tope de la fila fija al abrir la planilla
   if(tab==='reporte') generarReporte();
   if(tab==='sugerencias') renderSug();
   if(tab==='actividad') loadActividad();
@@ -721,7 +725,21 @@ function renderPlanilla(){
   }).join('');
   $('planStatus').textContent=ROWS.length+' registro(s) · '+fmtMoney(ROWS.reduce((a,r)=>a+usdNum(r.usd),0))+' total';
   ROWS.forEach((_,i)=>revalRow(i)); // resaltar fechas incoherentes ya existentes
+  freezeFirstRow(); // fijar la primera fila de datos bajo los encabezados
 }
+/* Fija la primera fila de datos justo debajo de los encabezados (que ya son sticky) */
+function freezeFirstRow(){
+  const body=$('planBody');if(!body)return;
+  const head=$('planHead');
+  const h=head?head.offsetHeight:0;
+  const rows=body.children;
+  for(let i=0;i<rows.length;i++)rows[i].classList.remove('frow');
+  if(!rows.length)return;
+  rows[0].classList.add('frow');
+  const tds=rows[0].children;
+  for(let j=0;j<tds.length;j++)tds[j].style.top=h+'px';
+}
+window.addEventListener('resize',()=>{try{freezeFirstRow();}catch(e){}});
 /* ===== Validación de secuencia de fechas (cada hito no puede ser anterior al hito previo) ===== */
 const DATE_CHAIN=['eta','fdisp','rpa','lcd','cost','dinv'];
 const DATE_LBL={eta:'ETA (FECHA ESTIMADA DE LLEGADA CHL)',fdisp:'FECHA DISPONIBILIDAD PUERTO -AEROPUERTO',rpa:'RETIRO P/A',lcd:'LLEGADA A CD',cost:'COSTEO',dinv:'DISPONIBILIDAD INVENTARIO (FINAL)'};
@@ -821,6 +839,7 @@ function setCellFromPaste(ri,c,raw){
   if(c.opt){const n=norm(val);const hit=c.opt.find(o=>norm(o)===n)||c.opt.find(o=>norm(o).startsWith(n)||n.startsWith(norm(o)));ROWS[ri][c.k]=hit||val;return;}
   if(c.date){ROWS[ri][c.k]=pasteDate(val);return;}
   if(c.k==='usd'){ROWS[ri][c.k]=val===''?'':Math.round(usdNum(val)).toLocaleString('en-US');return;}
+  if(c.k==='unid'){ROWS[ri][c.k]=val===''?'':cleanUnid(val);return;} // Unidades: respeta el número exacto del Excel, el punto es separador de miles (no decimal)
   if(c.money||c.num){ROWS[ri][c.k]=val===''?'':numClean(val);return;}
   ROWS[ri][c.k]=val;
 }
