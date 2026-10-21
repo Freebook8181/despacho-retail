@@ -695,6 +695,7 @@ function computeTtot(r){return diffDias(r.fconf,r.dinv);}
 function recalcTtot(){ROWS.forEach(r=>{r.ttot=computeTtot(r);});}
 function renderPlanilla(){
   renderHead();
+  if(!ROWS.length)ROWS=[rowObj()]; // siempre debe existir al menos la primera fila de captura de datos
   recalcTtot();
   $('planBody').innerHTML=ROWS.map((r,ri)=>{
     let tds=COLS.map(c=>{
@@ -907,7 +908,8 @@ function loadCloud(){
     const d=s.val();
     let newRows;
     if(d&&d.rows&&d.rows.length){newRows=d.rows.map(r=>Object.assign(rowObj(),r));}
-    else{newRows=FIRST_SNAP?SEED.map(a=>rowObj(a)):[];}
+    else if(d){newRows=[];} // existe un registro vacío (planilla eliminada o limpiada): NO volver a cargar los datos de ejemplo
+    else{newRows=FIRST_SNAP?SEED.map(a=>rowObj(a)):[];} // base de datos nunca inicializada: cargar ejemplo solo la primera vez
     FIRST_SNAP=false;
     const inAt=(d&&d.updatedAt)||0;
     if(inAt&&inAt===MY_SAVE_AT)return; // ignorar el eco de nuestro propio guardado
@@ -944,8 +946,11 @@ function closeDel(){$('delModal').classList.remove('on');}
 function confirmDel(){
   const real=$('delKey').dataset.real||'';
   if(real!=='1234'){$('delErr').textContent='Clave incorrecta.';return;}
-  db.ref('comex_qd').remove().then(()=>{
-    ROWS=[];renderPlanilla();renderKpis();renderAlerts();closeDel();$('planStatus').textContent='Datos eliminados de la nube';
+  const at=Date.now();MY_SAVE_AT=at;
+  // Se deja en la nube un registro VACÍO (sin filas): borra los datos para todos los usuarios y
+  // evita que al volver a entrar reaparezcan los datos de ejemplo.
+  db.ref('comex_qd').set({rows:[],updatedBy:CURRENT.email,updatedAt:at,cleared:true}).then(()=>{
+    ROWS=[];renderPlanilla();renderKpis();renderAlerts();drawCharts();closeDel();$('planStatus').textContent='Planilla eliminada de la nube · '+new Date().toLocaleString('es-CL');
     logAct('eliminar','Eliminó los datos de comex_qd');
   }).catch(e=>{$('delErr').textContent='Error: '+e.message;});
 }
