@@ -235,6 +235,9 @@ table.hm th,table.hm td{border:1px solid var(--line);padding:9px 11px;text-align
 table.hm th{background:var(--navy);color:#e8eef7;font-weight:700;font-size:11px}
 table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight:700}
 /* modal */
+#pasteMenu{position:fixed;display:none;z-index:400;background:var(--card,#fff);border:1px solid var(--line,#d3dce6);border-radius:10px;box-shadow:0 8px 28px rgba(15,39,68,.25);padding:4px;min-width:200px}
+#pasteMenu button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--ink,#1f2d3d);padding:9px 12px;border-radius:7px;cursor:pointer;font-size:14px}
+#pasteMenu button:hover{background:var(--acc,#2a6fb3);color:#fff}
 .modal{position:fixed;inset:0;background:rgba(15,39,68,.55);display:none;align-items:center;justify-content:center;z-index:300}
 .modal.on{display:flex}
 .modal-box{background:#fff;border-radius:13px;padding:26px 26px;width:min(400px,92vw);box-shadow:0 24px 70px rgba(0,0,0,.4)}
@@ -349,7 +352,6 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
     <button class="ib act-del" onclick="openDel()" aria-label="Eliminar"><span class="ic">🗑️</span><span class="ibl">Eliminar</span></button>
     <span class="st" id="planStatus">—</span>
   </div>
-  <p class="narr" style="margin:2px 0 8px">📋 <b>Pegar desde Excel:</b> en tu Excel selecciona y copia (Ctrl+C) todas las filas; luego haz clic en la <b>primera celda</b> de la planilla donde quieres empezar y pega (Ctrl+V). Las filas se crean <b>automáticamente</b> y cada dato cae ordenado en su columna.</p>
   <div class="plan-wrap"><table class="plan" id="planTable"><thead id="planHead"></thead><tbody id="planBody"></tbody></table></div>
 </section>
 
@@ -462,6 +464,22 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
     <div class="rowf">
       <button class="btn btn-g" onclick="closeDel()">Cancelar</button>
       <button class="btn btn-p" style="background:var(--bad)" onclick="confirmDel()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- menú contextual de pegado (clic derecho sobre una celda de la planilla) -->
+<div id="pasteMenu"><button type="button" onclick="doPasteFromMenu()">📋 Pegar desde Excel aquí</button></div>
+
+<!-- cuadro de respaldo para pegar (si el navegador no permite leer el portapapeles) -->
+<div class="modal" id="pasteBox">
+  <div class="modal-box">
+    <h3>Pegar desde Excel</h3>
+    <p>Pegue aquí las filas copiadas desde Excel (Ctrl+V) y presione «Pegar».</p>
+    <textarea id="pasteTA" rows="6" style="width:100%;box-sizing:border-box" placeholder="Pegue aquí con Ctrl+V…"></textarea>
+    <div class="rowf">
+      <button class="btn btn-g" onclick="closePasteBox()">Cancelar</button>
+      <button class="btn btn-p" onclick="confirmPasteBox()">Pegar</button>
     </div>
   </div>
 </div>
@@ -805,17 +823,14 @@ function setCellFromPaste(ri,c,raw){
   if(c.money||c.num){ROWS[ri][c.k]=val===''?'':numClean(val);return;}
   ROWS[ri][c.k]=val;
 }
-function handleGridPaste(e){
-  const el=e.target;if(!el||!el.id)return;
-  const m=(''+el.id).match(/^c_(\d+)_(.+)$/);if(!m)return; // solo celdas de la planilla
-  const txt=(e.clipboardData||window.clipboardData).getData('text')||'';
+/* Núcleo del pegado inteligente: inserta el rango a partir de la celda (ri0,k0).
+   SOLO se ejecuta cuando el usuario elige «Pegar desde Excel aquí» con el mouse
+   (clic derecho → opción del menú). Nunca se dispara automáticamente. */
+function doGridPaste(ri0,k0,txt){
   let grid=parseClip(txt);
-  if(grid.length<=1&&(!grid[0]||grid[0].length<=1))return; // 1 sola celda: pegado normal del input
-  e.preventDefault();
-  // si por error se copió también la fila de encabezados, se descarta
+  if(!grid.length||(grid.length===1&&(!grid[0]||(grid[0].length<=1&&!(''+grid[0][0]).trim())))){$('planStatus').textContent='No hay datos en el portapapeles para pegar.';return;}
   if(grid.length>1){const h=grid[0].map(norm).join('|');if(h.includes('proveedor')&&(h.includes('usd')||h.includes('zona')))grid=grid.slice(1);}
-  const ri0=+m[1];
-  const ci0=Math.max(0,COLS.findIndex(c=>c.k===m[2]));
+  const ci0=Math.max(0,COLS.findIndex(c=>c.k===k0));
   let nf=0;
   grid.forEach((cells,rr)=>{
     const ri=ri0+rr;
@@ -826,7 +841,40 @@ function handleGridPaste(e){
   $('planStatus').textContent='Pegadas '+grid.length+' fila(s) desde el portapapeles'+(nf?' ('+nf+' fila(s) nueva(s))':'')+' · recuerde Guardar';
   logAct('pegar','Pegó '+grid.length+' fila(s) desde Excel');
 }
-(function(){const b=$('planBody');if(b)b.addEventListener('paste',handleGridPaste);})();
+/* Menú contextual (clic derecho con el mouse): el pegado inteligente se activa
+   SOLO al elegir esta opción; un Ctrl+V normal sigue pegando un único valor en la celda. */
+let _pasteTarget=null;
+function hidePasteMenu(){const m=$('pasteMenu');if(m)m.style.display='none';}
+async function doPasteFromMenu(){
+  hidePasteMenu();
+  if(!_pasteTarget)return;
+  const t=_pasteTarget;
+  let txt='';
+  try{if(navigator.clipboard&&navigator.clipboard.readText)txt=await navigator.clipboard.readText();}catch(e){txt='';}
+  if(!txt){openPasteBox(t.ri,t.k);return;} // si el navegador no deja leer el portapapeles, se pega en un cuadro
+  doGridPaste(t.ri,t.k,txt);
+}
+function openPasteBox(ri,k){_pasteTarget={ri:ri,k:k};const ov=$('pasteBox');if(!ov)return;const ta=$('pasteTA');if(ta)ta.value='';ov.classList.add('on');setTimeout(()=>{if(ta)ta.focus();},60);}
+function closePasteBox(){const ov=$('pasteBox');if(ov)ov.classList.remove('on');}
+function confirmPasteBox(){const ta=$('pasteTA');const txt=ta?ta.value:'';const t=_pasteTarget;closePasteBox();if(t&&txt)doGridPaste(t.ri,t.k,txt);}
+(function(){
+  const b=$('planBody');if(!b)return;
+  b.addEventListener('contextmenu',e=>{
+    const el=e.target;if(!el||!el.id)return;
+    const m=(''+el.id).match(/^c_(\d+)_(.+)$/);if(!m)return;
+    e.preventDefault();
+    _pasteTarget={ri:+m[1],k:m[2]};
+    const menu=$('pasteMenu');if(!menu)return;
+    menu.style.display='block';
+    const mw=menu.offsetWidth||220, mh=menu.offsetHeight||44;
+    let x=e.clientX, y=e.clientY;
+    if(x+mw>window.innerWidth)x=window.innerWidth-mw-6;
+    if(y+mh>window.innerHeight)y=window.innerHeight-mh-6;
+    menu.style.left=x+'px';menu.style.top=y+'px';
+  });
+  document.addEventListener('click',hidePasteMenu);
+  document.addEventListener('scroll',hidePasteMenu,true);
+})();
 function limpiar(){
   if(!confirm('¿Limpiar toda la planilla en pantalla? (no afecta la nube hasta Guardar)'))return;
   ROWS=[];renderPlanilla();$('planStatus').textContent='Planilla limpia';
