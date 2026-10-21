@@ -277,6 +277,7 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
     <div class="fg"><label>Vehículo</label><select id="fTp"></select></div>
     <div class="fg"><label>Rango</label><select id="fRg"><option value="all">Todos</option><option value="AM">AM</option><option value="PM">PM</option><option value="EN BLANCO">EN BLANCO</option></select></div>
     <div class="fg"><label>Unidad</label><select id="fUn"></select></div>
+    <div class="fg"><label>Cliente</label><select id="fCli"></select></div>
     <div class="fg"><label>Comuna</label><select id="fCom"></select></div>
     <button class="reset" id="fReset">✕ Limpiar</button>
     <div class="active-scope" id="activeScope"></div>
@@ -340,7 +341,7 @@ function dDMY(s){const d=new Date(s+'T00:00:00');const p=n=>(n<10?'0':'')+n;retu
 function esProp(tp){tp=(typeof stripAcc==='function'?stripAcc((tp||'').toString()):(tp||'').toString()).toUpperCase().trim();return /^MOVIL\s*0*[1-6]$/.test(tp);}
 function catFlota(tp){return esProp(tp)?'Flota propia':'Tercerizada / Externa';}
 /* ====== STATE ====== */
-const F={mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',co:'all'};
+const F={mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',cl:'all',co:'all'};
 let CUR='op';
 const CH={};
 const TT={backgroundColor:'#fff',borderWidth:0,padding:[9,12],textStyle:{color:'#1f2a37',fontFamily:'IBM Plex Sans',fontSize:12},extraCssText:'box-shadow:0 6px 24px rgba(23,42,67,.16);border-radius:8px;'};
@@ -512,6 +513,11 @@ function buildFilters(){
  const uns=uniq(rowsM.map(r=>r.un)).sort();
  document.getElementById('fUn').innerHTML='<option value="all">Todas las unidades</option>'+uns.map(u=>`<option value="${u}">${u}</option>`).join('');
  document.getElementById('fUn').value=uns.includes(F.un)?F.un:(F.un='all');
+ // cliente (cascada: solo clientes de la unidad seleccionada)
+ const rowsCli=(F.un==='all')?rowsM:rowsM.filter(r=>r.un===F.un);
+ const clis=uniq(rowsCli.map(r=>r.cl)).filter(c=>c&&c!=='Sin dato').sort((a,b)=>a.localeCompare(b,'es'));
+ document.getElementById('fCli').innerHTML='<option value="all">Todos los clientes</option>'+clis.map(c=>`<option value="${c}">${c}</option>`).join('');
+ document.getElementById('fCli').value=clis.includes(F.cl)?F.cl:(F.cl='all');
  // comuna
  const cos=uniq(rowsM.map(r=>r.co)).filter(c=>c&&c!=='Sin dato').sort((a,b)=>a.localeCompare(b,'es'));
  document.getElementById('fCom').innerHTML='<option value="all">Todas las comunas</option>'+cos.map(c=>`<option value="${c}">${c}</option>`).join('');
@@ -528,16 +534,17 @@ function fillDias(){
  sel.value=F.dia;
 }
 function wireFilters(){
- const onMesAno=()=>{const mm=document.getElementById('fMes').value;const yy=document.getElementById('fAno').value;F.mes=`${yy}-${mm}`;F.sem='all';F.dia='all';F.tp='all';F.un='all';F.co='all';buildFilters();render();};
+ const onMesAno=()=>{const mm=document.getElementById('fMes').value;const yy=document.getElementById('fAno').value;F.mes=`${yy}-${mm}`;F.sem='all';F.dia='all';F.tp='all';F.un='all';F.cl='all';F.co='all';buildFilters();render();};
  document.getElementById('fMes').addEventListener('change',onMesAno);
  document.getElementById('fAno').addEventListener('change',onMesAno);
  document.getElementById('fSem').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;F.sem=b.dataset.s;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));F.dia='all';fillDias();render();});
  document.getElementById('fDia').addEventListener('change',e=>{F.dia=e.target.value;render();});
  document.getElementById('fTp').addEventListener('change',e=>{F.tp=e.target.value;render();});
  document.getElementById('fRg').addEventListener('change',e=>{F.rg=e.target.value;render();});
- document.getElementById('fUn').addEventListener('change',e=>{F.un=e.target.value;render();});
+ document.getElementById('fUn').addEventListener('change',e=>{F.un=e.target.value;F.cl='all';buildFilters();render();});
+ document.getElementById('fCli').addEventListener('change',e=>{F.cl=e.target.value;render();});
  document.getElementById('fCom').addEventListener('change',e=>{F.co=e.target.value;render();});
- document.getElementById('fReset').addEventListener('click',()=>{F.sem='all';F.dia='all';F.tp='all';F.rg='all';F.un='all';F.co='all';buildFilters();document.getElementById('fRg').value='all';render();});
+ document.getElementById('fReset').addEventListener('click',()=>{F.sem='all';F.dia='all';F.tp='all';F.rg='all';F.un='all';F.cl='all';F.co='all';buildFilters();document.getElementById('fRg').value='all';render();});
  document.getElementById('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;CUR=t.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.section').forEach(sx=>sx.classList.toggle('on',sx.id==='s-'+CUR));resizeCur();if(typeof updateEmptyState==='function')updateEmptyState();});
  document.getElementById('btnUpload').addEventListener('click',()=>document.getElementById('fileInp').click());
  document.getElementById('fileInp').addEventListener('change',handleUpload);
@@ -634,7 +641,7 @@ function cleanSheet(json,fname){
    const semRaw=get('Unnamed: 0','SEMANA');let sem=0;if(semRaw!=null){const mm=String(semRaw).match(/\d+/);if(mm)sem=+mm[0];}
    if(!sem||sem<1){const _off=(new Date(dt.getFullYear(),dt.getMonth(),1).getDay()+6)%7;sem=Math.floor((dt.getDate()-1+_off)/7)+1;}
    let tp=get('TRANSPORTE');tp=tp!=null?String(tp).trim():'Sin dato';if(tp==='SERVICO 3PL')tp='SERVICIO 3PL';
-   out.push({id:+(get('N° PEDIDOS','N PEDIDOS','ID PEDIDO')||out.length+1),f:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`,sem:sem,dow:(dt.getDay()+6)%7,un:(get('UNIDAD NEGOCIO')||'Sin dato')+'',co:canonComuna(get('COMUNA'),map),v:Math.round(val),ob:(()=>{const o=get('OBSERVACION');return o!=null?String(o).trim():'';})(),tp:tp,rg:(()=>{const r=get('RANGO');const s=r!=null?String(r).trim().toUpperCase():'';return s||'EN BLANCO';})(),_mo:monthFromName,_dt:dt});
+   out.push({id:+(get('N° PEDIDOS','N PEDIDOS','ID PEDIDO')||out.length+1),f:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`,sem:sem,dow:(dt.getDay()+6)%7,un:(get('UNIDAD NEGOCIO')||'Sin dato')+'',cl:(()=>{const c=get('NOMBRE CLIENTE','CLIENTE','NOMBRE DEL CLIENTE','RAZON SOCIAL');return c!=null&&String(c).trim()!==''?String(c).trim():'Sin dato';})(),co:canonComuna(get('COMUNA'),map),v:Math.round(val),ob:(()=>{const o=get('OBSERVACION');return o!=null?String(o).trim():'';})(),tp:tp,rg:(()=>{const r=get('RANGO');const s=r!=null?String(r).trim().toUpperCase():'';return s||'EN BLANCO';})(),_mo:monthFromName,_dt:dt});
  });
  if(!out.length)return null;
  let mi=out[0]._dt.getMonth(),yy=out[0]._dt.getFullYear();
@@ -716,7 +723,7 @@ function loadSaved(){
  }catch(err){}
 }
 /* ====== DATA ENGINE ====== */
-function getFiltered(){return DATA.rows.filter(r=>(F.mes==='all'||r.mk===F.mes)&&(F.sem==='all'||r.sem==+F.sem)&&(F.dia==='all'||r.f===F.dia)&&(F.tp==='all'||r.tp===F.tp)&&(F.rg==='all'||r.rg===F.rg)&&(F.un==='all'||r.un===F.un)&&(F.co==='all'||r.co===F.co));}
+function getFiltered(){return DATA.rows.filter(r=>(F.mes==='all'||r.mk===F.mes)&&(F.sem==='all'||r.sem==+F.sem)&&(F.dia==='all'||r.f===F.dia)&&(F.tp==='all'||r.tp===F.tp)&&(F.rg==='all'||r.rg===F.rg)&&(F.un==='all'||r.un===F.un)&&(F.cl==='all'||r.cl===F.cl)&&(F.co==='all'||r.co===F.co));}
 function groupSum(rows,key){const m={};rows.forEach(r=>{const k=r[key];if(!m[k])m[k]={n:0,v:0};m[k].n++;m[k].v+=r.v;});return m;}
 function toArr(m){return Object.entries(m).map(([k,o])=>({k,n:o.n,v:o.v}));}
 function activeScope(){
@@ -726,6 +733,7 @@ function activeScope(){
  parts.push(['Vehículo',F.tp==='all'?'Flota completa':F.tp]);
  if(F.rg!=='all')parts.push(['Rango',F.rg]);
  if(F.un!=='all')parts.push(['Unidad',F.un]);
+ if(F.cl!=='all')parts.push(['Cliente',F.cl]);
  if(F.co!=='all')parts.push(['Comuna',F.co]);
  document.getElementById('activeScope').innerHTML='<span style="font-weight:600;color:var(--navy)">Vista activa:</span>'+parts.map(p=>`<span class="chip">${p[0]}: <b>${p[1]}</b></span>`).join('');
 }
@@ -1271,7 +1279,7 @@ try{
  CANALYSIS['cmp_c_sem']='Leo esta vista para planificar por ciclo mensual: si una o dos semanas concentran la carga de forma recurrente, programo refuerzos de flota y personal justo en esas semanas y aprovecho las semanas flojas para mantenimiento. Cuando el valor sube mas que los pedidos en una semana, hay carga premium concentrada que exige reforzar seguros y trazabilidad en esas fechas.';
  CANALYSIS['cmp_c_ampm']='Vigilo el balance AM/PM en el tiempo: un desplazamiento sostenido hacia una franja indica que debo reasignar dotacion y moviles a ese turno para evitar horas extra y entregas fuera de ventana. Si la manana se satura mes a mes, recomiendo mover entregas flexibles a la tarde y nivelar la jornada.';
 }catch(e){}
-function cmpRows(){return DATA.rows.filter(r=>(F.tp==='all'||r.tp===F.tp)&&(F.rg==='all'||r.rg===F.rg)&&(F.un==='all'||r.un===F.un));}
+function cmpRows(){return DATA.rows.filter(r=>(F.tp==='all'||r.tp===F.tp)&&(F.rg==='all'||r.rg===F.rg)&&(F.un==='all'||r.un===F.un)&&(F.cl==='all'||r.cl===F.cl));}
 function renderCmp(){
  const rows=cmpRows();
  const meses=DATA.meta.meses;
