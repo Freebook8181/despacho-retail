@@ -179,7 +179,7 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 /* planilla editable */
 .plan-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:62vh;margin-top:4px}
 table.plan{border-collapse:collapse;width:max-content;min-width:100%;font-size:12px;table-layout:auto}
-table.plan th{background:var(--navy);color:#e8eef7;padding:10px 10px;text-align:center;position:sticky;top:0;white-space:pre-line;word-break:break-word;vertical-align:middle;line-height:1.3;font-weight:700;font-size:11.5px;letter-spacing:.2px;z-index:2;border-right:1px solid rgba(255,255,255,.08)}
+table.plan th{background:var(--navy);color:#e8eef7;padding:10px 10px;text-align:center;position:-webkit-sticky;position:sticky;top:0;white-space:pre-line;word-break:break-word;vertical-align:middle;line-height:1.3;font-weight:700;font-size:11.5px;letter-spacing:.2px;z-index:6;border-right:1px solid rgba(255,255,255,.08);box-shadow:0 2px 0 rgba(0,0,0,.18)}
 table.plan td{padding:0;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
 table.plan td input,table.plan td select{width:100%;border:none;background:transparent;padding:10px 10px;font-size:12.5px;font-family:inherit;color:var(--txt)}
 table.plan td input:focus,table.plan td select:focus{outline:2px solid var(--blue);outline-offset:-2px;background:#eff5ff}
@@ -193,6 +193,32 @@ table.plan td.rown{background:#fff;color:var(--muted);text-align:center;font-wei
 table.plan td.del-c{text-align:center}
 .rowdel{background:none;border:none;color:var(--bad);font-size:15px;cursor:pointer;padding:4px 8px}
 .rowdel:hover{background:var(--badbg);border-radius:5px}
+/* ===== Resumen ejecutivo para gerencia ===== */
+.exec-wrap{margin:6px 0 16px}
+.exec-card{background:linear-gradient(135deg,#0f2744 0%,#1b4b7a 100%);color:#eaf2fb;border-radius:14px;padding:18px 20px;box-shadow:0 10px 30px rgba(15,39,68,.18)}
+.exec-card .eh{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;letter-spacing:.3px;margin-bottom:3px}
+.exec-card .eh .etag{font-size:10.5px;font-weight:700;background:rgba(255,255,255,.16);padding:3px 9px;border-radius:20px;letter-spacing:.4px;margin-left:auto}
+.exec-card .esub{font-size:12px;color:#b9cde6;margin-bottom:14px}
+.exec-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin-bottom:15px}
+.exec-kpi{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:12px 13px}
+.exec-kpi .k{font-size:11px;color:#b9cde6;font-weight:700;letter-spacing:.2px;text-transform:uppercase}
+.exec-kpi .v{font-size:20px;font-weight:800;margin-top:4px;line-height:1.1;word-break:break-word}
+.exec-kpi .d{font-size:11px;color:#9fb8d6;margin-top:3px}
+.exec-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.exec-cols{grid-template-columns:1fr}}
+.exec-block{background:rgba(255,255,255,.07);border-radius:11px;padding:12px 14px}
+.exec-block h4{font-size:12.5px;font-weight:800;letter-spacing:.3px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.exec-block ul{list-style:none;margin:0;padding:0}
+.exec-block li{font-size:12.5px;line-height:1.5;padding:5px 0 5px 20px;position:relative;border-bottom:1px solid rgba(255,255,255,.07)}
+.exec-block li:last-child{border-bottom:none}
+.exec-block li:before{content:'';position:absolute;left:3px;top:11px;width:7px;height:7px;border-radius:50%}
+.exec-block.find li:before{background:#60a5fa}
+.exec-block.act li:before{background:#34d399}
+.exec-block li b{color:#fff}
+.exec-block li .lv{display:inline-block;font-size:9.5px;font-weight:800;padding:1px 7px;border-radius:20px;margin-right:6px;vertical-align:middle}
+.exec-block li .lv.bad{background:#ef4444;color:#fff}
+.exec-block li .lv.warn{background:#f59e0b;color:#3a2600}
+.exec-block li .lv.ok{background:#22c55e;color:#06310f}
 /* data table (read only) */
 .tablewrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px}
 table.dt{border-collapse:collapse;width:100%;font-size:12.5px;min-width:1000px}
@@ -323,6 +349,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
     <button class="ib act-del" onclick="openDel()" aria-label="Eliminar"><span class="ic">🗑️</span><span class="ibl">Eliminar</span></button>
     <span class="st" id="planStatus">—</span>
   </div>
+  <p class="narr" style="margin:2px 0 8px">📋 <b>Pegar desde Excel:</b> en tu Excel selecciona y copia (Ctrl+C) todas las filas; luego haz clic en la <b>primera celda</b> de la planilla donde quieres empezar y pega (Ctrl+V). Las filas se crean <b>automáticamente</b> y cada dato cae ordenado en su columna.</p>
   <div class="plan-wrap"><table class="plan" id="planTable"><thead id="planHead"></thead><tbody id="planBody"></tbody></table></div>
 </section>
 
@@ -339,6 +366,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <h2 class="sec">Control de tiempos del ciclo COMEX</h2>
   <div id="chartNotice" style="display:none"></div>
   <p class="narr">Gráficos construidos con <b>TODA</b> la planilla (todas las PO, sin excepciones). Los valores se muestran con el monto <b>real</b> de la planilla: <b>USD</b> con separador de miles por coma (ej. 19,790) y <b>pesos</b> con separador de miles por punto (ej. $19.790).</p>
+  <div id="execSummary" class="exec-wrap"></div>
   <div class="grid g2">
     <div class="panel">
       <div class="ph"><h3 id="tValProv">1. ¿Cuánto valor (USD) por proveedor?</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cValProv')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exValProv')">ℹ Análisis</button></div>
@@ -753,6 +781,52 @@ function focusCell(ri,k,el){
 }
 function addRow(){ROWS.push(rowObj());renderPlanilla();scheduleAutoSave();}
 function delRow(ri){ROWS.splice(ri,1);renderPlanilla();scheduleAutoSave();}
+/* ===== Pegar un RANGO desde Excel (varias filas × columnas): crea las filas
+   automáticamente y coloca cada dato ordenado en la columna que corresponde ===== */
+function parseClip(txt){
+  const t=(''+txt).replace(/\r/g,'').replace(/\n$/,'');
+  if(t==='')return [];
+  return t.split('\n').map(l=>l.split('\t'));
+}
+function pasteDate(v){
+  v=(''+v).trim();if(!v)return '';
+  let m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m)return m[1]+'-'+String(+m[2]).padStart(2,'0')+'-'+String(+m[3]).padStart(2,'0');
+  m=v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/); // dd/mm/aaaa o dd-mm-aa
+  if(m){let y=+m[3];if(y<100)y+=2000;return y+'-'+String(+m[2]).padStart(2,'0')+'-'+String(+m[1]).padStart(2,'0');}
+  return '';
+}
+function setCellFromPaste(ri,c,raw){
+  const val=(''+raw).trim();
+  if(c.calc)return; // TIEMPO TOTAL se calcula solo
+  if(c.opt){const n=norm(val);const hit=c.opt.find(o=>norm(o)===n)||c.opt.find(o=>norm(o).startsWith(n)||n.startsWith(norm(o)));ROWS[ri][c.k]=hit||val;return;}
+  if(c.date){ROWS[ri][c.k]=pasteDate(val);return;}
+  if(c.k==='usd'){ROWS[ri][c.k]=val===''?'':Math.round(usdNum(val)).toLocaleString('en-US');return;}
+  if(c.money||c.num){ROWS[ri][c.k]=val===''?'':numClean(val);return;}
+  ROWS[ri][c.k]=val;
+}
+function handleGridPaste(e){
+  const el=e.target;if(!el||!el.id)return;
+  const m=(''+el.id).match(/^c_(\d+)_(.+)$/);if(!m)return; // solo celdas de la planilla
+  const txt=(e.clipboardData||window.clipboardData).getData('text')||'';
+  let grid=parseClip(txt);
+  if(grid.length<=1&&(!grid[0]||grid[0].length<=1))return; // 1 sola celda: pegado normal del input
+  e.preventDefault();
+  // si por error se copió también la fila de encabezados, se descarta
+  if(grid.length>1){const h=grid[0].map(norm).join('|');if(h.includes('proveedor')&&(h.includes('usd')||h.includes('zona')))grid=grid.slice(1);}
+  const ri0=+m[1];
+  const ci0=Math.max(0,COLS.findIndex(c=>c.k===m[2]));
+  let nf=0;
+  grid.forEach((cells,rr)=>{
+    const ri=ri0+rr;
+    while(ROWS.length<=ri){ROWS.push(rowObj());nf++;}
+    cells.forEach((cell,cc)=>{const ci=ci0+cc;if(ci>=COLS.length)return;setCellFromPaste(ri,COLS[ci],cell);});
+  });
+  renderPlanilla();renderKpis();renderAlerts();scheduleAutoSave();
+  $('planStatus').textContent='Pegadas '+grid.length+' fila(s) desde el portapapeles'+(nf?' ('+nf+' fila(s) nueva(s))':'')+' · recuerde Guardar';
+  logAct('pegar','Pegó '+grid.length+' fila(s) desde Excel');
+}
+(function(){const b=$('planBody');if(b)b.addEventListener('paste',handleGridPaste);})();
 function limpiar(){
   if(!confirm('¿Limpiar toda la planilla en pantalla? (no afecta la nube hasta Guardar)'))return;
   ROWS=[];renderPlanilla();$('planStatus').textContent='Planilla limpia';
@@ -1324,6 +1398,47 @@ function drawTimeCharts(){
   DET['cTramo']={title:'Cascada del TIEMPO TOTAL por tramo (días promedio)',labels:trv.map(x=>x.lb.replace(/\n/g,' ')),vals:trv.map(x=>x.d),fmt:v=>v+' d',catLabel:'Tramo',valLabel:'Días promedio'};
   DET['cProvT']={title:'TIEMPO TOTAL promedio por proveedor (días)',labels:ttprov.map(x=>x[0]),vals:ttprov.map(x=>x[1]),fmt:v=>v+' d',catLabel:'Proveedor',valLabel:'Días promedio'};
   DET['cTransit']={title:'Capital movilizado vs. en tránsito',labels:['Movilizado','En tránsito'],vals:[vtr.disp,vtr.trans],fmt:fmtDual,catLabel:'Estado',valLabel:'Valor'};
+  renderExecSummary();
+}
+/* ===== Resumen ejecutivo para gerencia (síntesis automática de los 8 gráficos) ===== */
+function renderExecSummary(){
+  const host=$('execSummary');if(!host)return;
+  const totPO=ROWS.length;
+  if(!totPO){host.innerHTML='';return;}
+  const tu=totUSD(), vp=sortEnt(byProv()), zz=sortEnt(byZona());
+  const vtr=valorEnTransito(), ttv=vtr.trans+vtr.disp, pMov=ttv?Math.round(vtr.disp/ttv*100):0;
+  const ciclo=avgTiempo(), cbot=cuelloBotella(), ttp=sortEnt(ttotByProv());
+  const partProv=(vp[0]&&tu)?Math.round(vp[0][1]/tu*100):0;
+  const partZona=(zz[0]&&tu)?Math.round(zz[0][1]/tu*100):0;
+  const clp=fmtCLPg(tu);
+  const kpis=[
+    {k:'Valor importado',v:fmtUSDg(tu),d:clp?('≈ '+clp):(totPO+' PO en total')},
+    {k:'Capital movilizado',v:pMov+'%',d:fmtUSDg(vtr.disp)+' completo'},
+    {k:'Ciclo promedio',v:(ciclo?ciclo+' días':'—'),d:'de compra a bodega'},
+    {k:'Unidades totales',v:fmtUnid(totUnid()),d:totPO+' órdenes de compra'}
+  ];
+  const F=[];
+  if(vp[0])F.push('<b>'+esc(vp[0][0])+'</b> concentra el <b>'+partProv+'%</b> del valor importado ('+fmtUSDg(vp[0][1])+').');
+  if(zz[0])F.push('El <b>'+partZona+'%</b> del valor proviene de <b>'+esc(zz[0][0])+'</b>.');
+  if(cbot)F.push('El cuello de botella del ciclo es <b>'+esc(cbot.lb.replace(/\n/g,' '))+'</b> ('+cbot.d+' días).');
+  if(ttp[0])F.push('El proveedor más lento es <b>'+esc(ttp[0][0])+'</b> con <b>'+ttp[0][1]+' días</b> promedio.');
+  F.push('<b>'+pMov+'%</b> del capital está movilizado y <b>'+(100-pMov)+'%</b> aún en tránsito ('+fmtUSDg(vtr.trans)+').');
+  const A=[];
+  if(partProv>=40&&vp[0])A.push(['warn','Homologar un <b>segundo proveedor</b> para reducir la dependencia de '+esc(vp[0][0])+'.']);
+  if(partZona>=50&&zz[0])A.push(['warn','Evaluar <b>doble origen / nearshoring</b> por la alta concentración en '+esc(zz[0][0])+'.']);
+  if(cbot)A.push(['warn','Atacar el cuello de botella en <b>'+esc(cbot.lb.replace(/\n/g,' '))+'</b> para acortar el ciclo.']);
+  if(ttp[0])A.push(['bad','Renegociar plazos o buscar alternativa para <b>'+esc(ttp[0][0])+'</b>.']);
+  if(pMov<60)A.push([pMov<30?'bad':'warn','Completar los <b>registros en tránsito</b> ('+(100-pMov)+'% del capital) para cerrar las PO.']);
+  if(!A.length)A.push(['ok','Operación equilibrada: mantener el monitoreo de proveedores, zonas y tiempos.']);
+  const lvTxt=l=>l==='bad'?'ALTA':(l==='warn'?'MEDIA':'OK');
+  host.innerHTML='<div class="exec-card">'+
+    '<div class="eh">💼 Resumen ejecutivo <span class="etag">PARA GERENCIA</span></div>'+
+    '<div class="esub">Lectura rápida de las importaciones sobre '+totPO+' órdenes de compra — lo esencial para decidir.</div>'+
+    '<div class="exec-kpis">'+kpis.map(x=>'<div class="exec-kpi"><div class="k">'+x.k+'</div><div class="v">'+x.v+'</div><div class="d">'+x.d+'</div></div>').join('')+'</div>'+
+    '<div class="exec-cols">'+
+      '<div class="exec-block find"><h4>📊 Qué está pasando</h4><ul>'+F.map(t=>'<li>'+t+'</li>').join('')+'</ul></div>'+
+      '<div class="exec-block act"><h4>✅ Qué hacer</h4><ul>'+A.map(a=>'<li><span class="lv '+a[0]+'">'+lvTxt(a[0])+'</span>'+a[1]+'</li>').join('')+'</ul></div>'+
+    '</div></div>';
 }
 function fillExplains(){
   const S=(id,h)=>{const el=$(id);if(el)el.innerHTML=h;};
