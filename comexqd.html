@@ -749,35 +749,30 @@ function freezeFirstRow(){
 }
 window.addEventListener('resize',()=>{try{freezeFirstRow();}catch(e){}});
 /* ===== Validación de secuencia de fechas (cada hito no puede ser anterior al hito previo) ===== */
-const DATE_CHAIN=['eta','fdisp','rpa','lcd','cost','dinv'];
-const DATE_LBL={eta:'ETA (FECHA ESTIMADA DE LLEGADA CHL)',fdisp:'FECHA DISPONIBILIDAD PUERTO -AEROPUERTO',rpa:'RETIRO P/A',lcd:'LLEGADA A CD',cost:'COSTEO',dinv:'DISPONIBILIDAD INVENTARIO (FINAL)'};
-/* Reglas de fechas "tempranas" (antes de la cadena ETA→…): cada hito no puede romper el orden lógico con su hito de referencia */
-const EARLY_RULES=[
-  {k:'fconf',lbl:'FECHA CONFIRMACION (COMERCIAL)',rel:'dorig',rlbl:'DISPONIBILIDAD ORIGEN (FECHA)',cmp:'>'},
-  {k:'rorig',lbl:'RETIRO EN ORIGEN',rel:'dorig',rlbl:'DISPONIBILIDAD ORIGEN (FECHA)',cmp:'<'},
-  {k:'diast',lbl:'DIAS T (origen)',rel:'rorig',rlbl:'RETIRO EN ORIGEN',cmp:'<'}
-];
-const EARLY_KEYS=['fconf','dorig','rorig','diast'];
-function earlyBad(r,ru){if(!isDateStr(r[ru.k])||!isDateStr(r[ru.rel]))return false;return ru.cmp==='>'?(r[ru.k]>r[ru.rel]):(r[ru.k]<r[ru.rel]);}
-function earlyMsg(r,ru){return '«'+ru.lbl+'» ('+r[ru.k]+') no puede ser '+(ru.cmp==='>'?'mayor':'menor')+' que «'+ru.rlbl+'» ('+r[ru.rel]+').';}
+/* ===== Secuencia COMPLETA de fechas de la planilla (orden cronológico esperado) =====
+   BASE = FECHA CONFIRMACION (COMERCIAL). Ninguna fecha puede ser menor que la fecha
+   anterior de la secuencia; si una fecha es menor que la fecha previa, esa celda se
+   marca en ROJO. (RETIRO EN ORIGEN no puede ser menor que DISPONIBILIDAD ORIGEN, etc.) */
+const DATE_SEQ=['fconf','dorig','rorig','diast','eta','fdisp','rpa','lcd','cost','dinv'];
+const DATE_LBL={fconf:'FECHA CONFIRMACION (COMERCIAL)',dorig:'DISPONIBILIDAD ORIGEN (FECHA)',rorig:'RETIRO EN ORIGEN',diast:'DIAS T (origen)',eta:'ETA (FECHA ESTIMADA DE LLEGADA CHL)',fdisp:'FECHA DISPONIBILIDAD PUERTO -AEROPUERTO',rpa:'RETIRO P/A',lcd:'LLEGADA A CD',cost:'COSTEO',dinv:'DISPONIBILIDAD INVENTARIO (FINAL)'};
 function isDateStr(v){return /^\d{4}-\d{2}-\d{2}$/.test((''+(v||'')).trim());}
-function markCell(ri,k,bad,msg){const el=$('c_'+ri+'_'+k);if(!el)return;el.style.outline=bad?'2px solid #c62828':'';el.style.background=bad?'#ffebee':'';el.title=bad?(msg||('⚠ «Fecha menor que el hito anterior; revisar '+(DATE_LBL[k]||k)+'»')):'';}
+function markCell(ri,k,bad,msg){const el=$('c_'+ri+'_'+k);if(!el)return;el.style.outline=bad?'2px solid #c62828':'';el.style.background=bad?'#ffebee':'';el.title=bad?(msg||('⚠ «Fecha menor que la fecha anterior; revisar '+(DATE_LBL[k]||k)+'»')):'';}
 function revalRow(ri){
   const r=ROWS[ri];
-  for(let i=0;i<DATE_CHAIN.length;i++){
-    const k=DATE_CHAIN[i];let bad=false;
-    if(i>0){const p=DATE_CHAIN[i-1];if(isDateStr(r[k])&&isDateStr(r[p])&&r[k]<r[p])bad=true;}
-    markCell(ri,k,bad);
+  let prevKey=null,prevVal=null; // última fecha válida (no vacía) encontrada en la secuencia
+  for(let i=0;i<DATE_SEQ.length;i++){
+    const k=DATE_SEQ[i];
+    if(!isDateStr(r[k])){markCell(ri,k,false);continue;} // celda vacía/sin fecha: no se evalúa
+    let bad=false,msg='';
+    if(prevVal!==null && r[k]<prevVal){bad=true;msg='⚠ «'+(DATE_LBL[k]||k)+'» ('+r[k]+') no puede ser menor que «'+(DATE_LBL[prevKey]||prevKey)+'» ('+prevVal+').';}
+    markCell(ri,k,bad,msg);
+    prevKey=k;prevVal=r[k]; // avanza la referencia a la fecha actual
   }
-  // REGLAS de fechas tempranas: FECHA CONFIRMACION≤DISP. ORIGEN, RETIRO ORIGEN≥DISP. ORIGEN, DIAS T≥RETIRO ORIGEN → se marcan en rojo
-  EARLY_RULES.forEach(ru=>{const bad=earlyBad(r,ru);markCell(ri,ru.k,bad,bad?('⚠ '+earlyMsg(r,ru)):'');});
 }
 /* ===== Detección de celdas en rojo y de PO completas (reglas para gráficos y exportación) ===== */
 function rowRedKeys(r){
-  const red=[];
-  for(let i=1;i<DATE_CHAIN.length;i++){const k=DATE_CHAIN[i],p=DATE_CHAIN[i-1];if(isDateStr(r[k])&&isDateStr(r[p])&&r[k]<r[p])red.push(k);}
-  if(isDateStr(r.fconf)&&isDateStr(r.dorig)&&r.fconf>r.dorig)red.push('fconf');
-  EARLY_RULES.forEach(ru=>{if(ru.k!=='fconf'&&earlyBad(r,ru))red.push(ru.k);});
+  const red=[];let prevVal=null;
+  for(let i=0;i<DATE_SEQ.length;i++){const k=DATE_SEQ[i];if(!isDateStr(r[k]))continue;if(prevVal!==null&&r[k]<prevVal)red.push(k);prevVal=r[k];}
   return red;
 }
 function rowHasRed(r){return rowRedKeys(r).length>0;}
@@ -789,12 +784,9 @@ function validateConf(ri){
   // Aviso NO bloqueante: solo se re-evalúa el resaltado en rojo (con tooltip). No se usa alert() para que el usuario pueda cambiar la fecha sin interrupciones.
 }
 function validateDates(ri,k){
-  const r=ROWS[ri];const idx=DATE_CHAIN.indexOf(k);if(idx<0)return;
+  // Aviso NO bloqueante: se re-evalúa toda la secuencia de fechas de la fila y la celda
+  // queda en rojo (con el motivo en el tooltip) si es menor que la fecha anterior.
   revalRow(ri);
-  const msgs=[];
-  if(idx>0){const p=DATE_CHAIN[idx-1];if(isDateStr(r[k])&&isDateStr(r[p])&&r[k]<r[p])msgs.push('«'+DATE_LBL[k]+'» ('+r[k]+') no puede ser menor que «'+DATE_LBL[p]+'» ('+r[p]+').');}
-  if(idx<DATE_CHAIN.length-1){const n=DATE_CHAIN[idx+1];if(isDateStr(r[k])&&isDateStr(r[n])&&r[n]<r[k])msgs.push('«'+DATE_LBL[n]+'» ('+r[n]+') no puede ser menor que «'+DATE_LBL[k]+'» ('+r[k]+').');}
-  // Aviso NO bloqueante: la celda queda en rojo con su explicación en el tooltip; el usuario puede seguir editando libremente. No se usa alert() para no interrumpir el cambio de fecha.
 }
 function upd(ri,k,val){
   const c=COLS.find(x=>x.k===k);
@@ -810,15 +802,14 @@ function upd(ri,k,val){
     const tcell=$('ttot'+ri);
     if(tcell){const v=ROWS[ri].ttot;tcell.value=(v===''||v==null)?'':v+' días';}
   }
-  if(DATE_CHAIN.indexOf(k)>=0||EARLY_KEYS.indexOf(k)>=0)revalRow(ri); // solo resaltado visual mientras se edita; la alarma sale al salir del campo (no interrumpe el calendario)
+  if(DATE_SEQ.indexOf(k)>=0)revalRow(ri); // solo resaltado visual mientras se edita; la alarma sale al salir del campo (no interrumpe el calendario)
   scheduleAutoSave(); // guardar y propagar el cambio a todos los usuarios
 }
 function renderOne(ri,k,el){
   const c=COLS.find(x=>x.k===k);const v=ROWS[ri][k];
   if(c&&c.k==='unid')el.value=dispVal(c,v);
   $('planStatus').textContent=ROWS.length+' registro(s) · '+fmtMoney(ROWS.reduce((a,r)=>a+usdNum(r.usd),0));
-  if(DATE_CHAIN.indexOf(k)>=0)validateDates(ri,k); // la alarma se muestra al terminar de editar la fecha
-  if(k==='fconf'||k==='dorig'||k==='rorig'||k==='diast')validateConf(ri); // alarma de las reglas de fechas tempranas (confirmación / disponibilidad / retiro / días T)
+  if(DATE_SEQ.indexOf(k)>=0)validateDates(ri,k); // re-evalúa toda la secuencia de fechas al terminar de editar
   maybeApplyRemote(); // si llegó un cambio de otro usuario mientras editábamos, aplicarlo ahora
 }
 function focusCell(ri,k,el){
