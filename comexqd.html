@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -141,6 +142,9 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 .nube-grid{display:flex;gap:16px;flex:1;min-height:0;margin-top:4px}
 .nube-cal{width:270px;flex-shrink:0;overflow:auto}
 .nube-main{flex:1;min-width:0;overflow:auto;border-left:1px solid var(--line);padding-left:16px}
+.nubebox .dethd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.nubebox .dethd h3{flex:1;margin:0;font-size:16px;color:var(--navy)}
+.nubebox .dethd .x{background:#eef2f7;border:1px solid var(--line);border-radius:8px;width:34px;height:32px;font-size:15px;color:var(--navy);cursor:pointer}
 .btn-borrar{background:#fdeaea!important;border:1px solid #f3c0c0!important;color:#c62828!important;width:auto!important;padding:0 14px!important;font-weight:800;font-size:12.5px;letter-spacing:.5px}
 .btn-borrar:hover{background:#c62828!important;color:#fff!important;border-color:#c62828!important}
 .cal{background:#f6f9fd;border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -544,7 +548,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <div class="modal-box nubebox">
     <div class="dethd">
       <h3 id="nubeTitle">☁ Nube — Planillas guardadas</h3>
-      <button class="x btn-borrar" title="Borrar todo (plataforma y nube)" onclick="openBorrar()">🗑 BORRAR</button>
+      <button class="x btn-borrar" id="btnBorrarNube" title="Borrar todo (plataforma y nube)" onclick="openBorrar()">🗑 BORRAR</button>
       <button class="x" onclick="closeNube()">✕</button>
     </div>
     <div class="nube-grid">
@@ -573,8 +577,33 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
     </div>
   </div>
 </div>
+
+<!-- Pantalla de BLOQUEO (se muestra a los usuarios NO administradores cuando el sistema está bloqueado) -->
+<div id="lockScreen" style="position:fixed;inset:0;background:linear-gradient(135deg,#0f2744,#1b4b7a);display:none;align-items:center;justify-content:center;z-index:300;color:#fff;text-align:center;padding:24px">
+  <div>
+    <div style="font-size:64px;line-height:1">🔒</div>
+    <h2 style="margin:14px 0 6px;letter-spacing:2px;font-size:26px">SISTEMA BLOQUEADO</h2>
+    <p style="color:#cbd5e1;font-size:14px;max-width:420px;margin:0 auto">El acceso a la plataforma ha sido restringido por el administrador. Inténtelo más tarde.</p>
+  </div>
+</div>
+
+<!-- Botón oculto (esquina superior derecha, invisible) para abrir el panel de acceso restringido -->
+<div id="hideBtn" onclick="pedirMaestro()" title="" style="position:fixed;top:0;right:0;width:22px;height:22px;z-index:400;cursor:default;background:transparent"></div>
+
+<!-- modal clave maestra (bloqueo/desbloqueo del sistema, enmascarada con *) -->
+<div class="modal" id="mstModal" style="z-index:410">
+  <div class="modal-box">
+    <h3 id="mstTitle">Acceso restringido</h3>
+    <p id="mstMsg">Ingrese la clave.</p>
+    <input id="mstKey" type="text" autocomplete="off" inputmode="numeric" placeholder="••••••••">
+    <div id="mstErr" style="color:#c62828;font-size:12px;margin-top:8px;min-height:16px"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-g" style="flex:1;padding:10px" onclick="closeMst()">Cancelar</button>
+      <button class="btn" style="flex:1;padding:10px;background:var(--navy);color:#fff" onclick="mstOk()">Aceptar</button>
+    </div>
+  </div>
+</div>
 <script>
-/* ===== Firebase ===== */
 const firebaseConfig={apiKey:"AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOjOVzk",authDomain:"despacho-retail.firebaseapp.com",databaseURL:"https://despacho-retail-default-rtdb.firebaseio.com",projectId:"despacho-retail",storageBucket:"despacho-retail.appspot.com"};
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(), db=firebase.database();
@@ -713,7 +742,7 @@ auth.onAuthStateChanged(u=>{
   if(u){ startApp(u); } else { stopApp(); }
 });
 function stopApp(){
-  CURRENT=null;$('app').style.display='none';$('login').style.display='flex';resetLogin();renderUsers();
+  CURRENT=null;if($('lockScreen'))$('lockScreen').style.display='none';$('app').style.display='none';$('login').style.display='flex';resetLogin();renderUsers();
 }
 function logout(){ logAct('sesion','Cierre de sesión'); auth.signOut(); }
 
@@ -725,8 +754,10 @@ function startApp(u){
   const priv = CURRENT.email===IA_USER;
   $('navSug').style.display=priv?'flex':'none';
   $('navAct').style.display=priv?'flex':'none';
-  $('navNube').style.display=priv?'flex':'none'; // botón NUBE: SOLO administrador
+  $('navNube').style.display='flex'; // botón NUBE: disponible para TODOS los usuarios
+  if($('btnBorrarNube'))$('btnBorrarNube').style.display=priv?'inline-flex':'none'; // BORRAR dentro de la NUBE: solo administrador
   loadCloud();
+  loadLock(); // escucha el estado de bloqueo del sistema en tiempo real
   fetchDolar();
   if(!window._dolarTimer)window._dolarTimer=setInterval(fetchDolar,6*60*60*1000); // reconecta a internet (dólar observado) a diario
   go('graficos');
@@ -1409,12 +1440,11 @@ function detalle(id){
 }
 function closeDet(){$('detModal').classList.remove('on');if(detChart){detChart.destroy();detChart=null;}}
 window.addEventListener('resize',()=>{if(detChart&&$('detModal').classList.contains('on'))detChart.resize();});
-/* ===== NUBE (solo administrador): ver TODO lo que está guardado en Firebase ===== */
+/* ===== NUBE (disponible para todos los usuarios): ver TODO lo que está guardado en Firebase ===== */
 function closeNube(){$('nubeModal').classList.remove('on');}
 /* Estructura cargada: NUBE_HIST[dateKey] = [ {id, ts, by, byName, rows, n}, ... ] */
 let NUBE_HIST={}, NUBE_CAL={y:0,m:0}, NUBE_SELDAY=null;
 function verNube(){
-  if(!CURRENT||CURRENT.email!==IA_USER){alert('Esta sección es solo para el administrador.');return;}
   $('nubeList').innerHTML='<p style="color:var(--muted)">Cargando planillas guardadas desde la nube…</p>';
   $('nubeView').innerHTML='';
   $('nubeModal').classList.add('on');
@@ -1464,19 +1494,91 @@ function selDay(dk){
   });
   $('nubeList').innerHTML=html;
   $('nubeView').innerHTML='';
+  NUBE_VIEWID=null;
 }
 function findSnap(dk,id){return (NUBE_HIST[dk]||[]).find(x=>x.id===id);}
+let NUBE_VIEWID=null; // planilla actualmente mostrada en la nube (para alternar mostrar/ocultar)
 function verSnap(dk,id){
-  const sn=findSnap(dk,id);if(!sn){alert('No se encontró la planilla.');return;}
+  const key=dk+'|'+id;
+  // Al volver a presionar la misma planilla se oculta, para poder ver otra
+  if(NUBE_VIEWID===key){NUBE_VIEWID=null;$('nubeView').innerHTML='';return;}
+  NUBE_VIEWID=key;
+  const sn=findSnap(dk,id);if(!sn){alert('No se encontró la planilla.');NUBE_VIEWID=null;return;}
   const rows=Array.isArray(sn.rows)?sn.rows:[];
   const cols=COLS.filter(c=>!c.calc);
   const head='<tr>'+cols.map(c=>'<th>'+esc(c.t)+'</th>').join('')+'</tr>';
   const body=rows.length?rows.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(r[c.k]==null?'':r[c.k])+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+cols.length+'" style="text-align:center;color:var(--muted)">Planilla sin registros</td></tr>';
   const hora=new Date(sn.ts).toLocaleString('es-CL');
-  $('nubeView').innerHTML='<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px">'+
+  $('nubeView').innerHTML='<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px;flex-wrap:wrap">'+
     '<h3 style="color:var(--navy);font-size:14px;margin:0;flex:1">📄 Planilla del '+hora+' · '+rows.length+' registro(s)</h3>'+
+    '<button class="btn" style="background:#1d6f42;color:#fff;padding:8px 14px" onclick="exportarSnap(\''+dk+'\',\''+id+'\')">📊 Exportar Excel</button>'+
     '<button class="btn" style="background:var(--navy);color:#fff;padding:8px 14px" onclick="pedirEditar(\''+dk+'\',\''+id+'\')">✏ Editar</button></div>'+
     '<div class="nube-plan"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
+}
+/* ===== Exportar una planilla guardada a Excel con el MISMO diseño/colores/orden que la plataforma ===== */
+function exportarSnap(dk,id){
+  const sn=findSnap(dk,id);if(!sn){alert('No se encontró la planilla.');return;}
+  const rows=(Array.isArray(sn.rows)?sn.rows:[]).map(r=>Object.assign(rowObj(),r));
+  const f=new Date(sn.ts);
+  const pad=n=>String(n).padStart(2,'0');
+  const fname='COMEX_QD_'+f.toISOString().slice(0,10)+'_'+pad(f.getHours())+pad(f.getMinutes())+'.xlsx';
+  exportarPlanillaExcel(rows,fname,'COMEX QD · Planilla del '+f.toLocaleString('es-CL'));
+  logAct('exportar','Exportó a Excel una planilla guardada ('+f.toLocaleString('es-CL')+')');
+}
+function _xlBorde(argb){const s={style:'thin',color:{argb:argb}};return {top:s,bottom:s,left:s,right:s};}
+function _xlValor(c,r){
+  if(c.calc&&c.k==='ttot'){const t=computeTtot(r);return (t===''||t==null||isNaN(t))?'':Number(t);}
+  let v=(r[c.k]==null?'':r[c.k]);
+  if(v==='')return '';
+  if(c.money)return usdNum(v);
+  if(c.num)return numClean(v);
+  return ''+v;
+}
+function exportarPlanillaExcel(rows,fname,titulo){
+  if(typeof ExcelJS==='undefined'){alert('No se pudo cargar la librería de Excel. Verifique su conexión a internet y reintente.');return;}
+  const cols=COLS; // mismo orden que la plataforma, incluida TIEMPO TOTAL
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet('COMEX_QD',{views:[{state:'frozen',ySplit:titulo?2:1}]});
+  let headRow=1;
+  if(titulo){
+    ws.mergeCells(1,1,1,cols.length);
+    const tc=ws.getCell(1,1);tc.value=titulo;
+    tc.font={bold:true,size:13,color:{argb:'FF0F2744'}};
+    tc.alignment={vertical:'middle',horizontal:'left'};
+    ws.getRow(1).height=22;headRow=2;
+  }
+  const hr=ws.getRow(headRow);
+  cols.forEach((c,i)=>{
+    const cell=hr.getCell(i+1);cell.value=c.t;
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F2744'}};
+    cell.font={bold:true,size:10,color:{argb:'FFFFFFFF'}};
+    cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+    cell.border=_xlBorde('FF1B4B7A');
+  });
+  hr.height=30;
+  rows.forEach((r,ri)=>{
+    const red=rowRedKeys(r);
+    const row=ws.getRow(headRow+1+ri);
+    cols.forEach((c,ci)=>{
+      const cell=row.getCell(ci+1);
+      const v=_xlValor(c,r);
+      cell.value=(v===''?null:v);
+      const esRed=red.indexOf(c.k)>=0;
+      let fg=(ri%2===1)?'FFF6F9FD':'FFFFFFFF';let fc='FF334155';
+      if(esRed){fg='FFFFE2E2';fc='FFC62828';}
+      if(typeof v==='number'){cell.numFmt=c.money?'#,##0.00':'#,##0';cell.alignment={horizontal:'right',vertical:'middle'};}
+      else{cell.alignment={vertical:'middle'};}
+      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:fg}};
+      cell.font={size:10,color:{argb:fc},bold:esRed};
+      cell.border=_xlBorde('FFE2E8F0');
+    });
+  });
+  cols.forEach((c,i)=>{ws.getColumn(i+1).width=Math.max(12,Math.min(34,(''+(c.t||'')).length+3));});
+  wb.xlsx.writeBuffer().then(buf=>{
+    const mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const blob=new Blob([buf],{type:mime});
+    saveBlob(blob,fname,mime,'.xlsx','Libro de Excel');
+  }).catch(e=>alert('Error al exportar a Excel: '+((e&&e.message)||e)));
 }
 /* Editar una planilla histórica: pide contraseña 12345; al confirmar, la carga en la planilla principal para editarla */
 function pedirEditar(dk,id){
@@ -1506,6 +1608,54 @@ function pwOk(){
   const k=$('pwKey');if(!k)return;
   k.addEventListener('keydown',e=>{
     if(e.key==='Enter'){e.preventDefault();pwOk();return;}
+    let real=k.dataset.real||'';
+    if(e.key==='Backspace'){real=real.slice(0,-1);e.preventDefault();}
+    else if(/^[0-9]$/.test(e.key)){if(real.length<12)real+=e.key;e.preventDefault();}
+    else if(e.key.length===1){e.preventDefault();return;}
+    else {return;}
+    k.dataset.real=real;k.value='*'.repeat(real.length);
+  });
+  k.addEventListener('paste',e=>{e.preventDefault();const t=((e.clipboardData||window.clipboardData).getData('text')||'').replace(/[^0-9]/g,'').slice(0,12);k.dataset.real=t;k.value='*'.repeat(t.length);});
+})();
+/* ===== BLOQUEO DEL SISTEMA =====
+   Botón oculto (esquina sup. derecha) -> clave maestra:
+     21102001 = BLOQUEA todo el sistema (todos los usuarios NO administradores quedan fuera)
+     28111981 = DESBLOQUEA / ingreso del administrador
+     16122012 = clave alternativa de ingreso del administrador (también desbloquea)
+   El estado se guarda en Firebase (comex_qd_lock) y se propaga en tiempo real a todos. */
+let SYS_LOCKED=false, _lockSub=false;
+function loadLock(){
+  if(_lockSub)return;_lockSub=true;
+  db.ref('comex_qd_lock').on('value',s=>{const d=s.val()||{};SYS_LOCKED=!!d.locked;applyLock();},()=>{});
+}
+function applyLock(){
+  const esAdmin=CURRENT&&CURRENT.email===IA_USER;
+  // El administrador queda EXENTO del bloqueo; el resto ve la pantalla de bloqueo
+  const ls=$('lockScreen');if(!ls)return;
+  ls.style.display=(SYS_LOCKED&&!esAdmin)?'flex':'none';
+}
+function setLock(state){
+  const at=Date.now();
+  db.ref('comex_qd_lock').set({locked:!!state,by:(CURRENT&&CURRENT.email)||'',byName:(CURRENT&&CURRENT.name)||'',ts:at})
+    .then(()=>{logAct(state?'bloqueo':'desbloqueo',state?'Bloqueó el sistema para todos los usuarios':'Desbloqueó el sistema');})
+    .catch(e=>alert('No se pudo cambiar el estado del sistema: '+((e&&e.message)||e)+'\n\nVerifique que la regla comex_qd_lock esté publicada en Firebase.'));
+}
+function pedirMaestro(){
+  $('mstTitle').textContent='Acceso restringido';$('mstMsg').textContent='Ingrese la clave.';
+  const k=$('mstKey');k.value='';k.dataset.real='';$('mstErr').textContent='';
+  $('mstModal').classList.add('on');setTimeout(()=>k.focus(),80);
+}
+function closeMst(){$('mstModal').classList.remove('on');}
+function mstOk(){
+  const real=$('mstKey').dataset.real||'';
+  if(real==='21102001'){closeMst();setLock(true);return;}
+  if(real==='28111981'||real==='16122012'){closeMst();setLock(false);return;}
+  $('mstErr').textContent='Clave incorrecta.';
+}
+(function(){
+  const k=$('mstKey');if(!k)return;
+  k.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();mstOk();return;}
     let real=k.dataset.real||'';
     if(e.key==='Backspace'){real=real.slice(0,-1);e.preventDefault();}
     else if(/^[0-9]$/.test(e.key)){if(real.length<12)real+=e.key;e.preventDefault();}
@@ -2006,7 +2156,7 @@ function toggleDet(id){const el=$(id);if(!el)return;const open=el.style.display=
 
 /* ===== Init ===== */
 renderUsers();
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDel();closeDet();closeNube();closePw();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDel();closeDet();closeNube();closePw();closeMst();}});
 
 </script>
 </body>
