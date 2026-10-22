@@ -128,6 +128,13 @@ table.dett td{border-bottom:1px solid var(--line);padding:6px 10px}
 table.dett tbody tr:nth-child(even){background:#f6f9fd}
 table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(--navy)}
 .explain-box{margin-top:12px;background:#f1f5fb;border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:8px;padding:11px 13px;font-size:12.5px;color:#334155;line-height:1.55;display:none}
+.det-analysis{margin-top:16px;background:#f1f5fb;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:10px;padding:14px 16px;font-size:13px;color:#2a3a4d;line-height:1.6}
+.det-analysis h4{margin:0 0 8px;font-size:13.5px;color:var(--navy);display:flex;align-items:center;gap:7px}
+.det-analysis .verdict{margin:0 0 10px;padding:10px 12px;border-radius:8px;background:#fff;border:1px solid var(--line);font-weight:600}
+.det-analysis .verdict.warn{border-left:4px solid #d97706}
+.det-analysis .verdict.bad{border-left:4px solid #c62828}
+.det-analysis .verdict.ok{border-left:4px solid #16a34a}
+.det-analysis .verdict.info{border-left:4px solid var(--teal)}
 .explain-box.on{display:block}
 /* toolbar botones de la planilla */
 .toolbar{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px;align-items:center;position:relative;z-index:20}
@@ -374,56 +381,56 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <div id="execSummary" class="exec-wrap"></div>
   <div class="grid g2">
     <div class="panel">
-      <div class="ph"><h3 id="tValProv">1. ¿Cuánto valor (USD) por proveedor?</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cValProv')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exValProv')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tValProv">1. ¿Cuánto valor (USD) por proveedor?</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cValProv')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vValProv"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mValProv"></div>
       <div class="cc big"><canvas id="cValProv"></canvas></div>
       <div class="explain-box" id="exValProv"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tUniProv">2. ¿Cuántas unidades por proveedor?</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cUniProv')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exUniProv')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tUniProv">2. ¿Cuántas unidades por proveedor?</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cUniProv')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vUniProv"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mUniProv"></div>
       <div class="cc big"><canvas id="cUniProv"></canvas></div>
       <div class="explain-box" id="exUniProv"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tZonaV">3. ¿De qué zona viene el valor? — USD por zona</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cZonaV')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exZonaV')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tZonaV">3. ¿De qué zona viene el valor? — USD por zona</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cZonaV')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vZonaV"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mZonaV"></div>
       <div class="cc big"><canvas id="cZonaV"></canvas></div>
       <div class="explain-box" id="exZonaV"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tModo">4. ¿Cómo traemos la carga? — Tipo de transporte (con valores)</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cModo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exModo')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tModo">4. ¿Cómo traemos la carga? — Tipo de transporte (con valores)</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cModo')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vModo"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mModo"></div>
       <div class="cc big"><canvas id="cModo"></canvas></div>
       <div class="explain-box" id="exModo"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tTime">5. ¿Cuánto demora cada PO? — Tiempo total</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTime')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTime')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tTime">5. ¿Cuánto demora cada PO? — Tiempo total</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cTime')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vTime"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mTime"></div>
       <div class="cc big"><canvas id="cTime"></canvas></div>
       <div class="explain-box" id="exTime"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tTramo">6. ¿Dónde se pierde el tiempo? — Cuello de botella</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTramo')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTramo')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tTramo">6. ¿Dónde se pierde el tiempo? — Cuello de botella</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cTramo')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vTramo"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mTramo"></div>
       <div class="cc big"><canvas id="cTramo"></canvas></div>
       <div class="explain-box" id="exTramo"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tProvT">7. ¿Qué proveedor va más atrasado? — Tiempo por proveedor</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cProvT')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exProvT')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tProvT">7. ¿Qué proveedor va más atrasado? — Tiempo por proveedor</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cProvT')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vProvT"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mProvT"></div>
       <div class="cc big"><canvas id="cProvT"></canvas></div>
       <div class="explain-box" id="exProvT"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tTransit">8. Capital movilizado vs. en tránsito</h3><div class="sp"></div><button class="det-chart" onclick="detalle('cTransit')">⤢ Detalle</button><button class="explain-btn" onclick="tgEx('exTransit')">ℹ Análisis</button></div>
+      <div class="ph"><h3 id="tTransit">8. Capital movilizado vs. en tránsito</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cTransit')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vTransit"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mTransit"></div>
       <div class="cc big"><canvas id="cTransit"></canvas></div>
@@ -487,11 +494,12 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   </div>
 </div>
 
-<!-- modal DETALLE de gráfico -->
+<!-- modal DETALLE + ANÁLISIS de gráfico -->
 <div class="modal" id="detModal">
   <div class="modal-box detbox">
     <div class="dethd"><h3 id="detTitle">Detalle</h3><button class="x" onclick="closeDet()">✕</button></div>
     <div class="cc" id="detCC" style="height:min(52vh,460px)"><canvas id="detCanvas"></canvas></div>
+    <div id="detAnalysis" class="det-analysis"></div>
     <div id="detTable"></div>
   </div>
 </div>
@@ -1293,6 +1301,14 @@ let detChart=null;
 function detalle(id){
   const d=DET[id];if(!d){alert('Primero genera los gráficos.');return;}
   $('detTitle').textContent=d.title;
+  // Análisis del gráfico (conclusión + explicación detallada)
+  try{fillExplains();}catch(e){}
+  const bk=id.slice(1); // cValProv -> ValProv
+  const vEl=$('v'+bk), exEl=$('ex'+bk);
+  let vtx='';if(vEl){const tx=vEl.querySelector('.vtx');vtx=tx?tx.innerHTML:vEl.innerHTML;}
+  let vlv='info';if(vEl){const cl=vEl.className.replace('verdict','').trim();if(cl)vlv=cl.split(/\s+/)[0];}
+  const da=$('detAnalysis');
+  if(da)da.innerHTML='<h4>🔎 Análisis del gráfico</h4>'+((vtx&&vtx!=='—')?'<div class="verdict '+vlv+'">'+vtx+'</div>':'')+(exEl?exEl.innerHTML:'');
   if(d.series){
     const rows=d.labels.map((l,i)=>`<tr><td>${esc(l)}</td>${d.series.map(s=>`<td style="text-align:right">${s.fmt(s.vals[i])}</td>`).join('')}</tr>`).join('');
     $('detTable').innerHTML=`<table class="dett"><thead><tr><th>${esc(d.catLabel||'Categoría')}</th>${d.series.map(s=>`<th style="text-align:right">${esc(s.name)}</th>`).join('')}</tr></thead><tbody>${rows||'<tr><td colspan="3">Sin datos</td></tr>'}</tbody></table>`;
