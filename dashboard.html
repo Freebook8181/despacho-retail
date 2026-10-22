@@ -6,6 +6,7 @@
 <title>QUINTEC · Suite Logística & Financiera</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
@@ -116,6 +117,48 @@ select:focus{border-color:var(--navy)}
 .devo-foot{display:flex;flex-wrap:wrap;gap:30px;padding:12px 16px;border-top:1px solid #e3e8ef;font-size:13px;color:#1f2a37}
 .devo-ce{display:inline-block;min-width:160px;border-bottom:1px solid #9aa6b2;padding:1px 4px}
 .devo-ce:focus{outline:none;background:#eef5ff}
+/* toolbar devoluciones */
+.devo-toolbar{display:flex;flex-wrap:wrap;gap:10px;margin:0 2px 20px}
+.devo-btn{border:none;border-radius:9px;padding:9px 15px;font-size:12.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;color:#fff;background:#16a085;transition:filter .15s}
+.devo-btn:hover{filter:brightness(1.07)}
+.devo-imp{background:#1d4ed8}.devo-exp{background:#0d9488}.devo-save{background:#1e8449}.devo-del{background:#c0392b}.devo-cal{background:#7b1e3a}
+.devo-ghost{background:#eef1f5;color:#44505e}
+/* overlays/dialogos */
+.devo-ov{display:none;position:fixed;inset:0;background:rgba(20,30,45,.55);z-index:9000;align-items:center;justify-content:center;padding:20px}
+.devo-dlg{background:#fff;border-radius:14px;padding:22px 24px;width:min(460px,94vw);max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.devo-dlg h3{margin:0 0 4px;color:#1f3a59;font-size:18px}
+.devo-dlgsub{margin:0 0 14px;color:#5a6672;font-size:13px}
+.devo-chkbox{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.devo-chkrow{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#1f2a37;cursor:pointer}
+.devo-chkall{padding-bottom:8px;border-bottom:1px solid #e3e8ef;margin-bottom:4px}
+.devo-dot{display:inline-block;width:12px;height:12px;border-radius:3px}
+.devo-dlg-ft{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.devo-pwlbl{display:block;font-size:12.5px;color:#44505e;margin-bottom:4px;font-weight:600}
+.devo-pwin{width:140px;font-size:18px;letter-spacing:4px;padding:7px 10px;border:1.5px solid #c3ccd6;border-radius:8px;text-align:center}
+.devo-pwin:focus{outline:none;border-color:#2563eb}
+.devo-pwmsg{color:#c0392b;font-size:12.5px;margin-top:6px;min-height:16px}
+/* calendario */
+.devo-caldlg{width:min(340px,94vw)}
+.devo-calhead{display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px}
+.devo-calmo{font-weight:700;color:#1f3a59;font-size:15px}
+.devo-calnav{border:none;background:#eef1f5;border-radius:7px;width:30px;height:30px;font-size:18px;cursor:pointer;color:#44505e}
+.devo-calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.devo-caldow{text-align:center;font-size:11px;font-weight:700;color:#8a94a0;padding:4px 0}
+.devo-calday{position:relative;border:1px solid #e3e8ef;background:#fff;border-radius:7px;height:38px;cursor:pointer;font-size:13px;color:#1f2a37}
+.devo-calday:hover{background:#f0f4f9}
+.devo-calday.has{background:#e6f7f2;border-color:#16a085;font-weight:700;color:#0d6e5a}
+.devo-calbadge{position:absolute;top:-5px;right:-5px;background:#16a085;color:#fff;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:700}
+/* vista de dia a pantalla completa */
+.devo-fs{display:none;position:fixed;inset:0;background:#f4f6f9;z-index:9100;flex-direction:column}
+.devo-fsbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#16a085;color:#fff;flex:0 0 auto}
+.devo-fstit{font-size:17px;font-weight:800}
+.devo-fsbody{flex:1 1 auto;overflow:auto;padding:18px 20px}
+.devo-daytbl{border-collapse:collapse;width:100%;background:#fff;font-size:12.5px;box-shadow:0 4px 16px rgba(23,42,67,.07)}
+.devo-daytbl th{background:#1f3a59;color:#fff;padding:9px 7px;text-align:center;white-space:nowrap}
+.devo-daytbl td{border:1px solid #d9e0e8;padding:5px 7px;vertical-align:top}
+.devo-daycell:focus{outline:2px solid #2563eb;background:#eef5ff}
+.devo-daynote,.devo-dayempty{color:#5a6672;font-size:13px;margin-top:14px}
+.devo-dayempty{text-align:center;padding:50px 10px;font-size:15px}
 /* ===== Boton y ventana "Ver analisis" ===== */
 .card{position:relative}
 .an-btn{position:absolute;top:12px;right:12px;z-index:5;border:1px solid var(--line);background:#fff;color:var(--navy-d);font-family:'IBM Plex Sans';font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 4px rgba(23,42,67,.08);transition:.15s}
@@ -1641,6 +1684,14 @@ function devoEsc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(
 function devoPlanillas(){
  devoEnsure();
  let h='<div class="devo-note">Planillas editables. Lo que escribas se guarda y se comparte con todos los usuarios al instante.</div>';
+ h+='<div class="devo-toolbar">'
+  +'<button class="devo-btn devo-imp" id="devoImport">⬆ IMPORTAR EXCEL</button>'
+  +'<button class="devo-btn devo-exp" id="devoExport">⬇ EXPORTAR EXCEL</button>'
+  +'<button class="devo-btn devo-save" id="devoGuardar">💾 GUARDAR</button>'
+  +'<button class="devo-btn devo-del" id="devoBorrar">🗑 BORRAR</button>'
+  +'<button class="devo-btn devo-cal" id="devoCal">📅 VER POR FECHA</button>'
+  +'<input type="file" id="devoFile" accept=".xlsx,.xls" style="display:none"/>'
+  +'</div>';
  DEVO_ITEMS.forEach(it=>{
   h+=`<div class="devo-wrap" data-item="${it.id}">`;
   h+=`<div class="devo-title" style="background:${it.c};color:${it.tx}">${it.t}</div>`;
@@ -1655,7 +1706,8 @@ function devoPlanillas(){
 function devoRenderItem(it){
  const tb=document.getElementById('devob_'+it.id);if(!tb)return;
  const d=DEVO_DATA[it.id];if(!d)return;let h='';
- for(let r=0;r<DEVO_ROWS;r++){
+ const N=Math.max(DEVO_ROWS,d.rows.length);
+ for(let r=0;r<N;r++){
   h+=`<tr><td class="devo-num">${r+1}</td>`;
   for(let c=0;c<DEVO_COLS.length;c++){
    h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${devoEsc(d.rows[r][c])}</td>`;
@@ -1677,6 +1729,167 @@ function devoWire(){
   if(t.classList.contains('devo-cell')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].rows[r][c]=t.textContent;devoFbPush();}}
   else if(t.classList.contains('devo-ce')){const i=t.dataset.i,f=t.dataset.f;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i][f]=t.textContent;devoFbPush();}}
  });
+ const bI=document.getElementById('devoImport'),fI=document.getElementById('devoFile');
+ if(bI&&fI){bI.addEventListener('click',()=>fI.click());fI.addEventListener('change',devoImportExcel);}
+ const bE=document.getElementById('devoExport');if(bE)bE.addEventListener('click',()=>devoOpenPick('exp'));
+ const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
+ const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
+ const bC=document.getElementById('devoCal');if(bC)bC.addEventListener('click',devoOpenCal);
+}
+/* --- normalizar texto para comparar nombres --- */
+function devoNorm(s){return (s==null?'':String(s)).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');}
+function devoMatchItem(name){const n=devoNorm(name);let best=null;DEVO_ITEMS.forEach(it=>{const k=devoNorm(it.t);if(n===k||n.indexOf(k)>=0||k.indexOf(n)>=0&&n.length>=2)best=best||it;});if(best)return best;return null;}
+function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,ORIGEN:2,DESTINATARIOS:3,DESTINATARIO:3,BULTOS:4,BULTO:4,CONTENIDO:5,OBSERVACIONES:6,OBSERVACION:6};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null)map[al[k]]=i;});return map;}
+/* --- IMPORTAR: lee cualquier Excel y coloca filas en la planilla que corresponda --- */
+function devoImportExcel(ev){
+ const f=ev.target.files&&ev.target.files[0];if(!f){return;}
+ const rd=new FileReader();
+ rd.onload=function(e){
+  try{
+   const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+   devoEnsure();let added=0;
+   wb.SheetNames.forEach(sn=>{
+    const ws=wb.Sheets[sn];if(!ws)return;
+    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
+    if(!aoa||!aoa.length)return;
+    const header=aoa[0]||[];const cmap=devoColIndex(header);
+    const typeCol=(()=>{let idx=-1;header.forEach((h,i)=>{const k=devoNorm(h);if(k==='TIPO'||k==='PLANILLA'||k==='CATEGORIA')idx=i;});return idx;})();
+    let shItem=devoMatchItem(sn);
+    for(let r=1;r<aoa.length;r++){
+     const row=aoa[r]||[];
+     if(row.every(v=>v==null||String(v).trim()===''))continue;
+     let target=shItem;
+     if(typeCol>=0){const tm=devoMatchItem(row[typeCol]);if(tm)target=tm;}
+     if(!target)target=DEVO_ITEMS[DEVO_ITEMS.length-1];
+     const cells=DEVO_COLS.map((_,c)=>{const src=cmap[c];let v=(src!=null)?row[src]:'';if(v==null)v='';return String(v).trim();});
+     DEVO_DATA[target.id].rows.push(cells);added++;
+    }
+   });
+   devoRender();devoFbSave();
+   alert('Importaci\u00f3n lista: se agregaron '+added+' registro(s) a las planillas.');
+  }catch(err){console.error('devoImport',err);alert('No se pudo leer el Excel: '+err.message);}
+  ev.target.value='';
+ };
+ rd.readAsArrayBuffer(f);
+}
+/* --- GUARDAR inmediato en Firebase --- */
+function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
+function devoGuardar(){devoEnsure();if(typeof fbReady==='undefined'||!fbReady||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}devoFbSave().then(ok=>{alert(ok?'Informaci\u00f3n guardada en la nube. Todos los usuarios la ver\u00e1n al recargar.':'No se pudo guardar. Revisa los permisos de Firebase.');});}
+/* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o) --- */
+function devoSheetName(t){return (t||'Hoja').replace(/[\\/?*\[\]:]/g,' ').slice(0,31);}
+function devoExport(ids){
+ if(!ids||!ids.length){alert('Selecciona al menos una planilla.');return;}
+ devoEnsure();
+ const wb=XLSX.utils.book_new();
+ const bd={top:{style:'thin',color:{rgb:'B0B8C1'}},bottom:{style:'thin',color:{rgb:'B0B8C1'}},left:{style:'thin',color:{rgb:'B0B8C1'}},right:{style:'thin',color:{rgb:'B0B8C1'}}};
+ ids.forEach(id=>{
+  const it=DEVO_ITEMS.find(x=>x.id===id);if(!it)return;const d=DEVO_DATA[id];
+  const ncol=DEVO_COLS.length+1;
+  const aoa=[[it.t],['N\u00b0'].concat(DEVO_COLS)];
+  const N=Math.max(DEVO_ROWS,d.rows.length);
+  for(let r=0;r<N;r++){const row=d.rows[r]||[];aoa.push([r+1].concat(DEVO_COLS.map((_,c)=>row[c]==null?'':row[c])));}
+  aoa.push([]);aoa.push(['AM Nombre:',d.am||'','','Firma:','','Recepciona Nombre:',d.rec||'','Firma:']);
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
+  ws['!cols']=[{wch:5},{wch:12},{wch:16},{wch:16},{wch:18},{wch:8},{wch:16},{wch:22}];
+  const hex=it.c.replace('#','').toUpperCase(),txt=it.tx.replace('#','').toUpperCase();
+  const A1=ws['A1'];if(A1)A1.s={font:{bold:true,sz:14,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'left',vertical:'center'}};
+  for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:1,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'center',vertical:'center'},border:bd};}
+  for(let r=2;r<2+N;r++){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r,c});const cell=ws[ref];if(cell)cell.s={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:c===0?'center':'left'}};}}
+  if(!ws['!rows'])ws['!rows']=[];ws['!rows'][0]={hpt:22};ws['!rows'][1]={hpt:18};
+  XLSX.utils.book_append_sheet(wb,ws,devoSheetName(it.t));
+ });
+ try{XLSX.writeFile(wb,'Devoluciones_QUINTEC.xlsx');}catch(e){console.error('devoExport',e);alert('No se pudo exportar: '+e.message);}
+}
+/* ===== MODALES: seleccionar planillas (exportar/borrar) ===== */
+var DEVO_PICKMODE='exp',DEVO_PW='';
+function devoMaskWire(inp){if(!inp)return;DEVO_PW='';inp.value='';inp.addEventListener('keydown',function(e){if(e.key==='Backspace'){DEVO_PW=DEVO_PW.slice(0,-1);e.preventDefault();inp.value='*'.repeat(DEVO_PW.length);}else if(e.key==='Enter'){e.preventDefault();}else if(e.key&&e.key.length===1&&!e.ctrlKey&&!e.metaKey){DEVO_PW+=e.key;e.preventDefault();inp.value='*'.repeat(DEVO_PW.length);}});inp.addEventListener('paste',function(e){e.preventDefault();});}
+function devoBuildModals(){
+ if(document.getElementById('devoPickOv'))return;
+ const chk=DEVO_ITEMS.map(it=>`<label class="devo-chkrow"><input type="checkbox" class="devo-pickchk" value="${it.id}"> <span class="devo-dot" style="background:${it.c}"></span>${it.t}</label>`).join('');
+ const pick=document.createElement('div');pick.className='devo-ov';pick.id='devoPickOv';
+ pick.innerHTML=`<div class="devo-dlg"><h3 id="devoPickTit">Exportar a Excel</h3><p id="devoPickSub" class="devo-dlgsub">Selecciona las planillas:</p><label class="devo-chkrow devo-chkall"><input type="checkbox" id="devoPickAll"> <b>Todas</b></label><div class="devo-chkbox">${chk}</div><div id="devoPwWrap" style="display:none;margin-top:12px"><label class="devo-pwlbl">Contrase\u00f1a</label><input type="text" id="devoPw" class="devo-pwin" autocomplete="off" placeholder="****"><div id="devoPwMsg" class="devo-pwmsg"></div></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoPickCancel">Cancelar</button><button class="devo-btn" id="devoPickGo">Aceptar</button></div></div>`;
+ document.body.appendChild(pick);
+ document.getElementById('devoPickAll').addEventListener('change',function(){const on=this.checked;document.querySelectorAll('.devo-pickchk').forEach(c=>c.checked=on);});
+ document.getElementById('devoPickCancel').addEventListener('click',()=>pick.style.display='none');
+ pick.addEventListener('click',e=>{if(e.target===pick)pick.style.display='none';});
+ document.getElementById('devoPickGo').addEventListener('click',devoPickConfirm);
+ devoMaskWire(document.getElementById('devoPw'));
+ // calendario + vista de dia
+ const cal=document.createElement('div');cal.className='devo-ov';cal.id='devoCalOv';
+ cal.innerHTML='<div class="devo-dlg devo-caldlg"><h3>Ver registros por fecha</h3><div id="devoCalBody"></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoCalCancel">Cerrar</button></div></div>';
+ document.body.appendChild(cal);
+ document.getElementById('devoCalCancel').addEventListener('click',()=>cal.style.display='none');
+ cal.addEventListener('click',e=>{if(e.target===cal)cal.style.display='none';});
+ const day=document.createElement('div');day.className='devo-fs';day.id='devoDayOv';
+ day.innerHTML='<div class="devo-fsbar"><div class="devo-fstit" id="devoDayTit">Registros del d\u00eda</div><button class="devo-btn devo-ghost" id="devoDayClose">\u2715 Cerrar</button></div><div class="devo-fsbody" id="devoDayBody"></div>';
+ document.body.appendChild(day);
+ document.getElementById('devoDayClose').addEventListener('click',()=>day.style.display='none');
+}
+function devoOpenPick(mode){
+ devoBuildModals();DEVO_PICKMODE=mode;DEVO_PW='';
+ const ov=document.getElementById('devoPickOv');
+ document.getElementById('devoPickTit').textContent=(mode==='del')?'Borrar planillas':'Exportar a Excel';
+ document.getElementById('devoPickSub').textContent=(mode==='del')?'Selecciona las planillas a borrar:':'Selecciona las planillas a exportar:';
+ document.getElementById('devoPickGo').textContent=(mode==='del')?'Borrar':'Exportar';
+ document.getElementById('devoPickGo').className='devo-btn '+(mode==='del'?'devo-del':'devo-save');
+ document.getElementById('devoPwWrap').style.display=(mode==='del')?'block':'none';
+ const pw=document.getElementById('devoPw');if(pw)pw.value='';
+ document.getElementById('devoPwMsg').textContent='';
+ document.getElementById('devoPickAll').checked=false;
+ document.querySelectorAll('.devo-pickchk').forEach(c=>c.checked=false);
+ ov.style.display='flex';
+}
+function devoPickConfirm(){
+ const ids=[...document.querySelectorAll('.devo-pickchk:checked')].map(c=>c.value);
+ if(!ids.length){alert('Selecciona al menos una planilla.');return;}
+ if(DEVO_PICKMODE==='exp'){document.getElementById('devoPickOv').style.display='none';devoExport(ids);return;}
+ // borrar: verificar contrase\u00f1a
+ if(DEVO_PW!=='1234'){const m=document.getElementById('devoPwMsg');m.textContent='Contrase\u00f1a incorrecta.';return;}
+ const nom=ids.map(id=>(DEVO_ITEMS.find(x=>x.id===id)||{}).t).join(', ');
+ if(!confirm('\u00bfBorrar el contenido de: '+nom+'? Esta acci\u00f3n no se puede deshacer.'))return;
+ devoEnsure();ids.forEach(id=>{DEVO_DATA[id]=devoEmptyItem();});
+ devoRender();devoFbSave();document.getElementById('devoPickOv').style.display='none';
+ alert('Planilla(s) borrada(s).');
+}
+/* ===== CALENDARIO EN ESPA\u00d1OL + VISTA DE D\u00cdA ===== */
+var DEVO_CALY,DEVO_CALM;
+const DEVO_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DEVO_DIA=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+function devoParseFecha(s){s=(s==null?'':String(s)).trim();if(!s)return null;let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;if(mo<1||mo>12||d<1||d>31)return null;return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);if(m){let mo=+m[2],d=+m[3];if(mo<1||mo>12||d<1||d>31)return null;return m[1]+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}return null;}
+function devoCountDay(iso){let n=0;devoEnsure();DEVO_ITEMS.forEach(it=>{DEVO_DATA[it.id].rows.forEach(r=>{if(devoParseFecha(r[0])===iso)n++;});});return n;}
+function devoOpenCal(){devoBuildModals();const now=new Date();if(DEVO_CALY==null){DEVO_CALY=now.getFullYear();DEVO_CALM=now.getMonth();}devoDrawCal();document.getElementById('devoCalOv').style.display='flex';}
+function devoDrawCal(){
+ const b=document.getElementById('devoCalBody');if(!b)return;
+ const first=new Date(DEVO_CALY,DEVO_CALM,1);let sd=first.getDay();sd=(sd===0)?6:sd-1;
+ const dim=new Date(DEVO_CALY,DEVO_CALM+1,0).getDate();
+ let h='<div class="devo-calhead"><button class="devo-calnav" id="devoPrev">\u2039</button><span class="devo-calmo">'+DEVO_MES[DEVO_CALM]+' '+DEVO_CALY+'</span><button class="devo-calnav" id="devoNext">\u203a</button></div>';
+ h+='<div class="devo-calgrid">'+DEVO_DIA.map(d=>'<div class="devo-caldow">'+d+'</div>').join('');
+ for(let i=0;i<sd;i++)h+='<div></div>';
+ for(let d=1;d<=dim;d++){const iso=DEVO_CALY+'-'+String(DEVO_CALM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');const n=devoCountDay(iso);h+='<button class="devo-calday'+(n>0?' has':'')+'" data-iso="'+iso+'">'+d+(n>0?'<span class="devo-calbadge">'+n+'</span>':'')+'</button>';}
+ h+='</div>';
+ b.innerHTML=h;
+ document.getElementById('devoPrev').addEventListener('click',()=>{DEVO_CALM--;if(DEVO_CALM<0){DEVO_CALM=11;DEVO_CALY--;}devoDrawCal();});
+ document.getElementById('devoNext').addEventListener('click',()=>{DEVO_CALM++;if(DEVO_CALM>11){DEVO_CALM=0;DEVO_CALY++;}devoDrawCal();});
+ b.querySelectorAll('.devo-calday').forEach(btn=>btn.addEventListener('click',()=>{devoShowDay(btn.dataset.iso);}));
+}
+function devoFmtIso(iso){const p=iso.split('-');return p[2]+' de '+DEVO_MES[+p[1]-1].toLowerCase()+' de '+p[0];}
+function devoShowDay(iso){
+ devoBuildModals();devoEnsure();
+ const list=[];DEVO_ITEMS.forEach(it=>{DEVO_DATA[it.id].rows.forEach((r,ri)=>{if(devoParseFecha(r[0])===iso)list.push({it:it,ri:ri,r:r});});});
+ document.getElementById('devoDayTit').textContent='Registros del '+devoFmtIso(iso)+'  ('+list.length+')';
+ const body=document.getElementById('devoDayBody');
+ if(!list.length){body.innerHTML='<div class="devo-dayempty">No hay registros ingresados en esta fecha.</div>';}
+ else{
+  let h='<table class="devo-daytbl"><thead><tr><th>Planilla</th><th>N\u00b0</th>'+DEVO_COLS.map(c=>'<th>'+c+'</th>').join('')+'<th>Acci\u00f3n</th></tr></thead><tbody>';
+  list.forEach(x=>{h+='<tr data-i="'+x.it.id+'" data-r="'+x.ri+'"><td><span class="devo-dot" style="background:'+x.it.c+'"></span>'+x.it.t+'</td><td class="devo-num">'+(x.ri+1)+'</td>';for(let c=0;c<DEVO_COLS.length;c++){h+='<td class="devo-daycell" contenteditable="true" data-i="'+x.it.id+'" data-r="'+x.ri+'" data-c="'+c+'">'+devoEsc(x.r[c])+'</td>';}h+='<td><button class="devo-btn devo-del devo-daydel" data-i="'+x.it.id+'" data-r="'+x.ri+'">Borrar</button></td></tr>';});
+  h+='</tbody></table><div class="devo-daynote">Edita directamente las celdas (se guarda solo). Para borrar una fila se pedir\u00e1 la contrase\u00f1a.</div>';
+  body.innerHTML=h;
+  body.querySelectorAll('.devo-daycell').forEach(td=>td.addEventListener('input',()=>{const i=td.dataset.i,r=+td.dataset.r,c=+td.dataset.c;if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][c]=td.textContent;devoFbPush();devoRenderItem(DEVO_ITEMS.find(z=>z.id===i));}}));
+  body.querySelectorAll('.devo-daydel').forEach(btn=>btn.addEventListener('click',()=>{const pw=prompt('Para borrar este registro ingresa la contrase\u00f1a:');if(pw==null)return;if(pw!=='1234'){alert('Contrase\u00f1a incorrecta.');return;}const i=btn.dataset.i,r=+btn.dataset.r;if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r]=Array(DEVO_COLS.length).fill('');devoFbSave();devoRenderItem(DEVO_ITEMS.find(z=>z.id===i));devoShowDay(iso);}}));
+ }
+ document.getElementById('devoCalOv').style.display='none';
+ document.getElementById('devoDayOv').style.display='flex';
 }
 /* ===== CONSTRUIR SECCIONES Y PESTAÑAS DE LOS 3 MODULOS ===== */
 function buildModMarkup(){
@@ -1913,6 +2126,7 @@ try{modLoadLocal();}catch(e){console.error('modLoadLocal',e);}
 try{['mac','ver'].forEach(k=>buildModFilters(k));}catch(e){console.error('buildModFilters',e);}
 try{if(typeof fbReady!=='undefined'&&fbReady)modFbSubscribe();}catch(e){console.error('modFbSubscribe',e);}
 try{devoRender();}catch(e){console.error('devoRender',e);}
+try{devoBuildModals();}catch(e){console.error('devoBuildModals',e);}
 try{devoWire();}catch(e){console.error('devoWire',e);}
 try{if(typeof fbReady!=='undefined'&&fbReady)devoFbSubscribe();}catch(e){console.error('devoFbSubscribe',e);}
 try{applyRole();}catch(e){}
