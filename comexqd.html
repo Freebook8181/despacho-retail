@@ -136,6 +136,38 @@ table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(
 .det-analysis .verdict.bad{border-left:4px solid #c62828}
 .det-analysis .verdict.ok{border-left:4px solid #16a34a}
 .det-analysis .verdict.info{border-left:4px solid var(--teal)}
+/* ===== NUBE (pantalla completa) ===== */
+.nubebox{width:98vw!important;height:96vh;max-height:96vh;display:flex;flex-direction:column;overflow:hidden;padding:18px 20px}
+.nube-grid{display:flex;gap:16px;flex:1;min-height:0;margin-top:4px}
+.nube-cal{width:270px;flex-shrink:0;overflow:auto}
+.nube-main{flex:1;min-width:0;overflow:auto;border-left:1px solid var(--line);padding-left:16px}
+.btn-borrar{background:#fdeaea!important;border:1px solid #f3c0c0!important;color:#c62828!important;width:auto!important;padding:0 14px!important;font-weight:800;font-size:12.5px;letter-spacing:.5px}
+.btn-borrar:hover{background:#c62828!important;color:#fff!important;border-color:#c62828!important}
+.cal{background:#f6f9fd;border:1px solid var(--line);border-radius:12px;padding:12px}
+.cal-hd{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.cal-hd .mt{flex:1;text-align:center;font-weight:800;color:var(--navy);font-size:13.5px;text-transform:capitalize}
+.cal-hd button{background:#fff;border:1px solid var(--line);border-radius:7px;width:28px;height:28px;color:var(--navy);font-size:15px;cursor:pointer}
+.cal-hd button:hover{background:var(--navy);color:#fff}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-grid .dow{font-size:10px;font-weight:700;color:var(--muted);text-align:center;padding:3px 0}
+.cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:7px;color:#334155;cursor:default;position:relative}
+.cal-cell.has{background:#dbeafe;color:#0f2744;font-weight:800;cursor:pointer;border:1px solid #93c5fd}
+.cal-cell.has:hover{background:var(--steel);color:#fff}
+.cal-cell.sel{background:var(--navy)!important;color:#fff!important;border-color:var(--navy)!important}
+.cal-cell.today{outline:2px solid var(--teal);outline-offset:-2px}
+.cal-cell .dt{position:absolute;bottom:2px;width:5px;height:5px;border-radius:50%;background:#16a34a}
+.snap-item{display:flex;align-items:center;gap:10px;background:#f6f9fd;border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-bottom:7px;cursor:pointer}
+.snap-item:hover{border-color:var(--steel);background:#eef4fb}
+.snap-item .si-ic{font-size:17px}
+.snap-item .si-t{flex:1}
+.snap-item .si-t b{color:var(--navy);font-size:13px}
+.snap-item .si-t span{display:block;color:var(--muted);font-size:11px}
+.snap-item.cur{border-left:4px solid var(--teal)}
+.nube-plan{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:62vh}
+.nube-plan table{width:100%;border-collapse:collapse;font-size:11.5px;white-space:nowrap}
+.nube-plan th{background:#0f2744;color:#fff;padding:6px 9px;text-align:left;position:sticky;top:0;z-index:2}
+.nube-plan td{border-bottom:1px solid var(--line);padding:5px 9px}
+.nube-plan tbody tr:nth-child(even){background:#f6f9fd}
 .explain-box.on{display:block}
 /* toolbar botones de la planilla */
 .toolbar{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px;align-items:center;position:relative;z-index:20}
@@ -507,11 +539,38 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   </div>
 </div>
 
-<!-- modal NUBE (solo administrador): muestra TODO lo guardado en la nube -->
+<!-- modal NUBE (solo administrador): planillas guardadas por día + pantalla completa -->
 <div class="modal" id="nubeModal">
-  <div class="modal-box detbox">
-    <div class="dethd"><h3 id="nubeTitle">☁ Datos guardados en la nube</h3><button class="x" onclick="closeNube()">✕</button></div>
-    <div id="nubeBody"><p style="color:var(--muted)">Cargando…</p></div>
+  <div class="modal-box nubebox">
+    <div class="dethd">
+      <h3 id="nubeTitle">☁ Nube — Planillas guardadas</h3>
+      <button class="x btn-borrar" title="Borrar todo (plataforma y nube)" onclick="openBorrar()">🗑 BORRAR</button>
+      <button class="x" onclick="closeNube()">✕</button>
+    </div>
+    <div class="nube-grid">
+      <div class="nube-cal">
+        <div id="calWrap"></div>
+        <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">Los días con ● tienen planillas guardadas. Elija un día para ver las planillas de esa fecha.</p>
+      </div>
+      <div class="nube-main">
+        <div id="nubeList"></div>
+        <div id="nubeView"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- modal contraseña genérica (enmascarada con *) -->
+<div class="modal" id="pwModal">
+  <div class="modal-box">
+    <h3 id="pwTitle">Confirmar</h3>
+    <p id="pwMsg">Ingrese la contraseña para continuar.</p>
+    <input id="pwKey" type="text" autocomplete="off" inputmode="numeric" placeholder="•••••">
+    <div id="pwErr" style="color:#c62828;font-size:12px;margin-top:8px;min-height:16px"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-g" style="flex:1;padding:10px" onclick="closePw()">Cancelar</button>
+      <button class="btn" style="flex:1;padding:10px;background:var(--navy);color:#fff" onclick="pwOk()">Aceptar</button>
+    </div>
   </div>
 </div>
 <script>
@@ -965,8 +1024,18 @@ function saveCloud(silent){
   $('planStatus').textContent=silent?'Sincronizando cambios…':'Guardando…';
   const at=Date.now();MY_SAVE_AT=at;
   db.ref('comex_qd').set({rows:ROWS,updatedBy:CURRENT.email,updatedAt:at})
-    .then(()=>{$('planStatus').textContent=(silent?'Cambios sincronizados para todos · ':'Guardado en la nube · ')+new Date().toLocaleString('es-CL');if(!silent)logAct('guardar','Guardó '+ROWS.length+' registro(s)');})
+    .then(()=>{
+      $('planStatus').textContent=(silent?'Cambios sincronizados para todos · ':'Guardado en la nube · ')+new Date().toLocaleString('es-CL');
+      if(!silent){logAct('guardar','Guardó '+ROWS.length+' registro(s)');guardarSnapshot(at);} // cada guardado manual deja una planilla histórica para ver en NUBE
+    })
     .catch(e=>{$('planStatus').textContent='Error al guardar: '+e.message;});
+}
+/* Guarda una copia (snapshot) de la planilla con fecha/hora, para poder consultarla luego en NUBE */
+function guardarSnapshot(at){
+  at=at||Date.now();
+  const d=new Date(at);
+  const dk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  try{db.ref('comex_qd_hist/'+dk).push({rows:ROWS,by:(CURRENT&&CURRENT.email)||'',byName:(CURRENT&&CURRENT.name)||'',ts:at,n:ROWS.length});}catch(e){}
 }
 function loadCloud(){
   if(_cloudSub)return; // ya suscrito a los cambios en tiempo real
@@ -1342,41 +1411,125 @@ function closeDet(){$('detModal').classList.remove('on');if(detChart){detChart.d
 window.addEventListener('resize',()=>{if(detChart&&$('detModal').classList.contains('on'))detChart.resize();});
 /* ===== NUBE (solo administrador): ver TODO lo que está guardado en Firebase ===== */
 function closeNube(){$('nubeModal').classList.remove('on');}
+/* Estructura cargada: NUBE_HIST[dateKey] = [ {id, ts, by, byName, rows, n}, ... ] */
+let NUBE_HIST={}, NUBE_CAL={y:0,m:0}, NUBE_SELDAY=null;
 function verNube(){
   if(!CURRENT||CURRENT.email!==IA_USER){alert('Esta sección es solo para el administrador.');return;}
-  $('nubeBody').innerHTML='<p style="color:var(--muted)">Cargando datos desde la nube…</p>';
+  $('nubeList').innerHTML='<p style="color:var(--muted)">Cargando planillas guardadas desde la nube…</p>';
+  $('nubeView').innerHTML='';
   $('nubeModal').classList.add('on');
-  Promise.all([
-    db.ref('comex_qd').once('value').then(s=>s.val()).catch(()=>null),
-    db.ref('comex_qd_actividad').limitToLast(80).once('value').then(s=>s.val()).catch(()=>null)
-  ]).then(([data,act])=>{
-    let html='';
-    // --- Bloque 1: planilla guardada ---
-    const rows=(data&&Array.isArray(data.rows))?data.rows:[];
-    const meta=[];
-    if(data&&data.updatedBy)meta.push('Última edición por <b>'+esc(data.updatedBy)+'</b>');
-    if(data&&data.updatedAt)meta.push('el <b>'+esc(data.updatedAt)+'</b>');
-    if(data&&data.cleared)meta.push('<span style="color:#c62828;font-weight:700">(planilla vaciada)</span>');
-    html+='<div class="det-analysis" style="margin-top:0"><h4>☁ Planilla en la nube · ruta <code>comex_qd</code></h4>'+
-      '<div>'+(meta.join(' · ')||'Sin metadatos de edición.')+'</div>'+
-      '<div style="margin-top:6px"><b>'+rows.length+'</b> registro(s) almacenado(s).</div></div>';
-    if(rows.length){
-      const cols=COLS.filter(c=>!c.calc);
-      const head='<tr>'+cols.map(c=>'<th>'+esc(c.t)+'</th>').join('')+'</tr>';
-      const body=rows.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(r[c.k]==null?'':r[c.k])+'</td>').join('')+'</tr>').join('');
-      html+='<div style="overflow:auto;margin-top:12px"><table class="dett" style="min-width:900px"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
-    }
-    // --- Bloque 2: actividad registrada ---
-    const ev=act?Object.values(act).sort((a,b)=>b.ts-a.ts):[];
-    html+='<div class="det-analysis" style="margin-top:18px"><h4>🕒 Actividad registrada · ruta <code>comex_qd_actividad</code></h4>'+
-      '<div><b>'+ev.length+'</b> evento(s) recientes (últimos 80).</div></div>';
-    if(ev.length){
-      const body=ev.map(x=>'<tr><td>'+new Date(x.ts).toLocaleString('es-CL')+'</td><td>'+esc(x.name||x.email||'')+'</td><td>'+esc(AC_LABEL[x.action]||x.action||'')+'</td><td>'+esc(x.detail||'')+'</td></tr>').join('');
-      html+='<div style="overflow:auto;margin-top:10px"><table class="dett"><thead><tr><th>Fecha / hora</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead><tbody>'+body+'</tbody></table></div>';
-    }
-    $('nubeBody').innerHTML=html;
-    logAct('navegar','Abrió la vista NUBE (datos guardados)');
-  }).catch(e=>{$('nubeBody').innerHTML='<p style="color:#c62828">No se pudieron leer los datos de la nube: '+esc(e&&e.message||e)+'</p>';});
+  db.ref('comex_qd_hist').once('value').then(s=>{
+    const data=s.val()||{};NUBE_HIST={};
+    Object.keys(data).forEach(dk=>{
+      const node=data[dk]||{};
+      NUBE_HIST[dk]=Object.keys(node).map(id=>Object.assign({id:id},node[id])).sort((a,b)=>a.ts-b.ts);
+    });
+    const now=new Date();NUBE_CAL={y:now.getFullYear(),m:now.getMonth()};
+    renderCal();
+    // Auto-seleccionar hoy si tiene planillas; si no, el día más reciente con planillas
+    const todayKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    if(NUBE_HIST[todayKey])selDay(todayKey);
+    else{const keys=Object.keys(NUBE_HIST).sort();if(keys.length){const last=keys[keys.length-1];const d=last.split('-');NUBE_CAL={y:+d[0],m:+d[1]-1};renderCal();selDay(last);}else{$('nubeList').innerHTML='<div class="det-analysis" style="margin-top:0"><h4>☁ Sin planillas guardadas aún</h4><div>Cada vez que presione <b>Guardar</b> en la planilla, se almacenará una copia con su fecha y hora para poder consultarla aquí.</div></div>';}}
+    logAct('navegar','Abrió la vista NUBE (planillas guardadas)');
+  }).catch(e=>{$('nubeList').innerHTML='<p style="color:#c62828">No se pudo leer la nube: '+esc(e&&e.message||e)+'</p>';});
+}
+const MESES_ES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DOW_ES=['L','M','M','J','V','S','D'];
+function calStep(delta){let m=NUBE_CAL.m+delta,y=NUBE_CAL.y;if(m<0){m=11;y--;}if(m>11){m=0;y++;}NUBE_CAL={y:y,m:m};renderCal();}
+function renderCal(){
+  const y=NUBE_CAL.y,m=NUBE_CAL.m;
+  const first=new Date(y,m,1);let startDow=(first.getDay()+6)%7; // lunes=0
+  const days=new Date(y,m+1,0).getDate();
+  const now=new Date();const todayKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  let cells='';
+  DOW_ES.forEach(d=>cells+='<div class="dow">'+d+'</div>');
+  for(let i=0;i<startDow;i++)cells+='<div class="cal-cell"></div>';
+  for(let dd=1;dd<=days;dd++){
+    const dk=y+'-'+String(m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+    const has=!!NUBE_HIST[dk];
+    let cls='cal-cell'+(has?' has':'')+(dk===todayKey?' today':'')+(dk===NUBE_SELDAY?' sel':'');
+    cells+='<div class="'+cls+'"'+(has?' onclick="selDay(\''+dk+'\')"':'')+'>'+dd+(has?'<span class="dt"></span>':'')+'</div>';
+  }
+  $('calWrap').innerHTML='<div class="cal"><div class="cal-hd"><button onclick="calStep(-1)">‹</button><div class="mt">'+MESES_ES[m]+' '+y+'</div><button onclick="calStep(1)">›</button></div><div class="cal-grid">'+cells+'</div></div>';
+}
+function selDay(dk){
+  NUBE_SELDAY=dk;renderCal();
+  const list=NUBE_HIST[dk]||[];
+  const parts=dk.split('-');const fdate=parts[2]+' de '+MESES_ES[+parts[1]-1]+' de '+parts[0];
+  let html='<h3 style="color:var(--navy);font-size:15px;margin-bottom:10px">Planillas guardadas el '+fdate+' ('+list.length+')</h3>';
+  if(!list.length)html+='<p style="color:var(--muted)">No hay planillas guardadas este día.</p>';
+  else list.slice().reverse().forEach(sn=>{
+    const hora=new Date(sn.ts).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    html+='<div class="snap-item" onclick="verSnap(\''+dk+'\',\''+sn.id+'\')"><span class="si-ic">📄</span><div class="si-t"><b>Planilla de las '+hora+'</b><span>'+(sn.n||0)+' registro(s) · por '+esc(sn.byName||sn.by||'—')+'</span></div><span style="color:var(--steel);font-size:12px;font-weight:700">Ver ›</span></div>';
+  });
+  $('nubeList').innerHTML=html;
+  $('nubeView').innerHTML='';
+}
+function findSnap(dk,id){return (NUBE_HIST[dk]||[]).find(x=>x.id===id);}
+function verSnap(dk,id){
+  const sn=findSnap(dk,id);if(!sn){alert('No se encontró la planilla.');return;}
+  const rows=Array.isArray(sn.rows)?sn.rows:[];
+  const cols=COLS.filter(c=>!c.calc);
+  const head='<tr>'+cols.map(c=>'<th>'+esc(c.t)+'</th>').join('')+'</tr>';
+  const body=rows.length?rows.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(r[c.k]==null?'':r[c.k])+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+cols.length+'" style="text-align:center;color:var(--muted)">Planilla sin registros</td></tr>';
+  const hora=new Date(sn.ts).toLocaleString('es-CL');
+  $('nubeView').innerHTML='<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px">'+
+    '<h3 style="color:var(--navy);font-size:14px;margin:0;flex:1">📄 Planilla del '+hora+' · '+rows.length+' registro(s)</h3>'+
+    '<button class="btn" style="background:var(--navy);color:#fff;padding:8px 14px" onclick="pedirEditar(\''+dk+'\',\''+id+'\')">✏ Editar</button></div>'+
+    '<div class="nube-plan"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
+}
+/* Editar una planilla histórica: pide contraseña 12345; al confirmar, la carga en la planilla principal para editarla */
+function pedirEditar(dk,id){
+  askPassword('Editar planilla','Para editar esta planilla ingrese la contraseña.',()=>{
+    const sn=findSnap(dk,id);if(!sn){alert('No se encontró la planilla.');return;}
+    ROWS=(Array.isArray(sn.rows)?sn.rows:[]).map(r=>Object.assign(rowObj(),r));
+    renderPlanilla();renderKpis();renderAlerts();drawCharts();
+    closeNube();go('planilla');
+    $('planStatus').textContent='Editando copia de la planilla del '+new Date(sn.ts).toLocaleString('es-CL')+' · use Guardar para almacenar los cambios';
+    logAct('navegar','Abrió para editar una planilla guardada ('+new Date(sn.ts).toLocaleString('es-CL')+')');
+  });
+}
+/* ===== Contraseña genérica enmascarada con * (clave 12345, nunca visible) ===== */
+let PW_CB=null;
+function askPassword(title,msg,cb){
+  PW_CB=cb;$('pwTitle').textContent=title||'Confirmar';$('pwMsg').textContent=msg||'Ingrese la contraseña para continuar.';
+  const k=$('pwKey');k.value='';k.dataset.real='';$('pwErr').textContent='';
+  $('pwModal').classList.add('on');setTimeout(()=>k.focus(),80);
+}
+function closePw(){$('pwModal').classList.remove('on');PW_CB=null;}
+function pwOk(){
+  const real=$('pwKey').dataset.real||'';
+  if(real!=='12345'){$('pwErr').textContent='Contraseña incorrecta.';return;}
+  const cb=PW_CB;$('pwModal').classList.remove('on');PW_CB=null;if(cb)cb();
+}
+(function(){
+  const k=$('pwKey');if(!k)return;
+  k.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();pwOk();return;}
+    let real=k.dataset.real||'';
+    if(e.key==='Backspace'){real=real.slice(0,-1);e.preventDefault();}
+    else if(/^[0-9]$/.test(e.key)){if(real.length<12)real+=e.key;e.preventDefault();}
+    else if(e.key.length===1){e.preventDefault();return;}
+    else {return;}
+    k.dataset.real=real;k.value='*'.repeat(real.length);
+  });
+  k.addEventListener('paste',e=>{e.preventDefault();const t=((e.clipboardData||window.clipboardData).getData('text')||'').replace(/[^0-9]/g,'').slice(0,12);k.dataset.real=t;k.value='*'.repeat(t.length);});
+})();
+/* ===== BORRAR todo: plataforma (ROWS) y nube (comex_qd, comex_qd_hist, comex_qd_actividad). Pide 12345. ===== */
+function openBorrar(){
+  askPassword('Borrar TODO','⚠ Esto borrará TODAS las planillas y datos, en la plataforma y en la nube. Ingrese la contraseña para confirmar.',()=>{
+    if(!confirm('¿Seguro que desea BORRAR todo? Se eliminarán todas las planillas guardadas y la actividad, para todos los usuarios. Esta acción no se puede deshacer.'))return;
+    const at=Date.now();MY_SAVE_AT=at;
+    Promise.all([
+      db.ref('comex_qd').set({rows:[],updatedBy:CURRENT.email,updatedAt:at,cleared:true}),
+      db.ref('comex_qd_hist').remove(),
+      db.ref('comex_qd_actividad').remove()
+    ]).then(()=>{
+      ROWS=[];renderPlanilla();renderKpis();renderAlerts();drawCharts();
+      NUBE_HIST={};NUBE_SELDAY=null;renderCal();$('nubeList').innerHTML='<div class="det-analysis" style="margin-top:0"><h4>☁ Todo borrado</h4><div>Se eliminaron todas las planillas y la actividad de la plataforma y la nube.</div></div>';$('nubeView').innerHTML='';
+      $('planStatus').textContent='Todo borrado (plataforma y nube) · '+new Date().toLocaleString('es-CL');
+    }).catch(e=>alert('Error al borrar: '+(e&&e.message||e)));
+  });
 }
 /* ===== Exportar los gráficos a una presentación PPT (un gráfico por diapositiva) ===== */
 function _stripHtml(h){const d=document.createElement('div');d.innerHTML=h||'';return (d.textContent||d.innerText||'').replace(/\s+/g,' ').trim();}
@@ -1853,7 +2006,7 @@ function toggleDet(id){const el=$(id);if(!el)return;const open=el.style.display=
 
 /* ===== Init ===== */
 renderUsers();
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDel();closeDet();closeNube();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDel();closeDet();closeNube();closePw();}});
 
 </script>
 </body>
