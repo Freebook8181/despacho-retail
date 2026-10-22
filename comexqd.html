@@ -82,6 +82,8 @@ h2.sec::before{content:'';width:4px;height:15px;background:var(--teal);border-ra
 /* KPIs */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:15px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:17px 19px;position:relative;overflow:hidden}
+.kpi.kpi-click{transition:box-shadow .15s,transform .15s}
+.kpi.kpi-click:hover{box-shadow:0 4px 16px rgba(27,75,122,.18);transform:translateY(-1px);border-color:#1b4b7a}
 .kpi::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--steel)}
 .kpi .lb{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
 .kpi .vl{font-size:25px;font-weight:800;margin-top:7px;color:var(--navy)}
@@ -540,6 +542,14 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
     <div class="cc" id="detCC" style="height:min(52vh,460px)"><canvas id="detCanvas"></canvas></div>
     <div id="detAnalysis" class="det-analysis"></div>
     <div id="detTable"></div>
+  </div>
+</div>
+
+<!-- modal ¿POR QUÉ? de un indicador/KPI -->
+<div class="modal" id="kpiModal">
+  <div class="modal-box detbox">
+    <div class="dethd"><h3 id="kpiTitle">Indicador</h3><button class="x" onclick="closeKpi()">✕</button></div>
+    <div id="kpiBody" class="det-analysis"></div>
   </div>
 </div>
 
@@ -1367,19 +1377,85 @@ function renderKpis(){
   const otp=etaOnTimePct(), dva=etaDevAvg();
   const vt=valorEnTransito();
   $('kpis').innerHTML=`
-    ${kpi('gt1','TIEMPO TOTAL prom.',avgTiempo()+' d','confirmación → inventario')}
-    ${kpi('gt2','Cuello de botella',cb?cb.d+' d':'—',cb?cb.lb.replace(/\n/g,' '):'sin datos de tramos')}
-    ${kpi('ge1','Confiabilidad de ETA',otp!=null?otp+'%':'—','proveedor/ruta llega en fecha')}
-    ${kpi('ge2','Desviación ETA',dva!=null?((dva>0?'+':'')+dva+' d'):'—','atraso medio vs ETA')}
-    ${kpi('gv1','USD total',fmtMoney(tu),'valor importado')}
+    ${kpi('gt1','TIEMPO TOTAL prom.',avgTiempo()+' d','confirmación → inventario','tiempo')}
+    ${kpi('gt2','Cuello de botella',cb?cb.d+' d':'—',cb?cb.lb.replace(/\n/g,' '):'sin datos de tramos','cuello')}
+    ${kpi('ge1','Confiabilidad de ETA',otp!=null?otp+'%':'—','proveedor/ruta llega en fecha','confia')}
+    ${kpi('ge2','Desviación ETA',dva!=null?((dva>0?'+':'')+dva+' d'):'—','atraso medio vs ETA','desv')}
+    ${kpi('gv1','USD total',fmtMoney(tu),'valor importado','usd')}
     ${clp}
-    ${kpi('gv3','Valor en tránsito',fmtMoney(vt.trans),'capital inmovilizado')}
+    ${kpi('gv3','Valor en tránsito',fmtMoney(vt.trans),'capital inmovilizado','transito')}
     ${dolarKpi}
-    ${kpi('go1','PO activas / pend.',nAct+' / '+nPend,'completas / con datos faltantes')}
+    ${kpi('go1','PO activas / pend.',nAct+' / '+nPend,'completas / con datos faltantes','po')}
   `;
 }
-function kpi(cls,lb,vl,dt){return `<div class="kpi ${cls}"><div class="lb">${lb}</div><div class="vl">${vl}</div><div class="dt">${dt}</div></div>`;}
+function kpi(cls,lb,vl,dt,key){
+  const clickable=key?' kpi-click':'';
+  const onc=key?` onclick="kpiWhy('${key}')" title="Haga clic para ver el porqué" style="cursor:pointer"`:'';
+  const hint=key?'<span style="color:#1b4b7a;font-weight:700"> · ¿por qué? ›</span>':'';
+  return `<div class="kpi ${cls}${clickable}"${onc}><div class="lb">${lb}</div><div class="vl">${vl}</div><div class="dt">${dt}${hint}</div></div>`;
+}
 
+function kpiWhy(key){
+  try{drawCharts();}catch(e){}
+  const tu=totUSD();
+  let T='Indicador', H='';
+  const trL=x=>esc((x.lb||'').replace(/\n/g,' '));
+  if(key==='tiempo'){
+    const ci=avgTiempo(),cb=cuelloBotella(),tr=tramoAvg().filter(x=>x.n>0);
+    T='⏱ TIEMPO TOTAL promedio '+(ci?'— '+ci+' días':'— sin datos');
+    H='<p><b>Qué mide:</b> los días promedio desde que se confirma la compra hasta que la mercadería queda disponible en inventario, sobre las PO con fechas completas.</p>'+
+      '<p><b>Por qué da este valor:</b> '+(cb?'es la suma de todos los tramos del proceso; hoy el que más pesa es <b>'+trL(cb)+'</b> con <b>'+cb.d+' d</b>, y es el principal responsable de que el ciclo total sea de <b>'+ci+' d</b>.':'aún no hay suficientes fechas por tramo para explicar la composición.')+'</p>'+
+      (tr.length?'<p><b>De dónde sale (por tramo):</b></p><ul>'+tr.map(x=>'<li>'+trL(x)+': <b>'+x.d+' d</b></li>').join('')+'</ul>':'')+
+      '<p><b>Qué hacer:</b> para bajar el ciclo conviene atacar los tramos internos más lentos (nacionalización y recepción en CD); el tránsito internacional depende del proveedor y la naviera y no lo controla la empresa.</p>';
+  } else if(key==='cuello'){
+    const cb=cuelloBotella(),tr=tramoAvg().filter(x=>x.n>0),ci=avgTiempo();
+    const tot=tr.reduce((a,b)=>a+b.d,0);
+    T='🚧 Cuello de botella '+(cb?'— '+trL(cb)+' ('+cb.d+' d)':'— sin datos');
+    H=(cb?'<p><b>Qué dice:</b> el tramo del proceso donde más tiempo se pierde es <b>'+trL(cb)+'</b>, con <b>'+cb.d+' días</b> promedio'+(tot?(' ('+Math.round(cb.d/tot*100)+'% del ciclo total)'):'')+'.</p>':'<p>Aún no hay fechas suficientes para descomponer el ciclo por tramo.</p>')+
+      '<p><b>Por qué es el cuello de botella:</b> comparando los días promedio de cada etapa, ésta es la más lenta. Reducirla es la palanca que más acorta el ciclo total'+(ci?(' de '+ci+' días'):'')+'.</p>'+
+      (tr.length?'<p><b>Ranking de tramos (del más lento al más rápido):</b></p><ul>'+tr.slice().sort((a,b)=>b.d-a.d).map(x=>'<li>'+trL(x)+': <b>'+x.d+' d</b></li>').join('')+'</ul>':'')+
+      '<p><b>Qué hacer:</b> si el cuello es un tramo interno (nacionalización, retiro, recepción en CD), es accionable por la empresa. Si es el tránsito internacional, depende del proveedor y la naviera.</p>';
+  } else if(key==='confia'){
+    const d=etaDev(),otp=etaOnTimePct();
+    const late=d.filter(x=>x.dev>0).sort((a,b)=>b.dev-a.dev),ok=d.filter(x=>x.dev<=0);
+    T='🎯 Confiabilidad de ETA '+(otp!=null?'— '+otp+'%':'— sin datos');
+    H=(d.length?'<p><b>Qué mide:</b> de las '+d.length+' PO que tienen ETA y fecha real de llegada a CD, qué porcentaje llegó en la fecha prometida o antes.</p>'+
+      '<p><b>Por qué da '+otp+'%:</b> <b>'+ok.length+'</b> de <b>'+d.length+'</b> PO llegaron a tiempo (ETA cumplida) y <b>'+late.length+'</b> se atrasaron. El porcentaje es '+ok.length+'÷'+d.length+'.</p>'+
+      (late.length?'<p><b>Las que bajan el indicador (más atrasadas vs su ETA):</b></p><ul>'+late.slice(0,6).map(x=>'<li>PO <b>'+esc(x.po||'—')+'</b>: +'+x.dev+' d sobre la ETA</li>').join('')+'</ul>':'<p>Ninguna PO superó su ETA: confiabilidad total.</p>')+
+      '<p><b>Qué hacer:</b> revisar con el proveedor/naviera las rutas que repiten atrasos; un % bajo indica ETAs poco confiables para planificar.</p>':'<p>Aún no hay PO con ETA y llegada a CD registradas para medir la confiabilidad.</p>');
+  } else if(key==='desv'){
+    const d=etaDev(),dva=etaDevAvg();
+    const late=d.filter(x=>x.dev>0).sort((a,b)=>b.dev-a.dev),adel=d.filter(x=>x.dev<0);
+    T='📉 Desviación ETA '+(dva!=null?'— '+(dva>0?'+':'')+dva+' d':'— sin datos');
+    H=(d.length?'<p><b>Qué mide:</b> en promedio, cuántos días se desvía la llegada real a CD respecto de la ETA. Positivo = atraso, negativo = adelanto.</p>'+
+      '<p><b>Por qué da '+(dva>0?'+':'')+dva+' d:</b> es el promedio de la desviación de las '+d.length+' PO con ETA y llegada. '+(late.length?('<b>'+late.length+'</b> llegaron tarde'):'ninguna llegó tarde')+(adel.length?(' y <b>'+adel.length+'</b> antes de la ETA'):'')+'.</p>'+
+      (late.length?'<p><b>Las que más suben el promedio:</b></p><ul>'+late.slice(0,6).map(x=>'<li>PO <b>'+esc(x.po||'—')+'</b>: +'+x.dev+' d</li>').join('')+'</ul>':'')+
+      '<p><b>Qué hacer:</b> una desviación alta y positiva obliga a pedir con más anticipación o a renegociar plazos; cerca de 0 significa que las ETAs son fiables.</p>':'<p>Aún no hay PO con ETA y llegada a CD registradas.</p>');
+  } else if(key==='usd'){
+    const vp=sortEnt(byProv()),zz=sortEnt(byZona());
+    T='💵 USD total importado — '+fmtMoney(tu);
+    H='<p><b>Qué mide:</b> la suma del valor en dólares de todas las PO de la planilla.</p>'+
+      '<p><b>De dónde sale:</b> '+(vp[0]?'lo concentra sobre todo <b>'+esc(vp[0][0])+'</b> con '+fmtMoney(vp[0][1])+' ('+(tu?Math.round(vp[0][1]/tu*100):0)+'% del total)':'aún no hay valores cargados')+(zz[0]?('; por origen, <b>'+esc(zz[0][0])+'</b> aporta '+fmtMoney(zz[0][1])):'')+'.</p>'+
+      '<p><b>Qué hacer:</b> vigilar la concentración por proveedor y por zona para no depender de un solo origen.</p>';
+  } else if(key==='transito'){
+    const vt2=valorEnTransito(),tt=vt2.trans+vt2.disp,pct=tt?Math.round(vt2.trans/tt*100):0,nPend=poPendientes();
+    T='🚢 Valor en tránsito — '+fmtMoney(vt2.trans);
+    H='<p><b>Qué mide:</b> el capital inmovilizado en PO que aún tienen cuadros incompletos (no han terminado su ciclo).</p>'+
+      '<p><b>Por qué da este valor:</b> corresponde a <b>'+nPend+'</b> PO con datos faltantes, el <b>'+pct+'%</b> del valor total; el resto ('+fmtMoney(vt2.disp)+') ya está movilizado con sus cuadros completos.</p>'+
+      '<p><b>Qué hacer:</b> completar los registros pendientes para cerrar esas PO y liberar el seguimiento del capital.</p>';
+  } else if(key==='po'){
+    const nAct=poActivas(),nPend=poPendientes();
+    T='📋 PO activas / pendientes — '+nAct+' / '+nPend;
+    H='<p><b>Qué mide:</b> <b>activas</b> = PO con todos los cuadros completos; <b>pendientes</b> = PO con algún dato faltante.</p>'+
+      '<p><b>Por qué da este valor:</b> de la planilla, '+nAct+' órdenes están completas y '+nPend+' aún necesitan completar fechas o datos.</p>'+
+      '<p><b>Qué hacer:</b> priorizar completar las pendientes para que todos los indicadores de tiempo y valor reflejen el 100% de la operación.</p>';
+  } else { T='Indicador'; H='<p>Sin información adicional.</p>'; }
+  $('kpiTitle').textContent=T;
+  $('kpiBody').innerHTML='<h4>🔎 ¿Por qué este indicador?</h4>'+H;
+  $('kpiModal').classList.add('on');
+  try{logAct('kpi','Vio el porqué del indicador: '+T);}catch(e){}
+}
+function closeKpi(){$('kpiModal').classList.remove('on');}
 /* ===== Alertas ===== */
 function renderAlerts(){
   let out=[];
@@ -1402,7 +1478,18 @@ const CH={};
 const DET={};
 let detChart=null;
 function detalle(id){
-  const d=DET[id];if(!d){alert('Primero genera los gráficos.');return;}
+  let d=DET[id];
+  // Nunca mostrar un alert: si aún no se han generado los gráficos, generarlos ahora y reintentar.
+  if(!d){try{drawCharts();}catch(e){}d=DET[id];}
+  if(!d){
+    // Si de verdad no hay datos en la planilla, abrir igual la ventana con una explicación (no un alert).
+    $('detTitle').textContent='Análisis del gráfico';
+    const da0=$('detAnalysis');if(da0)da0.innerHTML='<h4>🔎 Análisis del gráfico</h4><div class="verdict info"><span class="dot"></span><span class="vtx">Todavía no hay PO cargadas en la planilla, por eso este gráfico no tiene datos. Ingrese o pegue órdenes de compra en la pestaña <b>Planilla</b> y vuelva a abrir el análisis: la ventana mostrará el gráfico en grande y su explicación.</span></div>';
+    $('detTable').innerHTML='';
+    if(detChart){detChart.destroy();detChart=null;}
+    $('detModal').classList.add('on');
+    return;
+  }
   $('detTitle').textContent=d.title;
   // Análisis del gráfico (conclusión + explicación detallada)
   try{fillExplains();}catch(e){}
