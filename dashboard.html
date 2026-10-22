@@ -103,6 +103,19 @@ select:focus{border-color:var(--navy)}
 #s-mac{border-top:4px solid #8e44ad}
 #s-ver{border-top:4px solid #e67e22}
 #s-devo{border-top:4px solid #16a085}
+/* ===== Planillas Devoluciones ===== */
+.devo-note{font-size:12.5px;color:#5a6672;margin:2px 2px 16px}
+.devo-wrap{margin:0 0 26px;border:1px solid #e3e8ef;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(23,42,67,.07);background:#fff}
+.devo-title{font-weight:800;font-size:15px;letter-spacing:.4px;padding:11px 16px}
+.devo-scroll{overflow-x:auto}
+.devo-tbl{border-collapse:collapse;width:100%;min-width:780px;font-size:12.5px}
+.devo-tbl th{padding:8px 6px;text-align:center;font-weight:700;border:1px solid rgba(255,255,255,.4);white-space:nowrap}
+.devo-tbl td{border:1px solid #d9e0e8;padding:5px 7px;min-width:72px;height:26px;vertical-align:top}
+.devo-tbl td.devo-num{text-align:center;background:#f4f6f9;color:#5a6672;font-weight:600;min-width:34px}
+.devo-cell:focus{outline:2px solid #2563eb;background:#eef5ff}
+.devo-foot{display:flex;flex-wrap:wrap;gap:30px;padding:12px 16px;border-top:1px solid #e3e8ef;font-size:13px;color:#1f2a37}
+.devo-ce{display:inline-block;min-width:160px;border-bottom:1px solid #9aa6b2;padding:1px 4px}
+.devo-ce:focus{outline:none;background:#eef5ff}
 /* ===== Boton y ventana "Ver analisis" ===== */
 .card{position:relative}
 .an-btn{position:absolute;top:12px;right:12px;z-index:5;border:1px solid var(--line);background:#fff;color:var(--navy-d);font-family:'IBM Plex Sans';font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 4px rgba(23,42,67,.08);transition:.15s}
@@ -1609,6 +1622,62 @@ function modDashboard(k){
  h+=`</div>`;
  return h;
 }
+/* ===== DEVOLUCIONES: planillas editables por tipo ===== */
+var DEVO_DATA={};
+const DEVO_ITEMS=[
+ {id:'cd',t:'CD',c:'#c0392b',tx:'#fff'},
+ {id:'gmac',t:'GARANTIA MAC',c:'#1d4ed8',tx:'#fff'},
+ {id:'ecom',t:'ECOMMERCE',c:'#7b1e3a',tx:'#fff'},
+ {id:'back',t:'BACKONLINE',c:'#1e8449',tx:'#fff'},
+ {id:'stec',t:'SERVICIO TECNICO',c:'#f1c40f',tx:'#3a2f00'},
+ {id:'varios',t:'VARIOS',c:'#7f8c8d',tx:'#fff'}
+];
+const DEVO_COLS=['Fecha','Documentos','Origen','Destinatarios','Bultos','Contenido','Observaciones'];
+const DEVO_ROWS=28;
+const FB_PATH_DEVO='quintec/devoluciones';
+function devoEmptyItem(){return{rows:Array.from({length:DEVO_ROWS},()=>Array(DEVO_COLS.length).fill('')),am:'',rec:''};}
+function devoEnsure(){if(!DEVO_DATA||typeof DEVO_DATA!=='object')DEVO_DATA={};DEVO_ITEMS.forEach(it=>{if(!DEVO_DATA[it.id])DEVO_DATA[it.id]=devoEmptyItem();const d=DEVO_DATA[it.id];if(!Array.isArray(d.rows))d.rows=[];while(d.rows.length<DEVO_ROWS)d.rows.push(Array(DEVO_COLS.length).fill(''));d.rows.forEach(r=>{while(r.length<DEVO_COLS.length)r.push('');});if(typeof d.am!=='string')d.am='';if(typeof d.rec!=='string')d.rec='';});}
+function devoEsc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function devoPlanillas(){
+ devoEnsure();
+ let h='<div class="devo-note">Planillas editables. Lo que escribas se guarda y se comparte con todos los usuarios al instante.</div>';
+ DEVO_ITEMS.forEach(it=>{
+  h+=`<div class="devo-wrap" data-item="${it.id}">`;
+  h+=`<div class="devo-title" style="background:${it.c};color:${it.tx}">${it.t}</div>`;
+  h+=`<div class="devo-scroll"><table class="devo-tbl"><thead><tr style="background:${it.c};color:${it.tx}"><th style="width:38px">N\u00b0</th>`;
+  DEVO_COLS.forEach(c=>{h+=`<th>${c}</th>`;});
+  h+=`</tr></thead><tbody id="devob_${it.id}"></tbody></table></div>`;
+  h+=`<div class="devo-foot"><div><b>AM</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="am" contenteditable="true"></span> &nbsp; Firma: ______________</div><div><b>Recepciona</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="rec" contenteditable="true"></span> &nbsp; Firma: ______________</div></div>`;
+  h+=`</div>`;
+ });
+ return h;
+}
+function devoRenderItem(it){
+ const tb=document.getElementById('devob_'+it.id);if(!tb)return;
+ const d=DEVO_DATA[it.id];if(!d)return;let h='';
+ for(let r=0;r<DEVO_ROWS;r++){
+  h+=`<tr><td class="devo-num">${r+1}</td>`;
+  for(let c=0;c<DEVO_COLS.length;c++){
+   h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${devoEsc(d.rows[r][c])}</td>`;
+  }
+  h+='</tr>';
+ }
+ tb.innerHTML=h;
+ const am=document.querySelector(`.devo-ce[data-i="${it.id}"][data-f="am"]`);if(am&&document.activeElement!==am)am.textContent=d.am||'';
+ const rc=document.querySelector(`.devo-ce[data-i="${it.id}"][data-f="rec"]`);if(rc&&document.activeElement!==rc)rc.textContent=d.rec||'';
+}
+function devoRender(){devoEnsure();DEVO_ITEMS.forEach(devoRenderItem);}
+var devoWriting=false,devoTimer=null;
+function devoFbPush(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;clearTimeout(devoTimer);devoTimer=setTimeout(()=>{try{devoWriting=true;fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;}).catch(e=>{devoWriting=false;console.error('devoFbPush',e);});}catch(e){devoWriting=false;}},500);}
+function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
+function devoWire(){
+ const root=document.getElementById('s-devo');if(!root)return;
+ root.addEventListener('input',e=>{
+  const t=e.target;if(!t||!t.classList)return;
+  if(t.classList.contains('devo-cell')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].rows[r][c]=t.textContent;devoFbPush();}}
+  else if(t.classList.contains('devo-ce')){const i=t.dataset.i,f=t.dataset.f;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i][f]=t.textContent;devoFbPush();}}
+ });
+}
 /* ===== CONSTRUIR SECCIONES Y PESTAÑAS DE LOS 3 MODULOS ===== */
 function buildModMarkup(){
  const M=document.getElementById('main');if(!M)return;
@@ -1619,10 +1688,9 @@ function buildModMarkup(){
  // Vertical Tiendas
  h+=`<section class="section" id="s-ver"><div class="sec-head"><h2 style="color:${MOD_COLOR.ver}">Vertical Tiendas</h2><p>Despachos a tiendas Vertical — por zona, mes y tienda</p></div>`;
  h+=modFilterBar('ver')+modDashboard('ver')+`</section>`;
- // Devoluciones (placeholder)
- h+=`<section class="section" id="s-devo"><div class="sec-head"><h2 style="color:${MOD_COLOR.devo}">Devoluciones</h2><p>Seguimiento de devoluciones</p></div>`;
- h+=`<div class="card" style="border-left:5px solid ${MOD_COLOR.devo}"><h3>${IC.redo} Devoluciones — en preparación</h3><div class="cs">Esta sección usará un Excel propio de devoluciones.</div><div style="padding:22px 4px;color:#5a6672;font-size:13.5px;line-height:1.65">El módulo de <b>Devoluciones</b> ya está creado. Tomará la información de <b>otro Excel</b> (independiente) con los filtros: Mes, Año, Semana, Día, Vehículo, Rango, Unidad y Comuna. Cuando envíes ese Excel y la regla para reconocer una devolución, activo aquí los mismos indicadores, gráficos y campos de calor.</div>
-   <div style="padding:4px 4px 16px"><button class="htool adminonly" id="devo_delBtn" style="background:#b4442f;border-color:#b4442f;color:#fff">🗑 Borrar Excel</button></div></div>`;
+ // Devoluciones — planillas por tipo
+ h+=`<section class="section" id="s-devo"><div class="sec-head"><h2 style="color:${MOD_COLOR.devo}">Devoluciones</h2><p>Planillas de control por tipo de devolución</p></div>`;
+ h+=(typeof devoPlanillas==='function'?devoPlanillas():'');
  h+=`</section>`;
  M.insertAdjacentHTML('beforeend',h);
  // pestañas con color distinto
@@ -1844,6 +1912,9 @@ try{wireMod();}catch(e){console.error('wireMod',e);}
 try{modLoadLocal();}catch(e){console.error('modLoadLocal',e);}
 try{['mac','ver'].forEach(k=>buildModFilters(k));}catch(e){console.error('buildModFilters',e);}
 try{if(typeof fbReady!=='undefined'&&fbReady)modFbSubscribe();}catch(e){console.error('modFbSubscribe',e);}
+try{devoRender();}catch(e){console.error('devoRender',e);}
+try{devoWire();}catch(e){console.error('devoWire',e);}
+try{if(typeof fbReady!=='undefined'&&fbReady)devoFbSubscribe();}catch(e){console.error('devoFbSubscribe',e);}
 try{applyRole();}catch(e){}
 
 /* ===== app11.js ===== */
