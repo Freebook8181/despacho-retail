@@ -450,28 +450,21 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
       <div class="explain-box" id="exModo"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tTime">5. ¿Cuánto demora cada PO? — Tiempo total</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cTime')">🔎 Ver análisis</button></div>
-      <div class="verdict info" id="vTime"><span class="dot"></span><span class="vtx">—</span></div>
-      <div class="metrow" id="mTime"></div>
-      <div class="cc big"><canvas id="cTime"></canvas></div>
-      <div class="explain-box" id="exTime"></div>
-    </div>
-    <div class="panel">
-      <div class="ph"><h3 id="tTramo">6. ¿Dónde se pierde el tiempo? — Cuello de botella</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cTramo')">🔎 Ver análisis</button></div>
+      <div class="ph"><h3 id="tTramo">5. ¿Dónde se pierde el tiempo? — Cuello de botella</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cTramo')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vTramo"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mTramo"></div>
       <div class="cc big"><canvas id="cTramo"></canvas></div>
       <div class="explain-box" id="exTramo"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tProvT">7. ¿Qué proveedor va más atrasado? — Tiempo por proveedor</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cProvT')">🔎 Ver análisis</button></div>
+      <div class="ph"><h3 id="tProvT">6. ¿Qué proveedor va más atrasado? — Tiempo por proveedor</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cProvT')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vProvT"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mProvT"></div>
       <div class="cc big"><canvas id="cProvT"></canvas></div>
       <div class="explain-box" id="exProvT"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tTransit">8. Capital movilizado vs. en tránsito</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cTransit')">🔎 Ver análisis</button></div>
+      <div class="ph"><h3 id="tTransit">7. Capital movilizado vs. en tránsito</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cTransit')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vTransit"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mTransit"></div>
       <div class="cc big"><canvas id="cTransit"></canvas></div>
@@ -1772,7 +1765,7 @@ function openBorrar(){
 function _stripHtml(h){const d=document.createElement('div');d.innerHTML=h||'';return (d.textContent||d.innerText||'').replace(/\s+/g,' ').trim();}
 const PPT_CHARTS=[
   {id:'cValProv',bk:'ValProv'},{id:'cUniProv',bk:'UniProv'},{id:'cZonaV',bk:'ZonaV'},{id:'cModo',bk:'Modo'},
-  {id:'cTime',bk:'Time'},{id:'cTramo',bk:'Tramo'},{id:'cProvT',bk:'ProvT'},{id:'cTransit',bk:'Transit'}
+  {id:'cTramo',bk:'Tramo'},{id:'cProvT',bk:'ProvT'},{id:'cTransit',bk:'Transit'}
 ];
 function exportPPT(){
   if(typeof PptxGenJS==='undefined'){alert('No se pudo cargar la librería de PowerPoint. Verifique su conexión a internet e inténtelo de nuevo.');return;}
@@ -1857,7 +1850,7 @@ try{if(window.ChartDataLabels)Chart.register(window.ChartDataLabels);}catch(e){}
 Chart.defaults.set('plugins.datalabels',{display:false,clamp:true,clip:false,font:{weight:'700',size:13}});
 function sortEnt(m){return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
 function chip(host,lb,val){const el=$(host);if(el)el.insertAdjacentHTML('beforeend',`<div class="chip"><span>${lb}</span><b>${val}</b></div>`);}
-function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mProvT','mMix','mTicket','mPareto','mTramo','mEta','mZonaT','mCostU','mModo','mTransit','mTrend','mValProv','mUniProv','mZonaV','mTime'].forEach(id=>{if($(id))$(id).innerHTML='';});}
+function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mProvT','mMix','mTicket','mPareto','mTramo','mEta','mZonaT','mCostU','mModo','mTransit','mTrend','mValProv','mUniProv','mZonaV'].forEach(id=>{if($(id))$(id).innerHTML='';});}
 function unidByProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+numClean(r.unid);});return m;}
 function tiempoByProv(){const sum={},cnt={};ROWS.forEach(r=>{const d=numClean(r.ttot);if(d>0){const p=r.prov||'—';sum[p]=(sum[p]||0)+d;cnt[p]=(cnt[p]||0)+1;}});const m={};Object.keys(sum).forEach(p=>{m[p]=Math.round(sum[p]/cnt[p]);});return m;}
 function ticketByZona(){const u=unidByZona(),z=byZona(),m={};Object.keys(z).forEach(k=>{m[k]=u[k]?z[k]/u[k]:0;});return m;}
@@ -1960,9 +1953,7 @@ function drawTimeCharts(){
   chip('mTransit','Movilizado',fmtDual(vtr.disp));chip('mTransit','En tránsito',fmtDual(vtr.trans));
 
   // 8) Tiempo total por PO (días)
-  const trows=ROWS.filter(r=>numClean(computeTtot(r))>0);
-  mk('cTime',{type:'bar',data:{labels:trows.map(r=>r.po),datasets:[{label:'Días',data:trows.map(r=>numClean(computeTtot(r))),backgroundColor:'#0e7490',borderRadius:5}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' días'}},datalabels:{display:true,anchor:'end',align:'top',color:'#0e7490',font:{weight:'800',size:12},formatter:v=>v}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'días'}}}}});
-  chip('mTime','Promedio',avgTiempo()+' d');chip('mTime','PO con dato',trows.length);
+  // 8) (gráfico "Tiempo total por PO" eliminado: estaba duplicado con el tiempo por proveedor)
 
   // ===== Títulos de conclusión + semáforos (vista gerencial) =====
   const tu2=totUSD(), totPO=ROWS.length;
@@ -1979,8 +1970,6 @@ function drawTimeCharts(){
   if(modos.length){const tot6=modos.reduce((a,b)=>a+b.usd,0);const mar=modos.find(x=>/mar/i.test(x.modo));const pMar=tot6&&mar?Math.round(mar.usd/tot6*100):null;setT('Modo',pMar!=null?('El '+pMar+'% del valor viene por vía marítima'):'Mix de modos de transporte');verdict('Modo','info',modos.map(x=>'<b>'+x.modo+'</b>: '+fmtDual(x.usd)+' / '+x.dias+' d').join(' · ')+'. Trade-off costo vs. velocidad: reservar aéreo para carga crítica o de alto valor.');}
   else{setT('Modo','Tipo de transporte — sin datos');verdict('Modo','info','Sin datos de modo de transporte.');}
   // 5) Tiempo total por PO
-  if(trows.length){setT('Time','Tiempo total promedio del ciclo: '+avgTiempo()+' días');verdict('Time','info','El ciclo promedio desde la confirmación de compra hasta la disponibilidad es de <b>'+avgTiempo()+' días</b> sobre <b>'+trows.length+'</b> PO con fechas. Las barras más altas son las órdenes más lentas.');}
-  else{setT('Time','Tiempo total — sin datos');verdict('Time','info','Aún no hay fechas suficientes para calcular el tiempo total por PO.');}
   // 6) Cuello de botella
   if(cbot){setT('Tramo','El cuello de botella es '+cbot.lb.replace(/\n/g,' ')+' ('+cbot.d+' días)');verdict('Tramo','warn','El tramo <b>'+cbot.lb.replace(/\n/g,' ')+'</b> concentra la mayor demora con <b>'+cbot.d+' días</b>. Es la palanca prioritaria para reducir el ciclo total.');}
   else{setT('Tramo','Cuello de botella — sin datos');verdict('Tramo','info','No hay fechas suficientes para descomponer el ciclo por tramo.');}
@@ -1995,7 +1984,6 @@ function drawTimeCharts(){
   chartTitle('cUniProv','Unidades importadas por proveedor','Volumen físico por proveedor');
   chartTitle('cZonaV','Valor importado por zona de origen','Distribución del USD (y CLP) según de dónde viene');
   chartTitle('cModo','Tipo de transporte','Valor importado (USD y CLP) y días de ciclo por modo');
-  chartTitle('cTime','Tiempo total por orden de compra','Días desde la confirmación hasta disponibilidad');
   chartTitle('cTramo','¿Dónde se pierde el tiempo del ciclo?','Días promedio por tramo del proceso');
   chartTitle('cProvT','Tiempo total promedio por proveedor','Días desde la compra hasta bodega');
   chartTitle('cTransit','Capital movilizado vs. en tránsito','Completas (movilizado) vs. incompletas (en tránsito)');
@@ -2005,7 +1993,6 @@ function drawTimeCharts(){
   DET['cUniProv']={title:'Unidades por proveedor',labels:uprov.map(x=>x[0]),vals:uprov.map(x=>x[1]),fmt:fmtUnid,catLabel:'Proveedor',valLabel:'Unidades'};
   DET['cZonaV']={title:'Valor importado (USD) por zona',labels:Object.keys(zval),vals:Object.values(zval),fmt:fmtDual,catLabel:'Zona',valLabel:'USD'};
   DET['cModo']={title:'Tipo de transporte',labels:modos.map(x=>x.modo),catLabel:'Modo',series:[{name:'Valor',vals:modos.map(x=>x.usd),fmt:fmtDual},{name:'Días prom.',vals:modos.map(x=>x.dias),fmt:v=>v+' d'}]};
-  DET['cTime']={title:'Tiempo total por PO (días)',labels:trows.map(r=>r.po),vals:trows.map(r=>numClean(computeTtot(r))),fmt:v=>v+' d',catLabel:'PO',valLabel:'Días'};
   DET['cTramo']={title:'Cascada del TIEMPO TOTAL por tramo (días promedio)',labels:trv.map(x=>x.lb.replace(/\n/g,' ')),vals:trv.map(x=>x.d),fmt:v=>v+' d',catLabel:'Tramo',valLabel:'Días promedio'};
   DET['cProvT']={title:'TIEMPO TOTAL promedio por proveedor (días)',labels:ttprov.map(x=>x[0]),vals:ttprov.map(x=>x[1]),fmt:v=>v+' d',catLabel:'Proveedor',valLabel:'Días promedio'};
   DET['cTransit']={title:'Capital movilizado vs. en tránsito',labels:['Movilizado','En tránsito'],vals:[vtr.disp,vtr.trans],fmt:fmtDual,catLabel:'Estado',valLabel:'Valor'};
@@ -2061,8 +2048,6 @@ function fillExplains(){
   S('exZonaV',`<b>📊 Qué muestra:</b> cómo se reparte el valor importado (USD y pesos) según la zona de origen, es decir de dónde viene la mercadería.<br><b>🔍 Cómo leerlo:</b> ${zv[0]?'<b>'+zv[0][0]+'</b> concentra '+fmtDual(zv[0][1]):'aún no hay zonas con valor'}.<br><b>💡 Para qué sirve:</b> medir la dependencia geográfica. Si una sola zona concentra la mayor parte del valor, conviene evaluar un doble origen o nearshoring.`);
   const md=byModo();
   S('exModo',`<b>📊 Qué muestra:</b> compara cuánto valor traemos por cada tipo de transporte (barras, en USD y pesos) y cuánto tarda cada modo (línea, en días).<br><b>🔍 Cómo leerlo:</b> ${md.map(x=>'<b>'+x.modo+'</b>: '+fmtDual(x.usd)+' / '+x.dias+' d').join(' · ')||'sin datos'}.<br><b>💡 Para qué sirve:</b> ver el equilibrio entre costo y rapidez. El aéreo es más caro pero mucho más rápido: conviene para productos urgentes o de alto valor.`);
-  const tr=ROWS.filter(r=>numClean(computeTtot(r))>0);
-  S('exTime',`<b>📊 Qué muestra:</b> el tiempo total (en días) de cada orden de compra, desde que se confirma hasta que queda disponible en bodega.<br><b>🔍 Cómo leerlo:</b> ${tr.length?'promedio de <b>'+avgTiempo()+' días</b> sobre '+tr.length+' PO con fechas; las barras más altas son las órdenes más lentas':'aún no hay fechas suficientes'}.<br><b>💡 Para qué sirve:</b> identificar qué órdenes se demoran más y darles seguimiento, y tener una referencia real del plazo de cada importación.`);
   const cbot=cuelloBotella();
   S('exTramo',`<b>📊 Qué muestra:</b> el tiempo total repartido en cada etapa del proceso (origen, tránsito internacional, nacionalización, recepción). Cada barra = días promedio de esa etapa.<br><b>🔍 Cómo leerlo:</b> ${cbot?'la etapa más lenta es <b>'+cbot.lb.replace(/\n/g,' ')+'</b> con '+cbot.d+' días; es ahí donde más tiempo se pierde':'aún no hay fechas suficientes para calcularlo'}.<br><b>💡 Para qué sirve:</b> encontrar el “cuello de botella”. El tránsito internacional (ej. barco desde Asia) depende del proveedor y la naviera y <b>no lo controla la empresa</b>; conviene enfocar las mejoras en las etapas internas (nacionalización y recepción en bodega).`);
   const ttp=sortEnt(ttotByProv());
