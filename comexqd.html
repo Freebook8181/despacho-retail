@@ -318,17 +318,20 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 .report .execbox{background:linear-gradient(135deg,#0e7490,#1b4b7a);color:#eaf4fb;border-radius:14px;padding:18px 22px;margin:16px 0 8px}
 .report .execbox .t{font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#bfe6f0;margin-bottom:6px}
 .report .execbox p{color:#e8f3fa;margin:0;font-size:13px;line-height:1.6}
-.report .rcard{background:#fff;border:1px solid #e6edf5;border-left:5px solid var(--teal);border-radius:14px;padding:20px 22px 20px;margin:18px 0;box-shadow:0 6px 20px rgba(15,39,68,.07);page-break-inside:avoid}
-.report .rcard .rc-h{display:flex;align-items:center;gap:12px;margin:0 0 14px}
-.report .rcard .rc-n{flex:none;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1b4b7a,#0e7490);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(14,116,144,.35)}
-.report .rcard .rc-h h3{margin:0;border:0;padding:0;color:var(--navy);font-size:16.5px}
-.report .rcard .rimg{margin:0 0 14px}
-.report .rcard .rimg img{display:block;width:100%;max-width:840px;height:auto;border:1px solid #eef2f7;border-radius:10px;background:#fff;padding:10px;margin:0 auto;box-shadow:0 2px 8px rgba(15,39,68,.05)}
-.report .rcard .rc-an{background:#f1f6fc;border:1px solid #dbe8f6;border-radius:10px;padding:14px 16px}
-.report .rcard .rc-an .rc-an-t{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#0e7490;margin-bottom:7px}
+.report .rcard{background:#fff;border:1px solid #e6edf5;border-left:5px solid var(--teal);border-radius:14px;padding:16px 18px;margin:14px 0;box-shadow:0 6px 18px rgba(15,39,68,.07);page-break-inside:avoid}
+.report .rcard .rc-h{display:flex;align-items:center;gap:11px;margin:0 0 12px}
+.report .rcard .rc-n{flex:none;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#1b4b7a,#0e7490);color:#fff;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(14,116,144,.3)}
+.report .rcard .rc-h h3{margin:0;border:0;padding:0;color:var(--navy);font-size:15.5px}
+.report .rcard .rc-body{display:flex;gap:18px;align-items:center}
+.report .rcard .rimg{flex:1 1 56%;min-width:0;margin:0}
+.report .rcard .rimg img{display:block;width:100%;max-width:100%;height:auto;border:1px solid #eef2f7;border-radius:10px;background:#fff;padding:8px;margin:0;box-shadow:0 2px 8px rgba(15,39,68,.05)}
+.report .rcard .rc-an{flex:1 1 44%;background:#f1f6fc;border:1px solid #dbe8f6;border-radius:10px;padding:13px 15px;margin:0;align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+.report .rcard .rc-an .rc-an-t{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#0e7490;margin-bottom:7px}
 .report .rcard .rc-an .rc-an-t::before{content:"▸ ";color:#0e7490}
-.report .rcard .rc-an p{margin:0 0 7px;font-size:13px;color:#334155;line-height:1.62}
+.report .rcard .rc-an p{margin:0 0 7px;font-size:12.5px;color:#334155;line-height:1.6}
 .report .rcard .rc-an p:last-child{margin:0}
+.report .rcard.full .rc-body{display:block}
+@media(max-width:680px){.report .rcard .rc-body{flex-direction:column;align-items:stretch}}
 .report .infg{background:linear-gradient(135deg,#0b2033,#143a63 55%,#0e5f73);border-radius:16px;padding:22px 24px 24px;margin:16px 0 10px;color:#eaf4fb;box-shadow:0 10px 30px rgba(15,39,68,.18)}
 .report .infg .ih{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#bfe6f0;margin-bottom:3px}
 .report .infg .ih2{font-size:19px;font-weight:800;color:#fff;margin:0 0 16px}
@@ -536,7 +539,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
     <button class="tbtn" onclick="exportarPDF()"><span class="ic">⬇</span> Exportar PDF</button>
     <button class="tbtn" onclick="imprimir('reporte')"><span class="ic">⎙</span> Imprimir reporte</button>
   </div>
-  <div id="reportHost"><div class="empty"><h3>Sin reporte generado</h3><p>Presione “Generar / actualizar reporte” para construir el análisis con gráficos y campo de calor.</p></div></div>
+  <div id="reportHost"><div class="empty"><h3>Sin reporte generado</h3><p>Presione “Generar / actualizar reporte” para construir el análisis con gráficos y sus explicaciones.</p></div></div>
 </section>
 
 <!-- SUGERENCIAS IA -->
@@ -1591,20 +1594,34 @@ function detalle(id){
   }
   $('detModal').classList.add('on');
   if(detChart){detChart.destroy();detChart=null;}
-  setTimeout(()=>{
-    // Mostrar EXACTAMENTE el mismo gráfico que en la vista principal (mismo tipo, colores y etiquetas),
-    // sólo que a mayor tamaño. Se clonan los datos para no reutilizar el config ya ligado al gráfico vivo.
-    const base=(DET[id]&&DET[id].detCfg)||CFG[id];
-    let cfg;
-    if(base){
-      const data2={labels:(base.data.labels||[]).slice(),datasets:(base.data.datasets||[]).map(ds=>Object.assign({},ds,{data:(ds.data||[]).slice()}))};
-      cfg={type:base.type,data:data2,options:Object.assign({},base.options||{},{maintainAspectRatio:false,responsive:true,animation:false})};
-    } else {
-      cfg={type:'bar',data:{labels:d.labels||[],datasets:[{data:d.vals||[]}]},options:{maintainAspectRatio:false}};
+  // Dibuja el gráfico en grande. Se usa doble requestAnimationFrame para que el
+  // modal ya tenga tamaño calculado (evita que el canvas mida 0 y quede en blanco).
+  const drawDet=()=>{
+    const cv=$('detCanvas'); if(!cv) return;
+    if(detChart){detChart.destroy();detChart=null;}
+    let cfg=null;
+    try{
+      // Mismo gráfico que la vista principal (tipo, colores y etiquetas), a mayor tamaño.
+      const base=(DET[id]&&DET[id].detCfg)||CFG[id];
+      if(base&&base.data){
+        const data2={labels:(base.data.labels||[]).slice(),datasets:(base.data.datasets||[]).map(ds=>Object.assign({},ds,{data:(ds.data||[]).slice()}))};
+        cfg={type:base.type,data:data2,options:Object.assign({},base.options||{},{maintainAspectRatio:false,responsive:true,animation:false})};
+      }
+    }catch(e){cfg=null;}
+    if(!cfg){
+      // Respaldo: reconstruir el gráfico a partir de los datos del detalle (siempre muestra algo).
+      const dd=DET[id]||d;
+      if(dd&&dd.series){
+        cfg={type:'bar',data:{labels:(dd.labels||[]).slice(),datasets:dd.series.map((s,i)=>({label:s.name,data:(s.vals||[]).slice(),backgroundColor:i?'#d97706':'#1b4b7a',borderRadius:4}))},options:{maintainAspectRatio:false,responsive:true,animation:false}};
+      }else if(dd){
+        cfg={type:(dd.type||'bar'),data:{labels:(dd.labels||[]).slice(),datasets:[{label:dd.valLabel||'Valor',data:(dd.vals||[]).slice(),backgroundColor:(dd.type==='doughnut'||dd.type==='polarArea')?PAL:'#1b4b7a',borderRadius:4}]},options:{maintainAspectRatio:false,responsive:true,animation:false,plugins:{legend:{display:(dd.type==='doughnut'||dd.type==='polarArea')}}}};
+      }
     }
-    detChart=new Chart($('detCanvas'),cfg);
-    setTimeout(()=>{if(detChart)detChart.resize();},60);
-  },90);
+    if(!cfg) return;
+    try{ detChart=new Chart(cv,cfg); }catch(e){}
+    setTimeout(()=>{if(detChart)detChart.resize();},80);
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(drawDet));
   logAct('detalle','Vio el detalle del gráfico: '+d.title);
 }
 function closeDet(){$('detModal').classList.remove('on');if(detChart){detChart.destroy();detChart=null;}}
@@ -2243,7 +2260,7 @@ function buildReportHTML(){
     const paTot=p.reduce((a,b)=>a+(+b[1]||0),0); let _n80=0,_acc=0; for(const x of p){_acc+=x[1];_n80++;if(paTot&&_acc/paTot>=0.8)break;}
     const nPO=ROWS.filter(r=>!isEmptyRow(r)).length;
     const pct=(v,t)=>t?Math.round(v/t*100):0;
-    const card=(n,ti,id,an)=>'<section class="rcard"><div class="rc-h"><span class="rc-n">'+n+'</span><h3>'+ti+'</h3></div><div class="rimg" data-chart="'+id+'"><div class="imgpend">⏳ Generando gráfico…</div></div><div class="rc-an"><div class="rc-an-t">Análisis e interpretación</div>'+an+'</div></section>';
+    const card=(n,ti,id,an)=>'<section class="rcard"><div class="rc-h"><span class="rc-n">'+n+'</span><h3>'+ti+'</h3></div><div class="rc-body"><div class="rimg" data-chart="'+id+'"><div class="imgpend">⏳ Generando gráfico…</div></div><div class="rc-an"><div class="rc-an-t">Análisis e interpretación</div>'+an+'</div></div></section>';
     const html=`<div class="report" id="reportDoc">
       <div class="rhead"><h1>Reporte de Control de Importaciones — COMEX QD</h1><div class="meta">Generado el ${new Date().toLocaleString('es-CL')} por ${esc(CURRENT.name)} · Quintec · Suite Logística</div></div>
       <div class="rk">
@@ -2264,7 +2281,6 @@ function buildReportHTML(){
       ${card(7,'Tiempo total de tránsito por PO (días)','cTiempo', '<p>El lead time promedio del portafolio es de <b>'+avgTiempo()+' días</b>, medido sobre <b>'+tRows.length+' PO</b> con fechas completas.</p><p>Las PO muy por encima de ese promedio revelan cuellos de botella (aduana, naviera o retiro P/A) que frenan la rotación de inventario y encarecen el stock en tránsito. Conviene revisar caso a caso las órdenes más lentas para corregir la causa raíz.</p>')}
       ${card(8,'Tiempo total promedio por proveedor','cProvT', '<p>Ordena a los proveedores por el tiempo que tardan en poner la mercadería disponible.'+(ttp[0]?' El más lento es <b>'+ttp[0][0]+'</b> con <b>'+ttp[0][1]+' días</b> promedio.':'')+'</p><p>Este dato es clave para planificar flujo de caja y capacidad de recepción en el centro de distribución. Los proveedores que más atrasan son candidatos a renegociar plazos o a activar un origen alternativo.</p>')}
       ${card(9,'Tipo de transporte — costo vs. velocidad','cModo', (()=>{if(!modos.length)return '<p>Aún no hay datos de tipo de transporte cargados en la planilla.</p>';const tot=modos.reduce((a,b)=>a+(+b.usd||0),0);return '<p>La carga se moviliza por <b>'+modos.length+' modo(s)</b>: '+modos.map(x=>'<b>'+esc(x.modo)+'</b> con '+fmtMoney(x.usd)+(tot?' ('+pct(x.usd,tot)+'%)':'')+(x.dias?' y '+x.dias+' días de ciclo':'')).join('; ')+'.</p><p>El marítimo suele ser el más económico pero lento; el aéreo acelera la llegada a mayor costo (carga urgente o de alto valor); el terrestre aplica a orígenes regionales. Equilibrar los modos según urgencia y valor optimiza el costo logístico sin sacrificar el nivel de servicio.</p>';})())}
-      <section class="rcard"><div class="rc-h"><span class="rc-n">10</span><h3>Campo de calor — Zona vs. Estado</h3></div><div class="hmwrap">${heatmapTable()}</div><div class="rc-an"><div class="rc-an-t">Análisis e interpretación</div><p>Muestra la cantidad de PO por combinación de zona de origen y etapa logística. Las celdas más intensas concentran más órdenes y permiten detectar si los atrasos se concentran en una zona u origen específico, orientando dónde enfocar la gestión operativa.</p></div></section>
       <div class="execbox"><div class="t">Conclusiones y recomendaciones</div><p>En síntesis, el foco de gestión debe estar en: (1) ${concTop>40?'diversificar al proveedor '+p[0][0]+' ('+concTop+'% del gasto)':'mantener la diversificación actual de proveedores'}; (2) ${z[0]&&tu&&z[0][1]/tu>0.5?'reducir la dependencia de la zona '+z[0][0]:'equilibrar las zonas de origen'}; (3) ${atr>0?'resolver los '+atr+' embarques atrasados':'sostener el cumplimiento de ETAs'}; y (4) completar las fechas de las ${pend} PO pendientes para mejorar la trazabilidad y la exactitud de los KPIs. El detalle y las acciones priorizadas están en la pestaña <b>Sugerencias IA</b>.</p></div>
     </div>`;
     return html;
@@ -2314,20 +2330,45 @@ function exportarPDF(host){
     } else blocks.push(ch);
   });
   const opt={scale:2,backgroundColor:'#ffffff',useCORS:true};
-  let y=M;
+  const GAP=3, usable=ph-2*M, MAXP=5;
   (async()=>{
+    // 1) Pre-renderizar cada bloque una sola vez y medir su alto natural a ancho de columna completo
+    const items=[];
     for(const b of blocks){
       if(!b.offsetWidth&&!b.offsetHeight) continue;
       const canvas=await html2canvas(b,opt);
-      let w=cw, h=cw*canvas.height/canvas.width;
-      if(h>ph-2*M){ h=ph-2*M; w=h*canvas.width/canvas.height; }  // bloque muy alto: se escala para que entre completo en una página
-      if(y+h>ph-M){ pdf.addPage(); y=M; }                        // si no cabe en lo que queda, pasa a página nueva (sin cortar)
-      const x=M+(cw-w)/2;                                         // centrado horizontal
-      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',x,y,w,h);
-      y+=h+4;
+      const hFull=cw*canvas.height/canvas.width;   // alto en mm si se dibuja a todo el ancho
+      items.push({canvas,hFull,ratio:canvas.height/canvas.width});
+    }
+    // 2) Contar cuántas páginas ocupa el reporte con un factor de escala s
+    const countPages=s=>{
+      let y=M,pages=1;
+      for(const it of items){
+        let h=Math.min(it.hFull*s,usable);
+        if(y+h>ph-M){ pages++; y=M; }
+        y+=h+GAP;
+      }
+      return pages;
+    };
+    // 3) Búsqueda binaria del mayor factor s que garantice ≤5 páginas
+    let s=1;
+    if(countPages(1)>MAXP){
+      let lo=0.40,hi=1;
+      for(let i=0;i<24;i++){ const mid=(lo+hi)/2; if(countPages(mid)<=MAXP){lo=mid;}else{hi=mid;} }
+      s=lo;
+    }
+    // 4) Dibujar con el factor encontrado, centrado y sin cortar bloques
+    let y=M;
+    for(const it of items){
+      let w=cw*s, h=it.hFull*s;
+      if(h>usable){ h=usable; w=h/it.ratio; }
+      if(y+h>ph-M){ pdf.addPage(); y=M; }
+      const x=M+(cw-w)/2;
+      pdf.addImage(it.canvas.toDataURL('image/jpeg',0.95),'JPEG',x,y,w,h);
+      y+=h+GAP;
     }
     pdf.save('Reporte_COMEX_QD_'+new Date().toISOString().slice(0,10)+'.pdf');
-    logAct('reporte','Exportó el reporte a PDF (carta)');
+    logAct('reporte','Exportó el reporte a PDF (carta, ≤5 págs)');
   })().catch(e=>{alert('Error al exportar PDF: '+(e&&e.message||e));});
 }
 /* ===== Sugerencias IA (solo analista) ===== */
