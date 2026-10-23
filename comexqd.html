@@ -1412,7 +1412,7 @@ function trendByMonth(){const su={},sd={},ct={};ROWS.forEach(r=>{const d=(''+(r.
 
 /* ===== KPIs ===== */
 let DOLAR=null, DOLAR_FECHA=null, DOLAR_ERR=false, DOLAR_MANUAL=false;
-let DOLAR_HIST={}; // { 'yyyy-mm-dd': valorObservado | 'pending' | null }
+let DOLAR_YEAR={}; // { '2026': {'2026-06-18':883.46,...} | 'pending' | 'err' }  cache del año completo
 /* "Fecha" de la fila para valorizar en CLP: se usa la fecha de COSTEO (cuando se valoriza la
    importacion); si esta vacia, se cae a la siguiente fecha disponible de la fila. */
 const FECHA_VAL_COLS=['cost','dinv','lcd','rpa','fdisp','eta','rorig','dorig','fconf'];
@@ -1423,26 +1423,35 @@ function rowFechaVal(r){
   }
   return null;
 }
-function _ymdToDmy(y){const p=y.split('-');return p[2]+'-'+p[1]+'-'+p[0];}
 function _prevDay(y){const p=y.split('-');const d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-/* Dolar observado HISTORICO por fecha (BCCh via mindicador.cl, con CORS). Fin de semana/feriado
-   sin publicacion -> retrocede hasta 6 dias. Resultado cacheado en DOLAR_HIST. */
-function fetchDolarHist(ymd){
-  if(!ymd || (ymd in DOLAR_HIST))return;
-  DOLAR_HIST[ymd]='pending';
-  _fetchHistDay(ymd,ymd,0);
-}
-function _fetchHistDay(orig,tryY,back){
-  if(back>6){DOLAR_HIST[orig]=null;_rerenderDolar();return;}
-  fetch('https://mindicador.cl/api/dolar/'+_ymdToDmy(tryY),{cache:'no-store'})
+/* RENDIMIENTO: se descarga UNA sola vez TODO el año del dólar observado (mindicador.cl/api/dolar/AAAA)
+   y se guarda en caché. Así no se hace una llamada por cada fecha (lo que tardaba minutos) sino 1 por año.
+   El re-dibujo del KPI se agrupa (debounce) para no re-renderizar en cada respuesta. */
+let _histT=null;
+function _rerenderDolarDebounced(){if(_histT)return;_histT=setTimeout(()=>{_histT=null;if($('kpis')&&$('kpis').innerHTML)renderKpis();},200);}
+function loadDolarYear(y){
+  if(!y||(y in DOLAR_YEAR))return;
+  DOLAR_YEAR[y]='pending';
+  fetch('https://mindicador.cl/api/dolar/'+y,{cache:'force-cache'})
     .then(r=>{if(!r.ok)throw 0;return r.json();})
-    .then(j=>{const s=(j&&j.serie&&j.serie.length)?j.serie[0]:null;
-      if(s&&s.valor){DOLAR_HIST[orig]=s.valor;_rerenderDolar();}
-      else{_fetchHistDay(orig,_prevDay(tryY),back+1);}})
-    .catch(()=>{_fetchHistDay(orig,_prevDay(tryY),back+1);});
+    .then(j=>{const m={};((j&&j.serie)||[]).forEach(it=>{const d=(''+it.fecha).slice(0,10);if(d&&it.valor)m[d]=it.valor;});DOLAR_YEAR[y]=m;_rerenderDolarDebounced();})
+    .catch(()=>{DOLAR_YEAR[y]='err';_rerenderDolarDebounced();});
 }
-function _rerenderDolar(){if($('kpis')&&$('kpis').innerHTML)renderKpis();if(typeof CH!=='undefined'&&CH&&CH.cModo){try{drawCharts();}catch(e){}}}
-function loadDolarHist(){const seen={};ROWS.forEach(r=>{if(isEmptyRow(r))return;const fk=rowFechaVal(r);if(fk&&!(fk in DOLAR_HIST)&&!seen[fk]){seen[fk]=1;fetchDolarHist(fk);}});}
+/* Devuelve el dólar observado de la fecha ymd. Si cae en fin de semana/feriado retrocede hasta 7 días
+   (en la caché local, sin más llamadas). Retorna number | 'pending' | null. */
+function dolarDe(ymd){
+  if(!ymd)return null;
+  let cur=ymd;
+  for(let i=0;i<8;i++){
+    const y=cur.slice(0,4), yr=DOLAR_YEAR[y];
+    if(yr===undefined){loadDolarYear(y);return 'pending';}
+    if(yr==='pending')return 'pending';
+    if(yr!=='err' && (cur in yr))return yr[cur];
+    cur=_prevDay(cur);
+  }
+  return null;
+}
+function loadDolarHist(){const ys={};ROWS.forEach(r=>{if(isEmptyRow(r))return;const fk=rowFechaVal(r);if(fk)ys[fk.slice(0,4)]=1;});Object.keys(ys).forEach(loadDolarYear);}
 /* VALOR EN CLP = Sumatoria ( USD de la fila x dolar observado historico del dia de su Fecha ).
    Regla (segun el ejemplo del usuario): una fila SIN fecha, o cuya fecha aún no tiene dolar
    obtenido, NO se suma (su valor en CLP es 0 / guion). NO se usa el dolar actual como respaldo. */
@@ -1451,7 +1460,7 @@ function valorCLPhist(){
   ROWS.forEach(r=>{if(isEmptyRow(r))return;const usd=usdNum(r.usd);if(!usd)return;
     const fk=rowFechaVal(r);
     if(!fk){nSin++;return;}            // sin fecha -> no se suma
-    const hv=DOLAR_HIST[fk];
+    const hv=dolarDe(fk);
     if(hv==='pending'){pend=true;return;}
     if(typeof hv==='number'){total+=usd*hv;nCon++;return;}
     nSin++;                            // sin dolar para esa fecha -> no se suma
