@@ -366,12 +366,13 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <div class="login-box">
     <div class="brand"><div class="t">COMEX <span>QD</span></div></div>
     <div class="sub">PLATAFORMA DE CONTROL DE IMPORTACIONES · QUINTEC</div>
-    <div id="loginFields">
-      <input type="text" id="email" placeholder="Usuario (correo)" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div id="userList"></div>
+    <div id="pwWrap">
       <input type="password" id="pw" placeholder="Contraseña" autocomplete="off">
     </div>
     <div class="rowf">
-      <button class="btn btn-p" id="btnLogin" onclick="doLogin()">Ingresar</button>
+      <button class="btn btn-g" id="btnBack" style="display:none" onclick="resetLogin()">Volver</button>
+      <button class="btn btn-p" id="btnLogin" onclick="doLogin()" style="display:none">Ingresar</button>
     </div>
     <div id="loginErr"></div>
   </div>
@@ -730,30 +731,43 @@ function cleanUnid(v){let s=(''+v).replace(/[^0-9.,-]/g,'').replace(/\./g,'').re
 function initials(n){return n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();}
 function esc(s){return (s==null?'':''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-/* ===== Login (usuario + contraseña, sin mostrar nombres) ===== */
-function renderUsers(){/* La pantalla de inicio ya NO muestra la lista de usuarios: se ingresa con correo y contraseña. */}
+/* ===== Login (lista de usuarios, sin mostrar contraseñas) ===== */
+function renderUsers(){
+  $('userList').innerHTML=USERS.map((u,i)=>`
+    <div class="user-card" data-i="${i}" onclick="pickUser(${i})">
+      <div class="avatar" style="background:${u.color}">${initials(u.name)}</div>
+      <div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role)}</div></div>
+      ${u.admin?'<span class="badge-admin">ADMIN</span>':''}
+    </div>`).join('');
+}
+function pickUser(i){
+  selEmail=USERS[i].email;
+  document.querySelectorAll('.user-card').forEach(c=>c.classList.toggle('sel',+c.dataset.i===i));
+  $('pwWrap').style.display='block';
+  $('btnLogin').style.display='block';
+  $('btnBack').style.display='block';
+  $('pw').focus();
+}
 function resetLogin(){
-  selEmail=null;if($('email'))$('email').value='';if($('pw'))$('pw').value='';$('loginErr').textContent='';
+  selEmail=null;if($('pw'))$('pw').value='';$('loginErr').textContent='';
+  if($('pwWrap'))$('pwWrap').style.display='none';if($('btnLogin'))$('btnLogin').style.display='none';if($('btnBack'))$('btnBack').style.display='none';
+  document.querySelectorAll('.user-card').forEach(c=>c.classList.remove('sel'));
 }
 function doLogin(){
-  const email=($('email').value||'').trim().toLowerCase();
-  const pw=$('pw').value;
-  if(!email||!pw){$('loginErr').textContent='Ingrese su usuario (correo) y su contraseña.';return;}
-  selEmail=email;
+  const pw=$('pw').value;if(!selEmail||!pw){$('loginErr').textContent='Seleccione un usuario e ingrese su contraseña.';return;}
   $('loginErr').textContent='Verificando…';
-  auth.signInWithEmailAndPassword(email,pw)
+  auth.signInWithEmailAndPassword(selEmail,pw)
     .catch(e=>{
       if(e.code==='auth/user-not-found'){
-        auth.createUserWithEmailAndPassword(email,pw).catch(e2=>{$('loginErr').textContent=mapErr(e2);});
+        auth.createUserWithEmailAndPassword(selEmail,pw).catch(e2=>{$('loginErr').textContent=mapErr(e2);});
       }else{$('loginErr').textContent=mapErr(e);}
     });
 }
 function mapErr(e){
-  const m={'auth/wrong-password':'Contraseña incorrecta.','auth/invalid-credential':'Usuario o contraseña incorrectos.','auth/invalid-email':'El usuario debe ser un correo válido.','auth/user-not-found':'Usuario no encontrado.','auth/too-many-requests':'Demasiados intentos, espere un momento.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.'};
+  const m={'auth/wrong-password':'Contraseña incorrecta.','auth/invalid-credential':'Usuario o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos, espere un momento.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.'};
   return m[e.code]||('Error: '+e.message);
 }
 $('pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-$('email').addEventListener('keydown',e=>{if(e.key==='Enter'){if($('pw').value)doLogin();else $('pw').focus();}});
 
 /* ===== Estado de sesión ===== */
 auth.onAuthStateChanged(u=>{
@@ -2170,14 +2184,14 @@ function buildReportHTML(){
 }
 function generarReporte(){
   drawCharts();
-  setTimeout(()=>{ $('reportHost').innerHTML=buildReportHTML(); logAct('reporte','Generó el reporte de importaciones'); },500);
+  setTimeout(()=>{ $('reportHost').innerHTML=buildReportHTML(); logAct('reporte','Generó el reporte de importaciones'); },60);
 }
 /* Abre el reporte en una VENTANA (modal) con los gráficos, el análisis de cada uno y los botones de PDF / Imprimir. */
 function abrirReporteModal(){
   $('reportModal').classList.add('on');
   $('reportModalBody').innerHTML='<div class="rm-loading">⏳ Generando el reporte con gráficos y análisis…</div>';
   drawCharts();
-  setTimeout(()=>{ $('reportModalBody').innerHTML=buildReportHTML(); logAct('reporte','Abrió el reporte en ventana'); },500);
+  setTimeout(()=>{ $('reportModalBody').innerHTML=buildReportHTML(); logAct('reporte','Abrió el reporte en ventana'); },60);
 }
 function cerrarReporteModal(){ $('reportModal').classList.remove('on'); }
 function imprimirReporteModal(){
