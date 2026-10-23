@@ -329,6 +329,28 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 .report .rcard .rc-an .rc-an-t::before{content:"▸ ";color:#0e7490}
 .report .rcard .rc-an p{margin:0 0 7px;font-size:13px;color:#334155;line-height:1.62}
 .report .rcard .rc-an p:last-child{margin:0}
+.report .infg{background:linear-gradient(135deg,#0b2033,#143a63 55%,#0e5f73);border-radius:16px;padding:22px 24px 24px;margin:16px 0 10px;color:#eaf4fb;box-shadow:0 10px 30px rgba(15,39,68,.18)}
+.report .infg .ih{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#bfe6f0;margin-bottom:3px}
+.report .infg .ih2{font-size:19px;font-weight:800;color:#fff;margin:0 0 16px}
+.report .infg .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.report .infg .tile{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:13px 15px}
+.report .infg .tile .ic{font-size:20px}
+.report .infg .tile .lb{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:#bcd6ef;margin:6px 0 3px}
+.report .infg .tile .vl{font-size:21px;font-weight:800;color:#fff;line-height:1.12}
+.report .infg .tile .sb{font-size:11px;color:#9fc3e6;margin-top:3px}
+.report .infg .hi{margin-top:13px}
+.report .infg .hcard{background:rgba(255,255,255,.96);border-radius:12px;padding:13px 15px;color:#0f2744}
+.report .infg .hcard .ht{font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#0e7490}
+.report .infg .hcard .hv{font-size:16px;font-weight:800;color:#0f2744;margin-top:4px}
+.report .infg .hcard .hs{font-size:11.5px;color:#5b6b7f;margin-top:2px}
+.report .infg .hcard.warn{box-shadow:inset 0 0 0 2px #f59e0b}
+.report .infg .hcard.ok{box-shadow:inset 0 0 0 2px #16a34a}
+.report .infg .bar{margin-top:13px;background:rgba(255,255,255,.12);border-radius:10px;padding:12px 15px}
+.report .infg .bar .bt{font-size:11.5px;color:#cfe2f5;margin-bottom:7px;display:flex;justify-content:space-between;gap:10px}
+.report .infg .bar .track{height:16px;border-radius:9px;background:rgba(255,255,255,.18);overflow:hidden;display:flex}
+.report .infg .bar .fill{height:100%;background:linear-gradient(90deg,#16a34a,#22c55e)}
+.report .infg .bar .fill2{height:100%;background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.report .infg .note{font-size:12.5px;color:#d6e8f8;line-height:1.6;margin:13px 0 0}
 /* ===== Ventana (modal) del Reporte ===== */
 #reportModal{position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:500;display:none;flex-direction:column;align-items:center}
 #reportModal.on{display:flex}
@@ -2171,6 +2193,38 @@ function heatmapTable(){
   zonas.forEach(z=>{h+=`<tr><td class="lbl">${esc(z)}</td>`+ests.map(e=>{const v=grid[z][e];return `<td style="background:${heatColor(v,max)};color:${v/max>0.55?'#fff':'#1e293b'}">${v||''}</td>`;}).join('')+'</tr>';});
   h+='</tbody></table>';return h;
 }
+function buildExecInfografia(){
+  const tu=totUSD(),tUn=totUnid(),p=sortEnt(byProv()),z=sortEnt(byZona()),e=byEstado(),ttp=sortEnt(ttotByProv()),modos=byModo();
+  const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
+  const nPO=ROWS.filter(r=>!isEmptyRow(r)).length;
+  const tk=tUn?tu/tUn:0, avg=avgTiempo();
+  const clp=DOLAR?('≈ $'+Math.round(tu*DOLAR).toLocaleString('es-CL')+' CLP'):'';
+  const pctG=p[0]&&tu?Math.round(p[0][1]/tu*100):0, pctZ=z[0]&&tu?Math.round(z[0][1]/tu*100):0;
+  const vtr=(typeof valorEnTransito==='function')?valorEnTransito():{disp:0,trans:0};
+  const totC=(vtr.disp||0)+(vtr.trans||0), pMov=totC?Math.round(vtr.disp/totC*100):0;
+  const modTot=modos.reduce((a,b)=>a+(+b.usd||0),0);
+  const modTop=modos.slice().sort((a,b)=>b.usd-a.usd)[0];
+  const tile=(ic,lb,vl,sb)=>'<div class="tile"><div class="ic">'+ic+'</div><div class="lb">'+lb+'</div><div class="vl">'+vl+'</div>'+(sb?'<div class="sb">'+sb+'</div>':'')+'</div>';
+  const hcard=(cls,ic,ht,hv,hs)=>'<div class="hcard '+cls+'"><div class="ht">'+ic+' '+ht+'</div><div class="hv">'+hv+'</div>'+(hs?'<div class="hs">'+hs+'</div>':'')+'</div>';
+  let tiles=tile('📦','PO activas',nPO,pend+' pend. · '+disp+' disp.')
+    +tile('💵','Valor importado',fmtMoney(tu),clp)
+    +tile('📊','Unidades',fmtUnid(tUn),'')
+    +tile('🧾','Ticket promedio',fmtMoney(tk),'por unidad')
+    +tile('⏱️','Lead time prom.',avg+' d','order-to-availability')
+    +tile(atr>0?'🚩':'✅','Atrasos',atr,atr>0?'requieren escalamiento':'sin atrasos');
+  let his='';
+  if(p[0])his+=hcard(pctG>40?'warn':'','🏭','Proveedor líder',esc(p[0][0]),fmtMoney(p[0][1])+' · '+pctG+'% del gasto'+(pctG>40?' (concentración alta)':''));
+  if(z[0])his+=hcard(pctZ>50?'warn':'','🌎','Zona líder',esc(z[0][0]),fmtMoney(z[0][1])+' · '+pctZ+'% del valor'+(pctZ>50?' (dependencia alta)':''));
+  if(ttp[0])his+=hcard('','🐢','Mayor demora',esc(ttp[0][0]),ttp[0][1]+' días promedio');
+  if(modTop)his+=hcard('','🚢','Modo principal',esc(modTop.modo),fmtMoney(modTop.usd)+(modTot?' · '+Math.round(modTop.usd/modTot*100)+'%':'')+(modTop.dias?' · '+modTop.dias+' d':''));
+  const bar=totC?('<div class="bar"><div class="bt"><span>🟢 Movilizado (PO completas): <b>'+fmtMoney(vtr.disp)+'</b> ('+pMov+'%)</span><span>🟡 En tránsito: <b>'+fmtMoney(vtr.trans)+'</b> ('+(100-pMov)+'%)</span></div><div class="track"><div class="fill" style="width:'+pMov+'%"></div><div class="fill2" style="width:'+(100-pMov)+'%"></div></div></div>'):'';
+  const note='El portafolio suma <b>'+nPO+' PO</b> por <b>'+fmtMoney(tu)+'</b> y <b>'+fmtUnid(tUn)+' unidades</b> (ticket '+fmtMoney(tk)+'/u), con un ciclo promedio de <b>'+avg+' días</b>. '+(atr>0?'Hay <b>'+atr+' PO atrasada(s)</b> que requieren gestión prioritaria.':'No hay atrasos en este corte.');
+  return '<div class="infg"><div class="ih">Para gerencia</div><div class="ih2">📈 Resumen ejecutivo — Infografía</div>'
+    +'<div class="grid">'+tiles+'</div>'
+    +(his?'<div class="grid hi">'+his+'</div>':'')
+    +bar
+    +'<p class="note">'+note+'</p></div>';
+}
 function buildReportHTML(){
     const z=sortEnt(byZona()),p=sortEnt(byProv()),tu=totUSD(),e=byEstado(),u=sortEnt(unidByZona());
     const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
@@ -2193,7 +2247,7 @@ function buildReportHTML(){
         <div class="b"><div class="l">Lead time prom.</div><div class="v">${avgTiempo()} d</div></div>
         <div class="b"><div class="l">Atrasadas</div><div class="v">${atr}</div></div>
       </div>
-      <div class="execbox"><div class="t">Resumen ejecutivo</div><p>El portafolio de importaciones bajo seguimiento comprende <b>${nPO} órdenes de compra (PO)</b> por un valor total de <b>${fmtMoney(tu)}</b> y <b>${fmtUnid(totUnid())} unidades</b>, con un ticket promedio de <b>${fmtMoney(totUnid()?tu/totUnid():0)} por unidad</b>.${clpTxt} ${z[0]?'La zona <b>'+z[0][0]+'</b> concentra el <b>'+pct(z[0][1],tu)+'%</b> del valor importado':''}. El ciclo promedio desde la confirmación comercial hasta la disponibilidad de inventario (lead time “order-to-availability”) es de <b>${avgTiempo()} días</b>. En cuanto al estado del pipeline, hay ${disp} PO disponibles, ${pend} pendientes y <b>${atr} atrasada(s)</b>${atr>0?', que requieren gestión prioritaria con la naviera y el agente de aduana.':'.'}</p></div>
+      ${buildExecInfografia()}
       ${card(1,'Valor importado por zona de origen','cZona', (z[0]?'<p>La zona <b>'+z[0][0]+'</b> concentra <b>'+fmtMoney(z[0][1])+'</b> ('+pct(z[0][1],tu)+'% del valor importado)'+(z[1]?', seguida de <b>'+z[1][0]+'</b> con '+fmtMoney(z[1][1])+' ('+pct(z[1][1],tu)+'%)':'')+'.</p>':'<p>Aún no hay valor importado por zona cargado en la planilla.</p>')+'<p>Una concentración elevada en una sola zona expone al negocio a riesgo cambiario, arancelario, de congestión portuaria y de variación de fletes en un único corredor.'+(z[0]&&tu&&z[0][1]/tu>0.5?' La dependencia actual de <b>'+z[0][0]+'</b> es alta: conviene evaluar un doble origen o estrategias de nearshoring.':' La distribución geográfica se mantiene razonablemente diversificada.')+'</p>')}
       ${card(2,'Unidades importadas por zona','cUnid', '<p>Se importaron <b>'+fmtUnid(totUnid())+' unidades</b> en total.'+(u[0]?' El mayor volumen proviene de <b>'+u[0][0]+'</b> con <b>'+fmtUnid(u[0][1])+' u</b> ('+pct(u[0][1],totUnid())+'%).':'')+'</p><p>Comparar este gráfico de volumen con el de valor (USD) revela dónde el precio por unidad es más alto: una zona con mucho USD pero pocas unidades indica mercadería de alto valor unitario, mientras que mucho volumen con bajo USD corresponde a productos tipo commodity.</p>')}
       ${card(3,'Top proveedores por valor (USD)','cProv', '<p>El portafolio cuenta con <b>'+p.length+' proveedor(es)</b>.'+(p[0]?' El principal es <b>'+p[0][0]+'</b> con <b>'+fmtMoney(p[0][1])+'</b>, equivalente al <b>'+concTop+'%</b> del gasto total.':'')+'</p><p>'+(concTop>40?'Esto supera el umbral recomendado del 40% y constituye una <b>concentración de riesgo</b>: una interrupción de este proveedor afectaría gran parte del flujo. Se sugiere homologar un segundo proveedor y pactar acuerdos de respaldo con lead time garantizado.':'La compra se mantiene dentro de un rango de diversificación razonable, sin dependencia crítica de un solo proveedor.')+'</p>')}
