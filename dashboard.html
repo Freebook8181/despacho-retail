@@ -1200,8 +1200,7 @@ function exportPDF(){
 //__END2__
 /* ====== POWERPOINT (m\u00e1s diapositivas) ====== */
 function exportPPT(sel){
- if(typeof CUR!=='undefined'&&(CUR==='mac'||CUR==='ver')&&typeof modExportPPT==='function'){modExportPPT();return;}
- if(sel===undefined){try{openExportPicker('ppt',function(s){exportPPT(s);});}catch(e){console.error('picker',e);}return;}
+ if(sel===undefined){try{openScopePicker('ppt');}catch(e){console.error('scope',e);}return;}
  if(typeof PptxGenJS==='undefined'){alert('No se pudo cargar la librer\u00eda de PowerPoint (revisa tu conexi\u00f3n a internet).');return;}
  const imgs=captureAll();const K=LAST.kpis||{},f=LAST.f||[],totV=LAST.totV||0;
  const CG={};expGroups().forEach((g,i)=>g[1].forEach(c=>CG[c]=i));
@@ -1231,8 +1230,8 @@ function exportPPT(sel){
    const tx=8.25,tw=4.55;
    const cd=(CDESC[cid]||'').slice(0,470);const ins=insText(cid);const an=(CANALYSIS[cid]||'').slice(0,470);
    s.addText([{text:'Qu\u00e9 muestra',options:{bold:true,fontSize:12.5,color:TEAL,breakLine:true}},{text:cd,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:1.55,w:tw,h:2.05,valign:'top',fontFace:'Segoe UI',fit:'shrink'});
-   if(ins)s.addText([{text:'Qu\u00e9 est\u00e1 pasando en esta vista',options:{bold:true,fontSize:12.5,color:NAVY,breakLine:true}},{text:ins,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:3.72,w:tw,h:1.3,valign:'top',fontFace:'Segoe UI',fit:'shrink'});
-   if(an)s.addText([{text:'An\u00e1lisis del ingeniero en log\u00edstica',options:{bold:true,fontSize:12.5,color:'6A5A92',breakLine:true}},{text:an,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:5.12,w:tw,h:1.98,valign:'top',fontFace:'Segoe UI',fit:'shrink'});});
+   if(!sel.noAnalysis&&ins)s.addText([{text:'Qu\u00e9 est\u00e1 pasando en esta vista',options:{bold:true,fontSize:12.5,color:NAVY,breakLine:true}},{text:ins,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:3.72,w:tw,h:1.3,valign:'top',fontFace:'Segoe UI',fit:'shrink'});
+   if(!sel.noAnalysis&&an)s.addText([{text:'An\u00e1lisis del ingeniero en log\u00edstica',options:{bold:true,fontSize:12.5,color:'6A5A92',breakLine:true}},{text:an,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:5.12,w:tw,h:1.98,valign:'top',fontFace:'Segoe UI',fit:'shrink'});});
  // Ishikawa (resumen de causas en texto)
  if(sel.charts&&sel.areas.has(5)&&typeof LASTISH!=='undefined'&&LASTISH&&LASTISH.cats){s=p.addSlide();head(s,'Diagrama de Ishikawa \u2014 Causas','Efecto analizado: '+(LASTISH.effect||'')+' \u00b7 '+(LASTISH.effVal||''));
   LASTISH.cats.forEach((cat,i)=>{const col=i%3,row=Math.floor(i/3);const x=0.5+col*4.3,y=1.65+row*2.7;
@@ -1289,8 +1288,7 @@ function exportSugerencia(){
  openOvr('Sugerencias IA \u00b7 Experto en Log\u00edstica',h);
 }
 function exportReporte(sel){
- if(typeof CUR!=='undefined'&&(CUR==='mac'||CUR==='ver')&&typeof modExportReporte==='function'){modExportReporte();return;}
- if(sel===undefined){try{openExportPicker('reporte',function(s){exportReporte(s);});}catch(e){console.error('picker',e);}return;}
+ if(sel===undefined){try{openScopePicker('reporte');}catch(e){console.error('scope',e);}return;}
  const imgs=captureAll();const K=LAST.kpis||{},f=LAST.f||[],totV=LAST.totV||0;const groups0=expGroups();
  const groups=groups0.filter((g,i)=>sel.areas.has(i));
  const CG={};groups0.forEach((g,i)=>g[1].forEach(c=>CG[c]=i));
@@ -2181,6 +2179,40 @@ function modMesLbl(){
  try{const mm=(F.mes&&F.mes.length>=7)?+F.mes.slice(5,7):9;const yy=(F.mes&&F.mes.length>=4)?F.mes.slice(0,4):'2026';return MESES_FULL[mm-1]+' '+yy;}catch(e){return '';}
 }
 function modEsc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function devoStats(){
+ try{devoEnsure();}catch(e){}
+ const out=[];let tReg=0,tBul=0;
+ DEVO_ITEMS.forEach(function(it){
+  const d=DEVO_DATA[it.id]||{rows:[]};
+  let reg=0,bul=0;
+  (d.rows||[]).forEach(function(r){
+   const full=(r||[]).some(function(c){return (c||'').toString().trim()!=='';});
+   if(full)reg++;
+   const b=parseFloat(((r&&r[4])||'').toString().replace(/\./g,'').replace(/,/g,'.'));
+   if(!isNaN(b))bul+=b;
+  });
+  tReg+=reg;tBul+=bul;
+  out.push({id:it.id,label:it.t,color:(it.c||'#555').replace('#',''),hex:it.c||'#555',reg:reg,bul:bul});
+ });
+ return {items:out,totReg:tReg,totBul:tBul};
+}
+function modDevoSeccion(){
+ const st=devoStats();const col='#16a085';
+ let h='<section class="mod-sec"><div class="sec-head" style="border-left:6px solid '+col+'"><h2 style="color:'+col+'">Devoluciones</h2><p>Control de devoluciones por tipo · '+modEsc(modMesLbl())+'</p></div>';
+ h+='<div class="kgrid" style="grid-template-columns:repeat(3,1fr)">';
+ h+='<div class="kpi" style="border-top:3px solid '+col+'"><div class="kt">Registros de Devolución</div><div class="kv">'+fi(st.totReg)+'</div><div class="kf">en los 6 tipos</div></div>';
+ h+='<div class="kpi" style="border-top:3px solid '+col+'"><div class="kt">Total de Bultos</div><div class="kv">'+fi(Math.round(st.totBul))+'</div><div class="kf">suma columna Bultos</div></div>';
+ const topd=st.items.slice().sort(function(a,b){return b.reg-a.reg;})[0];
+ h+='<div class="kpi" style="border-top:3px solid '+col+'"><div class="kt">Tipo con más Devoluciones</div><div class="kv" style="font-size:15px">'+modEsc(topd?topd.label:'–')+'</div><div class="kf">'+(topd?fi(topd.reg)+' registros':'')+'</div></div>';
+ h+='</div>';
+ h+='<div class="ch-block"><h3 style="color:'+col+'">Devoluciones por Tipo</h3><table class="dtab"><thead><tr><th>Tipo de devolución</th><th style="text-align:right">Registros</th><th style="text-align:right">Bultos</th></tr></thead><tbody>';
+ st.items.forEach(function(x){h+='<tr><td><span class="dot" style="background:'+x.hex+'"></span>'+modEsc(x.label)+'</td><td style="text-align:right">'+fi(x.reg)+'</td><td style="text-align:right">'+fi(Math.round(x.bul))+'</td></tr>';});
+ h+='<tr class="tot"><td>TOTAL</td><td style="text-align:right">'+fi(st.totReg)+'</td><td style="text-align:right">'+fi(Math.round(st.totBul))+'</td></tr>';
+ h+='</tbody></table>';
+ h+='<div class="an"><b>Análisis:</b> La planilla de Devoluciones concentra '+fi(st.totReg)+' registros y '+fi(Math.round(st.totBul))+' bultos devueltos. '+(topd&&topd.reg>0?('El tipo <b>'+modEsc(topd.label)+'</b> es el que más devoluciones acumula ('+fi(topd.reg)+'), por lo que conviene revisar sus causas (calidad, garantías o errores de despacho) para reducir el flujo inverso.'):'Aún no hay registros cargados en las planillas de devoluciones.')+' Un control ordenado por tipo permite separar devoluciones de garantía, ecommerce y servicio técnico, y priorizar dónde atacar el reproceso.</div></div>';
+ h+='</section>';
+ return h;
+}
 function modReporteSeccion(k,imgs,kpis,ins){
  const col=MOD_COLOR[k];const lab=(k==='mac')?'MacOnline Distribución':'Vertical Tiendas';
  let h='<section class="mod-sec"><div class="sec-head" style="border-left:6px solid '+col+'"><h2 style="color:'+col+'">'+modEsc(lab)+'</h2><p>Reporte ejecutivo · '+modEsc(modMesLbl())+'</p></div>';
@@ -2213,13 +2245,15 @@ function modExportReporte(){
    +'.kt{font-size:11px;color:#6b7684;font-weight:600;margin-bottom:4px}.kv{font-size:20px;font-weight:800;color:#172a43;font-family:IBM Plex Mono,monospace}.kf{font-size:10.5px;color:#7a8794;margin-top:3px;min-height:12px}'
    +'.ch-block{margin:0 0 24px;page-break-inside:avoid}.ch-block h3{margin:0 0 8px;font-size:15px}.ch-block img{width:100%;border:1px solid #eef1f5;border-radius:8px;display:block}'
    +'.an{margin-top:9px;font-size:12.5px;line-height:1.6;color:#3f4b59;background:#f8fafc;border-left:3px solid #c3cdd8;padding:9px 12px;border-radius:0 8px 8px 0}'
+   +'.dtab{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}.dtab th{background:#16a085;color:#fff;padding:8px 10px;text-align:left;font-size:12px}.dtab td{border:1px solid #eef1f5;padding:7px 10px}.dtab tr:nth-child(even) td{background:#f8fafc}.dtab tr.tot td{font-weight:800;background:#eafaf4;color:#0e6b57}.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:middle}'
    +'.bar{position:sticky;top:0;z-index:5;background:#172a43;color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center}'
    +'.bar button{background:#fff;color:#172a43;border:0;border-radius:8px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer}'
    +'@media print{.bar{display:none}body{background:#fff}.mod-sec{box-shadow:none;border:none;padding:0;margin-bottom:30px}.wrap{padding:0}}';
   let body='<div class="bar"><div style="font-weight:700">Reporte Ejecutivo — QUINTEC Tiendas</div><button onclick="window.print()">💾 Guardar como PDF</button></div>';
-  body+='<div class="wrap"><div class="rhead"><h1>Reporte Ejecutivo de Despacho a Tiendas</h1><p>MacOnline Distribución + Vertical Tiendas · '+modEsc(modMesLbl())+'</p></div>';
+  body+='<div class="wrap"><div class="rhead"><h1>Reporte Ejecutivo de Despacho a Tiendas</h1><p>MacOnline Distribución + Vertical Tiendas + Devoluciones · '+modEsc(modMesLbl())+'</p></div>';
   body+=modReporteSeccion('mac',macI,macK,macIn);
   body+=modReporteSeccion('ver',verI,verK,verIn);
+  body+=modDevoSeccion();
   body+='</div>';
   const w=window.open('','_blank');
   if(!w){alert('Permite las ventanas emergentes para ver el reporte.');return;}
@@ -2239,7 +2273,7 @@ function modExportPPT(){
   s=p.addSlide();s.background={color:NAVY};
   s.addText('QUINTEC · DESPACHO A TIENDAS',{x:0.7,y:2.0,w:12,h:0.5,fontSize:16,color:'C9A6DD',bold:true,charSpacing:3,fontFace:'Segoe UI'});
   s.addText('Reporte Visual de Tiendas',{x:0.7,y:2.6,w:12,h:1,fontSize:44,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
-  s.addText('MacOnline Distribución + Vertical Tiendas',{x:0.7,y:3.7,w:12,h:0.5,fontSize:20,color:'C9D8E6',fontFace:'Segoe UI'});
+  s.addText('MacOnline Distribución + Vertical Tiendas + Devoluciones',{x:0.7,y:3.7,w:12,h:0.5,fontSize:18,color:'C9D8E6',fontFace:'Segoe UI'});
   s.addText(mes+'  ·  generado '+new Date().toLocaleDateString('es-CL'),{x:0.7,y:4.45,w:12,h:0.4,fontSize:13,color:'8CA3BA',fontFace:'Segoe UI'});
   ['mac','ver'].forEach(function(k){
    const D=DATOS[k];
@@ -2252,8 +2286,58 @@ function modExportPPT(){
     s.addImage({data:D.img[cid],x:0.5,y:1.55,w:7.9,h:5.4,sizing:{type:'contain',w:7.9,h:5.4}});
     s.addText([{text:'Qué muestra este gráfico',options:{bold:true,fontSize:14,color:D.col,breakLine:true,paraSpaceAfter:8}},{text:m[2],options:{fontSize:13,color:'394552'}}],{x:8.6,y:1.7,w:4.25,h:5,valign:'top',fontFace:'Segoe UI',fit:'shrink'});});
   });
+  var DST=devoStats();
+  s=p.addSlide();s.background={color:'16A085'};
+  s.addText('Devoluciones',{x:0.7,y:3.0,w:12,h:1,fontSize:40,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
+  s.addText('Control de devoluciones por tipo · '+mes,{x:0.7,y:4.1,w:12,h:0.5,fontSize:18,color:'FFFFFF',fontFace:'Segoe UI'});
+  s=p.addSlide();head(s,'Devoluciones por Tipo',mes,'16A085');
+  var drows=[[{text:'Tipo de devolución',options:{bold:true,color:'FFFFFF',fill:{color:'16A085'}}},{text:'Registros',options:{bold:true,color:'FFFFFF',fill:{color:'16A085'},align:'right'}},{text:'Bultos',options:{bold:true,color:'FFFFFF',fill:{color:'16A085'},align:'right'}}]];
+  DST.items.forEach(function(x){drows.push([{text:x.label,options:{color:'394552'}},{text:fi(x.reg),options:{align:'right',color:'394552'}},{text:fi(Math.round(x.bul)),options:{align:'right',color:'394552'}}]);});
+  drows.push([{text:'TOTAL',options:{bold:true,fill:{color:'EAFAF4'},color:'0E6B57'}},{text:fi(DST.totReg),options:{align:'right',bold:true,fill:{color:'EAFAF4'},color:'0E6B57'}},{text:fi(Math.round(DST.totBul)),options:{align:'right',bold:true,fill:{color:'EAFAF4'},color:'0E6B57'}}]);
+  s.addTable(drows,{x:0.5,y:1.6,w:7.3,colW:[4.1,1.6,1.6],border:{type:'solid',color:'E3E7EC',pt:1},fontSize:12,fontFace:'Segoe UI',valign:'middle',rowH:0.42});
+  s.addText([{text:'Qué muestra',options:{bold:true,fontSize:14,color:'16A085',breakLine:true,paraSpaceAfter:8}},{text:'Resumen de las devoluciones registradas en cada planilla: número de registros y total de bultos devueltos por tipo (CD, Garantía Mac, Ecommerce, BackOnline, Servicio Técnico y Varios). Permite ver de un vistazo dónde se concentra el flujo inverso de mercadería.',options:{fontSize:13,color:'394552'}}],{x:8.6,y:1.7,w:4.25,h:5,valign:'top',fontFace:'Segoe UI',fit:'shrink'});
   p.writeFile({fileName:'QUINTEC_Tiendas_'+(mes.replace(/[^0-9A-Za-z]+/g,'_'))+'.pptx'});
  }catch(e){console.error('modExportPPT',e);alert('No se pudo generar el PowerPoint: '+e.message);}
+}
+function openScopePicker(kind){
+ const old=document.getElementById('scopePickOv');if(old)old.remove();
+ const ppt=(kind==='ppt');
+ const ov=document.createElement('div');ov.id='scopePickOv';
+ ov.style.cssText='position:fixed;inset:0;background:rgba(15,25,40,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px';
+ const titulo=ppt?'Armar PowerPoint':'Armar Reporte';
+ const sub=ppt?'Elige qué presentación quieres generar.':'Elige qué reporte quieres generar.';
+ const cardCss='display:flex;gap:14px;align-items:flex-start;padding:16px 16px;border:1.5px solid #e3e7ec;border-radius:12px;margin:10px 0;cursor:pointer;transition:.15s;background:#fff';
+ ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:540px;width:100%;box-shadow:0 24px 70px rgba(10,20,35,.4);overflow:hidden">'+
+  '<div style="padding:20px 24px;border-bottom:1px solid #eef1f4;background:linear-gradient(135deg,#1f3a59,#2b4a6f)"><div style="font-size:20px;font-weight:800;color:#fff">'+titulo+'</div><div style="font-size:13px;color:#c9d8e6;margin-top:3px">'+sub+'</div></div>'+
+  '<div style="padding:18px 22px">'+
+   '<div class="scOpt" data-s="ops" style="'+cardCss+';border-left:5px solid #2f7d6b">'+
+    '<div style="font-size:26px">📊</div><div><div style="font-size:15.5px;font-weight:800;color:#1f3a59">Operaciones</div>'+
+    '<div style="font-size:12.5px;color:#5a6672;margin-top:3px;line-height:1.5">Operación &amp; Flota, Finanzas &amp; P&amp;L y Tendencias &amp; Comparativo. Todos los gráficos con '+(ppt?'su explicación.':'análisis y explicación.')+'</div></div></div>'+
+   '<div class="scOpt" data-s="mod" style="'+cardCss+';border-left:5px solid #8e44ad">'+
+    '<div style="font-size:26px">🏪</div><div><div style="font-size:15.5px;font-weight:800;color:#1f3a59">MacOnline y Vertical</div>'+
+    '<div style="font-size:12.5px;color:#5a6672;margin-top:3px;line-height:1.5">MacOnline Distribución, Vertical Tiendas y Devoluciones. Gráficos con '+(ppt?'su explicación.':'análisis y explicación.')+'</div></div></div>'+
+  '</div>'+
+  '<div style="padding:12px 22px 18px;display:flex;justify-content:flex-end"><button id="scCancel" style="background:#eef1f4;color:#44515f;border:0;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">Cancelar</button></div>'+
+  '</div>';
+ document.body.appendChild(ov);
+ const close=function(){ov.remove();};
+ ov.addEventListener('click',function(e){if(e.target===ov)close();});
+ const cEl=document.getElementById('scCancel');if(cEl)cEl.addEventListener('click',close);
+ ov.querySelectorAll('.scOpt').forEach(function(el){
+  el.addEventListener('mouseenter',function(){el.style.boxShadow='0 6px 20px rgba(23,42,67,.12)';el.style.transform='translateY(-1px)';});
+  el.addEventListener('mouseleave',function(){el.style.boxShadow='';el.style.transform='';});
+  el.addEventListener('click',function(){
+   const s=el.dataset.s;close();
+   try{
+    if(s==='ops'){
+     if(ppt)exportPPT({areas:new Set([0,1,4]),resumen:false,charts:true,sug:false,noAnalysis:true});
+     else exportReporte({areas:new Set([0,1,4]),resumen:true,charts:true,sug:false});
+    }else{
+     if(ppt)modExportPPT();else modExportReporte();
+    }
+   }catch(e){console.error('scope go',e);alert('No se pudo generar: '+e.message);}
+  });
+ });
 }
 try{buildModMarkup();}catch(e){console.error('buildModMarkup',e);}
 try{wireMod();}catch(e){console.error('wireMod',e);}
