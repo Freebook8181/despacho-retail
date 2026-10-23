@@ -1592,7 +1592,8 @@ function verSnap(dk,id){
   $('nubeView').innerHTML='<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px;flex-wrap:wrap">'+
     '<h3 style="color:var(--navy);font-size:14px;margin:0;flex:1">📄 Planilla del '+hora+' · '+rows.length+' registro(s)</h3>'+
     '<button class="btn" style="background:#1d6f42;color:#fff;padding:8px 14px" onclick="exportarSnap(\''+dk+'\',\''+id+'\')">📊 Exportar Excel</button>'+
-    '<button class="btn" style="background:var(--navy);color:#fff;padding:8px 14px" onclick="pedirEditar(\''+dk+'\',\''+id+'\')">✏ Editar</button></div>'+
+    '<button class="btn" style="background:var(--navy);color:#fff;padding:8px 14px" onclick="pedirEditar(\''+dk+'\',\''+id+'\')">✏ Editar</button>'+
+    '<button class="btn" style="background:#c62828;color:#fff;padding:8px 14px" onclick="borrarSnap(\''+dk+'\',\''+id+'\')">🗑 BORRAR</button></div>'+
     '<div class="nube-plan"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
 }
 /* ===== Exportar una planilla guardada a Excel con el MISMO diseño/colores/orden que la plataforma ===== */
@@ -1660,6 +1661,18 @@ function exportarPlanillaExcel(rows,fname,titulo){
     saveBlob(blob,fname,mime,'.xlsx','Libro de Excel');
   }).catch(e=>alert('Error al exportar a Excel: '+((e&&e.message)||e)));
 }
+/* Borrar una planilla guardada individual: pide contraseña 1234 y verificación; elimina solo esa planilla de la nube */
+function borrarSnap(dk,id){
+  askPassword('Borrar planilla','⚠ Esta acción eliminará definitivamente esta planilla guardada. Ingrese la contraseña para confirmar.',()=>{
+    if(!confirm('¿Seguro que desea BORRAR esta planilla guardada? Esta acción no se puede deshacer.'))return;
+    db.ref('comex_qd_hist/'+dk+'/'+id).remove().then(()=>{
+      if(NUBE_HIST[dk]){NUBE_HIST[dk]=NUBE_HIST[dk].filter(x=>x.id!==id);if(!NUBE_HIST[dk].length)delete NUBE_HIST[dk];}
+      NUBE_VIEWID=null;$('nubeView').innerHTML='';
+      renderCal();selDay(dk);
+      logAct('borrar','Borró una planilla guardada de la nube ('+dk+')');
+    }).catch(e=>alert('No se pudo borrar la planilla: '+((e&&e.message)||e)));
+  },'1234');
+}
 /* Editar una planilla histórica: pide contraseña 12345; al confirmar, la carga en la planilla principal para editarla */
 function pedirEditar(dk,id){
   askPassword('Editar planilla','Para editar esta planilla ingrese la contraseña.',()=>{
@@ -1672,16 +1685,16 @@ function pedirEditar(dk,id){
   });
 }
 /* ===== Contraseña genérica enmascarada con * (clave 12345, nunca visible) ===== */
-let PW_CB=null;
-function askPassword(title,msg,cb){
-  PW_CB=cb;$('pwTitle').textContent=title||'Confirmar';$('pwMsg').textContent=msg||'Ingrese la contraseña para continuar.';
+let PW_CB=null, PW_KEY='12345';
+function askPassword(title,msg,cb,expected){
+  PW_CB=cb;PW_KEY=expected||'12345';$('pwTitle').textContent=title||'Confirmar';$('pwMsg').textContent=msg||'Ingrese la contraseña para continuar.';
   const k=$('pwKey');k.value='';k.dataset.real='';$('pwErr').textContent='';
   $('pwModal').classList.add('on');setTimeout(()=>k.focus(),80);
 }
 function closePw(){$('pwModal').classList.remove('on');PW_CB=null;}
 function pwOk(){
   const real=$('pwKey').dataset.real||'';
-  if(real!=='12345'){$('pwErr').textContent='Contraseña incorrecta.';return;}
+  if(real!==PW_KEY){$('pwErr').textContent='Contraseña incorrecta.';return;}
   const cb=PW_CB;$('pwModal').classList.remove('on');PW_CB=null;if(cb)cb();
 }
 (function(){
@@ -1745,7 +1758,7 @@ function mstOk(){
   });
   k.addEventListener('paste',e=>{e.preventDefault();const t=((e.clipboardData||window.clipboardData).getData('text')||'').replace(/[^0-9]/g,'').slice(0,12);k.dataset.real=t;k.value='*'.repeat(t.length);});
 })();
-/* ===== BORRAR todo: plataforma (ROWS) y nube (comex_qd, comex_qd_hist, comex_qd_actividad). Pide 12345. ===== */
+/* ===== BORRAR todo: plataforma (ROWS) y nube (comex_qd, comex_qd_hist, comex_qd_actividad). Pide 1234 y verificación. ===== */
 function openBorrar(){
   askPassword('Borrar TODO','⚠ Esto borrará TODAS las planillas y datos, en la plataforma y en la nube. Ingrese la contraseña para confirmar.',()=>{
     if(!confirm('¿Seguro que desea BORRAR todo? Se eliminarán todas las planillas guardadas y la actividad, para todos los usuarios. Esta acción no se puede deshacer.'))return;
@@ -1759,7 +1772,7 @@ function openBorrar(){
       NUBE_HIST={};NUBE_SELDAY=null;renderCal();$('nubeList').innerHTML='<div class="det-analysis" style="margin-top:0"><h4>☁ Todo borrado</h4><div>Se eliminaron todas las planillas y la actividad de la plataforma y la nube.</div></div>';$('nubeView').innerHTML='';
       $('planStatus').textContent='Todo borrado (plataforma y nube) · '+new Date().toLocaleString('es-CL');
     }).catch(e=>alert('Error al borrar: '+(e&&e.message||e)));
-  });
+  },'1234');
 }
 /* ===== Exportar los gráficos a una presentación PPT (un gráfico por diapositiva) ===== */
 function _stripHtml(h){const d=document.createElement('div');d.innerHTML=h||'';return (d.textContent||d.innerText||'').replace(/\s+/g,' ').trim();}
