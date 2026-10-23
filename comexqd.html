@@ -311,6 +311,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 .report .imgs{display:block;margin:6px 0 18px}
 .report .imgs img{display:block;width:100%;max-width:760px;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;margin:0 auto 16px}
 .report .imgfail{border:1px dashed #cbd5e1;border-radius:10px;padding:18px;text-align:center;color:#94a3b8;font-size:12.5px;margin:0 auto 16px;max-width:760px}
+.report .imgpend{border:1px dashed #cbd5e1;border-radius:10px;padding:26px 18px;text-align:center;color:#64748b;font-size:12.5px;margin:0 auto 16px;max-width:760px;background:#f8fafc}
 /* ===== Ventana (modal) del Reporte ===== */
 #reportModal{position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:500;display:none;flex-direction:column;align-items:center}
 #reportModal.on{display:flex}
@@ -1899,6 +1900,20 @@ function reportImg(id){
   document.body.removeChild(wrap);
   return data?`<img src="${data}" alt="gráfico">`:'<div class="imgfail">No se pudo generar la imagen del gráfico.</div>';
 }
+/* Rellena de forma ASINCRÓNICA los recuadros de gráficos del reporte (uno por tick),
+   así el texto aparece de inmediato y la interfaz no se congela al dibujar ~8 gráficos. */
+function fillReportImgs(host){
+  if(!host)return;
+  const slots=[].slice.call(host.querySelectorAll('.rimg[data-chart]'));
+  let i=0;
+  (function step(){
+    if(i>=slots.length)return;
+    const s=slots[i++];const id=s.getAttribute('data-chart');
+    try{s.innerHTML=reportImg(id)||'<div class="imgfail">Sin datos para este gráfico.</div>';}
+    catch(e){s.innerHTML='<div class="imgfail">No se pudo generar la imagen del gráfico.</div>';}
+    setTimeout(step,15);
+  })();
+}
 Chart.defaults.font.family="'Segoe UI',system-ui,Arial";Chart.defaults.color='#475569';Chart.defaults.font.size=12;
 // Mostrar valores sobre los gráficos (plugin datalabels, desactivado por defecto y activado por gráfico)
 try{if(window.ChartDataLabels)Chart.register(window.ChartDataLabels);}catch(e){}
@@ -2143,7 +2158,7 @@ function buildReportHTML(){
     const z=sortEnt(byZona()),p=sortEnt(byProv()),tu=totUSD(),e=byEstado(),u=sortEnt(unidByZona());
     const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
     const tk=sortEnt(ticketByZona());
-    const img=id=>reportImg(id);
+    const img=id=>'<div class="rimg" data-chart="'+id+'"><div class="imgpend">⏳ Generando gráfico…</div></div>';
     const clpTxt=DOLAR?` Al tipo de cambio observado del Banco Central (${'$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2})} al ${DOLAR_FECHA}), el portafolio equivale a aproximadamente <b>$${Math.round(tu*DOLAR).toLocaleString('es-CL')} CLP</b>.`:'';
     const concTop=p[0]&&tu?Math.round(p[0][1]/tu*100):0;
     const html=`<div class="report" id="reportDoc">
@@ -2183,15 +2198,21 @@ function buildReportHTML(){
     return html;
 }
 function generarReporte(){
-  drawCharts();
-  setTimeout(()=>{ $('reportHost').innerHTML=buildReportHTML(); logAct('reporte','Generó el reporte de importaciones'); },60);
+  try{drawCharts();}catch(e){}
+  $('reportHost').innerHTML=buildReportHTML();
+  logAct('reporte','Generó el reporte de importaciones');
+  fillReportImgs($('reportHost'));
 }
 /* Abre el reporte en una VENTANA (modal) con los gráficos, el análisis de cada uno y los botones de PDF / Imprimir. */
 function abrirReporteModal(){
   $('reportModal').classList.add('on');
-  $('reportModalBody').innerHTML='<div class="rm-loading">⏳ Generando el reporte con gráficos y análisis…</div>';
-  drawCharts();
-  setTimeout(()=>{ $('reportModalBody').innerHTML=buildReportHTML(); logAct('reporte','Abrió el reporte en ventana'); },60);
+  $('reportModalBody').innerHTML='<div class="rm-loading">⏳ Generando el reporte…</div>';
+  setTimeout(()=>{
+    try{drawCharts();}catch(e){}
+    $('reportModalBody').innerHTML=buildReportHTML();
+    logAct('reporte','Abrió el reporte en ventana');
+    fillReportImgs($('reportModalBody'));
+  },30);
 }
 function cerrarReporteModal(){ $('reportModal').classList.remove('on'); }
 function imprimirReporteModal(){
