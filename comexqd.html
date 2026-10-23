@@ -312,6 +312,23 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 .report .imgs img{display:block;width:100%;max-width:760px;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;margin:0 auto 16px}
 .report .imgfail{border:1px dashed #cbd5e1;border-radius:10px;padding:18px;text-align:center;color:#94a3b8;font-size:12.5px;margin:0 auto 16px;max-width:760px}
 .report .imgpend{border:1px dashed #cbd5e1;border-radius:10px;padding:26px 18px;text-align:center;color:#64748b;font-size:12.5px;margin:0 auto 16px;max-width:760px;background:#f8fafc}
+.report .rhead{background:linear-gradient(135deg,#0f2744,#1b4b7a);color:#fff;border-radius:14px;padding:22px 26px;margin:0 0 18px}
+.report .rhead h1{color:#fff;margin:0 0 6px}
+.report .rhead .meta{color:#c9dcf2;border:0;padding:0;margin:0}
+.report .execbox{background:linear-gradient(135deg,#0e7490,#1b4b7a);color:#eaf4fb;border-radius:14px;padding:18px 22px;margin:16px 0 8px}
+.report .execbox .t{font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#bfe6f0;margin-bottom:6px}
+.report .execbox p{color:#e8f3fa;margin:0;font-size:13px;line-height:1.6}
+.report .rcard{background:#fff;border:1px solid #e6edf5;border-left:5px solid var(--teal);border-radius:14px;padding:20px 22px 20px;margin:18px 0;box-shadow:0 6px 20px rgba(15,39,68,.07);page-break-inside:avoid}
+.report .rcard .rc-h{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+.report .rcard .rc-n{flex:none;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1b4b7a,#0e7490);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(14,116,144,.35)}
+.report .rcard .rc-h h3{margin:0;border:0;padding:0;color:var(--navy);font-size:16.5px}
+.report .rcard .rimg{margin:0 0 14px}
+.report .rcard .rimg img{display:block;width:100%;max-width:840px;height:auto;border:1px solid #eef2f7;border-radius:10px;background:#fff;padding:10px;margin:0 auto;box-shadow:0 2px 8px rgba(15,39,68,.05)}
+.report .rcard .rc-an{background:#f1f6fc;border:1px solid #dbe8f6;border-radius:10px;padding:14px 16px}
+.report .rcard .rc-an .rc-an-t{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#0e7490;margin-bottom:7px}
+.report .rcard .rc-an .rc-an-t::before{content:"▸ ";color:#0e7490}
+.report .rcard .rc-an p{margin:0 0 7px;font-size:13px;color:#334155;line-height:1.62}
+.report .rcard .rc-an p:last-child{margin:0}
 /* ===== Ventana (modal) del Reporte ===== */
 #reportModal{position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:500;display:none;flex-direction:column;align-items:center}
 #reportModal.on{display:flex}
@@ -2161,39 +2178,33 @@ function buildReportHTML(){
     const img=id=>'<div class="rimg" data-chart="'+id+'"><div class="imgpend">⏳ Generando gráfico…</div></div>';
     const clpTxt=DOLAR?` Al tipo de cambio observado del Banco Central (${'$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2})} al ${DOLAR_FECHA}), el portafolio equivale a aproximadamente <b>$${Math.round(tu*DOLAR).toLocaleString('es-CL')} CLP</b>.`:'';
     const concTop=p[0]&&tu?Math.round(p[0][1]/tu*100):0;
+    const up=unidByProv(), modos=byModo(), ttp=sortEnt(ttotByProv()), tRows=ROWS.filter(r=>numClean(r.ttot)>0);
+    const paTot=p.reduce((a,b)=>a+(+b[1]||0),0); let _n80=0,_acc=0; for(const x of p){_acc+=x[1];_n80++;if(paTot&&_acc/paTot>=0.8)break;}
+    const nPO=ROWS.filter(r=>!isEmptyRow(r)).length;
+    const pct=(v,t)=>t?Math.round(v/t*100):0;
+    const card=(n,ti,id,an)=>'<section class="rcard"><div class="rc-h"><span class="rc-n">'+n+'</span><h3>'+ti+'</h3></div><div class="rimg" data-chart="'+id+'"><div class="imgpend">⏳ Generando gráfico…</div></div><div class="rc-an"><div class="rc-an-t">Análisis e interpretación</div>'+an+'</div></section>';
     const html=`<div class="report" id="reportDoc">
-      <h1>Reporte de Control de Importaciones — COMEX QD</h1>
-      <div class="meta">Generado el ${new Date().toLocaleString('es-CL')} por ${esc(CURRENT.name)} · Quintec · Suite Logística</div>
+      <div class="rhead"><h1>Reporte de Control de Importaciones — COMEX QD</h1><div class="meta">Generado el ${new Date().toLocaleString('es-CL')} por ${esc(CURRENT.name)} · Quintec · Suite Logística</div></div>
       <div class="rk">
-        <div class="b"><div class="l">PO activas</div><div class="v">${ROWS.filter(r=>!isEmptyRow(r)).length}</div></div>
+        <div class="b"><div class="l">PO activas</div><div class="v">${nPO}</div></div>
         <div class="b"><div class="l">USD total</div><div class="v">${fmtMoney(tu)}</div></div>
         <div class="b"><div class="l">Unidades</div><div class="v">${fmtUnid(totUnid())}</div></div>
         <div class="b"><div class="l">Ticket prom.</div><div class="v">${fmtMoney(totUnid()?tu/totUnid():0)}</div></div>
         <div class="b"><div class="l">Lead time prom.</div><div class="v">${avgTiempo()} d</div></div>
         <div class="b"><div class="l">Atrasadas</div><div class="v">${atr}</div></div>
       </div>
-      <h3>1. Resumen ejecutivo</h3>
-      <p>El portafolio de importaciones bajo seguimiento comprende <b>${ROWS.filter(r=>!isEmptyRow(r)).length} órdenes de compra (PO)</b> por un valor total de <b>${fmtMoney(tu)}</b> y <b>${fmtUnid(totUnid())} unidades</b>, con un ticket promedio de <b>${fmtMoney(totUnid()?tu/totUnid():0)} por unidad</b>.${clpTxt} ${z[0]?'La zona <b>'+z[0][0]+'</b> concentra el <b>'+Math.round(z[0][1]/tu*100)+'%</b> del valor importado':''}. El ciclo promedio desde la confirmación comercial hasta la disponibilidad de inventario (lead time “order-to-availability”) es de <b>${avgTiempo()} días</b>. En cuanto al estado del pipeline, hay ${disp} PO disponibles, ${pend} pendientes y <b>${atr} atrasada(s)</b>${atr>0?', que requieren gestión prioritaria con la naviera y el agente de aduana.':'.'}</p>
-      <h3>2. Análisis de abastecimiento: zona de origen</h3>
-      <p>La estructura geográfica del abastecimiento es un factor crítico de riesgo. ${z[0]?'Actualmente <b>'+z[0][0]+'</b> lidera con '+fmtMoney(z[0][1])+' ('+Math.round(z[0][1]/tu*100)+'%)':''}${z[1]?', seguida de <b>'+z[1][0]+'</b> con '+fmtMoney(z[1][1])+' ('+Math.round(z[1][1]/tu*100)+'%)':''}. Una concentración elevada en una sola zona expone al negocio a riesgo cambiario, arancelario, de congestión portuaria y de variación de fletes en un único corredor. Se recomienda monitorear la relación valor/volumen por zona para decidir estrategias de nearshoring o doble origen.</p>
-      <div class="imgs">${img('cZona')}${img('cUnid')}</div>
-      <h3>3. Concentración de proveedores (Pareto)</h3>
-      <p>${p[0]?'El proveedor <b>'+p[0][0]+'</b> representa el <b>'+concTop+'%</b> del gasto total ('+fmtMoney(p[0][1])+'). '+(concTop>40?'Esto constituye una <b>concentración de riesgo</b> sobre el umbral recomendado (40%): una interrupción de este proveedor afectaría gran parte del flujo. Se sugiere homologar un segundo proveedor y negociar acuerdos de respaldo con lead time garantizado.':'Se encuentra dentro de un rango de diversificación razonable.'):''} El gráfico combinado USD vs. unidades permite distinguir proveedores de alto valor unitario (pocas unidades, mucho USD) de proveedores de commodities (alto volumen, bajo USD), orientando la priorización de seguros, inspecciones y condiciones de pago.</p>
-      <div class="imgs">${img('cProv')}${img('cMix')}${img('cPareto')}</div>
-      <h3>4. Estado operativo y tiempos de tránsito</h3>
-      <p>Distribución de etapas del pipeline: ${Object.entries(e).map(x=>x[0]+' ('+x[1]+')').join(', ')}. El lead time promedio es de <b>${avgTiempo()} días</b>; las PO muy por encima de ese promedio revelan cuellos de botella (aduana, naviera o retiro P/A) que impactan la rotación de inventario y el costo financiero del stock en tránsito. ${atr>0?'Las '+atr+' PO atrasadas deben escalarse de inmediato.':'No hay atrasos registrados en este corte.'}</p>
-      <div class="imgs">${img('cEstado')}${img('cTiempo')}</div>
-      <h3>5. Tiempos por proveedor y valor unitario</h3>
-      <p>El lead time promedio por proveedor permite identificar qué proveedores tardan más en poner la mercadería disponible, clave para planificar flujo de caja y capacidad de recepción en el CD. ${tk[0]?'El ticket promedio más alto corresponde a <b>'+tk[0][0]+'</b> con '+fmtMoney(tk[0][1])+' por unidad, lo que justifica mayor control de calidad y, eventualmente, modos de transporte más rápidos para esa mercadería de alto valor.':''}</p>
-      <div class="imgs">${img('cProvT')}</div>
-      <h3>6. Tipo de transporte — costo vs. velocidad</h3>
-      <p>${(()=>{const md=byModo();if(!md.length)return 'Aún no hay datos de tipo de transporte cargados en la planilla.';const tot=md.reduce((a,b)=>a+(+b.usd||0),0);return 'La carga se moviliza por <b>'+md.length+' modo(s)</b> de transporte: '+md.map(x=>'<b>'+esc(x.modo)+'</b> con '+fmtMoney(x.usd)+(tot?' ('+Math.round(x.usd/tot*100)+'%)':'')+(x.dias?' y '+x.dias+' días promedio de ciclo':'')).join('; ')+'. El modo marítimo suele ser el más económico pero el más lento; el aéreo acelera la llegada a mayor costo (conviene para carga urgente o de alto valor); el terrestre aplica a orígenes regionales. Equilibrar estos modos según la urgencia y el valor de la carga es clave para optimizar el costo logístico sin sacrificar el nivel de servicio.';})()}</p>
-      <div class="imgs">${img('cModo')}</div>
-      <h3>7. Campo de calor — Zona vs. Estado</h3>
-      <p>Cantidad de PO por combinación de zona de origen y etapa logística. Las celdas más intensas concentran mayor cantidad de órdenes y ayudan a detectar si los atrasos se concentran en una zona u origen específico.</p>
-      <div class="hmwrap">${heatmapTable()}</div>
-      <h3>8. Conclusiones y recomendaciones</h3>
-      <p>En síntesis, el foco de gestión debe estar en: (1) ${concTop>40?'diversificar al proveedor '+p[0][0]+' ('+concTop+'% del gasto)':'mantener la diversificación actual de proveedores'}; (2) ${z[0]&&z[0][1]/tu>0.5?'reducir la dependencia de la zona '+z[0][0]:'equilibrar las zonas de origen'}; (3) ${atr>0?'resolver los '+atr+' embarques atrasados':'sostener el cumplimiento de ETAs'}; y (4) completar las fechas de las ${pend} PO pendientes para mejorar la trazabilidad y la exactitud de los KPIs. El detalle y las acciones concretas priorizadas se encuentran en la pestaña <b>Sugerencias IA</b>.</p>
+      <div class="execbox"><div class="t">Resumen ejecutivo</div><p>El portafolio de importaciones bajo seguimiento comprende <b>${nPO} órdenes de compra (PO)</b> por un valor total de <b>${fmtMoney(tu)}</b> y <b>${fmtUnid(totUnid())} unidades</b>, con un ticket promedio de <b>${fmtMoney(totUnid()?tu/totUnid():0)} por unidad</b>.${clpTxt} ${z[0]?'La zona <b>'+z[0][0]+'</b> concentra el <b>'+pct(z[0][1],tu)+'%</b> del valor importado':''}. El ciclo promedio desde la confirmación comercial hasta la disponibilidad de inventario (lead time “order-to-availability”) es de <b>${avgTiempo()} días</b>. En cuanto al estado del pipeline, hay ${disp} PO disponibles, ${pend} pendientes y <b>${atr} atrasada(s)</b>${atr>0?', que requieren gestión prioritaria con la naviera y el agente de aduana.':'.'}</p></div>
+      ${card(1,'Valor importado por zona de origen','cZona', (z[0]?'<p>La zona <b>'+z[0][0]+'</b> concentra <b>'+fmtMoney(z[0][1])+'</b> ('+pct(z[0][1],tu)+'% del valor importado)'+(z[1]?', seguida de <b>'+z[1][0]+'</b> con '+fmtMoney(z[1][1])+' ('+pct(z[1][1],tu)+'%)':'')+'.</p>':'<p>Aún no hay valor importado por zona cargado en la planilla.</p>')+'<p>Una concentración elevada en una sola zona expone al negocio a riesgo cambiario, arancelario, de congestión portuaria y de variación de fletes en un único corredor.'+(z[0]&&tu&&z[0][1]/tu>0.5?' La dependencia actual de <b>'+z[0][0]+'</b> es alta: conviene evaluar un doble origen o estrategias de nearshoring.':' La distribución geográfica se mantiene razonablemente diversificada.')+'</p>')}
+      ${card(2,'Unidades importadas por zona','cUnid', '<p>Se importaron <b>'+fmtUnid(totUnid())+' unidades</b> en total.'+(u[0]?' El mayor volumen proviene de <b>'+u[0][0]+'</b> con <b>'+fmtUnid(u[0][1])+' u</b> ('+pct(u[0][1],totUnid())+'%).':'')+'</p><p>Comparar este gráfico de volumen con el de valor (USD) revela dónde el precio por unidad es más alto: una zona con mucho USD pero pocas unidades indica mercadería de alto valor unitario, mientras que mucho volumen con bajo USD corresponde a productos tipo commodity.</p>')}
+      ${card(3,'Top proveedores por valor (USD)','cProv', '<p>El portafolio cuenta con <b>'+p.length+' proveedor(es)</b>.'+(p[0]?' El principal es <b>'+p[0][0]+'</b> con <b>'+fmtMoney(p[0][1])+'</b>, equivalente al <b>'+concTop+'%</b> del gasto total.':'')+'</p><p>'+(concTop>40?'Esto supera el umbral recomendado del 40% y constituye una <b>concentración de riesgo</b>: una interrupción de este proveedor afectaría gran parte del flujo. Se sugiere homologar un segundo proveedor y pactar acuerdos de respaldo con lead time garantizado.':'La compra se mantiene dentro de un rango de diversificación razonable, sin dependencia crítica de un solo proveedor.')+'</p>')}
+      ${card(4,'Concentración del gasto — Pareto 80/20','cPareto', '<p>El gráfico ordena a los proveedores por gasto y traza el porcentaje acumulado. El <b>80% del gasto</b> se concentra en <b>'+_n80+'</b> de los '+p.length+' proveedor(es).</p><p>Esta regla de Pareto (80/20) indica dónde enfocar la gestión: negociar precio, condiciones de pago y planes de contingencia con ese grupo reducido entrega el mayor impacto sobre el costo total de importación.</p>')}
+      ${card(5,'Valor vs. volumen por proveedor','cMix', '<p>Compara, para los principales proveedores, el valor en USD (barras) contra las unidades compradas (línea).</p><p>Permite distinguir proveedores de <b>alto valor unitario</b> (pocas unidades, mucho USD) de los de <b>commodity</b> (alto volumen, bajo USD). Los primeros justifican mayor control de calidad, seguros y, eventualmente, transporte más rápido; los segundos, foco en costo logístico y negociación por volumen.</p>')}
+      ${card(6,'Estado de los embarques (pipeline)','cEstado', '<p>Distribución de etapas del pipeline: '+Object.entries(e).map(x=>'<b>'+x[0]+'</b> ('+x[1]+')').join(', ')+'.</p><p>'+(atr>0?'Hay <b>'+atr+' PO atrasada(s)</b> que deben escalarse de inmediato con la naviera y el agente de aduana.':'No hay atrasos registrados en este corte, lo que refleja un buen cumplimiento de ETAs.')+' Mantener el pipeline balanceado entre disponibles y pendientes evita quiebres de stock y sobrecostos financieros por mercadería detenida.</p>')}
+      ${card(7,'Tiempo total de tránsito por PO (días)','cTiempo', '<p>El lead time promedio del portafolio es de <b>'+avgTiempo()+' días</b>, medido sobre <b>'+tRows.length+' PO</b> con fechas completas.</p><p>Las PO muy por encima de ese promedio revelan cuellos de botella (aduana, naviera o retiro P/A) que frenan la rotación de inventario y encarecen el stock en tránsito. Conviene revisar caso a caso las órdenes más lentas para corregir la causa raíz.</p>')}
+      ${card(8,'Tiempo total promedio por proveedor','cProvT', '<p>Ordena a los proveedores por el tiempo que tardan en poner la mercadería disponible.'+(ttp[0]?' El más lento es <b>'+ttp[0][0]+'</b> con <b>'+ttp[0][1]+' días</b> promedio.':'')+'</p><p>Este dato es clave para planificar flujo de caja y capacidad de recepción en el centro de distribución. Los proveedores que más atrasan son candidatos a renegociar plazos o a activar un origen alternativo.</p>')}
+      ${card(9,'Tipo de transporte — costo vs. velocidad','cModo', (()=>{if(!modos.length)return '<p>Aún no hay datos de tipo de transporte cargados en la planilla.</p>';const tot=modos.reduce((a,b)=>a+(+b.usd||0),0);return '<p>La carga se moviliza por <b>'+modos.length+' modo(s)</b>: '+modos.map(x=>'<b>'+esc(x.modo)+'</b> con '+fmtMoney(x.usd)+(tot?' ('+pct(x.usd,tot)+'%)':'')+(x.dias?' y '+x.dias+' días de ciclo':'')).join('; ')+'.</p><p>El marítimo suele ser el más económico pero lento; el aéreo acelera la llegada a mayor costo (carga urgente o de alto valor); el terrestre aplica a orígenes regionales. Equilibrar los modos según urgencia y valor optimiza el costo logístico sin sacrificar el nivel de servicio.</p>';})())}
+      <section class="rcard"><div class="rc-h"><span class="rc-n">10</span><h3>Campo de calor — Zona vs. Estado</h3></div><div class="hmwrap">${heatmapTable()}</div><div class="rc-an"><div class="rc-an-t">Análisis e interpretación</div><p>Muestra la cantidad de PO por combinación de zona de origen y etapa logística. Las celdas más intensas concentran más órdenes y permiten detectar si los atrasos se concentran en una zona u origen específico, orientando dónde enfocar la gestión operativa.</p></div></section>
+      <div class="execbox"><div class="t">Conclusiones y recomendaciones</div><p>En síntesis, el foco de gestión debe estar en: (1) ${concTop>40?'diversificar al proveedor '+p[0][0]+' ('+concTop+'% del gasto)':'mantener la diversificación actual de proveedores'}; (2) ${z[0]&&tu&&z[0][1]/tu>0.5?'reducir la dependencia de la zona '+z[0][0]:'equilibrar las zonas de origen'}; (3) ${atr>0?'resolver los '+atr+' embarques atrasados':'sostener el cumplimiento de ETAs'}; y (4) completar las fechas de las ${pend} PO pendientes para mejorar la trazabilidad y la exactitud de los KPIs. El detalle y las acciones priorizadas están en la pestaña <b>Sugerencias IA</b>.</p></div>
     </div>`;
     return html;
 }
@@ -2235,7 +2246,8 @@ function exportarPDF(host){
   // Armar la lista de bloques atómicos: cada gráfico se trata por separado para no cortarlo a la mitad
   const blocks=[];
   Array.from(el.children).forEach(ch=>{
-    if(ch.classList&&ch.classList.contains('imgs')){
+    if(ch.classList&&ch.classList.contains('rcard')){ blocks.push(ch); }
+    else if(ch.classList&&ch.classList.contains('imgs')){
       const ims=Array.from(ch.querySelectorAll('img'));
       if(ims.length) ims.forEach(im=>blocks.push(im)); else blocks.push(ch);
     } else blocks.push(ch);
