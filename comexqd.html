@@ -1412,6 +1412,51 @@ function trendByMonth(){const su={},sd={},ct={};ROWS.forEach(r=>{const d=(''+(r.
 
 /* ===== KPIs ===== */
 let DOLAR=null, DOLAR_FECHA=null, DOLAR_ERR=false, DOLAR_MANUAL=false;
+let DOLAR_HIST={}; // { 'yyyy-mm-dd': valorObservado | 'pending' | null }
+/* "Fecha" de la fila para valorizar en CLP: se usa la fecha de COSTEO (cuando se valoriza la
+   importacion); si esta vacia, se cae a la siguiente fecha disponible de la fila. */
+const FECHA_VAL_COLS=['cost','dinv','lcd','rpa','fdisp','eta','rorig','dorig','fconf'];
+function rowFechaVal(r){
+  for(const k of FECHA_VAL_COLS){
+    const m=(''+(r[k]==null?'':r[k])).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m)return m[1]+'-'+m[2]+'-'+m[3];
+  }
+  return null;
+}
+function _ymdToDmy(y){const p=y.split('-');return p[2]+'-'+p[1]+'-'+p[0];}
+function _prevDay(y){const p=y.split('-');const d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+/* Dolar observado HISTORICO por fecha (BCCh via mindicador.cl, con CORS). Fin de semana/feriado
+   sin publicacion -> retrocede hasta 6 dias. Resultado cacheado en DOLAR_HIST. */
+function fetchDolarHist(ymd){
+  if(!ymd || (ymd in DOLAR_HIST))return;
+  DOLAR_HIST[ymd]='pending';
+  _fetchHistDay(ymd,ymd,0);
+}
+function _fetchHistDay(orig,tryY,back){
+  if(back>6){DOLAR_HIST[orig]=null;_rerenderDolar();return;}
+  fetch('https://mindicador.cl/api/dolar/'+_ymdToDmy(tryY),{cache:'no-store'})
+    .then(r=>{if(!r.ok)throw 0;return r.json();})
+    .then(j=>{const s=(j&&j.serie&&j.serie.length)?j.serie[0]:null;
+      if(s&&s.valor){DOLAR_HIST[orig]=s.valor;_rerenderDolar();}
+      else{_fetchHistDay(orig,_prevDay(tryY),back+1);}})
+    .catch(()=>{_fetchHistDay(orig,_prevDay(tryY),back+1);});
+}
+function _rerenderDolar(){if($('kpis')&&$('kpis').innerHTML)renderKpis();if(typeof CH!=='undefined'&&CH&&CH.cModo){try{drawCharts();}catch(e){}}}
+function loadDolarHist(){const seen={};ROWS.forEach(r=>{if(isEmptyRow(r))return;const fk=rowFechaVal(r);if(fk&&!(fk in DOLAR_HIST)&&!seen[fk]){seen[fk]=1;fetchDolarHist(fk);}});}
+/* VALOR EN CLP = Sumatoria ( USD de la fila x dolar observado historico del dia de su Fecha ).
+   Si una fila no tiene fecha o no se pudo obtener el historico, se usa el dolar observado actual
+   SOLO como respaldo para no dejar la PO sin valorizar. */
+function valorCLPhist(){
+  let total=0,pend=false,nCon=0,nResp=0;
+  ROWS.forEach(r=>{if(isEmptyRow(r))return;const usd=usdNum(r.usd);if(!usd)return;
+    const fk=rowFechaVal(r);
+    if(fk){const hv=DOLAR_HIST[fk];
+      if(hv==='pending'){pend=true;return;}
+      if(typeof hv==='number'){total+=usd*hv;nCon++;return;}}
+    if(DOLAR){total+=usd*DOLAR;nResp++;}else pend=true;
+  });
+  return {total,pend,nCon,nResp};
+}
 function _applyDolar(valor,fecha,manual){DOLAR=valor;DOLAR_FECHA=fecha;DOLAR_ERR=false;DOLAR_MANUAL=!!manual;if($('kpis')&&$('kpis').innerHTML)renderKpis();if(typeof CH!=='undefined'&&CH&&CH.cModo){try{drawCharts();}catch(e){}}}
 function fetchDolar(){
   if(DOLAR_MANUAL)return; // respetar el valor ingresado manualmente
@@ -1449,14 +1494,24 @@ function renderKpis(){
   const _ml='background:none;border:none;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;padding:0';
   let dolarKpi;
   if(DOLAR){
-    const sub=(DOLAR_MANUAL?'ingreso manual':'BCCh')+' · '+DOLAR_FECHA+` <button style="${_ml}" onclick="setManualDolar()">editar</button>`;
+    const sub='solo informativo · '+(DOLAR_MANUAL?'ingreso manual':'BCCh')+' · '+DOLAR_FECHA+` <button style="${_ml}" onclick="setManualDolar()">editar</button>`;
     dolarKpi=kpi('gv4','Dólar observado','$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}),sub);
   }else if(DOLAR_ERR){
     dolarKpi=kpi('gv4','Dólar observado','sin conexión',`<button style="${_ml}" onclick="reintentarDolar()">reintentar</button> · <button style="${_ml}" onclick="setManualDolar()">ingresar</button>`);
   }else{
     dolarKpi=kpi('gv4','Dólar observado','…','conectando al Banco Central');
   }
-  const clp = DOLAR ? kpi('gv2','Valor en CLP','$'+Math.round(tu*DOLAR).toLocaleString('es-CL'),'equivalente a '+fmtMoney(tu)) : '';
+  loadDolarHist();
+  const vc=valorCLPhist();
+  let clp='';
+  if(vc.total>0||vc.nCon||vc.nResp){
+    let sub='cada USD × dólar observado del día de su fecha · '+fmtMoney(tu);
+    if(vc.pend) sub='calculando (dólar de cada fecha)… · '+fmtMoney(tu);
+    else if(vc.nResp) sub='USD × dólar de su fecha ('+vc.nResp+' PO sin fecha usan el dólar actual) · '+fmtMoney(tu);
+    clp=kpi('gv2','Valor en CLP','$'+Math.round(vc.total).toLocaleString('es-CL'),sub);
+  }else if(vc.pend){
+    clp=kpi('gv2','Valor en CLP','calculando…','convirtiendo cada PO con el dólar de su fecha');
+  }
   const nAct=poActivas(), nPend=poPendientes();
   const cb=cuelloBotella();
   const otp=etaOnTimePct(), dva=etaDevAvg();
@@ -1562,6 +1617,38 @@ function toggleAlerts(){const a=$('alerts'),ar=$('alertsArrow');if(!a)return;con
 const CH={};
 const DET={};
 let detChart=null;
+/* Construye una configuración de Chart.js NUEVA y limpia para la ventana de detalle,
+   a partir SOLO de los datos de DET[id] (labels/vals/series/fmt/type). Nunca reutiliza la
+   config del gráfico vivo (que Chart.js muta internamente y dejaba el detalle en blanco). */
+function buildDetCfg(dd){
+  if(!dd)return null;
+  const NAVY='#1b4b7a', AMBER='#d97706';
+  const isLineSerie=n=>/%|acum|prom|día|dias/i.test(n||'');
+  if(dd.series&&dd.series.length){
+    const ds=dd.series.map(s=>isLineSerie(s.name)
+      ? {type:'line',label:s.name,data:(s.vals||[]).slice(),borderColor:AMBER,backgroundColor:AMBER,yAxisID:'y1',tension:.25,pointRadius:3,borderWidth:2}
+      : {type:'bar',label:s.name,data:(s.vals||[]).slice(),backgroundColor:NAVY,borderRadius:4,yAxisID:'y'});
+    const hasR=ds.some(d=>d.yAxisID==='y1');
+    const f0=dd.series[0]&&dd.series[0].fmt?dd.series[0].fmt:(v=>v);
+    const sR=dd.series.find(x=>isLineSerie(x.name)); const fR=sR&&sR.fmt?sR.fmt:(v=>v);
+    const sc={y:{position:'left',beginAtZero:true,ticks:{callback:v=>f0(v)}}};
+    if(hasR)sc.y1={position:'right',beginAtZero:true,grid:{drawOnChartArea:false},ticks:{callback:v=>fR(v)}};
+    return {type:'bar',data:{labels:(dd.labels||[]).slice(),datasets:ds},
+      options:{maintainAspectRatio:false,responsive:true,animation:false,
+        plugins:{legend:{display:true},datalabels:{display:false},
+          tooltip:{callbacks:{label:ctx=>{const s=dd.series[ctx.datasetIndex];const f=s&&s.fmt?s.fmt:(v=>v);return (s?s.name:'')+': '+f(ctx.parsed.y);}}}},
+        scales:sc}};
+  }
+  const isCirc=(dd.type==='doughnut'||dd.type==='polarArea'||dd.type==='pie');
+  const f=dd.fmt||(v=>v);
+  return {type:dd.type||'bar',
+    data:{labels:(dd.labels||[]).slice(),datasets:[{label:dd.valLabel||'Valor',data:(dd.vals||[]).slice(),
+      backgroundColor:isCirc?PAL:NAVY,borderRadius:isCirc?0:4,borderWidth:isCirc?2:0,borderColor:'#fff'}]},
+    options:{maintainAspectRatio:false,responsive:true,animation:false,
+      plugins:{legend:{display:isCirc,position:'right'},datalabels:{display:false},
+        tooltip:{callbacks:{label:ctx=>{const v=isCirc?ctx.parsed:ctx.parsed.y;return (ctx.label||'')+': '+f(v);}}}},
+      scales:isCirc?{}:{y:{beginAtZero:true,ticks:{callback:v=>f(v)}}}}};
+}
 function detalle(id){
   let d=DET[id];
   // Nunca mostrar un alert: si aún no se han generado los gráficos, generarlos ahora y reintentar.
@@ -1599,26 +1686,8 @@ function detalle(id){
   const drawDet=()=>{
     const cv=$('detCanvas'); if(!cv) return;
     if(detChart){detChart.destroy();detChart=null;}
-    // Clon profundo que CONSERVA las funciones (formatters/callbacks) por referencia.
-    // Es clave NO compartir los objetos anidados (plugins/scales) con el gráfico vivo:
-    // si se comparten, Chart.js les añade estado interno y el 2º gráfico queda en blanco.
-    const dc=o=>{ if(Array.isArray(o))return o.map(dc); if(o&&typeof o==='object'){const r={};for(const k in o)r[k]=dc(o[k]);return r;} return o; };
-    let cfg=null;
-    try{
-      const base=(DET[id]&&DET[id].detCfg)||CFG[id];
-      if(base&&base.data){
-        cfg={type:base.type,data:dc(base.data),options:Object.assign(dc(base.options||{}),{maintainAspectRatio:false,responsive:true,animation:false})};
-      }
-    }catch(e){cfg=null;}
-    if(!cfg){
-      // Respaldo: reconstruir el gráfico a partir de los datos del detalle (siempre muestra algo).
-      const dd=DET[id]||d;
-      if(dd&&dd.series){
-        cfg={type:'bar',data:{labels:(dd.labels||[]).slice(),datasets:dd.series.map((s,i)=>({label:s.name,data:(s.vals||[]).slice(),backgroundColor:i?'#d97706':'#1b4b7a',borderRadius:4}))},options:{maintainAspectRatio:false,responsive:true,animation:false}};
-      }else if(dd){
-        cfg={type:(dd.type||'bar'),data:{labels:(dd.labels||[]).slice(),datasets:[{label:dd.valLabel||'Valor',data:(dd.vals||[]).slice(),backgroundColor:(dd.type==='doughnut'||dd.type==='polarArea')?PAL:'#1b4b7a',borderRadius:4}]},options:{maintainAspectRatio:false,responsive:true,animation:false,plugins:{legend:{display:(dd.type==='doughnut'||dd.type==='polarArea')}}}};
-      }
-    }
+    // Config NUEVA y limpia desde los datos del detalle: garantiza que el gráfico SIEMPRE se vea.
+    const cfg=buildDetCfg(DET[id]||d);
     if(!cfg) return;
     try{ detChart=new Chart(cv,cfg); }catch(e){ try{console.error('detalle chart',e);}catch(_){ } }
     setTimeout(()=>{if(detChart){try{detChart.resize();detChart.update('none');}catch(e){}}},90);
@@ -1884,6 +1953,11 @@ function openBorrar(){
 }
 /* ===== Exportar los gráficos a una presentación PPT (un gráfico por diapositiva) ===== */
 function _stripHtml(h){const d=document.createElement('div');d.innerHTML=h||'';return (d.textContent||d.innerText||'').replace(/\s+/g,' ').trim();}
+/* Convierte el HTML del análisis (con <br> y <b>) en párrafos de texto plano para el PPT.
+   Cada <br> inicia un párrafo nuevo: así el análisis se ve SIEMPRE, sin depender de autoajuste. */
+function _htmlToParas(h){
+  return (h||'').split(/<br\s*\/?>/i).map(p=>_stripHtml(p)).filter(x=>x);
+}
 const PPT_CHARTS=[
   {id:'cValProv',bk:'ValProv'},{id:'cUniProv',bk:'UniProv'},{id:'cZonaV',bk:'ZonaV'},{id:'cModo',bk:'Modo'},
   {id:'cTramo',bk:'Tramo'},{id:'cProvT',bk:'ProvT'},{id:'cTransit',bk:'Transit'}
@@ -1914,10 +1988,10 @@ function exportPPT(){
         const titEl=$('t'+pc.bk);const titulo=titEl?titEl.textContent.replace(/^\s*\d+\.\s*/,'').trim():pc.bk;
         const vEl=$('v'+pc.bk);let concl='',lvl='info';
         if(vEl){const tx=vEl.querySelector('.vtx');concl=_stripHtml(tx?tx.innerHTML:vEl.innerHTML);const cl=vEl.className.replace('verdict','').trim();if(cl)lvl=cl.split(/\s+/)[0];}
-        let exEl=$('ex'+pc.bk);let analisis=_stripHtml(exEl?exEl.innerHTML:'');
+        let exEl=$('ex'+pc.bk);let analisisHTML=exEl?exEl.innerHTML:'';let analisis=_stripHtml(analisisHTML);
         // Respaldo: si el cuadro de análisis estuviera vacío, generarlo ahora y volver a leerlo.
-        if(!analisis){try{fillExplains();}catch(e){} exEl=$('ex'+pc.bk); analisis=_stripHtml(exEl?exEl.innerHTML:'');}
-        if(!analisis) analisis=concl; // último respaldo: usar la conclusión
+        if(!analisis){try{fillExplains();}catch(e){} exEl=$('ex'+pc.bk); analisisHTML=exEl?exEl.innerHTML:''; analisis=_stripHtml(analisisHTML);}
+        if(!analisis){analisis=concl;analisisHTML=concl;} // último respaldo: usar la conclusión
         const sl=pptx.addSlide();sl.background={color:'FFFFFF'};
         sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.33,h:1.05,fill:{color:NAVY}});
         sl.addText(String(n),{x:0.35,y:0.12,w:0.8,h:0.8,fontSize:30,bold:true,color:'5B82A6',align:'center'});
@@ -1926,10 +2000,12 @@ function exportPPT(){
         else sl.addText('(Sin datos suficientes para este gráfico)',{x:0.45,y:3.6,w:7.6,h:0.6,fontSize:14,italic:true,color:GREY,align:'center'});
         // Panel derecho: conclusión + análisis
         sl.addShape(pptx.ShapeType.rect,{x:8.35,y:1.35,w:0.09,h:5.7,fill:{color:(LVC[lvl]||TEAL)}});
-        sl.addText('CONCLUSIÓN',{x:8.6,y:1.4,w:4.4,h:0.4,fontSize:13,bold:true,color:(LVC[lvl]||TEAL),charSpacing:1});
-        sl.addText(concl||'—',{x:8.6,y:1.8,w:4.45,h:2.2,fontSize:14,color:NAVY,valign:'top',lineSpacingMultiple:1.05,fit:'shrink'});
-        sl.addText('ANÁLISIS',{x:8.6,y:4.15,w:4.4,h:0.4,fontSize:13,bold:true,color:STEEL,charSpacing:1});
-        sl.addText(analisis||'—',{x:8.6,y:4.55,w:4.45,h:2.5,fontSize:11.5,color:'2A3A4D',valign:'top',lineSpacingMultiple:1.03,fit:'shrink'});
+        sl.addText('CONCLUSIÓN',{x:8.6,y:1.35,w:4.4,h:0.4,fontSize:13,bold:true,color:(LVC[lvl]||TEAL),charSpacing:1});
+        sl.addText(concl||'—',{x:8.6,y:1.75,w:4.5,h:1.55,fontSize:13.5,color:NAVY,valign:'top',lineSpacingMultiple:1.05});
+        sl.addText('ANÁLISIS',{x:8.6,y:3.4,w:4.4,h:0.4,fontSize:13,bold:true,color:STEEL,charSpacing:1});
+        const _paras=_htmlToParas(analisisHTML);
+        const _anaRuns=_paras.length?_paras.map((t,i)=>({text:t,options:{breakLine:true,paraSpaceAfter:(i<_paras.length-1?6:0)}})):[{text:(analisis||'—')}];
+        sl.addText(_anaRuns,{x:8.6,y:3.82,w:4.5,h:3.18,fontSize:10.5,color:'2A3A4D',valign:'top',lineSpacingMultiple:1.04});
         sl.addText('COMEX QD · Quintec',{x:0.45,y:7.05,w:7.6,h:0.35,fontSize:9,color:GREY});
       });
       if(n===0){alert('No hay gráficos con datos para exportar. Cargue la planilla primero.');return;}
