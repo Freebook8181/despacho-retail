@@ -1444,18 +1444,19 @@ function _fetchHistDay(orig,tryY,back){
 function _rerenderDolar(){if($('kpis')&&$('kpis').innerHTML)renderKpis();if(typeof CH!=='undefined'&&CH&&CH.cModo){try{drawCharts();}catch(e){}}}
 function loadDolarHist(){const seen={};ROWS.forEach(r=>{if(isEmptyRow(r))return;const fk=rowFechaVal(r);if(fk&&!(fk in DOLAR_HIST)&&!seen[fk]){seen[fk]=1;fetchDolarHist(fk);}});}
 /* VALOR EN CLP = Sumatoria ( USD de la fila x dolar observado historico del dia de su Fecha ).
-   Si una fila no tiene fecha o no se pudo obtener el historico, se usa el dolar observado actual
-   SOLO como respaldo para no dejar la PO sin valorizar. */
+   Regla (segun el ejemplo del usuario): una fila SIN fecha, o cuya fecha aún no tiene dolar
+   obtenido, NO se suma (su valor en CLP es 0 / guion). NO se usa el dolar actual como respaldo. */
 function valorCLPhist(){
-  let total=0,pend=false,nCon=0,nResp=0;
+  let total=0,pend=false,nCon=0,nSin=0;
   ROWS.forEach(r=>{if(isEmptyRow(r))return;const usd=usdNum(r.usd);if(!usd)return;
     const fk=rowFechaVal(r);
-    if(fk){const hv=DOLAR_HIST[fk];
-      if(hv==='pending'){pend=true;return;}
-      if(typeof hv==='number'){total+=usd*hv;nCon++;return;}}
-    if(DOLAR){total+=usd*DOLAR;nResp++;}else pend=true;
+    if(!fk){nSin++;return;}            // sin fecha -> no se suma
+    const hv=DOLAR_HIST[fk];
+    if(hv==='pending'){pend=true;return;}
+    if(typeof hv==='number'){total+=usd*hv;nCon++;return;}
+    nSin++;                            // sin dolar para esa fecha -> no se suma
   });
-  return {total,pend,nCon,nResp};
+  return {total,pend,nCon,nSin};
 }
 function _applyDolar(valor,fecha,manual){DOLAR=valor;DOLAR_FECHA=fecha;DOLAR_ERR=false;DOLAR_MANUAL=!!manual;if($('kpis')&&$('kpis').innerHTML)renderKpis();if(typeof CH!=='undefined'&&CH&&CH.cModo){try{drawCharts();}catch(e){}}}
 function fetchDolar(){
@@ -1504,13 +1505,15 @@ function renderKpis(){
   loadDolarHist();
   const vc=valorCLPhist();
   let clp='';
-  if(vc.total>0||vc.nCon||vc.nResp){
-    let sub='cada USD × dólar observado del día de su fecha · '+fmtMoney(tu);
-    if(vc.pend) sub='calculando (dólar de cada fecha)… · '+fmtMoney(tu);
-    else if(vc.nResp) sub='USD × dólar de su fecha ('+vc.nResp+' PO sin fecha usan el dólar actual) · '+fmtMoney(tu);
+  if(vc.total>0||vc.nCon){
+    let sub='suma de (USD × dólar observado de su fecha)';
+    if(vc.pend) sub='calculando (dólar de cada fecha)…';
+    if(vc.nSin) sub+=' · '+vc.nSin+' PO sin fecha no se suman';
     clp=kpi('gv2','Valor en CLP','$'+Math.round(vc.total).toLocaleString('es-CL'),sub);
   }else if(vc.pend){
-    clp=kpi('gv2','Valor en CLP','calculando…','convirtiendo cada PO con el dólar de su fecha');
+    clp=kpi('gv2','Valor en CLP','calculando…','buscando el dólar de la fecha de cada PO');
+  }else if(vc.nSin){
+    clp=kpi('gv2','Valor en CLP','$0','ninguna PO tiene fecha para buscar el dólar');
   }
   const nAct=poActivas(), nPend=poPendientes();
   const cb=cuelloBotella();
