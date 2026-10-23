@@ -798,13 +798,20 @@ function doLogin(){
   $('loginErr').textContent='Verificando…';
   auth.signInWithEmailAndPassword(selEmail,pw)
     .catch(e=>{
-      if(e.code==='auth/user-not-found'){
-        auth.createUserWithEmailAndPassword(selEmail,pw).catch(e2=>{$('loginErr').textContent=mapErr(e2);});
+      const c=e.code||'';
+      // El SDK nuevo informa la cuenta inexistente como invalid-login-credentials / invalid-credential
+      // (protección de enumeración de correos), ya no como user-not-found. En esos casos creamos la cuenta.
+      if(c==='auth/user-not-found'||c==='auth/invalid-login-credentials'||c==='auth/invalid-credential'){
+        auth.createUserWithEmailAndPassword(selEmail,pw)
+          .catch(e2=>{
+            if(e2.code==='auth/email-already-in-use'){$('loginErr').textContent='Contraseña incorrecta para este usuario.';}
+            else{$('loginErr').textContent=mapErr(e2);}
+          });
       }else{$('loginErr').textContent=mapErr(e);}
     });
 }
 function mapErr(e){
-  const m={'auth/wrong-password':'Contraseña incorrecta.','auth/invalid-credential':'Usuario o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos, espere un momento.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.'};
+  const m={'auth/wrong-password':'Contraseña incorrecta.','auth/invalid-credential':'Usuario o contraseña incorrectos.','auth/invalid-login-credentials':'Usuario o contraseña incorrectos.','auth/email-already-in-use':'Contraseña incorrecta para este usuario.','auth/operation-not-allowed':'Falta habilitar el proveedor Correo/Contraseña en Firebase (Authentication → Sign-in method).','auth/too-many-requests':'Demasiados intentos, espere un momento.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.'};
   return m[e.code]||('Error: '+e.message);
 }
 $('pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
