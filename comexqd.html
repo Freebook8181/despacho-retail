@@ -42,6 +42,8 @@ button{font-family:inherit;cursor:pointer}
 #pwWrap{margin-top:8px;display:none}
 #pwWrap input{width:100%;padding:12px 14px;border-radius:9px;border:1px solid var(--line);background:#f8fafc;color:var(--txt);font-size:15px}
 #pwWrap input:focus{outline:none;border-color:var(--blue)}
+#loginFields input{width:100%;padding:12px 14px;border-radius:9px;border:1px solid var(--line);background:#f8fafc;color:var(--txt);font-size:15px;margin-bottom:10px}
+#loginFields input:focus{outline:none;border-color:var(--blue)}
 .rowf{display:flex;gap:10px;margin-top:12px}
 .btn{border:none;border-radius:9px;padding:11px 16px;font-weight:600;font-size:13.5px;transition:.15s}
 .btn:hover{filter:brightness(1.06)}
@@ -309,6 +311,15 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 .report .imgs{display:block;margin:6px 0 18px}
 .report .imgs img{display:block;width:100%;max-width:760px;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px;margin:0 auto 16px}
 .report .imgfail{border:1px dashed #cbd5e1;border-radius:10px;padding:18px;text-align:center;color:#94a3b8;font-size:12.5px;margin:0 auto 16px;max-width:760px}
+/* ===== Ventana (modal) del Reporte ===== */
+#reportModal{position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:500;display:none;flex-direction:column;align-items:center}
+#reportModal.on{display:flex}
+#reportModal .rm-head{width:100%;background:#0f2744;color:#fff;display:flex;align-items:center;gap:10px;padding:12px 18px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+#reportModal .rm-title{font-size:16px;font-weight:800;letter-spacing:.3px}
+#reportModal .rm-sp{flex:1}
+#reportModal .rm-body{flex:1;overflow:auto;width:100%;display:flex;justify-content:center;padding:22px 14px 44px}
+#reportModal .rm-body .report{max-width:816px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+#reportModal .rm-loading{color:#fff;font-size:15px;padding:60px;text-align:center}
 /* IA / sugerencias */
 .sug{background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px 20px;margin-bottom:13px;border-left:4px solid var(--teal)}
 .sug.hi{border-left-color:var(--bad)} .sug.md{border-left-color:var(--warn)}
@@ -341,6 +352,11 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   body{background:#fff}
   .tabpane{display:none!important}.tabpane.printing{display:block!important}
   .panel,.report,.kpi{break-inside:avoid}
+  body.print-report #app,body.print-report #login,body.print-report .topbar{display:none!important}
+  body.print-report #reportModal{position:static;display:block!important;background:#fff}
+  body.print-report #reportModal .rm-head{display:none!important}
+  body.print-report #reportModal .rm-body{overflow:visible;padding:0;display:block}
+  body.print-report #reportModal .rm-body .report{box-shadow:none;border:none;max-width:100%;margin:0}
 }
 </style>
 </head>
@@ -350,13 +366,12 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <div class="login-box">
     <div class="brand"><div class="t">COMEX <span>QD</span></div></div>
     <div class="sub">PLATAFORMA DE CONTROL DE IMPORTACIONES · QUINTEC</div>
-    <div id="userList"></div>
-    <div id="pwWrap">
+    <div id="loginFields">
+      <input type="text" id="email" placeholder="Usuario (correo)" autocomplete="off" autocapitalize="off" spellcheck="false">
       <input type="password" id="pw" placeholder="Contraseña" autocomplete="off">
     </div>
     <div class="rowf">
-      <button class="btn btn-g" id="btnBack" style="display:none" onclick="resetLogin()">Volver</button>
-      <button class="btn btn-p" id="btnLogin" onclick="doLogin()" style="display:none">Ingresar</button>
+      <button class="btn btn-p" id="btnLogin" onclick="doLogin()">Ingresar</button>
     </div>
     <div id="loginErr"></div>
   </div>
@@ -370,7 +385,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
     <nav class="nav" id="nav">
       <button data-tab="graficos" class="active" onclick="go('graficos')"><span class="ic">◑</span><span class="lbl">Gráficos &amp; KPIs</span></button>
       <button data-tab="planilla" onclick="go('planilla')"><span class="ic">▤</span><span class="lbl">Planilla</span></button>
-      <button data-tab="reporte" onclick="go('reporte')"><span class="ic">▧</span><span class="lbl">Reporte</span></button>
+      <button data-tab="reporte" onclick="abrirReporteModal()"><span class="ic">▧</span><span class="lbl">Reporte</span></button>
       <button data-tab="sugerencias" id="navSug" onclick="go('sugerencias')" style="display:none"><span class="ic">✨</span><span class="lbl">Sugerencias IA</span></button>
       <button data-tab="actividad" id="navAct" onclick="go('actividad')" style="display:none"><span class="ic">○</span><span class="lbl">Actividad</span></button>
       <button id="navNube" onclick="verNube()" style="display:none"><span class="ic">☁</span><span class="lbl">NUBE</span></button>
@@ -581,6 +596,18 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   </div>
 </div>
 
+<!-- ===== Ventana (modal) del REPORTE con gráficos, análisis y botones PDF / Imprimir ===== -->
+<div id="reportModal">
+  <div class="rm-head">
+    <div class="rm-title">📄 Reporte de Control de Importaciones</div>
+    <div class="rm-sp"></div>
+    <button class="btn" style="background:#1d6f42;color:#fff;padding:9px 15px" onclick="exportarPDF($('reportModalBody'))">⬇ Descargar PDF</button>
+    <button class="btn" style="background:var(--navy);color:#fff;padding:9px 15px" onclick="imprimirReporteModal()">⎙ Imprimir</button>
+    <button class="btn btn-g" style="padding:9px 15px" onclick="cerrarReporteModal()">✕ Cerrar</button>
+  </div>
+  <div class="rm-body" id="reportModalBody"></div>
+</div>
+
 <!-- Pantalla de BLOQUEO (se muestra a los usuarios NO administradores cuando el sistema está bloqueado) -->
 <div id="lockScreen" style="position:fixed;inset:0;background:linear-gradient(135deg,#0f2744,#1b4b7a);display:none;align-items:center;justify-content:center;z-index:300;color:#fff;text-align:center;padding:24px">
   <div>
@@ -614,7 +641,8 @@ const auth=firebase.auth(), db=firebase.database();
 /* ===== Usuarios (sin mostrar contraseñas) ===== */
 const USERS=[
   {email:"eduardo.donoso@ext.quintec.cl",name:"Eduardo Donoso",role:"Administrador COMEX",admin:true,analyst:true,color:"#0f2744"},
-  {email:"cretamac@quintec.cl",name:"C. Retamal",role:"Usuario COMEX",admin:false,color:"#1b4b7a"}
+  {email:"cretamac@quintec.cl",name:"C. Retamal",role:"Usuario COMEX",admin:false,color:"#1b4b7a"},
+  {email:"keren.hidalgo@quintec.cl",name:"Keren Hidalgo",role:"Usuario COMEX",admin:false,color:"#0e7490"}
 ];
 const IA_USER="eduardo.donoso@ext.quintec.cl";   // admin + Sugerencias IA + Actividad
 let CURRENT=null, selEmail=null;
@@ -702,43 +730,30 @@ function cleanUnid(v){let s=(''+v).replace(/[^0-9.,-]/g,'').replace(/\./g,'').re
 function initials(n){return n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();}
 function esc(s){return (s==null?'':''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-/* ===== Login (name-pick, sin ver passwords) ===== */
-function renderUsers(){
-  $('userList').innerHTML=USERS.map((u,i)=>`
-    <div class="user-card" data-i="${i}" onclick="pickUser(${i})">
-      <div class="avatar" style="background:${u.color}">${initials(u.name)}</div>
-      <div><div class="nm">${esc(u.name)}</div><div class="rl">${esc(u.role)}</div></div>
-      ${u.admin?'<span class="badge-admin">ADMIN</span>':''}
-    </div>`).join('');
-}
-function pickUser(i){
-  selEmail=USERS[i].email;
-  document.querySelectorAll('.user-card').forEach(c=>c.classList.toggle('sel',+c.dataset.i===i));
-  $('pwWrap').style.display='block';
-  $('btnLogin').style.display='block';
-  $('btnBack').style.display='block';
-  $('pw').focus();
-}
+/* ===== Login (usuario + contraseña, sin mostrar nombres) ===== */
+function renderUsers(){/* La pantalla de inicio ya NO muestra la lista de usuarios: se ingresa con correo y contraseña. */}
 function resetLogin(){
-  selEmail=null;$('pw').value='';$('loginErr').textContent='';
-  $('pwWrap').style.display='none';$('btnLogin').style.display='none';$('btnBack').style.display='none';
-  document.querySelectorAll('.user-card').forEach(c=>c.classList.remove('sel'));
+  selEmail=null;if($('email'))$('email').value='';if($('pw'))$('pw').value='';$('loginErr').textContent='';
 }
 function doLogin(){
-  const pw=$('pw').value;if(!selEmail||!pw){$('loginErr').textContent='Seleccione un usuario e ingrese su contraseña.';return;}
+  const email=($('email').value||'').trim().toLowerCase();
+  const pw=$('pw').value;
+  if(!email||!pw){$('loginErr').textContent='Ingrese su usuario (correo) y su contraseña.';return;}
+  selEmail=email;
   $('loginErr').textContent='Verificando…';
-  auth.signInWithEmailAndPassword(selEmail,pw)
+  auth.signInWithEmailAndPassword(email,pw)
     .catch(e=>{
       if(e.code==='auth/user-not-found'){
-        auth.createUserWithEmailAndPassword(selEmail,pw).catch(e2=>{$('loginErr').textContent=mapErr(e2);});
+        auth.createUserWithEmailAndPassword(email,pw).catch(e2=>{$('loginErr').textContent=mapErr(e2);});
       }else{$('loginErr').textContent=mapErr(e);}
     });
 }
 function mapErr(e){
-  const m={'auth/wrong-password':'Contraseña incorrecta.','auth/invalid-credential':'Credenciales inválidas.','auth/too-many-requests':'Demasiados intentos, espere un momento.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.'};
+  const m={'auth/wrong-password':'Contraseña incorrecta.','auth/invalid-credential':'Usuario o contraseña incorrectos.','auth/invalid-email':'El usuario debe ser un correo válido.','auth/user-not-found':'Usuario no encontrado.','auth/too-many-requests':'Demasiados intentos, espere un momento.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.'};
   return m[e.code]||('Error: '+e.message);
 }
 $('pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+$('email').addEventListener('keydown',e=>{if(e.key==='Enter'){if($('pw').value)doLogin();else $('pw').focus();}});
 
 /* ===== Estado de sesión ===== */
 auth.onAuthStateChanged(u=>{
@@ -1220,6 +1235,7 @@ function importExcel(inp){
           if(c.k==='usd')o[c.k]=(src===''||src==null)?'':Math.round(usdNum(src)).toLocaleString('en-US'); // USD: valor del Excel con miles (coma) y SIN decimales
           else if(c.money||c.num)o[c.k]=src===''?'':numClean(src);
           else if(c.date)o[c.k]=xdate(src);
+          else if(c.opt){const s=src==null?'':(''+src).trim();if(!s){o[c.k]='';}else{const n=norm(s);let hit=c.opt.find(o2=>norm(o2)===n)||c.opt.find(o2=>norm(o2).startsWith(n)||n.startsWith(norm(o2)));if(!hit&&c.k==='tipo'){const t=_normTipo(s);if(c.opt.indexOf(t)>=0)hit=t;}o[c.k]=hit||s;}} // listas (Tipo transporte, ZONA): homologar el texto importado a la opción correcta
           else o[c.k]=src==null?'':(''+src).trim();
         });
         if(COLS.some(c=>o[c.k]!==''&&o[c.k]!==0))newRows.push(o);
@@ -1312,7 +1328,19 @@ function etaDev(){return ROWS.map(r=>({po:r.po,dev:diffSign(r.eta,r.lcd)})).filt
 function etaOnTimePct(){const d=etaDev();if(!d.length)return null;return Math.round(d.filter(x=>x.dev<=0).length/d.length*100);}
 function etaDevAvg(){const d=etaDev();if(!d.length)return null;return Math.round(d.reduce((a,b)=>a+b.dev,0)/d.length);}
 // Comparativa por modo de transporte (Marítimo / Aéreo): USD total y días promedio
-function byModo(){const su={},st={},ct={};ROWS.forEach(r=>{const m=r.tipo||'—';su[m]=(su[m]||0)+usdNum(r.usd);const d=numClean(computeTtot(r));if(d>0){st[m]=(st[m]||0)+d;ct[m]=(ct[m]||0)+1;}});const modos=[...new Set(Object.keys(su).concat(Object.keys(st)))];return modos.map(m=>({modo:m,usd:su[m]||0,dias:ct[m]?Math.round(st[m]/ct[m]):0}));}
+/* Normaliza el TIPO de transporte: tolera mayúsculas/minúsculas, acentos, espacios y sinónimos,
+   para que Aéreo / Marítimo / Terrestre se consoliden SIEMPRE completos en los gráficos aunque
+   la planilla importada traiga variantes (AEREO, maritimo, TERRESTRE, etc.). */
+function _normTipo(v){
+  let s=(v==null?'':''+v).trim();
+  if(!s)return '—';
+  const u=s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(/mar|sea|ocean|barco|buque|naval|cont/.test(u))return 'Marítimo';
+  if(/aer|air|avi|fly|flight/.test(u))return 'Aéreo';
+  if(/terr|land|cami|truck|road|carret/.test(u))return 'Terrestre';
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+function byModo(){const su={},st={},ct={};ROWS.forEach(r=>{const m=_normTipo(r.tipo);su[m]=(su[m]||0)+usdNum(r.usd);const d=numClean(computeTtot(r));if(d>0){st[m]=(st[m]||0)+d;ct[m]=(ct[m]||0)+1;}});const modos=[...new Set(Object.keys(su).concat(Object.keys(st)))].filter(m=>m!=='—');return modos.map(m=>({modo:m,usd:su[m]||0,dias:ct[m]?Math.round(st[m]/ct[m]):0}));}
 // Capital MOVILIZADO (PO con TODOS los cuadros completos) vs EN TRÁNSITO (PO con cuadros incompletos)
 function valorEnTransito(){let trans=0,disp=0;ROWS.forEach(r=>{const v=usdNum(r.usd);if(rowComplete(r))disp+=v;else trans+=v;});return {trans,disp};}
 function mesLabel(ym){const M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];const p=ym.split('-');const i=parseInt(p[1],10)-1;return (M[i]||p[1])+' '+p[0];}
@@ -2097,9 +2125,7 @@ function heatmapTable(){
   zonas.forEach(z=>{h+=`<tr><td class="lbl">${esc(z)}</td>`+ests.map(e=>{const v=grid[z][e];return `<td style="background:${heatColor(v,max)};color:${v/max>0.55?'#fff':'#1e293b'}">${v||''}</td>`;}).join('')+'</tr>';});
   h+='</tbody></table>';return h;
 }
-function generarReporte(){
-  drawCharts();
-  setTimeout(()=>{
+function buildReportHTML(){
     const z=sortEnt(byZona()),p=sortEnt(byProv()),tu=totUSD(),e=byEstado(),u=sortEnt(unidByZona());
     const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
     const tk=sortEnt(ticketByZona());
@@ -2131,20 +2157,40 @@ function generarReporte(){
       <h3>5. Tiempos por proveedor y valor unitario</h3>
       <p>El lead time promedio por proveedor permite identificar qué proveedores tardan más en poner la mercadería disponible, clave para planificar flujo de caja y capacidad de recepción en el CD. ${tk[0]?'El ticket promedio más alto corresponde a <b>'+tk[0][0]+'</b> con '+fmtMoney(tk[0][1])+' por unidad, lo que justifica mayor control de calidad y, eventualmente, modos de transporte más rápidos para esa mercadería de alto valor.':''}</p>
       <div class="imgs">${img('cProvT')}</div>
-      <h3>6. Campo de calor — Zona vs. Estado</h3>
+      <h3>6. Tipo de transporte — costo vs. velocidad</h3>
+      <p>${(()=>{const md=byModo();if(!md.length)return 'Aún no hay datos de tipo de transporte cargados en la planilla.';const tot=md.reduce((a,b)=>a+(+b.usd||0),0);return 'La carga se moviliza por <b>'+md.length+' modo(s)</b> de transporte: '+md.map(x=>'<b>'+esc(x.modo)+'</b> con '+fmtMoney(x.usd)+(tot?' ('+Math.round(x.usd/tot*100)+'%)':'')+(x.dias?' y '+x.dias+' días promedio de ciclo':'')).join('; ')+'. El modo marítimo suele ser el más económico pero el más lento; el aéreo acelera la llegada a mayor costo (conviene para carga urgente o de alto valor); el terrestre aplica a orígenes regionales. Equilibrar estos modos según la urgencia y el valor de la carga es clave para optimizar el costo logístico sin sacrificar el nivel de servicio.';})()}</p>
+      <div class="imgs">${img('cModo')}</div>
+      <h3>7. Campo de calor — Zona vs. Estado</h3>
       <p>Cantidad de PO por combinación de zona de origen y etapa logística. Las celdas más intensas concentran mayor cantidad de órdenes y ayudan a detectar si los atrasos se concentran en una zona u origen específico.</p>
       <div class="hmwrap">${heatmapTable()}</div>
-      <h3>7. Conclusiones y recomendaciones</h3>
+      <h3>8. Conclusiones y recomendaciones</h3>
       <p>En síntesis, el foco de gestión debe estar en: (1) ${concTop>40?'diversificar al proveedor '+p[0][0]+' ('+concTop+'% del gasto)':'mantener la diversificación actual de proveedores'}; (2) ${z[0]&&z[0][1]/tu>0.5?'reducir la dependencia de la zona '+z[0][0]:'equilibrar las zonas de origen'}; (3) ${atr>0?'resolver los '+atr+' embarques atrasados':'sostener el cumplimiento de ETAs'}; y (4) completar las fechas de las ${pend} PO pendientes para mejorar la trazabilidad y la exactitud de los KPIs. El detalle y las acciones concretas priorizadas se encuentran en la pestaña <b>Sugerencias IA</b>.</p>
     </div>`;
-    $('reportHost').innerHTML=html;
-    logAct('reporte','Generó el reporte de importaciones');
-  },500);
+    return html;
+}
+function generarReporte(){
+  drawCharts();
+  setTimeout(()=>{ $('reportHost').innerHTML=buildReportHTML(); logAct('reporte','Generó el reporte de importaciones'); },500);
+}
+/* Abre el reporte en una VENTANA (modal) con los gráficos, el análisis de cada uno y los botones de PDF / Imprimir. */
+function abrirReporteModal(){
+  $('reportModal').classList.add('on');
+  $('reportModalBody').innerHTML='<div class="rm-loading">⏳ Generando el reporte con gráficos y análisis…</div>';
+  drawCharts();
+  setTimeout(()=>{ $('reportModalBody').innerHTML=buildReportHTML(); logAct('reporte','Abrió el reporte en ventana'); },500);
+}
+function cerrarReporteModal(){ $('reportModal').classList.remove('on'); }
+function imprimirReporteModal(){
+  if(anyRed()){alert('⛔ No se puede imprimir el reporte: hay fechas en ROJO en la planilla. Corrija las celdas marcadas antes de continuar.');return;}
+  document.body.classList.add('print-report');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('print-report'),600);
+  logAct('imprimir','Imprimió el reporte (ventana)');
 }
 /* Exporta el reporte a PDF en tamaño CARTA, por bloques, para que ningún gráfico quede cortado entre páginas */
-function exportarPDF(){
+function exportarPDF(host){
   if(anyRed()){alert('⛔ No se puede exportar a PDF: hay fechas en ROJO en la planilla.\n\nCorrija todas las celdas marcadas en rojo (FECHA CONFIRMACION mayor que DISPONIBILIDAD ORIGEN, o fechas fuera de secuencia) y vuelva a intentar.');return;}
-  const el=$('reportDoc');
+  const el=(host&&host.querySelector)?host.querySelector('.report'):$('reportDoc');
   if(!el){alert('Primero genere el reporte con el botón “Generar / actualizar reporte”.');return;}
   const jsPDFns=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
   if(!window.html2canvas||!jsPDFns){alert('No se pudieron cargar las librerías de PDF. Verifique su conexión a internet.');return;}
