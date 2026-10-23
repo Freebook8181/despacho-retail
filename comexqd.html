@@ -1599,13 +1599,15 @@ function detalle(id){
   const drawDet=()=>{
     const cv=$('detCanvas'); if(!cv) return;
     if(detChart){detChart.destroy();detChart=null;}
+    // Clon profundo que CONSERVA las funciones (formatters/callbacks) por referencia.
+    // Es clave NO compartir los objetos anidados (plugins/scales) con el gráfico vivo:
+    // si se comparten, Chart.js les añade estado interno y el 2º gráfico queda en blanco.
+    const dc=o=>{ if(Array.isArray(o))return o.map(dc); if(o&&typeof o==='object'){const r={};for(const k in o)r[k]=dc(o[k]);return r;} return o; };
     let cfg=null;
     try{
-      // Mismo gráfico que la vista principal (tipo, colores y etiquetas), a mayor tamaño.
       const base=(DET[id]&&DET[id].detCfg)||CFG[id];
       if(base&&base.data){
-        const data2={labels:(base.data.labels||[]).slice(),datasets:(base.data.datasets||[]).map(ds=>Object.assign({},ds,{data:(ds.data||[]).slice()}))};
-        cfg={type:base.type,data:data2,options:Object.assign({},base.options||{},{maintainAspectRatio:false,responsive:true,animation:false})};
+        cfg={type:base.type,data:dc(base.data),options:Object.assign(dc(base.options||{}),{maintainAspectRatio:false,responsive:true,animation:false})};
       }
     }catch(e){cfg=null;}
     if(!cfg){
@@ -1618,8 +1620,8 @@ function detalle(id){
       }
     }
     if(!cfg) return;
-    try{ detChart=new Chart(cv,cfg); }catch(e){}
-    setTimeout(()=>{if(detChart)detChart.resize();},80);
+    try{ detChart=new Chart(cv,cfg); }catch(e){ try{console.error('detalle chart',e);}catch(_){ } }
+    setTimeout(()=>{if(detChart){try{detChart.resize();detChart.update('none');}catch(e){}}},90);
   };
   requestAnimationFrame(()=>requestAnimationFrame(drawDet));
   logAct('detalle','Vio el detalle del gráfico: '+d.title);
@@ -1888,7 +1890,10 @@ const PPT_CHARTS=[
 ];
 function exportPPT(){
   if(typeof PptxGenJS==='undefined'){alert('No se pudo cargar la librería de PowerPoint. Verifique su conexión a internet e inténtelo de nuevo.');return;}
-  try{drawCharts();fillExplains();}catch(e){}
+  // Importante: generar los gráficos y, por separado, los textos de análisis, de modo que
+  // un error al dibujar los gráficos NO impida que se escriba el análisis en cada diapositiva.
+  try{drawCharts();}catch(e){}
+  try{fillExplains();}catch(e){}
   setTimeout(()=>{
     try{
       const NAVY='0F2744',STEEL='1B4B7A',TEAL='0D9488',GREY='5B6B7F';
@@ -1909,7 +1914,10 @@ function exportPPT(){
         const titEl=$('t'+pc.bk);const titulo=titEl?titEl.textContent.replace(/^\s*\d+\.\s*/,'').trim():pc.bk;
         const vEl=$('v'+pc.bk);let concl='',lvl='info';
         if(vEl){const tx=vEl.querySelector('.vtx');concl=_stripHtml(tx?tx.innerHTML:vEl.innerHTML);const cl=vEl.className.replace('verdict','').trim();if(cl)lvl=cl.split(/\s+/)[0];}
-        const exEl=$('ex'+pc.bk);const analisis=_stripHtml(exEl?exEl.innerHTML:'');
+        let exEl=$('ex'+pc.bk);let analisis=_stripHtml(exEl?exEl.innerHTML:'');
+        // Respaldo: si el cuadro de análisis estuviera vacío, generarlo ahora y volver a leerlo.
+        if(!analisis){try{fillExplains();}catch(e){} exEl=$('ex'+pc.bk); analisis=_stripHtml(exEl?exEl.innerHTML:'');}
+        if(!analisis) analisis=concl; // último respaldo: usar la conclusión
         const sl=pptx.addSlide();sl.background={color:'FFFFFF'};
         sl.addShape(pptx.ShapeType.rect,{x:0,y:0,w:13.33,h:1.05,fill:{color:NAVY}});
         sl.addText(String(n),{x:0.35,y:0.12,w:0.8,h:0.8,fontSize:30,bold:true,color:'5B82A6',align:'center'});
@@ -1919,9 +1927,9 @@ function exportPPT(){
         // Panel derecho: conclusión + análisis
         sl.addShape(pptx.ShapeType.rect,{x:8.35,y:1.35,w:0.09,h:5.7,fill:{color:(LVC[lvl]||TEAL)}});
         sl.addText('CONCLUSIÓN',{x:8.6,y:1.4,w:4.4,h:0.4,fontSize:13,bold:true,color:(LVC[lvl]||TEAL),charSpacing:1});
-        sl.addText(concl||'—',{x:8.6,y:1.8,w:4.45,h:2.2,fontSize:14,color:NAVY,valign:'top',lineSpacingMultiple:1.05});
+        sl.addText(concl||'—',{x:8.6,y:1.8,w:4.45,h:2.2,fontSize:14,color:NAVY,valign:'top',lineSpacingMultiple:1.05,fit:'shrink'});
         sl.addText('ANÁLISIS',{x:8.6,y:4.15,w:4.4,h:0.4,fontSize:13,bold:true,color:STEEL,charSpacing:1});
-        sl.addText(analisis||'—',{x:8.6,y:4.55,w:4.45,h:2.5,fontSize:11.5,color:'2A3A4D',valign:'top',lineSpacingMultiple:1.03});
+        sl.addText(analisis||'—',{x:8.6,y:4.55,w:4.45,h:2.5,fontSize:11.5,color:'2A3A4D',valign:'top',lineSpacingMultiple:1.03,fit:'shrink'});
         sl.addText('COMEX QD · Quintec',{x:0.45,y:7.05,w:7.6,h:0.35,fontSize:9,color:GREY});
       });
       if(n===0){alert('No hay gráficos con datos para exportar. Cargue la planilla primero.');return;}
