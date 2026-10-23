@@ -1570,6 +1570,7 @@ function selDay(dk){
   if(!list.length)html+='<p style="color:var(--muted)">No hay planillas guardadas este día.</p>';
   else list.slice().reverse().forEach(sn=>{
     const hora=new Date(sn.ts).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    html+='<div style="margin-bottom:4px"><button class="btn" style="background:#c62828;color:#fff;padding:5px 12px;font-size:12px" onclick="event.stopPropagation();borrarSnap(\''+dk+'\',\''+sn.id+'\')">🗑 BORRAR esta planilla</button></div>';
     html+='<div class="snap-item" onclick="verSnap(\''+dk+'\',\''+sn.id+'\')"><span class="si-ic">📄</span><div class="si-t"><b>Planilla de las '+hora+'</b><span>'+(sn.n||0)+' registro(s) · por '+esc(sn.byName||sn.by||'—')+'</span></div><span style="color:var(--steel);font-size:12px;font-weight:700">Ver ›</span></div>';
   });
   $('nubeList').innerHTML=html;
@@ -1592,8 +1593,7 @@ function verSnap(dk,id){
   $('nubeView').innerHTML='<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px;flex-wrap:wrap">'+
     '<h3 style="color:var(--navy);font-size:14px;margin:0;flex:1">📄 Planilla del '+hora+' · '+rows.length+' registro(s)</h3>'+
     '<button class="btn" style="background:#1d6f42;color:#fff;padding:8px 14px" onclick="exportarSnap(\''+dk+'\',\''+id+'\')">📊 Exportar Excel</button>'+
-    '<button class="btn" style="background:var(--navy);color:#fff;padding:8px 14px" onclick="pedirEditar(\''+dk+'\',\''+id+'\')">✏ Editar</button>'+
-    '<button class="btn" style="background:#c62828;color:#fff;padding:8px 14px" onclick="borrarSnap(\''+dk+'\',\''+id+'\')">🗑 BORRAR</button></div>'+
+    '<button class="btn" style="background:var(--navy);color:#fff;padding:8px 14px" onclick="pedirEditar(\''+dk+'\',\''+id+'\')">✏ Editar</button></div>'+
     '<div class="nube-plan"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
 }
 /* ===== Exportar una planilla guardada a Excel con el MISMO diseño/colores/orden que la plataforma ===== */
