@@ -77,7 +77,8 @@ nav.tabs#tabs{margin-top:0;border-top:2px solid rgba(255,255,255,.12);padding-to
 .opsbtn.ob-del{background:rgba(139,26,26,.55);border-color:rgba(192,80,70,.55);color:#ffe9e5}
 .opsbtn.ob-rep{background:rgba(43,74,111,.6);border-color:rgba(120,150,190,.5)}
 .opsbtn.ob-ppt{background:rgba(200,154,78,.4);border-color:rgba(216,173,96,.6);color:#2a2208}
-.opsbtn.ob-nube{background:rgba(47,125,107,.5);border-color:rgba(91,191,166,.55);color:#e9fff7}
+.opsbtn.ob-nube{background:rgba(43,108,176,.6);border-color:rgba(110,160,220,.6);color:#eaf4ff}
+.opsbtn.ob-nube svg{width:16px;height:16px;flex:0 0 auto}
 /* ===== FILTER BAR ===== */
 .filters{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(9px);border-bottom:1px solid var(--line);box-shadow:0 2px 12px rgba(23,42,67,.05);margin-top:-70px;border-radius:12px;margin-bottom:20px}
 .filters .wrap{padding:11px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -420,7 +421,7 @@ const GROUP_OF={op:'ops',fin:'ops',log:'ops',aud:'ops',cmp:'ops',diag:'ops',mac:
 function setGroup(g){
  CURG=g;
  const tb=document.getElementById('tabs');if(tb){tb.classList.remove('g-ops','g-mod');tb.classList.add('g-'+g);}
- const ob=document.getElementById('opsbar');if(ob)ob.style.display=(g==='ops')?'flex':'none';
+ const ob=document.getElementById('opsbar');if(ob)ob.style.display='flex';
  document.querySelectorAll('.ptab').forEach(p=>p.classList.toggle('on',p.dataset.g===g));
 }
 function activateGroup(g){
@@ -443,7 +444,6 @@ function recomputeMeta(){
  DATA.meta.n=r.length;
 }
 function rowsForMonth(){return F.mes==='all'?DATA.rows:DATA.rows.filter(r=>r.mk===F.mes);}
-
 /* ===== app2.js ===== */
 /* ====== MARKUP ====== */
 const TABS=[['op','Operaciones & Flota',IC.truck],['fin','Finanzas & P&L',IC.money],['log','Logística & Rutas',IC.map],['aud','Auditoría & Excepciones',IC.search],['cmp','Tendencias & Comparativo',IC.cal],['diag','Diagnóstico & Causas',IC.alert]];
@@ -453,7 +453,7 @@ function buildMarkup(){
  document.getElementById('tabs').innerHTML=TABS.map(t=>`<div class="tab grp-ops ${t[0]=='op'?'on':''} ${t[0]==='diag'?'adminonly':''}" data-t="${t[0]}">${t[2]}<span>${t[1]}</span></div>`).join('');
  document.getElementById('tabs').classList.add('g-ops');
  const _pt=document.getElementById('ptabs');if(_pt)_pt.innerHTML=`<div class="ptab on" data-g="ops"><span class="pdot"></span><span>Operaciones</span></div><div class="ptab" data-g="mod"><span class="pdot"></span><span>MacOnline y Vertical</span></div>`;
- const _ob=document.getElementById('opsbar');if(_ob){_ob.innerHTML=[['imp','Importar'],['exp','Exportar'],['del','Eliminar'],['rep','Reporte'],['ppt','PPT'],['nube','NUBE']].map(b=>`<button class="opsbtn ob-${b[0]}" data-ob="${b[0]}">${b[1]}</button>`).join('');_ob.style.display='flex';}
+ const _ob=document.getElementById('opsbar');if(_ob){const _cloud='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 7 17.5"/></svg>';_ob.innerHTML=[['imp','Importar'],['exp','Exportar'],['del','Eliminar'],['rep','Reporte'],['ppt','PPT'],['nube','NUBE']].map(b=>`<button class="opsbtn ob-${b[0]}" data-ob="${b[0]}">${b[0]==='nube'?_cloud:''}<span>${b[1]}</span></button>`).join('');_ob.style.display='flex';}
  const M=document.getElementById('main');let h='';
  // ===== OPERACIONES =====
  h+=`<section class="section on" id="s-op"><div class="sec-head"><h2>Operaciones & Desempeño de Flota</h2><p>Rendimiento volumétrico y densidad de despachos</p></div>`;
@@ -505,7 +505,6 @@ function buildMarkup(){
  h+=`</section>`;
  M.innerHTML=h;
 }
-
 /* ===== app3.js ===== */
 /* ====== FILTERS ====== */
 function uniq(a){return [...new Set(a)];}
@@ -793,7 +792,6 @@ function activeScope(){
  if(F.co!=='all')parts.push(['Comuna',F.co]);
  document.getElementById('activeScope').innerHTML='<span style="font-weight:600;color:var(--navy)">Vista activa:</span>'+parts.map(p=>`<span class="chip">${p[0]}: <b>${p[1]}</b></span>`).join('');
 }
-
 /* ===== app4.js ===== */
 /* ====== CHART CORE ====== */
 function setC(id,opt){const el=document.getElementById(id);if(!el)return;if(!CH[id])CH[id]=echarts.init(el,null,{renderer:'canvas'});CH[id].setOption(opt,true);}
@@ -907,7 +905,6 @@ function renderKPIs(f,days,nDays,totV){
  setKV('k_semcrit',semCrit,semCritR?`tasa <b>${(100*semCritR).toFixed(1)}%</b>`:'sin datos');
  LAST.kpis={peakN,peakD,comunas,prop,tot,am,pm,obs:obs.length,reenv,camb,prior,vobs,vmax,vmr,vtop,top5,tipos,med:median(dayCounts),vmed:median(vals),pxv,vehAct,vehProp,hhi,hhiTxt,cv,vProp,vTer,pTkt,nP,pv,comLead,comObs,comObsN,semCrit,semCritR};
 }
-
 /* ===== app5.js ===== */
 /* ====== OPERACIONES ====== */
 function renderOp(f){
@@ -948,7 +945,6 @@ function renderOp(f){
  setC('c_ampmdisp',{tooltip:Object.assign({trigger:'item',formatter:function(p){var v=p.value;return `<b>${(typeof dDMY==='function')?dDMY(v[3]):v[3]}</b><br/>Pedidos AM: <b>${fi(v[0])}</b><br/>Pedidos PM: <b>${fi(v[1])}</b><br/>Total del día: <b>${fi(v[4])}</b><br/>% con observación: <b>${v[2]}%</b>`;}},TT),grid:{left:8,right:16,top:16,bottom:40,containLabel:true},xAxis:Object.assign({type:'value',name:'Pedidos AM',nameLocation:'middle',nameGap:26,nameTextStyle:{color:'#8a95a1',fontSize:11}},axCfg(),{axisLabel:{color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',name:'Pedidos PM',nameLocation:'middle',nameGap:34,nameTextStyle:{color:'#8a95a1',fontSize:11}},axCfg(),{axisLabel:{color:'#6b7684',fontSize:10}}),visualMap:{min:0,max:obMax||1,dimension:2,calculable:true,orient:'horizontal',right:6,bottom:4,itemWidth:12,itemHeight:60,text:['+ incidencias','- incidencias'],textStyle:{color:'#6b7684',fontSize:10},inRange:{color:['#3a5b80','#c89a4e','#c0504f']}},series:[{type:'scatter',data:pts,symbolSize:function(v){return Math.max(8,Math.min(30,Math.sqrt(v[4])*1.8));},itemStyle:{borderColor:'#fff',borderWidth:1,opacity:.85}}]});
  setI('c_ampmdisp',np?`Cada punto es un día del periodo: a la derecha más pedidos en la mañana (AM), arriba más en la tarde (PM); el tamaño es el total del día y el color la tasa de incidencias (proxy de problemas de entrega). La correlación AM–PM es <b>${rho.toFixed(2)}</b> (${Math.abs(rho)<0.3?'débil':(Math.abs(rho)<0.6?'moderada':'fuerte')}, ${rho>=0?'positiva':'negativa'}). <b>Nota:</b> el Excel actual no registra la hora/tiempo de entrega, por eso el color usa el % de observaciones como aproximación; si agregas una columna de tiempo de entrega, cambio el eje para correlacionarlo directo.`:'Sin datos.');
 }
-
 /* ===== app6.js ===== */
 /* ====== FINANZAS ====== */
 function renderFin(f,days,nDays,totV){
@@ -1015,7 +1011,6 @@ function renderRouteTable(){
  pg.innerHTML=h;
  pg.querySelectorAll('button[data-pg]').forEach(b=>{if(b.disabled)return;b.addEventListener('click',()=>{RT_PAGE=+b.dataset.pg;renderRouteTable();const w=document.querySelector('#rt_tbl').closest('.tblwrap');if(w)w.scrollTop=0;});});
 }
-
 /* ===== app7.js ===== */
 /* ====== AUDITORIA ====== */
 function renderAud(f){
@@ -1061,7 +1056,6 @@ try{applyRole();}catch(e){console.error('applyRole2',e);}
 //    y, si falla o no hay internet, el tablero sigue con los datos locales.
 try{if(fbInit())fbSubscribe();}catch(e){console.error('firebase',e);}
 try{setTimeout(()=>{try{Object.values(CH).forEach(c=>c.resize());}catch(_){}} ,150);}catch(e){}
-
 /* ===== app8.js ===== */
 /* ====== CAPTURE CHARTS ====== */
 function captureAll(){
@@ -1192,7 +1186,6 @@ function exportSugerencia(){
  h+=`<p style="font-size:11px;color:#9aa5b1;margin-top:16px">Sugerencias generadas autom\u00e1ticamente a partir de los indicadores del tablero. No sustituyen el criterio operativo; priorizar seg\u00fan impacto y factibilidad.</p>`;
  openOvr('Sugerencias IA \u00b7 Experto en Log\u00edstica',h);
 }
-
 /* ===== app9.js ===== */
 /* ====== TENDENCIAS & COMPARATIVO (multi-mes) ====== */
 /* CMPA/CMPB/LASTAGG/LASTISH declarados como globales en app.js */
@@ -1411,7 +1404,6 @@ function ishikawaSVG(cats,effect,effVal){
  s+=`</svg>`;
  return s;
 }
-
 /* ===== app10.js ===== */
 /* ===== MODULOS TIENDAS: MacOnline Distribucion / Vertical Tiendas / Devoluciones ===== */
 /* Fuente de datos independiente (Excel nuevo con columnas FECHA, VALOR, RANGO, TRANSPORTE,
@@ -2110,12 +2102,10 @@ try{devoBuildModals();}catch(e){console.error('devoBuildModals',e);}
 try{devoWire();}catch(e){console.error('devoWire',e);}
 try{if(typeof fbReady!=='undefined'&&fbReady)devoFbSubscribe();}catch(e){console.error('devoFbSubscribe',e);}
 try{applyRole();}catch(e){}
-
 /* ===== app11.js ===== */
 /* ====== APP11 · Roles granulares, borrado de Excel de tiendas, quitar pedido y selector de exportación ====== */
 /* Nuevo usuario: solo lectura + exportar (sin subir ni borrar, porque eso es acción de administrador) */
 try{USERS['cretamac@quintec.cl']={pass:'123456789',role:'cretamac',name:'Creta Mac'};}catch(e){}
-
 /* applyRole con permisos finos:
    - admin: ve TODO
    - cretamac: ve casi todo, EXCEPTO Sugerencias IA, Vaciar datos, pestaña Diagnóstico y pestaña Auditoría; tampoco ve subir/borrar Excel
@@ -2150,7 +2140,6 @@ function applyRole(){
   var w=document.getElementById('whoami');if(w)w.textContent=SESSION?('Salir · '+SESSION.name):'';
  }catch(err){console.error('applyRole11',err);}
 }
-
 /* ====== Borrar el Excel de tiendas (plataforma + nube) ====== */
 function modDeleteExcel(scope){
  if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede borrar el Excel.');return;}
@@ -2202,7 +2191,6 @@ function modDeleteExcel(scope){
   }catch(e){done();}
  });
 }
-
 /* ====== Quitar un pedido por su N° (plataforma + nube) con selección y contraseña ====== */
 function modFmtMoney(v){try{if(typeof fm==='function')return fm(v);}catch(e){}return '$'+(v||0).toLocaleString('es-CL');}
 function modRemovePedido(){
@@ -2253,12 +2241,10 @@ function modRemovePedido(){
   alert('Listo. Se quitó el valor de '+chks.length+' registro(s) del pedido N° '+target+' en la plataforma y en la nube.\nEl pedido sigue contando como salida en los gráficos.');
  });
 }
-
 function wireModExtra(){
  ['mac','ver','devo'].forEach(function(k){var d=document.getElementById(k+'_delBtn');if(d&&!d._wired){d._wired=1;d.addEventListener('click',function(){modDeleteExcel(k);});}});
  var rb=document.getElementById('mac_retBtn');if(rb&&!rb._wired){rb._wired=1;rb.addEventListener('click',modRemovePedido);}
 }
-
 /* ====== Ventana de selección para el Reporte / PowerPoint ====== */
 function openExportPicker(kind,cb){
  var groups=expGroups();
@@ -2296,12 +2282,9 @@ function openExportPicker(kind,cb){
    close();try{cb(sel);}catch(e){console.error('cb export',e);}
  });
 }
-
 /* ====== Reclasificar botones de exportación: ahora los ve admin y cretamac ====== */
-
 try{wireModExtra();}catch(e){console.error('wireModExtra',e);}
 try{applyRole();}catch(e){console.error('applyRole-init11',e);}
-
 /* ===== app12.js ===== */
 /* ===== VISTA NUEVA: VENTAS POR TIENDA Y MES (MacOnline y Vertical) =====
    Lee un Excel tipo matriz (una fila por tienda, meses en columnas, secciones
@@ -2840,7 +2823,6 @@ function initVentasFor(k){
 }
 function initVentas(){vLoadLocal();['mac','ver'].forEach(k=>{try{initVentasFor(k);}catch(e){console.error('initVentasFor',k,e);}});try{if(typeof fbReady!=='undefined'&&fbReady)vFbSubscribe();}catch(e){console.error('vFbSubscribe',e);}try{if(typeof applyRole==='function')applyRole();}catch(e){}}
 try{initVentas();}catch(e){console.error('initVentas',e);}
-
 /* ===== app13.js ===== */
 /* ====== APP13 · Botón "Ver análisis" en cada gráfico / campo de calor ======
    Agrega un botón a cada tarjeta con gráfico. Al pulsarlo abre una ventana
@@ -2946,9 +2928,6 @@ try{initVentas();}catch(e){console.error('initVentas',e);}
  /* También al hacer click en pestañas */
  try{var tabsEl=document.getElementById('tabs');if(tabsEl)tabsEl.addEventListener('click',schedule);}catch(e){}
 })();
-
-
-
 </script>
 </body>
 </html>
