@@ -184,6 +184,21 @@ select:focus{border-color:var(--navy)}
 .devo-daycell:focus{outline:2px solid #2563eb;background:#eef5ff}
 .devo-daynote,.devo-dayempty{color:#5a6672;font-size:13px;margin-top:14px}
 .devo-dayempty{text-align:center;padding:50px 10px;font-size:15px}
+/* pestañas + nuevas celdas devoluciones */
+.devo-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 2px 14px}
+.devo-tab{border:2px solid var(--tc);background:#fff;color:var(--tc);border-radius:9px 9px 0 0;padding:9px 16px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;transition:all .15s;opacity:.82}
+.devo-tab:hover{opacity:1}
+.devo-tab.on{background:var(--tc);color:var(--tt);opacity:1;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.devo-nube{background:#2563eb}
+.devo-total{padding:10px 16px;border-top:1px solid #e3e8ef;font-size:13.5px;color:#1f2a37;text-align:right;background:#fbfcfe}
+.devo-totval{font-weight:800;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;margin-left:6px}
+.devo-valcell{text-align:right;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;font-weight:600}
+.devo-valhead{background:rgba(0,0,0,.10)}
+.devo-fechacell{cursor:pointer;background:#fcfbf6}
+.devo-fechacell:hover{background:#fff7e6;outline:1px dashed #c89a4e}
+.devo-horrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.devo-clock{font-family:'IBM Plex Mono',monospace;font-weight:800;color:#16a085;background:#e6f7f2;border:1px solid #16a085;border-radius:7px;padding:3px 9px;font-size:14px;letter-spacing:1px}
+.devo-ins{background:#16a085;padding:6px 12px}
 /* ===== Boton y ventana "Ver analisis" ===== */
 .card{position:relative}
 .an-btn{position:absolute;top:12px;right:12px;z-index:5;border:1px solid var(--line);background:#fff;color:var(--navy-d);font-family:'IBM Plex Sans';font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 4px rgba(23,42,67,.08);transition:.15s}
@@ -1528,7 +1543,7 @@ function modDashboard(k){
  h+=`</div>`;
  return h;
 }
-/* ===== DEVOLUCIONES: planillas editables por tipo ===== */
+/* ===== DEVOLUCIONES: planillas editables por tipo (con pestañas) ===== */
 var DEVO_DATA={};
 const DEVO_ITEMS=[
  {id:'cd',t:'CD',c:'#c0392b',tx:'#fff'},
@@ -1538,50 +1553,93 @@ const DEVO_ITEMS=[
  {id:'stec',t:'SERVICIO TECNICO',c:'#f1c40f',tx:'#3a2f00'},
  {id:'varios',t:'VARIOS',c:'#7f8c8d',tx:'#fff'}
 ];
-const DEVO_COLS=['Fecha','Documentos','Origen','Destinatarios','Bultos','Contenido','Observaciones'];
+const DEVO_COLS=['Fecha','Documentos','Valor','Origen','Destinatarios','Bultos','Contenido','Observaciones'];
+const DEVO_VALCOL=2;
 const DEVO_ROWS=28;
 const FB_PATH_DEVO='quintec/devoluciones';
+var DEVO_ACTIVE='cd';
 function devoEmptyItem(){return{rows:Array.from({length:DEVO_ROWS},()=>Array(DEVO_COLS.length).fill('')),am:'',rec:''};}
-function devoEnsure(){if(!DEVO_DATA||typeof DEVO_DATA!=='object')DEVO_DATA={};DEVO_ITEMS.forEach(it=>{if(!DEVO_DATA[it.id])DEVO_DATA[it.id]=devoEmptyItem();const d=DEVO_DATA[it.id];if(!Array.isArray(d.rows))d.rows=[];while(d.rows.length<DEVO_ROWS)d.rows.push(Array(DEVO_COLS.length).fill(''));d.rows.forEach(r=>{while(r.length<DEVO_COLS.length)r.push('');});if(typeof d.am!=='string')d.am='';if(typeof d.rec!=='string')d.rec='';});}
+function devoEnsure(){
+ if(!DEVO_DATA||typeof DEVO_DATA!=='object')DEVO_DATA={};
+ DEVO_ITEMS.forEach(it=>{
+  if(!DEVO_DATA[it.id])DEVO_DATA[it.id]=devoEmptyItem();
+  const d=DEVO_DATA[it.id];
+  if(!Array.isArray(d.rows))d.rows=[];
+  d.rows.forEach(r=>{
+   if(r.length===DEVO_COLS.length-1){r.splice(DEVO_VALCOL,0,'');} /* migración esquema 7->8 cols (inserta VALOR) */
+   while(r.length<DEVO_COLS.length)r.push('');
+  });
+  while(d.rows.length<DEVO_ROWS)d.rows.push(Array(DEVO_COLS.length).fill(''));
+  if(typeof d.am!=='string')d.am='';
+  if(typeof d.rec!=='string')d.rec='';
+ });
+}
 function devoEsc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+/* --- formato de VALOR (miles con punto, símbolo $, sin redondear) --- */
+function devoNum(s){s=String(s==null?'':s).replace(/\$/g,'').trim();if(s==='')return null;s=s.replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.\-]/g,'');var n=parseFloat(s);return isNaN(n)?null:n;}
+function devoFmtVal(v){var n=(typeof v==='number')?v:devoNum(v);if(n==null)return '';return '$'+n.toLocaleString('es-CL',{maximumFractionDigits:2});}
+function devoItemTotal(id){var d=DEVO_DATA[id];if(!d)return 0;var t=0;d.rows.forEach(r=>{var n=devoNum(r[DEVO_VALCOL]);if(n!=null)t+=n;});return t;}
+/* --- reloj digital (funciona con o sin internet; usa la hora del equipo) --- */
+var DEVO_CLKTMR=null;
+function devoNowTime(){var d=new Date();function p(n){return String(n).padStart(2,'0');}return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+function devoStartClock(){if(DEVO_CLKTMR)clearInterval(DEVO_CLKTMR);function tick(){var el=document.getElementById('devoClock');if(el)el.textContent=devoNowTime();}tick();DEVO_CLKTMR=setInterval(tick,1000);}
+/* --- maquetado: toolbar + pestañas + panel activo --- */
 function devoPlanillas(){
  devoEnsure();
- let h='<div class="devo-note">Planillas editables. Lo que escribas se guarda y se comparte con todos los usuarios al instante.</div>';
+ let h='<div class="devo-note">Planillas editables por pestaña. Lo que escribas se guarda y se comparte con todos los usuarios al instante.</div>';
  h+='<div class="devo-toolbar">'
   +'<button class="devo-btn devo-imp" id="devoImport">⬆ IMPORTAR EXCEL</button>'
   +'<button class="devo-btn devo-exp" id="devoExport">⬇ EXPORTAR EXCEL</button>'
   +'<button class="devo-btn devo-save" id="devoGuardar">💾 GUARDAR</button>'
   +'<button class="devo-btn devo-del" id="devoBorrar">🗑 BORRAR</button>'
   +'<button class="devo-btn devo-cal" id="devoCal">📅 VER POR FECHA</button>'
+  +'<button class="devo-btn devo-nube" id="devoNube">☁ NUBE</button>'
   +'<input type="file" id="devoFile" accept=".xlsx,.xls" style="display:none"/>'
   +'</div>';
- DEVO_ITEMS.forEach(it=>{
-  h+=`<div class="devo-wrap" data-item="${it.id}">`;
-  h+=`<div class="devo-title" style="background:${it.c};color:${it.tx}">${it.t}</div>`;
-  h+=`<div class="devo-scroll"><table class="devo-tbl"><thead><tr style="background:${it.c};color:${it.tx}"><th style="width:38px">N\u00b0</th>`;
-  DEVO_COLS.forEach(c=>{h+=`<th>${c}</th>`;});
-  h+=`</tr></thead><tbody id="devob_${it.id}"></tbody></table></div>`;
-  h+=`<div class="devo-foot"><div><b>AM</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="am" contenteditable="true"></span> &nbsp; Firma: ______________</div><div><b>Recepciona</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="rec" contenteditable="true"></span> &nbsp; Firma: ______________</div></div>`;
-  h+=`</div>`;
- });
+ h+='<div class="devo-tabs" id="devoTabs">'+DEVO_ITEMS.map(it=>`<button class="devo-tab" data-tab="${it.id}" style="--tc:${it.c};--tt:${it.tx}">${it.t}</button>`).join('')+'</div>';
+ h+='<div id="devoPane"></div>';
+ return h;
+}
+function devoWrapHtml(it){
+ let h=`<div class="devo-wrap" data-item="${it.id}">`;
+ h+=`<div class="devo-title" style="background:${it.c};color:${it.tx}">${it.t}</div>`;
+ h+=`<div class="devo-scroll"><table class="devo-tbl"><thead><tr style="background:${it.c};color:${it.tx}"><th style="width:38px">N\u00b0</th>`;
+ DEVO_COLS.forEach((c,ci)=>{h+=`<th${ci===DEVO_VALCOL?' class="devo-valhead"':''}>${c}</th>`;});
+ h+=`</tr></thead><tbody id="devob_${it.id}"></tbody></table></div>`;
+ h+=`<div class="devo-total">Suma total <b>Valor</b>: <span id="devoTot_${it.id}" class="devo-totval">$0</span></div>`;
+ h+=`<div class="devo-foot">`
+  +`<div class="devo-horrow"><b>Horario</b> <span class="devo-clock" id="devoClock">--:--:--</span> <span class="devo-ce" data-i="${it.id}" data-f="am" contenteditable="true"></span> <button class="devo-btn devo-ins" id="devoIns" data-i="${it.id}">⏱ Insertar</button></div>`
+  +`<div><b>Recepciona</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="rec" contenteditable="true"></span> &nbsp; Firma: ______________</div>`
+  +`</div>`;
+ h+=`</div>`;
  return h;
 }
 function devoRenderItem(it){
+ const pane=document.getElementById('devoPane');if(!pane)return;
+ if(it.id!==DEVO_ACTIVE)return;
+ const cur=pane.querySelector('.devo-wrap');
+ if(!cur||cur.getAttribute('data-item')!==it.id){pane.innerHTML=devoWrapHtml(it);devoStartClock();}
  const tb=document.getElementById('devob_'+it.id);if(!tb)return;
  const d=DEVO_DATA[it.id];if(!d)return;let h='';
  const N=Math.max(DEVO_ROWS,d.rows.length);
  for(let r=0;r<N;r++){
   h+=`<tr><td class="devo-num">${r+1}</td>`;
   for(let c=0;c<DEVO_COLS.length;c++){
-   h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${devoEsc(d.rows[r][c])}</td>`;
+   let val=devoEsc(d.rows[r][c]);
+   if(c===0){h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${val}</td>`;}
+   else if(c===DEVO_VALCOL){h+=`<td class="devo-cell devo-valcell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
+   else{h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
   }
   h+='</tr>';
  }
  tb.innerHTML=h;
- const am=document.querySelector(`.devo-ce[data-i="${it.id}"][data-f="am"]`);if(am&&document.activeElement!==am)am.textContent=d.am||'';
- const rc=document.querySelector(`.devo-ce[data-i="${it.id}"][data-f="rec"]`);if(rc&&document.activeElement!==rc)rc.textContent=d.rec||'';
+ const am=pane.querySelector(`.devo-ce[data-i="${it.id}"][data-f="am"]`);if(am&&document.activeElement!==am)am.textContent=d.am||'';
+ const rc=pane.querySelector(`.devo-ce[data-i="${it.id}"][data-f="rec"]`);if(rc&&document.activeElement!==rc)rc.textContent=d.rec||'';
+ const tot=document.getElementById('devoTot_'+it.id);if(tot)tot.textContent=devoFmtVal(devoItemTotal(it.id))||'$0';
 }
-function devoRender(){devoEnsure();DEVO_ITEMS.forEach(devoRenderItem);}
+function devoActivateTabStyle(){document.querySelectorAll('#devoTabs .devo-tab').forEach(b=>{b.classList.toggle('on',b.getAttribute('data-tab')===DEVO_ACTIVE);});}
+function devoRender(){devoEnsure();const act=DEVO_ITEMS.find(x=>x.id===DEVO_ACTIVE)||DEVO_ITEMS[0];DEVO_ACTIVE=act.id;devoActivateTabStyle();devoRenderItem(act);}
+function devoSetActive(id){DEVO_ACTIVE=id;const pane=document.getElementById('devoPane');if(pane)pane.innerHTML='';devoRender();}
 var devoWriting=false,devoTimer=null;
 function devoFbPush(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;clearTimeout(devoTimer);devoTimer=setTimeout(()=>{try{devoWriting=true;fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;}).catch(e=>{devoWriting=false;console.error('devoFbPush',e);});}catch(e){devoWriting=false;}},500);}
 function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
@@ -1589,8 +1647,14 @@ function devoWire(){
  const root=document.getElementById('s-devo');if(!root)return;
  root.addEventListener('input',e=>{
   const t=e.target;if(!t||!t.classList)return;
-  if(t.classList.contains('devo-cell')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].rows[r][c]=t.textContent;devoFbPush();}}
+  if(t.classList.contains('devo-cell')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].rows[r][c]=t.textContent;if(c===DEVO_VALCOL){const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';}devoFbPush();}}
   else if(t.classList.contains('devo-ce')){const i=t.dataset.i,f=t.dataset.f;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i][f]=t.textContent;devoFbPush();}}
+ });
+ root.addEventListener('blur',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('devo-valcell')){const i=t.dataset.i,r=+t.dataset.r;const f=devoFmtVal(t.textContent);if(f!==''){t.textContent=f;if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][DEVO_VALCOL]=f;}const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';devoFbPush();}}},true);
+ root.addEventListener('click',e=>{
+  const tab=e.target.closest?e.target.closest('.devo-tab'):null;if(tab){devoSetActive(tab.getAttribute('data-tab'));return;}
+  const ins=e.target.closest?e.target.closest('.devo-ins'):null;if(ins){const i=ins.dataset.i;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].am=devoNowTime();const el=document.querySelector(`.devo-ce[data-i="${i}"][data-f="am"]`);if(el)el.textContent=DEVO_DATA[i].am;devoFbPush();}return;}
+  const fc=e.target.closest?e.target.closest('.devo-fechacell'):null;if(fc){devoOpenEditCal(fc.dataset.i,+fc.dataset.r);return;}
  });
  const bI=document.getElementById('devoImport'),fI=document.getElementById('devoFile');
  if(bI&&fI){bI.addEventListener('click',()=>fI.click());fI.addEventListener('change',devoImportExcel);}
@@ -1598,11 +1662,13 @@ function devoWire(){
  const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
  const bC=document.getElementById('devoCal');if(bC)bC.addEventListener('click',devoOpenCal);
+ const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
+ devoStartClock();
 }
 /* --- normalizar texto para comparar nombres --- */
 function devoNorm(s){return (s==null?'':String(s)).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');}
 function devoMatchItem(name){const n=devoNorm(name);let best=null;DEVO_ITEMS.forEach(it=>{const k=devoNorm(it.t);if(n===k||n.indexOf(k)>=0||k.indexOf(n)>=0&&n.length>=2)best=best||it;});if(best)return best;return null;}
-function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,ORIGEN:2,DESTINATARIOS:3,DESTINATARIO:3,BULTOS:4,BULTO:4,CONTENIDO:5,OBSERVACIONES:6,OBSERVACION:6};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null)map[al[k]]=i;});return map;}
+function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,VALOR:2,VALORES:2,MONTO:2,MONTOS:2,ORIGEN:3,DESTINATARIOS:4,DESTINATARIO:4,BULTOS:5,BULTO:5,CONTENIDO:6,OBSERVACIONES:7,OBSERVACION:7};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null)map[al[k]]=i;});return map;}
 /* --- IMPORTAR: lee cualquier Excel y coloca filas en la planilla que corresponda --- */
 function devoImportExcel(ev){
  const f=ev.target.files&&ev.target.files[0];if(!f){return;}
@@ -1625,6 +1691,7 @@ function devoImportExcel(ev){
      if(typeCol>=0){const tm=devoMatchItem(row[typeCol]);if(tm)target=tm;}
      if(!target)target=DEVO_ITEMS[DEVO_ITEMS.length-1];
      const cells=DEVO_COLS.map((_,c)=>{const src=cmap[c];let v=(src!=null)?row[src]:'';if(v==null)v='';return String(v).trim();});
+     if(cells[DEVO_VALCOL]){const fv=devoFmtVal(cells[DEVO_VALCOL]);if(fv)cells[DEVO_VALCOL]=fv;}
      DEVO_DATA[target.id].rows.push(cells);added++;
     }
    });
@@ -1638,7 +1705,7 @@ function devoImportExcel(ev){
 /* --- GUARDAR inmediato en Firebase --- */
 function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
 function devoGuardar(){devoEnsure();if(typeof fbReady==='undefined'||!fbReady||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}devoFbSave().then(ok=>{alert(ok?'Informaci\u00f3n guardada en la nube. Todos los usuarios la ver\u00e1n al recargar.':'No se pudo guardar. Revisa los permisos de Firebase.');});}
-/* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o) --- */
+/* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o y colores) --- */
 function devoSheetName(t){return (t||'Hoja').replace(/[\\/?*\[\]:]/g,' ').slice(0,31);}
 function devoExport(ids){
  if(!ids||!ids.length){alert('Selecciona al menos una planilla.');return;}
@@ -1651,20 +1718,22 @@ function devoExport(ids){
   const aoa=[[it.t],['N\u00b0'].concat(DEVO_COLS)];
   const N=Math.max(DEVO_ROWS,d.rows.length);
   for(let r=0;r<N;r++){const row=d.rows[r]||[];aoa.push([r+1].concat(DEVO_COLS.map((_,c)=>row[c]==null?'':row[c])));}
-  aoa.push([]);aoa.push(['AM Nombre:',d.am||'','','Firma:','','Recepciona Nombre:',d.rec||'','Firma:']);
+  const totRow=new Array(ncol).fill('');totRow[DEVO_VALCOL]='TOTAL';totRow[DEVO_VALCOL+1]=devoFmtVal(devoItemTotal(id))||'$0';aoa.push(totRow);
+  aoa.push([]);aoa.push(['Horario:',d.am||'','','','Recepciona Nombre:',d.rec||'','Firma:']);
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
-  ws['!cols']=[{wch:5},{wch:12},{wch:16},{wch:16},{wch:18},{wch:8},{wch:16},{wch:22}];
+  ws['!cols']=[{wch:5},{wch:12},{wch:14},{wch:14},{wch:16},{wch:16},{wch:8},{wch:18},{wch:22}];
   const hex=it.c.replace('#','').toUpperCase(),txt=it.tx.replace('#','').toUpperCase();
   const A1=ws['A1'];if(A1)A1.s={font:{bold:true,sz:14,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'left',vertical:'center'}};
   for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:1,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'center',vertical:'center'},border:bd};}
-  for(let r=2;r<2+N;r++){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r,c});const cell=ws[ref];if(cell)cell.s={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:c===0?'center':'left'}};}}
+  for(let r=2;r<2+N;r++){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r,c});const cell=ws[ref];if(cell)cell.s={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:(c===0||c===DEVO_VALCOL+1)?(c===0?'center':'right'):'left'}};}}
+  const totR=2+N;for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:totR,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,color:{rgb:'1F3A59'}},fill:{patternType:'solid',fgColor:{rgb:'EEF1F5'}},alignment:{horizontal:c===DEVO_VALCOL+1?'right':'left',vertical:'center'},border:bd};}
   if(!ws['!rows'])ws['!rows']=[];ws['!rows'][0]={hpt:22};ws['!rows'][1]={hpt:18};
   XLSX.utils.book_append_sheet(wb,ws,devoSheetName(it.t));
  });
  try{XLSX.writeFile(wb,'Devoluciones_QUINTEC.xlsx');}catch(e){console.error('devoExport',e);alert('No se pudo exportar: '+e.message);}
 }
-/* ===== MODALES: seleccionar planillas (exportar/borrar) ===== */
+/* ===== MODALES ===== */
 var DEVO_PICKMODE='exp',DEVO_PW='';
 function devoMaskWire(inp){if(!inp)return;DEVO_PW='';inp.value='';inp.addEventListener('keydown',function(e){if(e.key==='Backspace'){DEVO_PW=DEVO_PW.slice(0,-1);e.preventDefault();inp.value='*'.repeat(DEVO_PW.length);}else if(e.key==='Enter'){e.preventDefault();}else if(e.key&&e.key.length===1&&!e.ctrlKey&&!e.metaKey){DEVO_PW+=e.key;e.preventDefault();inp.value='*'.repeat(DEVO_PW.length);}});inp.addEventListener('paste',function(e){e.preventDefault();});}
 function devoBuildModals(){
@@ -1678,12 +1747,21 @@ function devoBuildModals(){
  pick.addEventListener('click',e=>{if(e.target===pick)pick.style.display='none';});
  document.getElementById('devoPickGo').addEventListener('click',devoPickConfirm);
  devoMaskWire(document.getElementById('devoPw'));
- // calendario + vista de dia
  const cal=document.createElement('div');cal.className='devo-ov';cal.id='devoCalOv';
  cal.innerHTML='<div class="devo-dlg devo-caldlg"><h3>Ver registros por fecha</h3><div id="devoCalBody"></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoCalCancel">Cerrar</button></div></div>';
  document.body.appendChild(cal);
  document.getElementById('devoCalCancel').addEventListener('click',()=>cal.style.display='none');
  cal.addEventListener('click',e=>{if(e.target===cal)cal.style.display='none';});
+ const ecal=document.createElement('div');ecal.className='devo-ov';ecal.id='devoEditCalOv';
+ ecal.innerHTML='<div class="devo-dlg devo-caldlg"><h3>Elegir fecha</h3><div id="devoEditCalBody"></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoEditCalCancel">Cerrar</button></div></div>';
+ document.body.appendChild(ecal);
+ document.getElementById('devoEditCalCancel').addEventListener('click',()=>ecal.style.display='none');
+ ecal.addEventListener('click',e=>{if(e.target===ecal)ecal.style.display='none';});
+ const nube=document.createElement('div');nube.className='devo-ov';nube.id='devoNubeOv';
+ nube.innerHTML='<div class="devo-dlg" style="width:min(560px,94vw)"><h3>☁ Datos guardados en la nube</h3><p class="devo-dlgsub">Resumen de las planillas almacenadas en Firebase.</p><div id="devoNubeBody"></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoNubeClose">Cerrar</button></div></div>';
+ document.body.appendChild(nube);
+ document.getElementById('devoNubeClose').addEventListener('click',()=>nube.style.display='none');
+ nube.addEventListener('click',e=>{if(e.target===nube)nube.style.display='none';});
  const day=document.createElement('div');day.className='devo-fs';day.id='devoDayOv';
  day.innerHTML='<div class="devo-fsbar"><div class="devo-fstit" id="devoDayTit">Registros del d\u00eda</div><button class="devo-btn devo-ghost" id="devoDayClose">\u2715 Cerrar</button></div><div class="devo-fsbody" id="devoDayBody"></div>';
  document.body.appendChild(day);
@@ -1707,7 +1785,6 @@ function devoPickConfirm(){
  const ids=[...document.querySelectorAll('.devo-pickchk:checked')].map(c=>c.value);
  if(!ids.length){alert('Selecciona al menos una planilla.');return;}
  if(DEVO_PICKMODE==='exp'){document.getElementById('devoPickOv').style.display='none';devoExport(ids);return;}
- // borrar: verificar contrase\u00f1a
  if(DEVO_PW!=='1234'){const m=document.getElementById('devoPwMsg');m.textContent='Contrase\u00f1a incorrecta.';return;}
  const nom=ids.map(id=>(DEVO_ITEMS.find(x=>x.id===id)||{}).t).join(', ');
  if(!confirm('\u00bfBorrar el contenido de: '+nom+'? Esta acci\u00f3n no se puede deshacer.'))return;
@@ -1715,11 +1792,52 @@ function devoPickConfirm(){
  devoRender();devoFbSave();document.getElementById('devoPickOv').style.display='none';
  alert('Planilla(s) borrada(s).');
 }
-/* ===== CALENDARIO EN ESPA\u00d1OL + VISTA DE D\u00cdA ===== */
+/* ===== NUBE: ver lo guardado en Firebase ===== */
+function devoOpenNube(){
+ devoBuildModals();
+ const ov=document.getElementById('devoNubeOv'),body=document.getElementById('devoNubeBody');
+ if(typeof fbReady==='undefined'||!fbReady||!fbDB){body.innerHTML='<div class="devo-dayempty">No hay conexi\u00f3n con la nube (Firebase).</div>';ov.style.display='flex';return;}
+ body.innerHTML='<div class="devo-daynote">Consultando la nube\u2026</div>';ov.style.display='flex';
+ fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){
+  const v=snap.val()||{};let tReg=0,tVal=0;
+  let h='<table class="devo-daytbl"><thead><tr><th>Planilla</th><th>Registros</th><th>Suma Valor</th></tr></thead><tbody>';
+  DEVO_ITEMS.forEach(function(it){
+   const d=v[it.id]||{};const rows=d.rows||[];
+   const reg=rows.filter(function(r){return r&&r.some(function(x){return x!=null&&String(x).trim()!=='';});}).length;
+   let val=0;rows.forEach(function(r){if(r){const n=devoNum(r[DEVO_VALCOL]);if(n!=null)val+=n;}});
+   tReg+=reg;tVal+=val;
+   h+='<tr><td><span class="devo-dot" style="background:'+it.c+'"></span>'+it.t+'</td><td class="devo-num">'+reg+'</td><td style="text-align:right">'+(devoFmtVal(val)||'$0')+'</td></tr>';
+  });
+  h+='</tbody><tfoot><tr style="font-weight:800;background:#f4f6f9"><td>TOTAL</td><td class="devo-num">'+tReg+'</td><td style="text-align:right">'+(devoFmtVal(tVal)||'$0')+'</td></tr></tfoot></table><div class="devo-daynote">As\u00ed est\u00e1n guardadas las tablas en Firebase ahora mismo.</div>';
+  body.innerHTML=h;
+ }).catch(function(e){body.innerHTML='<div class="devo-dayempty">No se pudo leer la nube: '+e.message+'</div>';});
+}
+/* ===== CALENDARIO EN ESPA\u00d1OL ===== */
 var DEVO_CALY,DEVO_CALM;
 const DEVO_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DEVO_DIA=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
 function devoParseFecha(s){s=(s==null?'':String(s)).trim();if(!s)return null;let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;if(mo<1||mo>12||d<1||d>31)return null;return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);if(m){let mo=+m[2],d=+m[3];if(mo<1||mo>12||d<1||d>31)return null;return m[1]+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}return null;}
+/* --- calendario para EDITAR la celda Fecha --- */
+var DEVO_ECAL_I=null,DEVO_ECAL_R=null,DEVO_ECY,DEVO_ECM;
+function devoOpenEditCal(i,r){devoBuildModals();DEVO_ECAL_I=i;DEVO_ECAL_R=r;var cur=devoParseFecha((DEVO_DATA[i]&&DEVO_DATA[i].rows[r])?DEVO_DATA[i].rows[r][0]:'');var d=cur?new Date(cur+'T00:00:00'):new Date();DEVO_ECY=d.getFullYear();DEVO_ECM=d.getMonth();devoDrawEditCal();document.getElementById('devoEditCalOv').style.display='flex';}
+function devoDrawEditCal(){
+ var b=document.getElementById('devoEditCalBody');if(!b)return;
+ var first=new Date(DEVO_ECY,DEVO_ECM,1);var sd=first.getDay();sd=(sd===0)?6:sd-1;
+ var dim=new Date(DEVO_ECY,DEVO_ECM+1,0).getDate();
+ var tn=new Date();var tiso=tn.getFullYear()+'-'+String(tn.getMonth()+1).padStart(2,'0')+'-'+String(tn.getDate()).padStart(2,'0');
+ var h='<div class="devo-calhead"><button class="devo-calnav" id="devoEPrev">\u2039</button><span class="devo-calmo">'+DEVO_MES[DEVO_ECM]+' '+DEVO_ECY+'</span><button class="devo-calnav" id="devoENext">\u203a</button></div>';
+ h+='<div class="devo-calgrid">'+DEVO_DIA.map(d=>'<div class="devo-caldow">'+d+'</div>').join('');
+ for(var i=0;i<sd;i++)h+='<div></div>';
+ for(var dd=1;dd<=dim;dd++){var iso=DEVO_ECY+'-'+String(DEVO_ECM+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');h+='<button class="devo-calday'+(iso===tiso?' has':'')+'" data-iso="'+iso+'">'+dd+'</button>';}
+ h+='</div><div class="devo-dlg-ft" style="margin-top:12px"><button class="devo-btn devo-ghost" id="devoECalToday">Hoy</button></div>';
+ b.innerHTML=h;
+ document.getElementById('devoEPrev').onclick=function(){DEVO_ECM--;if(DEVO_ECM<0){DEVO_ECM=11;DEVO_ECY--;}devoDrawEditCal();};
+ document.getElementById('devoENext').onclick=function(){DEVO_ECM++;if(DEVO_ECM>11){DEVO_ECM=0;DEVO_ECY++;}devoDrawEditCal();};
+ document.getElementById('devoECalToday').onclick=function(){var t=new Date();devoSetFecha(t.getFullYear(),t.getMonth()+1,t.getDate());};
+ b.querySelectorAll('.devo-calday').forEach(function(btn){btn.onclick=function(){var p=btn.dataset.iso.split('-');devoSetFecha(+p[0],+p[1],+p[2]);};});
+}
+function devoSetFecha(y,mo,d){var txt=String(d).padStart(2,'0')+'-'+String(mo).padStart(2,'0')+'-'+y;devoEnsure();if(DEVO_DATA[DEVO_ECAL_I]&&DEVO_DATA[DEVO_ECAL_I].rows[DEVO_ECAL_R]){DEVO_DATA[DEVO_ECAL_I].rows[DEVO_ECAL_R][0]=txt;devoFbPush();devoRenderItem(DEVO_ITEMS.find(z=>z.id===DEVO_ECAL_I));}document.getElementById('devoEditCalOv').style.display='none';}
+/* --- VER POR FECHA (todas las planillas) --- */
 function devoCountDay(iso){let n=0;devoEnsure();DEVO_ITEMS.forEach(it=>{DEVO_DATA[it.id].rows.forEach(r=>{if(devoParseFecha(r[0])===iso)n++;});});return n;}
 function devoOpenCal(){devoBuildModals();const now=new Date();if(DEVO_CALY==null){DEVO_CALY=now.getFullYear();DEVO_CALM=now.getMonth();}devoDrawCal();document.getElementById('devoCalOv').style.display='flex';}
 function devoDrawCal(){
