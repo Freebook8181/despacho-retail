@@ -326,7 +326,6 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
     <div class="badge-live" id="loadInfo"><i></i> <span>Datos cargados</span></div>
     <h1>MONITOREO DE FLOTA</h1>
     <p class="sub">Monitoreo volumétrico, valorización financiera, eficiencia de rutas y auditoría de calidad de datos. Filtra por semana, día, vehículo o rango horario y todo el tablero reacciona en vivo.</p>
-    <div class="scope" id="heroScope"></div>
     <nav class="ptabs" id="ptabs"></nav>
     <nav class="tabs" id="tabs"></nav>
   </div>
@@ -808,7 +807,6 @@ function render(){
  updateEmptyState();
  const days=[...new Set(f.map(r=>r.f))];const nDays=days.length||1;
  const totV=f.reduce((a,r)=>a+r.v,0);
- document.getElementById('heroScope').innerHTML=`<span>Periodo: <b>${F.mes==='all'?'Todos los meses':(DATA.meta.meses.find(m=>m.key===F.mes)||{}).label}</b></span><span>Registros en vista: <b>${fi(f.length)}</b></span><span>Valor en vista: <b>${fmShort(totV)}</b></span><span>Flota: <b>${F.tp==='all'?'completa':F.tp}</b></span>`;
  LAST={f,days,nDays,totV};
  renderKPIs(f,days,nDays,totV);
  renderOp(f);renderFin(f,days,nDays,totV);renderLog(f,days);renderAud(f);
