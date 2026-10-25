@@ -70,6 +70,14 @@ nav.tabs#tabs{margin-top:0;border-top:2px solid rgba(255,255,255,.12);padding-to
 /* mostrar solo las sub-pestañas del grupo activo */
 #tabs.g-ops .grp-mod{display:none}
 #tabs.g-mod .grp-ops{display:none}
+/* ===== Barra de acciones del módulo Operaciones ===== */
+.opsbar{display:none;gap:8px;flex-wrap:wrap;margin-top:12px}
+.opsbtn{display:flex;align-items:center;gap:7px;font-family:'IBM Plex Sans';font-size:12.5px;font-weight:600;color:#eaf1f8;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);padding:8px 15px;border-radius:8px;cursor:pointer;transition:.16s}
+.opsbtn:hover{background:rgba(255,255,255,.2);transform:translateY(-1px)}
+.opsbtn.ob-del{background:rgba(139,26,26,.55);border-color:rgba(192,80,70,.55);color:#ffe9e5}
+.opsbtn.ob-rep{background:rgba(43,74,111,.6);border-color:rgba(120,150,190,.5)}
+.opsbtn.ob-ppt{background:rgba(200,154,78,.4);border-color:rgba(216,173,96,.6);color:#2a2208}
+.opsbtn.ob-nube{background:rgba(47,125,107,.5);border-color:rgba(91,191,166,.55);color:#e9fff7}
 /* ===== FILTER BAR ===== */
 .filters{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(9px);border-bottom:1px solid var(--line);box-shadow:0 2px 12px rgba(23,42,67,.05);margin-top:-70px;border-radius:12px;margin-bottom:20px}
 .filters .wrap{padding:11px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -328,6 +336,7 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
     <p class="sub">Monitoreo volumétrico, valorización financiera, eficiencia de rutas y auditoría de calidad de datos. Filtra por semana, día, vehículo o rango horario y todo el tablero reacciona en vivo.</p>
     <nav class="ptabs" id="ptabs"></nav>
     <nav class="tabs" id="tabs"></nav>
+    <div class="opsbar" id="opsbar"></div>
   </div>
 </header>
 <!-- FILTER BAR -->
@@ -411,6 +420,7 @@ const GROUP_OF={op:'ops',fin:'ops',log:'ops',aud:'ops',cmp:'ops',diag:'ops',mac:
 function setGroup(g){
  CURG=g;
  const tb=document.getElementById('tabs');if(tb){tb.classList.remove('g-ops','g-mod');tb.classList.add('g-'+g);}
+ const ob=document.getElementById('opsbar');if(ob)ob.style.display=(g==='ops')?'flex':'none';
  document.querySelectorAll('.ptab').forEach(p=>p.classList.toggle('on',p.dataset.g===g));
 }
 function activateGroup(g){
@@ -443,6 +453,7 @@ function buildMarkup(){
  document.getElementById('tabs').innerHTML=TABS.map(t=>`<div class="tab grp-ops ${t[0]=='op'?'on':''} ${t[0]==='diag'?'adminonly':''}" data-t="${t[0]}">${t[2]}<span>${t[1]}</span></div>`).join('');
  document.getElementById('tabs').classList.add('g-ops');
  const _pt=document.getElementById('ptabs');if(_pt)_pt.innerHTML=`<div class="ptab on" data-g="ops"><span class="pdot"></span><span>Operaciones</span></div><div class="ptab" data-g="mod"><span class="pdot"></span><span>MacOnline y Vertical</span></div>`;
+ const _ob=document.getElementById('opsbar');if(_ob){_ob.innerHTML=[['imp','Importar'],['exp','Exportar'],['del','Eliminar'],['rep','Reporte'],['ppt','PPT'],['nube','NUBE']].map(b=>`<button class="opsbtn ob-${b[0]}" data-ob="${b[0]}">${b[1]}</button>`).join('');_ob.style.display='flex';}
  const M=document.getElementById('main');let h='';
  // ===== OPERACIONES =====
  h+=`<section class="section on" id="s-op"><div class="sec-head"><h2>Operaciones & Desempeño de Flota</h2><p>Rendimiento volumétrico y densidad de despachos</p></div>`;
