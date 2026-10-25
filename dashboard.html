@@ -1723,7 +1723,7 @@ function devoExport(ids){
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
   ws['!cols']=[{wch:5},{wch:12},{wch:14},{wch:14},{wch:16},{wch:16},{wch:8},{wch:18},{wch:22}];
-  const hex=it.c.replace('#','').toUpperCase(),txt=it.tx.replace('#','').toUpperCase();
+  const hex=it.c.replace('#','').toUpperCase();const txt=(['gmac','ecom','back'].indexOf(it.id)>=0)?'FFFFFF':'000000';
   const A1=ws['A1'];if(A1)A1.s={font:{bold:true,sz:14,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'left',vertical:'center'}};
   for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:1,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'center',vertical:'center'},border:bd};}
   for(let r=2;r<2+N;r++){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r,c});const cell=ws[ref];if(cell)cell.s={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:(c===0||c===DEVO_VALCOL+1)?(c===0?'center':'right'):'left'}};}}
