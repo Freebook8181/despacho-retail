@@ -421,7 +421,7 @@ const GROUP_OF={op:'ops',fin:'ops',log:'ops',aud:'ops',cmp:'ops',diag:'ops',mac:
 function setGroup(g){
  CURG=g;
  const tb=document.getElementById('tabs');if(tb){tb.classList.remove('g-ops','g-mod');tb.classList.add('g-'+g);}
- const ob=document.getElementById('opsbar');if(ob)ob.style.display='flex';
+ const ob=document.getElementById('opsbar');if(ob&&typeof obUpdateBar==='function')obUpdateBar();else if(ob)ob.style.display='flex';
  document.querySelectorAll('.ptab').forEach(p=>p.classList.toggle('on',p.dataset.g===g));
 }
 function activateGroup(g){
@@ -1945,6 +1945,228 @@ function handleModUpload(e){
  });
  e.target.value='';
 }
+/* ===== OPSBAR: IMPORTAR/EXPORTAR/ELIMINAR/REPORTE/PPT/NUBE (MacOnline Distribucion + Vertical Tiendas) ===== */
+var OB_REPORT=null,OB_NUBE_EDIT=false;
+function obIsAdmin(){try{return !!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin');}catch(e){return false;}}
+function obUpdateBar(){var ob=document.getElementById('opsbar');if(!ob)return;var show=(CURG==='ops')||(CUR==='mac');ob.style.display=show?'flex':'none';}
+function obRows(grp){return MDATA.rows.filter(function(r){return r.grp===grp;});}
+function obAgg(grp){
+ var rows=obRows(grp);
+ var totV=rows.reduce(function(a,r){return a+(r.v||0);},0);
+ var tiendas=new Set(rows.map(function(r){return r.tienda;}).filter(function(t){return t&&t!=='Sin dato';})).size;
+ var byMes={};rows.forEach(function(r){byMes[r.mk]=byMes[r.mk]||{label:r.mes,n:0,v:0};byMes[r.mk].n++;byMes[r.mk].v+=r.v||0;});
+ var meses=Object.keys(byMes).sort().map(function(mk){return {mk:mk,label:byMes[mk].label,n:byMes[mk].n,v:byMes[mk].v};});
+ var byTie={};rows.forEach(function(r){var t=r.tienda||'Sin dato';byTie[t]=byTie[t]||{n:0,v:0};byTie[t].n++;byTie[t].v+=r.v||0;});
+ var tieTop=Object.keys(byTie).map(function(t){return {k:t,n:byTie[t].n,v:byTie[t].v};}).filter(function(x){return x.k!=='Sin dato';}).sort(function(a,b){return b.v-a.v;});
+ var byZona={Santiago:{n:0,v:0},Regiones:{n:0,v:0}};rows.forEach(function(r){if(byZona[r.zona]){byZona[r.zona].n++;byZona[r.zona].v+=r.v||0;}});
+ var bySem={};rows.forEach(function(r){var s=r.sem||0;if(s>0){bySem[s]=bySem[s]||{n:0,v:0};bySem[s].n++;bySem[s].v+=r.v||0;}});
+ var sems=Object.keys(bySem).map(Number).sort(function(a,b){return a-b;}).map(function(s){return {s:s,n:bySem[s].n,v:bySem[s].v};});
+ var byTp={};rows.forEach(function(r){var t=r.tp||'Sin dato';byTp[t]=byTp[t]||{n:0,v:0};byTp[t].n++;byTp[t].v+=r.v||0;});
+ var tp=Object.keys(byTp).map(function(t){return {k:t,n:byTp[t].n,v:byTp[t].v};}).filter(function(x){return x.k!=='Sin dato';}).sort(function(a,b){return b.v-a.v;});
+ var am=rows.filter(function(r){return r.rg==='AM';}).length,pm=rows.filter(function(r){return r.rg==='PM';}).length;
+ return {rows:rows,totV:totV,nPed:rows.length,tiendas:tiendas,meses:meses,tieTop:tieTop,byZona:byZona,sems:sems,tp:tp,am:am,pm:pm};
+}
+function obChartImg(w,h,option){
+ var d=document.createElement('div');d.style.cssText='position:fixed;left:-10000px;top:0;width:'+w+'px;height:'+h+'px;';
+ document.body.appendChild(d);
+ var inst=echarts.init(d,null,{renderer:'canvas'});
+ option.animation=false;option.backgroundColor='#ffffff';
+ inst.setOption(option,true);
+ var img='';try{img=inst.getDataURL({pixelRatio:2,backgroundColor:'#ffffff'});}catch(e){img='';}
+ inst.dispose();document.body.removeChild(d);
+ return img;
+}
+function obGenImages(grp){
+ var a=obAgg(grp),col=MOD_COLOR[grp];var out={};
+ out.mes=obChartImg(820,380,{grid:{left:8,right:20,top:24,bottom:28,containLabel:true},tooltip:{},xAxis:{type:'category',data:a.meses.map(function(m){return m.label;}),axisLabel:{color:'#6b7684'}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{type:'bar',data:a.meses.map(function(m){return m.v;}),itemStyle:{color:col,borderRadius:[5,5,0,0]},barWidth:'55%',label:{show:true,position:'top',fontSize:10,color:'#1f3a59',formatter:function(p){return fmShort(p.value);}}}]});
+ out.zona=obChartImg(400,360,{tooltip:{},legend:{bottom:0},series:[{type:'pie',radius:['40%','70%'],data:[{name:'Santiago',value:a.byZona.Santiago.v,itemStyle:{color:col}},{name:'Regiones',value:a.byZona.Regiones.v,itemStyle:{color:'#c3d0dd'}}],label:{formatter:'{b}\n{d}%',fontSize:12}}]});
+ var tt=a.tieTop.slice(0,10).slice().reverse();
+ out.tie=obChartImg(430,360,{grid:{left:8,right:76,top:10,bottom:10,containLabel:true},tooltip:{},xAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},yAxis:{type:'category',data:tt.map(function(x){return x.k;}),axisLabel:{width:130,overflow:'truncate',color:'#6b7684',fontSize:10}},series:[{type:'bar',data:tt.map(function(x){return x.v;}),itemStyle:{color:col,borderRadius:[0,4,4,0]},label:{show:true,position:'right',fontSize:9,color:'#1f3a59',formatter:function(p){return fmShort(p.value);}}}]});
+ out.sem=obChartImg(430,340,{grid:{left:8,right:20,top:20,bottom:28,containLabel:true},tooltip:{},xAxis:{type:'category',data:a.sems.map(function(s){return 'S'+s.s;}),axisLabel:{color:'#6b7684'}},yAxis:{type:'value',axisLabel:{color:'#6b7684'}},series:[{type:'line',smooth:true,data:a.sems.map(function(s){return s.n;}),lineStyle:{color:col,width:3},itemStyle:{color:col},areaStyle:{color:'rgba(0,0,0,.05)'},symbol:'circle',symbolSize:6}]});
+ var tp=a.tp.slice(0,8).slice().reverse();
+ out.tp=obChartImg(430,340,{grid:{left:8,right:76,top:10,bottom:10,containLabel:true},tooltip:{},xAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},yAxis:{type:'category',data:tp.map(function(x){return x.k;}),axisLabel:{color:'#6b7684',fontSize:10}},series:[{type:'bar',data:tp.map(function(x){return x.v;}),itemStyle:{color:'#2b4a6f',borderRadius:[0,4,4,0]},label:{show:true,position:'right',fontSize:9,color:'#1f3a59',formatter:function(p){return fmShort(p.value);}}}]});
+ return {a:a,col:col,img:out};
+}
+function obReportHtml(grp,startPage){
+ var g=obGenImages(grp),a=g.a,col=g.col,img=g.img;
+ var lbl=grp==='mac'?'MacOnline Distribucion':'Vertical Tiendas';
+ var ticket=a.nPed?a.totV/a.nPed:0;
+ var topMes=a.meses.slice().sort(function(x,y){return y.v-x.v;})[0];
+ var topTie=a.tieTop[0];
+ var stgShare=a.totV?100*a.byZona.Santiago.v/a.totV:0;
+ var topTp=a.tp[0];
+ var band=function(sub,n){return '<div class="rep-band" style="background:'+col+'"><div class="rep-bt">'+lbl+' · <span>'+sub+'</span></div><div class="rep-bs">Hoja '+n+' de 6 · QUINTEC KPI Logística</div></div>';};
+ var kpi=function(t,v,s){return '<div class="rep-k"><div class="rep-kt">'+t+'</div><div class="rep-kv">'+v+'</div><div class="rep-ks">'+s+'</div></div>';};
+ var p1='<div class="rep-page">'+band('Resumen Ejecutivo',startPage)+'<div class="rep-kpis">'+kpi('Pedidos / salidas',fi(a.nPed),fi(a.meses.length)+' meses cargados')+kpi('Valor movilizado',fm(a.totV),'Monto total exacto')+kpi('Tiendas activas',fi(a.tiendas),'con despachos')+kpi('Ticket promedio',fm(ticket),'valor por pedido')+'</div><img class="rep-img" src="'+img.mes+'"/><div class="rep-exp"><b>Explicación.</b> El gráfico muestra el <b>valor movilizado por mes</b> en '+lbl+', sumando la columna VALOR de cada pedido sin redondear. Cada barra corresponde a un mes cargado.</div><div class="rep-an"><b>Análisis.</b> '+(topMes?('El mes de mayor valor es <b>'+topMes.label+'</b> con <b>'+fm(topMes.v)+'</b>. '):'')+'En total se movilizaron <b>'+fm(a.totV)+'</b> en <b>'+fi(a.nPed)+'</b> pedidos, con un ticket promedio de <b>'+fm(ticket)+'</b>.</div></div>';
+ var p2='<div class="rep-page">'+band('Distribución Territorial',startPage+1)+'<div class="rep-duo"><div><div class="rep-ct">Valor por zona</div><img class="rep-img2" src="'+img.zona+'"/></div><div><div class="rep-ct">Top 10 tiendas por valor</div><img class="rep-img2" src="'+img.tie+'"/></div></div><div class="rep-exp"><b>Explicación.</b> A la izquierda, la repartición del valor entre <b>Santiago</b> y <b>Regiones</b>; a la derecha, las 10 tiendas que concentran mayor valor.</div><div class="rep-an"><b>Análisis.</b> Santiago concentra el <b>'+stgShare.toFixed(0)+'%</b> del valor y Regiones el <b>'+(100-stgShare).toFixed(0)+'%</b>. '+(topTie?('La tienda líder es <b>'+topTie.k+'</b> con <b>'+fm(topTie.v)+'</b>.'):'')+'</div></div>';
+ var p3='<div class="rep-page">'+band('Operación y Logística',startPage+2)+'<div class="rep-duo"><div><div class="rep-ct">Pedidos por semana</div><img class="rep-img2" src="'+img.sem+'"/></div><div><div class="rep-ct">Valor por vehículo</div><img class="rep-img2" src="'+img.tp+'"/></div></div><div class="rep-exp"><b>Explicación.</b> Evolución de los <b>pedidos por semana del año</b> y el <b>valor movilizado por tipo de transporte</b>. Rango horario: AM <b>'+fi(a.am)+'</b> · PM <b>'+fi(a.pm)+'</b>.</div><div class="rep-an"><b>Análisis.</b> '+(topTp?('El transporte de mayor valor es <b>'+topTp.k+'</b> con <b>'+fm(topTp.v)+'</b>. '):'')+'La operación se distribuye en <b>'+a.sems.length+'</b> semanas con un total de <b>'+fi(a.nPed)+'</b> pedidos.</div></div>';
+ return {html:p1+p2+p3,imgs:img,agg:a,lbl:lbl,col:col};
+}
+function obAskPass(titulo,msg,cb){
+ var ov=document.createElement('div');ov.className='ob-modal';
+ ov.innerHTML='<div class="ob-box"><div class="ob-h">'+titulo+'</div><div class="ob-m">'+msg+'</div><input type="password" class="ob-inp" maxlength="12" placeholder="••••" autocomplete="off"><div class="ob-err" style="display:none">Contraseña incorrecta</div><div class="ob-btns"><button class="ob-c">Cancelar</button><button class="ob-ok">Aceptar</button></div></div>';
+ document.body.appendChild(ov);
+ var inp=ov.querySelector('.ob-inp');setTimeout(function(){inp.focus();},30);
+ function close(){if(ov.parentNode)document.body.removeChild(ov);}
+ function ok(){if(inp.value==='1234'){close();if(cb)cb();}else{ov.querySelector('.ob-err').style.display='';inp.value='';inp.focus();}}
+ ov.querySelector('.ob-c').onclick=close;
+ ov.querySelector('.ob-ok').onclick=ok;
+ inp.onkeydown=function(e){if(e.key==='Enter')ok();if(e.key==='Escape')close();};
+}
+function obImport(){
+ if(!obIsAdmin()){alert('Solo el administrador puede importar información.');return;}
+ var inp=document.getElementById('obFileInput');
+ if(!inp){inp=document.createElement('input');inp.type='file';inp.id='obFileInput';inp.accept='.xlsx,.xls';inp.multiple=true;inp.style.display='none';document.body.appendChild(inp);
+  inp.addEventListener('change',function(e){alert('☁ La información del Excel se clasificará automáticamente por la columna UNIDAD NEGOCIO:\n • "MacOnline Distribución" → pestaña MacOnline Distribución\n • "Vertical Tiendas" → pestaña Vertical Tiendas\n\nAl terminar se GUARDARÁ en la nube (Firebase) para todos los usuarios.');handleModUpload(e);});}
+ inp.click();
+}
+function obExport(){
+ if(!MDATA.rows.length){alert('No hay información para exportar.');return;}
+ try{
+  var wb=XLSX.utils.book_new();
+  [['mac','MacOnline'],['ver','Vertical']].forEach(function(g){
+    var grp=g[0],rows=obRows(grp);if(!rows.length)return;
+    var sorted=rows.slice().sort(function(a,b){return (a.zona||'').localeCompare(b.zona||'')||(a.region||'').localeCompare(b.region||'')||(a.tienda||'').localeCompare(b.tienda||'')||(a.mk||'').localeCompare(b.mk||'')||((a.sem||0)-(b.sem||0))||(a.f||'').localeCompare(b.f||'');});
+    var det=[['Zona','Región','Comuna','Tienda','Mes','Semana','Fecha','Unidad Negocio','Vehículo','Rango','Pedido','Valor']];
+    sorted.forEach(function(r){det.push([r.zona,r.region,r.co,r.tienda,r.mes,'Sem '+r.sem,r.f,r.un,r.tp,r.rg,r.pedido,r.v]);});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(det),g[1]+' Detalle');
+    var agg=obAgg(grp);var mesesKeys=agg.meses.map(function(m){return m.label;});
+    var tm=[['Tienda','Zona','Región'].concat(mesesKeys).concat(['Total'])];
+    var tieMap={};rows.forEach(function(r){var key=r.tienda;tieMap[key]=tieMap[key]||{zona:r.zona,region:r.region,m:{}};tieMap[key].m[r.mes]=(tieMap[key].m[r.mes]||0)+r.v;});
+    Object.keys(tieMap).sort().forEach(function(t){var o=tieMap[t];var row=[t,o.zona,o.region];var tot=0;mesesKeys.forEach(function(ml){var v=o.m[ml]||0;row.push(v);tot+=v;});row.push(tot);tm.push(row);});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tm),g[1]+' x Tienda-Mes');
+    var sm=[['Semana','Pedidos','Valor']];agg.sems.forEach(function(s){sm.push(['Semana '+s.s,s.n,s.v]);});sm.push(['TOTAL',agg.nPed,agg.totV]);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sm),g[1]+' x Semana');
+    var rz=[['Zona','Pedidos','Valor'],['Santiago',agg.byZona.Santiago.n,agg.byZona.Santiago.v],['Regiones',agg.byZona.Regiones.n,agg.byZona.Regiones.v]];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rz),g[1]+' x Zona');
+  });
+  if(!wb.SheetNames.length){alert('No hay información para exportar.');return;}
+  XLSX.writeFile(wb,'Tiendas_QUINTEC_'+(new Date().toISOString().slice(0,10))+'.xlsx');
+ }catch(e){alert('No se pudo exportar: '+e.message);}
+}
+function obDelete(){
+ if(!obIsAdmin()){alert('Solo el administrador puede eliminar información.');return;}
+ if(!MDATA.rows.length){alert('No hay información cargada para eliminar.');return;}
+ if(typeof fbReady==='undefined'||!fbReady||!fbDB){alert('⚠ La información solo puede eliminarse si está guardada en la nube (Firebase). En este momento no hay conexión con Firebase.');return;}
+ obAskPass('Eliminar información','Ingresa la contraseña para continuar. La contraseña no se mostrará en pantalla.',function(){
+   var mac=obRows('mac').length,ver=obRows('ver').length;
+   var ok=confirm('⚠ ELIMINACIÓN DEFINITIVA\n\nSe borrará TODA la información de:\n • MacOnline Distribución ('+mac+' registros)\n • Vertical Tiendas ('+ver+' registros)\n\nSe eliminará de ESTA plataforma y de la base de datos en la NUBE (Firebase: quintec/tiendas_meses).\n\nEsta acción NO se puede deshacer y la información NO se podrá recuperar.\n\n¿Deseas continuar?');
+   if(!ok)return;
+   MDATA.rows=[];try{localStorage.removeItem(MLS_KEY);}catch(_){}
+   modFbClear().then(function(){
+     ['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});
+     if(CUR==='mac'||CUR==='ver')renderMod(CUR);
+     alert('✓ Información eliminada de la plataforma y de la nube (Firebase). No se puede recuperar.');
+   });
+ });
+}
+function obReporte(){
+ if(!MDATA.rows.length){alert('No hay información para generar el reporte. Importa primero un Excel.');return;}
+ var mac=obReportHtml('mac',1),ver=obReportHtml('ver',4);
+ OB_REPORT={mac:mac,ver:ver};
+ var ov=document.getElementById('obRepOvr');
+ if(!ov){ov=document.createElement('div');ov.id='obRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo · MacOnline Distribución y Vertical Tiendas</div><button class="ob-rep-b ob-pdf">⤓ PDF</button><button class="ob-rep-b ob-imp">🖨 IMPRIMIR</button><button class="ob-rep-x">✕</button></div><div class="ob-rep-body" id="obRepBody"></div></div>';document.body.appendChild(ov);
+  ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
+  ov.querySelector('.ob-pdf').onclick=function(){obPrintReport(true);};
+  ov.querySelector('.ob-imp').onclick=function(){obPrintReport(false);};}
+ document.getElementById('obRepBody').innerHTML='<div class="rep-wrap">'+mac.html+ver.html+'</div>';
+ ov.style.display='block';
+}
+function obPrintReport(isPdf){
+ if(!OB_REPORT)return;
+ var html='<div class="rep-wrap">'+OB_REPORT.mac.html+OB_REPORT.ver.html+'</div>';
+ var w=window.open('','_blank');
+ if(!w){alert('El navegador bloqueó la ventana. Permite las ventanas emergentes para '+(isPdf?'guardar el PDF':'imprimir')+'.');return;}
+ w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{page-break-after:always;box-shadow:none;border:0;margin:0 auto}@page{size:A4;margin:9mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
+ w.document.close();
+}
+function obLoadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+function obPPT(){
+ if(!MDATA.rows.length){alert('No hay información para generar el PPT. Importa primero un Excel.');return;}
+ var mac=obReportHtml('mac',1),ver=obReportHtml('ver',4);
+ var load=(typeof PptxGenJS!=='undefined')?Promise.resolve():obLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
+ load.then(function(){obBuildPPT(mac,ver);}).catch(function(){alert('No se pudo cargar el generador de PPT. Revisa tu conexión a internet e inténtalo de nuevo.');});
+}
+function obBuildPPT(mac,ver){
+ try{
+  var pptx=new PptxGenJS();pptx.defineLayout({name:'QA',width:13.33,height:7.5});pptx.layout='QA';
+  var s0=pptx.addSlide();s0.background={color:'1F3A59'};
+  s0.addText('Reporte Ejecutivo de Tiendas',{x:0.8,y:2.5,w:11.7,h:1,fontSize:36,bold:true,color:'FFFFFF',fontFace:'Arial'});
+  s0.addText('MacOnline Distribución y Vertical Tiendas  ·  QUINTEC KPI Logística',{x:0.8,y:3.6,w:11.7,h:0.6,fontSize:18,color:'C3D0DD'});
+  [mac,ver].forEach(function(R){obPPTSlides(pptx,R);});
+  pptx.writeFile({fileName:'Reporte_Tiendas_QUINTEC.pptx'});
+ }catch(e){alert('No se pudo generar el PPT: '+e.message);}
+}
+function obPPTSlides(pptx,R){
+ var a=R.agg,img=R.imgs,col=(R.col||'#1f3a59').replace('#',''),lbl=R.lbl;
+ var ticket=a.nPed?a.totV/a.nPed:0;
+ var s1=pptx.addSlide();
+ s1.addText(lbl+'  ·  Resumen Ejecutivo',{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:col});
+ s1.addText('Pedidos: '+fi(a.nPed)+'      Valor: '+fm(a.totV)+'      Tiendas: '+fi(a.tiendas)+'      Ticket: '+fm(ticket),{x:0.5,y:0.95,w:12.3,h:0.5,fontSize:14,color:'333333'});
+ if(img.mes)s1.addImage({data:img.mes,x:1.1,y:1.65,w:7.3,h:3.4});
+ s1.addText('Explicación: valor movilizado por mes (columna VALOR, sin redondear).',{x:8.8,y:1.9,w:4.1,h:3,fontSize:13,color:'333333'});
+ var s2=pptx.addSlide();
+ s2.addText(lbl+'  ·  Distribución Territorial',{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:col});
+ if(img.zona)s2.addImage({data:img.zona,x:0.6,y:1.4,w:4.2,h:3.7});
+ if(img.tie)s2.addImage({data:img.tie,x:5.1,y:1.4,w:4.3,h:3.6});
+ s2.addText('Reparto Santiago / Regiones y las 10 tiendas de mayor valor.',{x:9.7,y:1.7,w:3.2,h:3,fontSize:13,color:'333333'});
+ var s3=pptx.addSlide();
+ s3.addText(lbl+'  ·  Operación y Logística',{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:col});
+ if(img.sem)s3.addImage({data:img.sem,x:0.6,y:1.4,w:4.3,h:3.4});
+ if(img.tp)s3.addImage({data:img.tp,x:5.1,y:1.4,w:4.3,h:3.4});
+ s3.addText('Pedidos por semana y valor por transporte. AM '+fi(a.am)+' · PM '+fi(a.pm)+'.',{x:9.7,y:1.7,w:3.2,h:3,fontSize:13,color:'333333'});
+}
+function obNube(){
+ var ov=document.getElementById('obNubeOvr');
+ if(!ov){ov=document.createElement('div');ov.id='obNubeOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">☁ Información guardada en la nube (Firebase)</div><button class="ob-rep-b ob-edit">✎ EDITAR</button><button class="ob-rep-x">✕</button></div><div class="ob-rep-body" id="obNubeBody"></div></div>';document.body.appendChild(ov);
+  ov.querySelector('.ob-rep-x').onclick=function(){OB_NUBE_EDIT=false;ov.style.display='none';};
+  ov.querySelector('.ob-edit').onclick=function(){obAskPass('Editar en la nube','Ingresa la contraseña para habilitar la edición. La contraseña no se mostrará en pantalla.',function(){OB_NUBE_EDIT=true;obNubeRender();});};}
+ OB_NUBE_EDIT=false;obNubeRender();ov.style.display='block';
+}
+function obNubeRender(){
+ var body=document.getElementById('obNubeBody');if(!body)return;
+ var conn=(typeof fbReady!=='undefined'&&fbReady);
+ var head='<div class="nube-conn '+(conn?'ok':'off')+'">'+(conn?'● Conectado a la nube · quintec/tiendas_meses':'○ Sin conexión con la nube')+(OB_NUBE_EDIT?' · <b>Modo edición activo</b>':'')+'</div>';
+ var cols='';
+ [['mac','MacOnline Distribución'],['ver','Vertical Tiendas']].forEach(function(g){
+   var grp=g[0],rows=obRows(grp);
+   var byMk={};rows.forEach(function(r){byMk[r.mk]=byMk[r.mk]||{label:r.mes,n:0,v:0};byMk[r.mk].n++;byMk[r.mk].v+=r.v||0;});
+   var mks=Object.keys(byMk).sort();
+   var items=mks.length?mks.map(function(mk){var o=byMk[mk];return '<div class="nube-row"><div class="nube-mes">'+o.label+'</div><div class="nube-stat">'+fi(o.n)+' registros · '+fm(o.v)+'</div>'+(OB_NUBE_EDIT?'<button class="nube-del" data-grp="'+grp+'" data-mk="'+mk+'">Eliminar mes</button>':'')+'</div>';}).join(''):'<div class="nube-empty">Sin información en la nube.</div>';
+   var tv=rows.reduce(function(a,r){return a+(r.v||0);},0);
+   cols+='<div class="nube-col"><div class="nube-h" style="background:'+MOD_COLOR[grp]+'">'+g[1]+'</div><div class="nube-tot">'+fi(rows.length)+' registros · '+fm(tv)+'</div>'+items+'</div>';
+ });
+ body.innerHTML=head+'<div class="nube-cols">'+cols+'</div>';
+ body.querySelectorAll('.nube-del').forEach(function(b){b.onclick=function(){var grp=b.getAttribute('data-grp'),mk=b.getAttribute('data-mk');if(!obIsAdmin()){alert('Solo el administrador puede editar.');return;}if(!confirm('¿Eliminar de la nube el mes seleccionado de '+(grp==='mac'?'MacOnline Distribución':'Vertical Tiendas')+'?\n\nEsta acción se aplica también en Firebase y no se puede deshacer.'))return;MDATA.rows=MDATA.rows.filter(function(r){return !(r.grp===grp&&r.mk===mk);});try{modSaveLocal();}catch(_){}if(typeof modFbPush==='function')modFbPush();['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});if(CUR==='mac'||CUR==='ver')renderMod(CUR);obNubeRender();};});
+}
+var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
++".rep-page{background:#fff;border:1px solid #e3e8ef;border-radius:10px;box-shadow:0 6px 20px rgba(20,40,70,.08);padding:0 0 18px;margin:0 auto 22px;overflow:hidden}"
++".rep-band{padding:16px 22px;color:#fff}.rep-bt{font-size:19px;font-weight:700;font-family:'Sora',Arial}.rep-bt span{font-weight:400;opacity:.9}.rep-bs{font-size:11px;opacity:.85;margin-top:3px}"
++".rep-kpis{display:flex;gap:12px;padding:16px 22px 4px;flex-wrap:wrap}.rep-k{flex:1;min-width:130px;background:#f6f9fc;border:1px solid #e6edf4;border-radius:8px;padding:10px 12px}.rep-kt{font-size:11px;color:#6b7684;font-weight:600}.rep-kv{font-size:19px;font-weight:700;color:#1f3a59;font-family:'Sora',Arial;margin:2px 0}.rep-ks{font-size:10.5px;color:#8a95a1}"
++".rep-img{display:block;width:calc(100% - 44px);margin:14px 22px;border:1px solid #eef2f6;border-radius:8px}"
++".rep-duo{display:flex;gap:14px;padding:14px 22px}.rep-duo>div{flex:1;min-width:0}.rep-ct{font-size:12.5px;font-weight:700;color:#1f3a59;margin-bottom:6px}.rep-img2{width:100%;border:1px solid #eef2f6;border-radius:8px}"
++".rep-exp,.rep-an{margin:6px 22px;padding:11px 14px;border-radius:8px;font-size:12.5px;line-height:1.6}.rep-exp{background:#eef5f2;border:1px solid #d6e8e1;color:#2a4a40}.rep-an{background:#eef3fa;border:1px solid #d6e1f0;color:#24415f}"
++".ob-rep-ovr{position:fixed;inset:0;z-index:950;background:rgba(16,28,42,.6);display:none;padding:22px}"
++".ob-rep-card{max-width:1000px;height:100%;margin:0 auto;background:#eef2f6;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(10,25,45,.45)}"
++".ob-rep-head{display:flex;align-items:center;gap:10px;padding:14px 20px;background:#1f3a59;color:#fff}.ob-rep-h{flex:1;font-family:'Sora',Arial;font-weight:600;font-size:15px}"
++".ob-rep-b{font-size:12.5px;font-weight:600;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;border-radius:7px;padding:7px 14px;cursor:pointer}.ob-rep-b:hover{background:rgba(255,255,255,.26)}"
++".ob-rep-x{background:transparent;border:0;color:#cdd9e6;font-size:20px;cursor:pointer;line-height:1}"
++".ob-rep-body{flex:1;overflow:auto;padding:18px}"
++".ob-modal{position:fixed;inset:0;z-index:1000;background:rgba(16,28,42,.55);display:flex;align-items:center;justify-content:center}"
++".ob-box{background:#fff;border-radius:12px;padding:22px;width:340px;box-shadow:0 20px 60px rgba(10,25,45,.4);font-family:'IBM Plex Sans',Arial}"
++".ob-h{font-size:16px;font-weight:700;color:#1f3a59;margin-bottom:6px}.ob-m{font-size:12.5px;color:#5a6672;line-height:1.5;margin-bottom:12px}"
++".ob-inp{width:100%;box-sizing:border-box;font-size:20px;letter-spacing:6px;text-align:center;padding:10px;border:1.5px solid #cfd8e3;border-radius:8px;outline:none}.ob-inp:focus{border-color:#2f7d6b}"
++".ob-err{color:#c0392b;font-size:12px;margin-top:7px;font-weight:600}.ob-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}"
++".ob-btns button{font-size:13px;font-weight:600;padding:8px 16px;border-radius:7px;cursor:pointer;border:1px solid #cfd8e3;background:#fff;color:#4a5968}.ob-ok{background:#2f7d6b!important;border-color:#2f7d6b!important;color:#fff!important}"
++".nube-conn{font-size:12.5px;padding:8px 12px;border-radius:7px;margin-bottom:14px;font-weight:600}.nube-conn.ok{background:#e6f5ef;color:#1d6b56}.nube-conn.off{background:#fbecec;color:#b4442f}"
++".nube-cols{display:flex;gap:16px;flex-wrap:wrap}.nube-col{flex:1;min-width:300px;background:#fff;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden}"
++".nube-h{padding:12px 16px;color:#fff;font-weight:700;font-size:15px}.nube-tot{padding:10px 16px;background:#f6f9fc;font-size:12.5px;color:#4a5968;font-weight:600;border-bottom:1px solid #eef2f6}"
++".nube-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f3f7}.nube-mes{flex:1;font-weight:600;color:#1f3a59;font-size:13px}.nube-stat{font-size:12px;color:#6b7684}"
++".nube-del{background:#b4442f;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer}.nube-empty{padding:16px;color:#8a95a1;font-size:13px}";
+(function(){
+ try{var st=document.createElement('style');st.textContent=OB_REP_CSS;document.head.appendChild(st);}catch(e){}
+ document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('#opsbar [data-ob]'):null;if(!b)return;var k=b.getAttribute('data-ob');if(k==='imp')obImport();else if(k==='exp')obExport();else if(k==='del')obDelete();else if(k==='rep')obReporte();else if(k==='ppt')obPPT();else if(k==='nube')obNube();});
+})();
 /* ===== WIRE ===== */
 function wireMod(){
  ['mac','ver'].forEach(k=>{
