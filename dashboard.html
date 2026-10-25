@@ -2075,6 +2075,96 @@ function handleModUpload(e){
  });
  e.target.value='';
 }
+/* ===== IMPORTAR EXCEL DE OPERACIONES (Resumen_Meses_Duplicados: una hoja por mes) =====
+   Separado por completo de MacOnline Distribucion / Vertical Tiendas (MDATA) y de Devoluciones.
+   Vuelca al modelo DATA.rows de Operaciones y persiste en Firebase (quintec/meses). */
+function opsFecha(x){
+ if(x==null||x==='')return null;
+ if(x instanceof Date)return isNaN(x)?null:new Date(x.getFullYear(),x.getMonth(),x.getDate());
+ if(typeof x==='number'){var d=new Date(Math.round((x-25569)*86400*1000));return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());}
+ var s=String(x).trim();var m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+ if(m){var dd=+m[1],mm=+m[2],yy=+m[3];if(yy<100)yy+=2000;return new Date(yy,mm-1,dd);}
+ m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+ var d2=new Date(s);return isNaN(d2)?null:new Date(d2.getFullYear(),d2.getMonth(),d2.getDate());
+}
+function opsCleanResumenSheet(aoa){
+ if(!aoa||!aoa.length)return null;
+ var hdr=-1,idx={};
+ for(var i=0;i<Math.min(aoa.length,40);i++){
+  var up=(aoa[i]||[]).map(function(c){return c==null?'':stripAcc(String(c)).trim().toUpperCase();});
+  if(up.indexOf('PEDIDO')>=0&&up.indexOf('VALOR')>=0&&up.indexOf('FECHA')>=0&&up.indexOf('RAZON')>=0){hdr=i;idx={};up.forEach(function(c,j){if(c&&!(c in idx))idx[c]=j;});break;}
+ }
+ if(hdr<0)return null;
+ function col(name){var k=Object.keys(idx).find(function(k){return k===name;});if(k==null)k=Object.keys(idx).find(function(k){return k.indexOf(name)>=0;});return k!=null?idx[k]:-1;}
+ var cP=col('PEDIDO'),cS=col('SEMANA'),cF=col('FECHA'),cU=col('UNIDAD NEGOCIO'),cC=col('CLIENTE'),cD=col('DIRECCION'),cCo=col('COMUNA'),cZ=col('ZONA'),cV=col('VALOR'),cM=col('MOVIL'),cR=col('RANGO'),cRa=col('RAZON');
+ var map={},byMk={};
+ for(var r=hdr+1;r<aoa.length;r++){
+  var row=aoa[r];if(!row)continue;
+  var raz=cRa>=0?row[cRa]:null;if(raz==null)continue;
+  if(stripAcc(String(raz)).trim().toUpperCase()!=='SE SUMA')continue; // dedup: solo SE SUMA (los NO SUMA se omiten)
+  var dt=opsFecha(cF>=0?row[cF]:null);if(!dt)continue;
+  var vRaw=cV>=0?row[cV]:null;
+  var v=(typeof vRaw==='number')?vRaw:parseFloat(String(vRaw==null?'':vRaw).replace(/[^0-9.\-]/g,'')); // VALOR exacto, sin redondear
+  if(!isFinite(v))v=0;
+  var sem=0,sRaw=cS>=0?row[cS]:null;if(sRaw!=null){var mm=String(sRaw).match(/\d+/);if(mm)sem=+mm[0];}
+  if(!sem||sem<1){var _off=(new Date(dt.getFullYear(),dt.getMonth(),1).getDay()+6)%7;sem=Math.floor((dt.getDate()-1+_off)/7)+1;}
+  var zu=stripAcc(String(cZ>=0&&row[cZ]!=null?row[cZ]:'')).toUpperCase();var zona=zu.indexOf('SANT')>=0?'Santiago':(zu.indexOf('REG')>=0?'Regiones':'Sin dato');
+  var tp=(cM>=0&&row[cM]!=null&&String(row[cM]).trim()!=='')?String(row[cM]).trim():'Sin dato';
+  var rg=(cR>=0&&row[cR]!=null&&String(row[cR]).trim()!=='')?String(row[cR]).trim().toUpperCase():'EN BLANCO';
+  var un=(cU>=0&&row[cU]!=null&&String(row[cU]).trim()!=='')?String(row[cU]).trim():'Sin dato';
+  var cl=(cC>=0&&row[cC]!=null&&String(row[cC]).trim()!=='')?String(row[cC]).trim():'Sin dato';
+  var co=canonComuna(cCo>=0?row[cCo]:null,map);
+  var dir=(cD>=0&&row[cD]!=null)?String(row[cD]).trim():'';
+  var ped=cP>=0?row[cP]:null;
+  var yy=dt.getFullYear(),mi=dt.getMonth();
+  var mk=yy+'-'+String(mi+1).padStart(2,'0'),label=MESES_FULL[mi]+' '+yy;
+  (byMk[mk]=byMk[mk]||{label:label,mk:mk,rows:[]}).rows.push({
+   id:(+(ped||0))||0,pedido:ped,f:yy+'-'+String(mi+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),
+   sem:sem,dow:(dt.getDay()+6)%7,un:un,cl:cl,co:co,dir:dir,zona:zona,v:v,ob:'',tp:tp,rg:rg,mes:label,mk:mk});
+ }
+ return Object.keys(byMk).length?byMk:null;
+}
+function handleOpsUpload(e){
+ var files=[].slice.call(e.target.files||[]);if(!files.length)return;
+ var done=0,all={},msgs=[],errs=[];
+ files.forEach(function(file){
+  var rd=new FileReader();
+  rd.onload=function(ev){
+   try{
+    var wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+    var found=false;
+    wb.SheetNames.forEach(function(nm){
+     var n=stripAcc(nm).toUpperCase();
+     if(n.indexOf('TOTALES')>=0||n.indexOf('ATIPIC')>=0||n.indexOf('LEYENDA')>=0||n.indexOf('RESUMEN')>=0)return;
+     var aoa=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:null,raw:true});
+     var byMk=opsCleanResumenSheet(aoa);
+     if(byMk){Object.keys(byMk).forEach(function(mk){if(!all[mk])all[mk]=byMk[mk];else all[mk].rows=all[mk].rows.concat(byMk[mk].rows);found=true;});}
+    });
+    if(!found)errs.push(file.name+': sin hojas de meses v\u00e1lidas');
+   }catch(err){errs.push(file.name+': error ('+err.message+')');}
+   done++;if(done===files.length)opsFinishUpload(all,msgs,errs);
+  };rd.readAsArrayBuffer(file);
+ });
+ e.target.value='';
+}
+function opsFinishUpload(all,msgs,errs){
+ var mks=Object.keys(all).sort();
+ if(!mks.length){alert('No se pudo importar ninguna hoja de meses.\n'+(errs.join('\n')||''));return;}
+ mks.forEach(function(mk){
+  var o=all[mk];
+  DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;}).concat(o.rows); // REEMPLAZA el mes, no duplica
+  var tot=o.rows.reduce(function(a,r){return a+(r.v||0);},0);
+  msgs.push(o.label+': '+fi(o.rows.length)+' pedidos \u00b7 '+fm(tot));
+ });
+ recomputeMeta();
+ try{if(DATA.meta.meses.length){F.mes=DATA.meta.meses[DATA.meta.meses.length-1].key;}}catch(_){}
+ try{saveMonths();}catch(_){}
+ try{buildFilters();}catch(_){}
+ try{render();}catch(_){}
+ var tail=(errs.length?('\n\n'+errs.join('\n')):'');
+ if(typeof fbReady!=='undefined'&&fbReady){try{fbPush();}catch(_){}alert('\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail+'\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Solo Operaciones; no afecta a MacOnline ni Vertical.');}
+ else alert('\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail+'\n\n\u2713 Guardado en este navegador.');
+}
 /* ===== OPSBAR: IMPORTAR/EXPORTAR/ELIMINAR/REPORTE/PPT/NUBE (MacOnline Distribucion + Vertical Tiendas) ===== */
 var OB_REPORT=null,OB_NUBE_EDIT=false;
 function obIsAdmin(){try{return !!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin');}catch(e){return false;}}
@@ -2145,9 +2235,9 @@ function obAskPass(titulo,msg,cb){
 }
 function obImport(){
  if(!obIsAdmin()){alert('Solo el administrador puede importar información.');return;}
- var inp=document.getElementById('obFileInput');
- if(!inp){inp=document.createElement('input');inp.type='file';inp.id='obFileInput';inp.accept='.xlsx,.xls';inp.multiple=true;inp.style.display='none';document.body.appendChild(inp);
-  inp.addEventListener('change',function(e){alert('☁ La información del Excel se clasificará automáticamente por la columna UNIDAD NEGOCIO:\n • "MacOnline Distribución" → pestaña MacOnline Distribución\n • "Vertical Tiendas" → pestaña Vertical Tiendas\n\nAl terminar se GUARDARÁ en la nube (Firebase) para todos los usuarios.');handleModUpload(e);});}
+ var inp=document.getElementById('opsFileInput');
+ if(!inp){inp=document.createElement('input');inp.type='file';inp.id='opsFileInput';inp.accept='.xlsx,.xls';inp.multiple=true;inp.style.display='none';document.body.appendChild(inp);
+  inp.addEventListener('change',function(e){alert('☁ Se importará el Excel de OPERACIONES (una hoja por mes, p. ej. Resumen_Meses_Duplicados).\n\n • Solo se suman los pedidos marcados "SE SUMA" (los duplicados "NO SUMA" se omiten).\n • El VALOR se mantiene EXACTO, sin redondear.\n • Los datos se separan en Santiago y Regiones.\n • Si vuelves a importar un mes, ese mes se REEMPLAZA (no se duplica).\n\nAl terminar se GUARDARÁ en la nube (Firebase) solo para Operaciones; no afecta a MacOnline ni Vertical.');handleOpsUpload(e);});}
  inp.click();
 }
 function obExport(){
