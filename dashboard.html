@@ -489,7 +489,7 @@ function buildMarkup(){
  document.getElementById('tabs').innerHTML=TABS.map(t=>`<div class="tab grp-ops ${t[0]=='op'?'on':''} ${t[0]==='diag'?'adminonly':''}" data-t="${t[0]}">${t[2]}<span>${t[1]}</span></div>`).join('');
  document.getElementById('tabs').classList.add('g-ops');
  const _pt=document.getElementById('ptabs');if(_pt)_pt.innerHTML=`<div class="ptab on" data-g="ops"><span class="pdot"></span><span>Operaciones</span></div><div class="ptab" data-g="mod"><span class="pdot"></span><span>MacOnline y Vertical</span></div><div class="ptab" data-g="devo"><span class="pdot"></span><span>Devoluciones</span></div>`;
- const _ob=document.getElementById('opsbar');if(_ob){const _cloud='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 7 17.5"/></svg>';_ob.innerHTML=[['imp','Importar'],['exp','Exportar'],['del','Eliminar'],['rep','Reporte'],['ppt','PPT'],['nube','NUBE']].map(b=>`<button class="opsbtn ob-${b[0]}" data-ob="${b[0]}">${b[0]==='nube'?_cloud:''}<span>${b[1]}</span></button>`).join('');_ob.style.display='flex';}
+ const _ob=document.getElementById('opsbar');if(_ob){const _cloud='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 7 17.5"/></svg>';_ob.innerHTML=[['imp','Importar'],['exp','Exportar'],['gua','Guardar'],['del','Eliminar']].map(b=>`<button class="opsbtn ob-${b[0]}" data-ob="${b[0]}">${b[0]==='nube'?_cloud:''}<span>${b[1]}</span></button>`).join('');_ob.style.display='flex';}
  const M=document.getElementById('main');let h='';
  // ===== OPERACIONES =====
  h+=`<section class="section on" id="s-op"><div class="sec-head"><h2>Operaciones & Desempeño de Flota</h2><p>Rendimiento volumétrico y densidad de despachos</p></div>`;
@@ -728,6 +728,7 @@ function initAuth(){
      document.body.classList.remove('locked');
      applyRole();
      try{if(typeof render==='function')render();}catch(err){}
+     try{setTimeout(function(){if(typeof opsCheckDailyBackup==='function')opsCheckDailyBackup();},1200);}catch(_){}
      setTimeout(()=>{Object.values(CH).forEach(c=>c.resize());if(typeof resizeCur==='function')resizeCur();},120);
    }else{
      document.getElementById('loginErr').style.display='block';
@@ -2177,6 +2178,155 @@ function opsFinishUpload(all,msgs,errs){
  if(typeof fbReady!=='undefined'&&fbReady){try{fbPush();}catch(_){}alert('\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail+'\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Solo Operaciones; no afecta a MacOnline ni Vertical.');}
  else alert('\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail+'\n\n\u2713 Guardado en este navegador.');
 }
+function opsGuardar(){
+ if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
+ if(!DATA.rows.length){alert('No hay informaci\u00f3n importada para guardar. Importa primero un Excel de Operaciones.');return;}
+ try{saveMonths();}catch(_){}
+ if(typeof fbReady!=='undefined'&&fbReady&&fbDB){
+  try{fbPush();}catch(_){}
+  var nM=(DATA.meta&&DATA.meta.meses)?DATA.meta.meses.length:0;
+  var tot=DATA.rows.reduce(function(a,r){return a+(r.v||0);},0);
+  alert('\u2713 Informaci\u00f3n de OPERACIONES guardada.\n\n \u2022 '+fi(DATA.rows.length)+' pedidos en '+nM+' mes(es)\n \u2022 Valor total: '+fm(tot)+'\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Todos los usuarios la ver\u00e1n al recargar.');
+ }else{
+  alert('\u26a0 No hay conexi\u00f3n con la nube (Firebase). La informaci\u00f3n se guard\u00f3 solo en este navegador.');
+ }
+}
+function opsBuildWorkbook(){
+ var wb=XLSX.utils.book_new();
+ var rows=DATA.rows.slice().sort(function(a,b){return (a.mk||'').localeCompare(b.mk||'')||((a.sem||0)-(b.sem||0))||(a.f||'').localeCompare(b.f||'')||((a.id||0)-(b.id||0));});
+ var det=[['Mes','Semana','Fecha','Pedido','Unidad Negocio','Cliente','Direcci\u00f3n','Comuna','Zona','Transporte','Rango','Valor']];
+ rows.forEach(function(r){det.push([r.mes,'Semana '+r.sem,r.f,(r.pedido!=null?r.pedido:r.id),r.un,r.cl,r.dir||'',r.co,r.zona||'',r.tp,r.rg,r.v]);});
+ det.push([]);det.push(['','','','','','','','','','','TOTAL',rows.reduce(function(a,r){return a+(r.v||0);},0)]);
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(det),'Detalle');
+ function aggSheet(keyFn,labelCol){var m={};rows.forEach(function(r){var k=keyFn(r);if(k==null||k==='')k='Sin dato';m[k]=m[k]||{n:0,v:0,st:0,rg:0};m[k].n++;m[k].v+=r.v||0;if(r.zona==='Santiago')m[k].st+=r.v||0;else if(r.zona==='Regiones')m[k].rg+=r.v||0;});var arr=Object.keys(m).map(function(k){return {k:k,o:m[k]};});arr.sort(function(a,b){return b.o.v-a.o.v;});var aoa=[[labelCol,'Pedidos','Valor','Valor Santiago','Valor Regiones']];var T={n:0,v:0,st:0,rg:0};arr.forEach(function(x){aoa.push([x.k,x.o.n,x.o.v,x.o.st,x.o.rg]);T.n+=x.o.n;T.v+=x.o.v;T.st+=x.o.st;T.rg+=x.o.rg;});aoa.push(['TOTAL',T.n,T.v,T.st,T.rg]);return XLSX.utils.aoa_to_sheet(aoa);}
+ var mm={};rows.forEach(function(r){mm[r.mk]=mm[r.mk]||{label:r.mes,n:0,v:0,st:0,rg:0};mm[r.mk].n++;mm[r.mk].v+=r.v||0;if(r.zona==='Santiago')mm[r.mk].st+=r.v||0;else if(r.zona==='Regiones')mm[r.mk].rg+=r.v||0;});
+ var mAoa=[['Mes','Pedidos','Valor','Valor Santiago','Valor Regiones']];var MT={n:0,v:0,st:0,rg:0};Object.keys(mm).sort().forEach(function(mk){var o=mm[mk];mAoa.push([o.label,o.n,o.v,o.st,o.rg]);MT.n+=o.n;MT.v+=o.v;MT.st+=o.st;MT.rg+=o.rg;});mAoa.push(['TOTAL',MT.n,MT.v,MT.st,MT.rg]);
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(mAoa),'Por Mes');
+ var sm={};rows.forEach(function(r){var s=r.sem||0;sm[s]=sm[s]||{n:0,v:0,st:0,rg:0};sm[s].n++;sm[s].v+=r.v||0;if(r.zona==='Santiago')sm[s].st+=r.v||0;else if(r.zona==='Regiones')sm[s].rg+=r.v||0;});
+ var sAoa=[['Semana','Pedidos','Valor','Valor Santiago','Valor Regiones']];var ST={n:0,v:0,st:0,rg:0};Object.keys(sm).map(Number).sort(function(a,b){return a-b;}).forEach(function(s){var o=sm[s];sAoa.push(['Semana '+s,o.n,o.v,o.st,o.rg]);ST.n+=o.n;ST.v+=o.v;ST.st+=o.st;ST.rg+=o.rg;});sAoa.push(['TOTAL',ST.n,ST.v,ST.st,ST.rg]);
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sAoa),'Por Semana');
+ var zz={Santiago:{n:0,v:0},Regiones:{n:0,v:0},'Sin dato':{n:0,v:0}};rows.forEach(function(r){var z=zz[r.zona]?r.zona:'Sin dato';zz[z].n++;zz[z].v+=r.v||0;});
+ var zAoa=[['Zona','Pedidos','Valor']];['Santiago','Regiones','Sin dato'].forEach(function(z){if(zz[z].n)zAoa.push([z,zz[z].n,zz[z].v]);});zAoa.push(['TOTAL',rows.length,rows.reduce(function(a,r){return a+(r.v||0);},0)]);
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(zAoa),'Por Zona');
+ XLSX.utils.book_append_sheet(wb,aggSheet(function(r){return r.un;},'Unidad Negocio'),'Por Unidad');
+ XLSX.utils.book_append_sheet(wb,aggSheet(function(r){return r.cl;},'Cliente'),'Por Cliente');
+ XLSX.utils.book_append_sheet(wb,aggSheet(function(r){return r.tp;},'Transporte'),'Por Transporte');
+ return wb;
+}
+function opsExport(){
+ if(!DATA.rows.length){alert('No hay informaci\u00f3n para exportar. Importa primero un Excel de Operaciones.');return;}
+ try{XLSX.writeFile(opsBuildWorkbook(),'Operaciones_QUINTEC_'+(new Date().toISOString().slice(0,10))+'.xlsx');}catch(e){alert('No se pudo exportar: '+e.message);}
+}
+
+function opsEliminar(){
+ if(!obIsAdmin()){alert('Solo el administrador puede eliminar informaci\u00f3n.');return;}
+ if(!DATA.rows.length){alert('No hay informaci\u00f3n guardada para eliminar.');return;}
+ var meses=(DATA.meta&&DATA.meta.meses)?DATA.meta.meses.slice():[];
+ var byMk={};DATA.rows.forEach(function(r){byMk[r.mk]=byMk[r.mk]||{label:r.mes,n:0,v:0};byMk[r.mk].n++;byMk[r.mk].v+=r.v||0;});
+ if(!meses.length){meses=Object.keys(byMk).sort().map(function(mk){return {key:mk,label:byMk[mk].label};});}
+ var listHtml=meses.map(function(m){var o=byMk[m.key]||{n:0,v:0};return '<label class="opsdel-row"><input type="checkbox" class="opsdel-chk" value="'+m.key+'"><span class="opsdel-mes">'+m.label+'</span><span class="opsdel-stat">'+fi(o.n)+' pedidos \u00b7 '+fm(o.v)+'</span></label>';}).join('');
+ var ov=document.createElement('div');ov.className='ob-modal';
+ ov.innerHTML='<div class="ob-box" style="width:470px;max-width:94vw">'
+  +'<div class="ob-h">Eliminar informaci\u00f3n de la nube</div>'
+  +'<div class="ob-m">Selecciona los meses de OPERACIONES que deseas borrar de este programa y de la nube (Firebase \u00b7 quintec/meses). Esta acci\u00f3n no se puede deshacer.</div>'
+  +'<label class="opsdel-row opsdel-all"><input type="checkbox" id="opsDelAll"><span class="opsdel-mes"><b>Seleccionar todos</b></span></label>'
+  +'<div class="opsdel-list">'+listHtml+'</div>'
+  +'<div class="opsdel-pwlbl">Contrase\u00f1a</div>'
+  +'<input type="password" class="ob-inp" id="opsDelPw" maxlength="12" placeholder="\u2022\u2022\u2022\u2022" autocomplete="off">'
+  +'<div class="ob-err" id="opsDelErr" style="display:none">Contrase\u00f1a incorrecta</div>'
+  +'<div class="ob-btns"><button class="ob-c" id="opsDelCancel">Cancelar</button><button class="ob-ok" id="opsDelOk">Eliminar seleccionados</button></div>'
+  +'</div>';
+ document.body.appendChild(ov);
+ var pw=ov.querySelector('#opsDelPw');setTimeout(function(){pw.focus();},30);
+ function close(){if(ov.parentNode)document.body.removeChild(ov);}
+ ov.querySelector('#opsDelAll').onchange=function(){var on=this.checked;ov.querySelectorAll('.opsdel-chk').forEach(function(c){c.checked=on;});};
+ ov.querySelector('#opsDelCancel').onclick=close;
+ ov.querySelector('#opsDelOk').onclick=function(){
+  var sel=[].slice.call(ov.querySelectorAll('.opsdel-chk:checked')).map(function(c){return c.value;});
+  if(!sel.length){alert('Selecciona al menos un mes para eliminar.');return;}
+  if(pw.value!=='1234'){ov.querySelector('#opsDelErr').style.display='';pw.value='';pw.focus();return;}
+  var labels=sel.map(function(mk){return (byMk[mk]||{}).label||mk;});
+  if(!confirm('\u26a0 ELIMINACI\u00d3N DEFINITIVA\n\nSe borrar\u00e1n estos meses de OPERACIONES:\n \u2022 '+labels.join('\n \u2022 ')+'\n\nSe eliminar\u00e1 de este programa y de la nube (Firebase). No se puede deshacer.\n\n\u00bfDeseas continuar?'))return;
+  if(!confirm('\u00bfEst\u00e1s seguro? Esta es la \u00faltima confirmaci\u00f3n antes de borrar definitivamente.'))return;
+  DATA.rows=DATA.rows.filter(function(r){return sel.indexOf(r.mk)<0;});
+  try{recomputeMeta();}catch(_){}
+  try{if(typeof F!=='undefined'&&DATA.meta&&DATA.meta.meses&&!DATA.meta.meses.find(function(m){return m.key===F.mes;})){F.mes=DATA.meta.meses.length?DATA.meta.meses[DATA.meta.meses.length-1].key:'all';}}catch(_){}
+  try{saveMonths();}catch(_){}
+  if(typeof fbReady!=='undefined'&&fbReady&&fbDB){try{if(DATA.rows.length)fbPush();else fbClear();}catch(_){}}
+  try{buildFilters();}catch(_){}
+  try{render();}catch(_){}
+  close();
+  alert('\u2713 Meses eliminados de OPERACIONES y de la nube (Firebase):\n \u2022 '+labels.join('\n \u2022 '));
+ };
+ pw.addEventListener('keydown',function(e){if(e.key==='Enter')ov.querySelector('#opsDelOk').click();if(e.key==='Escape')close();});
+}
+
+function obBuildGroupWb(grp){
+ var rows=obRows(grp);if(!rows.length)return null;
+ var lbl=grp==='mac'?'MacOnline':'Vertical';
+ var wb=XLSX.utils.book_new();
+ var sorted=rows.slice().sort(function(a,b){return (a.zona||'').localeCompare(b.zona||'')||(a.region||'').localeCompare(b.region||'')||(a.tienda||'').localeCompare(b.tienda||'')||(a.mk||'').localeCompare(b.mk||'')||((a.sem||0)-(b.sem||0))||(a.f||'').localeCompare(b.f||'');});
+ var det=[['Zona','Regi\u00f3n','Comuna','Tienda','Mes','Semana','Fecha','Unidad Negocio','Veh\u00edculo','Rango','Pedido','Valor']];
+ sorted.forEach(function(r){det.push([r.zona,r.region,r.co,r.tienda,r.mes,'Sem '+r.sem,r.f,r.un,r.tp,r.rg,r.pedido,r.v]);});
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(det),lbl+' Detalle');
+ var agg=obAgg(grp);var mesesKeys=agg.meses.map(function(m){return m.label;});
+ var tm=[['Tienda','Zona','Regi\u00f3n'].concat(mesesKeys).concat(['Total'])];
+ var tieMap={};rows.forEach(function(r){var key=r.tienda;tieMap[key]=tieMap[key]||{zona:r.zona,region:r.region,m:{}};tieMap[key].m[r.mes]=(tieMap[key].m[r.mes]||0)+r.v;});
+ Object.keys(tieMap).sort().forEach(function(t){var o=tieMap[t];var row=[t,o.zona,o.region];var tot=0;mesesKeys.forEach(function(ml){var v=o.m[ml]||0;row.push(v);tot+=v;});row.push(tot);tm.push(row);});
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tm),lbl+' x Tienda-Mes');
+ var sm=[['Semana','Pedidos','Valor']];agg.sems.forEach(function(x){sm.push(['Semana '+x.s,x.n,x.v]);});sm.push(['TOTAL',agg.nPed,agg.totV]);
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sm),lbl+' x Semana');
+ var rz=[['Zona','Pedidos','Valor'],['Santiago',agg.byZona.Santiago.n,agg.byZona.Santiago.v],['Regiones',agg.byZona.Regiones.n,agg.byZona.Regiones.v]];
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rz),lbl+' x Zona');
+ return wb;
+}
+function opsSaveAllCloud(){
+ try{if(typeof fbReady!=='undefined'&&fbReady&&fbDB){
+   if(DATA.rows.length&&typeof fbPush==='function')fbPush();
+   if(typeof MDATA!=='undefined'&&MDATA.rows.length&&typeof modFbPush==='function')modFbPush();
+   if(typeof devoFbSave==='function')devoFbSave();
+ }}catch(_){}
+ setTimeout(function(){alert('\u2713 Respaldo diario completado.\n\nSe exportaron en Excel (por separado): Operaciones, MacOnline Distribuci\u00f3n, Vertical Tiendas y Devoluciones.\n\n\u2601 Adem\u00e1s se guard\u00f3 todo en la nube (Firebase).');},300);
+}
+function opsExportTodo(){
+ var stamp=new Date().toISOString().slice(0,10);
+ var tasks=[];
+ if(typeof DATA!=='undefined'&&DATA.rows.length){tasks.push(function(){try{XLSX.writeFile(opsBuildWorkbook(),'Operaciones_QUINTEC_'+stamp+'.xlsx');}catch(e){}});}
+ if(typeof MDATA!=='undefined'&&MDATA.rows.length){
+  tasks.push(function(){var wb=obBuildGroupWb('mac');if(wb){try{XLSX.writeFile(wb,'MacOnline_Distribucion_QUINTEC_'+stamp+'.xlsx');}catch(e){}}});
+  tasks.push(function(){var wb=obBuildGroupWb('ver');if(wb){try{XLSX.writeFile(wb,'Vertical_Tiendas_QUINTEC_'+stamp+'.xlsx');}catch(e){}}});
+ }
+ if(typeof DEVO_ITEMS!=='undefined'&&DEVO_ITEMS.length){tasks.push(function(){try{devoExport(DEVO_ITEMS.map(function(it){return it.id;}));}catch(e){}});}
+ if(!tasks.length){alert('No hay informaci\u00f3n cargada para respaldar todav\u00eda.');return;}
+ var i=0;(function next(){if(i>=tasks.length){opsSaveAllCloud();return;}try{tasks[i]();}catch(_){}i++;setTimeout(next,900);})();
+}
+function opsBackupKey(){var d=new Date();return 'quintec_backup_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function opsMarkBackupDone(){try{localStorage.setItem(opsBackupKey(),'1');}catch(_){}}
+function opsShowBackupPrompt(){
+ if(document.getElementById('opsBkOv'))return;
+ var ov=document.createElement('div');ov.id='opsBkOv';ov.className='ops-bk-ov';
+ ov.innerHTML='<div class="ops-bk-card">'
+  +'<div class="ops-bk-ic">\ud83d\udce4</div>'
+  +'<h2>Respaldo diario \u00b7 8:00 AM</h2>'
+  +'<p>Buenos d\u00edas. Es momento de <b>exportar y respaldar toda la informaci\u00f3n del programa</b> en Excel, cada m\u00f3dulo por separado:</p>'
+  +'<ul class="ops-bk-list"><li>Operaciones</li><li>MacOnline Distribuci\u00f3n</li><li>Vertical Tiendas</li><li>Devoluciones</li></ul>'
+  +'<p class="ops-bk-sub">Se descargar\u00e1n archivos Excel ordenados y, adem\u00e1s, se guardar\u00e1 todo en la nube (Firebase).</p>'
+  +'<div class="ops-bk-btns"><button class="ops-bk-no" id="opsBkNo">Ahora no</button><button class="ops-bk-yes" id="opsBkYes">S\u00ed, exportar y guardar todo</button></div>'
+  +'</div>';
+ document.body.appendChild(ov);
+ document.getElementById('opsBkNo').onclick=function(){opsMarkBackupDone();ov.remove();};
+ document.getElementById('opsBkYes').onclick=function(){opsMarkBackupDone();ov.remove();opsExportTodo();};
+}
+function opsCheckDailyBackup(){
+ try{
+  if(!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin'))return;
+  var d=new Date();var dow=d.getDay();if(dow===0||dow===6)return;
+  if(d.getHours()<8)return;
+  if(localStorage.getItem(opsBackupKey()))return;
+  opsShowBackupPrompt();
+ }catch(_){}
+}
+
 /* ===== OPSBAR: IMPORTAR/EXPORTAR/ELIMINAR/REPORTE/PPT/NUBE (MacOnline Distribucion + Vertical Tiendas) ===== */
 var OB_REPORT=null,OB_NUBE_EDIT=false;
 function obIsAdmin(){try{return !!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin');}catch(e){return false;}}
@@ -2394,10 +2544,10 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".nube-cols{display:flex;gap:16px;flex-wrap:wrap}.nube-col{flex:1;min-width:300px;background:#fff;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden}"
 +".nube-h{padding:12px 16px;color:#fff;font-weight:700;font-size:15px}.nube-tot{padding:10px 16px;background:#f6f9fc;font-size:12.5px;color:#4a5968;font-weight:600;border-bottom:1px solid #eef2f6}"
 +".nube-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f3f7}.nube-mes{flex:1;font-weight:600;color:#1f3a59;font-size:13px}.nube-stat{font-size:12px;color:#6b7684}"
-+".nube-del{background:#b4442f;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer}.nube-empty{padding:16px;color:#8a95a1;font-size:13px}";
++".nube-del{background:#b4442f;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer}.nube-empty{padding:16px;color:#8a95a1;font-size:13px}"+".opsdel-list{max-height:240px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;margin:4px 0 12px;background:#fbfcfe}"+".opsdel-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid #eef2f7;font-size:13px;color:#1f2a37;cursor:pointer}"+".opsdel-row:last-child{border-bottom:0}.opsdel-row input{width:16px;height:16px;cursor:pointer;accent-color:#1f3a59}"+".opsdel-all{border:0;background:transparent;padding:2px 2px 8px}"+".opsdel-mes{flex:1;font-weight:600;color:#1f3a59}.opsdel-stat{font-size:11.5px;color:#6b7684;white-space:nowrap}"+".opsdel-pwlbl{font-size:12.5px;color:#44505e;font-weight:600;margin-bottom:5px}"+".ops-bk-ov{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,rgba(15,30,55,.97),rgba(31,58,89,.97));display:flex;align-items:center;justify-content:center;padding:20px}"+".ops-bk-card{background:#fff;border-radius:18px;max-width:560px;width:100%;padding:34px 40px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center;font-family:inherit}"+".ops-bk-ic{font-size:46px;line-height:1}"+".ops-bk-card h2{margin:12px 0 10px;font-size:23px;color:#1f3a59}"+".ops-bk-card p{font-size:14.5px;color:#3a4654;line-height:1.55;margin:8px 0}"+".ops-bk-sub{font-size:12.5px !important;color:#6b7684 !important}"+".ops-bk-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;list-style:none;padding:6px 0 2px;margin:10px 0}"+".ops-bk-list li{background:#eef3f9;color:#1f3a59;font-weight:600;font-size:13px;padding:7px 14px;border-radius:20px}"+".ops-bk-btns{display:flex;gap:12px;justify-content:center;margin-top:20px}"+".ops-bk-no{background:#eef1f5;color:#44505e;border:0;border-radius:9px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer}"+".ops-bk-yes{background:#1f3a59;color:#fff;border:0;border-radius:9px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(31,58,89,.35)}"+".ops-bk-yes:hover{background:#264a73}";
 (function(){
  try{var st=document.createElement('style');st.textContent=OB_REP_CSS;document.head.appendChild(st);}catch(e){}
- document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('#opsbar [data-ob]'):null;if(!b)return;var k=b.getAttribute('data-ob');if(k==='imp')obImport();else if(k==='exp')obExport();else if(k==='del')obDelete();else if(k==='rep')obReporte();else if(k==='ppt')obPPT();else if(k==='nube')obNube();});
+ document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('#opsbar [data-ob]'):null;if(!b)return;var k=b.getAttribute('data-ob');if(k==='imp')obImport();else if(k==='exp')opsExport();else if(k==='gua')opsGuardar();else if(k==='del')opsEliminar();}); try{setInterval(function(){if(typeof opsCheckDailyBackup==='function')opsCheckDailyBackup();},60000);}catch(_){}
 })();
 /* ===== WIRE ===== */
 function wireMod(){
