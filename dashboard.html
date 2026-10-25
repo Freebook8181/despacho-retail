@@ -65,11 +65,15 @@ html,body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans
 /* MacOnline y Vertical: fondo crema */
 .ptab[data-g="mod"].on{background:#f8f1df;color:#7a3e94;border-color:#e9dcba}
 .ptab[data-g="mod"] .pdot{background:#8e44ad}
+/* Devoluciones: su propia pestaña padre */
+.ptab[data-g="devo"].on{background:#e6f7f2;color:#0d6e5a;border-color:#16a085}
+.ptab[data-g="devo"] .pdot{background:#16a085}
 /* la barra de sub-pestañas se pega al padre */
 nav.tabs#tabs{margin-top:0;border-top:2px solid rgba(255,255,255,.12);padding-top:10px}
 /* mostrar solo las sub-pestañas del grupo activo */
-#tabs.g-ops .grp-mod{display:none}
-#tabs.g-mod .grp-ops{display:none}
+#tabs.g-ops .grp-mod,#tabs.g-ops .grp-devo{display:none}
+#tabs.g-mod .grp-ops,#tabs.g-mod .grp-devo{display:none}
+#tabs.g-devo .grp-ops,#tabs.g-devo .grp-mod{display:none}
 /* ===== Barra de acciones del módulo Operaciones ===== */
 .opsbar{display:none;gap:8px;flex-wrap:wrap;margin-top:12px}
 .opsbtn{display:flex;align-items:center;gap:7px;font-family:'IBM Plex Sans';font-size:12.5px;font-weight:600;color:#eaf1f8;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);padding:8px 15px;border-radius:8px;cursor:pointer;transition:.16s}
@@ -79,6 +83,10 @@ nav.tabs#tabs{margin-top:0;border-top:2px solid rgba(255,255,255,.12);padding-to
 .opsbtn.ob-ppt{background:rgba(200,154,78,.4);border-color:rgba(216,173,96,.6);color:#2a2208}
 .opsbtn.ob-nube{background:rgba(43,108,176,.6);border-color:rgba(110,160,220,.6);color:#eaf4ff}
 .opsbtn.ob-nube svg{width:16px;height:16px;flex:0 0 auto}
+.modactbtn{font-family:'IBM Plex Sans';font-size:12.5px;font-weight:700;letter-spacing:.3px;padding:8px 16px;border-radius:9px;cursor:pointer;transition:.16s;border:1.5px solid}
+.modactbtn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.modactbtn.mab-rep{background:#2b4a6f;border-color:#2b4a6f;color:#fff}
+.modactbtn.mab-ppt{background:#c89a4e;border-color:#c89a4e;color:#2a2208}
 /* ===== FILTER BAR ===== */
 .filters{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(9px);border-bottom:1px solid var(--line);box-shadow:0 2px 12px rgba(23,42,67,.05);margin-top:-70px;border-radius:12px;margin-bottom:20px}
 .filters .wrap{padding:11px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -432,10 +440,10 @@ function catFlota(tp){return esProp(tp)?'Flota propia':'Tercerizada / Externa';}
 const F={mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',cl:'all',co:'all'};
 let CUR='op';
 let CURG='ops';
-const GROUP_OF={op:'ops',fin:'ops',log:'ops',aud:'ops',cmp:'ops',diag:'ops',mac:'mod',ver:'mod',devo:'mod'};
+const GROUP_OF={op:'ops',fin:'ops',log:'ops',aud:'ops',cmp:'ops',diag:'ops',mac:'mod',ver:'mod',devo:'devo'};
 function setGroup(g){
  CURG=g;
- const tb=document.getElementById('tabs');if(tb){tb.classList.remove('g-ops','g-mod');tb.classList.add('g-'+g);}
+ const tb=document.getElementById('tabs');if(tb){tb.classList.remove('g-ops','g-mod','g-devo');tb.classList.add('g-'+g);}
  const ob=document.getElementById('opsbar');if(ob&&typeof obUpdateBar==='function')obUpdateBar();else if(ob)ob.style.display='flex';
  document.querySelectorAll('.ptab').forEach(p=>p.classList.toggle('on',p.dataset.g===g));
 }
@@ -467,7 +475,7 @@ function card(id,icon,title,sub,cls,detail){return `<div class="card"><h3>${icon
 function buildMarkup(){
  document.getElementById('tabs').innerHTML=TABS.map(t=>`<div class="tab grp-ops ${t[0]=='op'?'on':''} ${t[0]==='diag'?'adminonly':''}" data-t="${t[0]}">${t[2]}<span>${t[1]}</span></div>`).join('');
  document.getElementById('tabs').classList.add('g-ops');
- const _pt=document.getElementById('ptabs');if(_pt)_pt.innerHTML=`<div class="ptab on" data-g="ops"><span class="pdot"></span><span>Operaciones</span></div><div class="ptab" data-g="mod"><span class="pdot"></span><span>MacOnline y Vertical</span></div>`;
+ const _pt=document.getElementById('ptabs');if(_pt)_pt.innerHTML=`<div class="ptab on" data-g="ops"><span class="pdot"></span><span>Operaciones</span></div><div class="ptab" data-g="mod"><span class="pdot"></span><span>MacOnline y Vertical</span></div><div class="ptab" data-g="devo"><span class="pdot"></span><span>Devoluciones</span></div>`;
  const _ob=document.getElementById('opsbar');if(_ob){const _cloud='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 7 17.5"/></svg>';_ob.innerHTML=[['imp','Importar'],['exp','Exportar'],['del','Eliminar'],['rep','Reporte'],['ppt','PPT'],['nube','NUBE']].map(b=>`<button class="opsbtn ob-${b[0]}" data-ob="${b[0]}">${b[0]==='nube'?_cloud:''}<span>${b[1]}</span></button>`).join('');_ob.style.display='flex';}
  const M=document.getElementById('main');let h='';
  // ===== OPERACIONES =====
@@ -1893,7 +1901,11 @@ function buildModMarkup(){
   tabsEl.insertAdjacentHTML('beforeend',
    `<div class="tab modtab grp-mod" data-t="mac" style="background:${MOD_COLOR.mac}1f;border:1.5px solid ${MOD_COLOR.mac};color:${MOD_COLOR.mac};font-weight:700;border-radius:9px"><span>MacOnline Distribución</span></div>`+
    `<div class="tab modtab grp-mod" data-t="ver" style="background:${MOD_COLOR.ver}1f;border:1.5px solid ${MOD_COLOR.ver};color:${MOD_COLOR.ver};font-weight:700;border-radius:9px"><span>Vertical Tiendas</span></div>`+
-   `<div class="tab modtab grp-mod" data-t="devo" style="background:${MOD_COLOR.devo}1f;border:1.5px solid ${MOD_COLOR.devo};color:${MOD_COLOR.devo};font-weight:700;border-radius:9px"><span>Devoluciones</span></div>`);
+   `<div class="tab modtab grp-devo" data-t="devo" style="background:${MOD_COLOR.devo}1f;border:1.5px solid ${MOD_COLOR.devo};color:${MOD_COLOR.devo};font-weight:700;border-radius:9px"><span>Devoluciones</span></div>`+
+   `<button type="button" class="modactbtn grp-mod mab-rep" id="tabRep">📄 Reporte</button>`+
+   `<button type="button" class="modactbtn grp-mod mab-ppt" id="tabPpt">📊 PPT</button>`);
+  var tR=document.getElementById('tabRep');if(tR)tR.addEventListener('click',function(e){e.stopPropagation();if(typeof obReporte==='function')obReporte();});
+  var tP=document.getElementById('tabPpt');if(tP)tP.addEventListener('click',function(e){e.stopPropagation();if(typeof obPPT==='function')obPPT();});
  }
 }
 /* ===== FILTRO: POBLAR CONTROLES ===== */
@@ -2066,7 +2078,7 @@ function handleModUpload(e){
 /* ===== OPSBAR: IMPORTAR/EXPORTAR/ELIMINAR/REPORTE/PPT/NUBE (MacOnline Distribucion + Vertical Tiendas) ===== */
 var OB_REPORT=null,OB_NUBE_EDIT=false;
 function obIsAdmin(){try{return !!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin');}catch(e){return false;}}
-function obUpdateBar(){var ob=document.getElementById('opsbar');if(!ob)return;var show=(CURG==='ops')||(CUR==='mac');ob.style.display=show?'flex':'none';}
+function obUpdateBar(){var ob=document.getElementById('opsbar');if(!ob)return;var show=(CURG==='ops');ob.style.display=show?'flex':'none';}
 function obRows(grp){return MDATA.rows.filter(function(r){return r.grp===grp;});}
 function obAgg(grp){
  var rows=obRows(grp);
