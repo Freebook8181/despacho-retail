@@ -449,6 +449,16 @@ function setGroup(g){
 }
 function activateGroup(g){
  setGroup(g);
+ // Devoluciones no tiene sub-pestañas: se activa su sección directamente (sin mostrar un botón "Devoluciones" abajo).
+ if(g==='devo'){
+  CUR='devo';
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.section').forEach(sx=>sx.classList.toggle('on',sx.id==='s-devo'));
+  var fl=document.querySelector('.filters');if(fl)fl.style.display='none';
+  if(typeof resizeCur==='function')resizeCur();
+  if(typeof updateEmptyState==='function')updateEmptyState();
+  return;
+ }
  const sub=[...document.querySelectorAll('#tabs .tab.grp-'+g)];
  const vis=sub.find(t=>t.style.display!=='none');
  if(vis)vis.click();
@@ -1901,7 +1911,6 @@ function buildModMarkup(){
   tabsEl.insertAdjacentHTML('beforeend',
    `<div class="tab modtab grp-mod" data-t="mac" style="background:${MOD_COLOR.mac}1f;border:1.5px solid ${MOD_COLOR.mac};color:${MOD_COLOR.mac};font-weight:700;border-radius:9px"><span>MacOnline Distribución</span></div>`+
    `<div class="tab modtab grp-mod" data-t="ver" style="background:${MOD_COLOR.ver}1f;border:1.5px solid ${MOD_COLOR.ver};color:${MOD_COLOR.ver};font-weight:700;border-radius:9px"><span>Vertical Tiendas</span></div>`+
-   `<div class="tab modtab grp-devo" data-t="devo" style="background:${MOD_COLOR.devo}1f;border:1.5px solid ${MOD_COLOR.devo};color:${MOD_COLOR.devo};font-weight:700;border-radius:9px"><span>Devoluciones</span></div>`+
    `<button type="button" class="modactbtn grp-mod mab-rep" id="tabRep">📄 Reporte</button>`+
    `<button type="button" class="modactbtn grp-mod mab-ppt" id="tabPpt">📊 PPT</button>`);
   var tR=document.getElementById('tabRep');if(tR)tR.addEventListener('click',function(e){e.stopPropagation();if(typeof obReporte==='function')obReporte();});
