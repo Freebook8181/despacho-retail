@@ -27,6 +27,8 @@ html,body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans
 .wrap{max-width:1340px;margin:0 auto;padding:0 22px}
 /* ===== HERO ===== */
 .hero{background:linear-gradient(135deg,var(--navy-d),var(--navy) 60%,#355a85);color:#eaf1f8;padding:30px 0 74px;position:relative;overflow:hidden}
+/* En MacOnline y Vertical y en Devoluciones no hay barra de filtros: quitamos el espacio azul sobrante bajo los botones */
+body.grp-mod .hero,body.grp-devo .hero{padding-bottom:16px}
 .hero:before{content:'';position:absolute;inset:0;background:radial-gradient(900px 300px at 85% -40%,rgba(90,180,160,.28),transparent 60%);pointer-events:none}
 .hero .wrap{position:relative;z-index:2}
 .brandrow{display:flex;align-items:center;gap:12px;margin-bottom:18px}
@@ -444,6 +446,7 @@ const GROUP_OF={op:'ops',fin:'ops',log:'ops',aud:'ops',cmp:'ops',diag:'ops',mac:
 function setGroup(g){
  CURG=g;
  const tb=document.getElementById('tabs');if(tb){tb.classList.remove('g-ops','g-mod','g-devo');tb.classList.add('g-'+g);}
+ try{document.body.classList.remove('grp-ops','grp-mod','grp-devo');document.body.classList.add('grp-'+g);}catch(_){}
  const ob=document.getElementById('opsbar');if(ob&&typeof obUpdateBar==='function')obUpdateBar();else if(ob)ob.style.display='flex';
  document.querySelectorAll('.ptab').forEach(p=>p.classList.toggle('on',p.dataset.g===g));
 }
