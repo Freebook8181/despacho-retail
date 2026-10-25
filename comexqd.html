@@ -469,15 +469,14 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <div class="toolbar">
     <button class="ib" onclick="limpiarTodo()" aria-label="Limpiar todo"><span class="ic">🧹</span><span class="ibl">Limpiar</span></button>
     <button class="ib" onclick="exportPPT()" aria-label="Exportar PPT"><span class="ic">📑</span><span class="ibl">Exportar PPT</span></button>
-    <span class="st">Limpiar todo · el <b>Dólar Observado</b> se conserva y se actualiza a diario desde internet</span>
+    <span class="st">Limpiar todo los datos y gráficos de la planilla</span>
   </div>
   <h2 class="sec">Indicadores clave &amp; métricas</h2>
   <div class="kpis" id="kpis"></div>
   <h2 class="sec" style="cursor:pointer;user-select:none" onclick="toggleAlerts()">Alertas operativas<span id="alertsArrow" style="margin-left:auto;font-size:13px;transition:transform .2s">▼</span></h2>
   <div class="alerts" id="alerts"></div>
-  <h2 class="sec">Control de tiempos del ciclo COMEX</h2>
   <div id="chartNotice" style="display:none"></div>
-  <p class="narr">Gráficos construidos con <b>TODA</b> la planilla (todas las PO, sin excepciones). Los valores se muestran con el monto <b>real</b> de la planilla: <b>USD</b> con separador de miles por coma (ej. 19,790) y <b>pesos</b> con separador de miles por punto (ej. $19.790).</p>
+  <p class="narr">Gráficos construidos con <b>TODA</b> la planilla (todas las PO, sin excepciones). Los valores se muestran con el monto <b>real</b> de la planilla en <b>USD</b>, con separador de miles por coma (ej. 19,790).</p>
   <div id="execSummary" class="exec-wrap"></div>
   <div class="grid g2">
     <div class="panel">
@@ -740,12 +739,9 @@ function fmtMoneyExact(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(
 function fmtUSDk(v){v=+v||0;return (v/1000).toLocaleString('en-US',{maximumFractionDigits:0})+'k USD';}
 /* USD exacto para gráficos: 1,100 USD (miles con coma, SIN redondear ni abreviar, sin forzar decimales) */
 function fmtUSDg(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('en-US',{maximumFractionDigits:2})+' USD';}
-/* CLP exacto: $1.100 (miles con punto, sin decimales). Convierte con el dólar observado cargado; '' si no hay tipo de cambio. */
-function fmtCLPg(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;if(!DOLAR)return '';return '$'+Math.round(v*DOLAR).toLocaleString('es-CL',{maximumFractionDigits:0});}
-/* Dual USD · CLP para tooltips de gráficos */
-function fmtDual(v){const c=fmtCLPg(v);return c?(fmtUSDg(v)+' · '+c):fmtUSDg(v);}
-/* Dual multilínea [USD, CLP] para datalabels */
-function fmtDualArr(v){const c=fmtCLPg(v);return c?[fmtUSDg(v),c]:[fmtUSDg(v)];}
+/* Gráficos SOLO en USD (sin conversión a pesos chilenos) */
+function fmtDual(v){return fmtUSDg(v);}
+function fmtDualArr(v){return [fmtUSDg(v)];}
 /* Unidades: 1.234.567 (miles con punto), SIN redondear (conserva decimales si los hubiera) */
 function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('es-CL',{maximumFractionDigits:20});}
 function numClean(v){return parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;}
@@ -840,8 +836,6 @@ function startApp(u){
   if($('btnBorrarNube'))$('btnBorrarNube').style.display=priv?'inline-flex':'none'; // BORRAR dentro de la NUBE: solo administrador
   loadCloud();
   loadLock(); // escucha el estado de bloqueo del sistema en tiempo real
-  fetchDolar();
-  if(!window._dolarTimer)window._dolarTimer=setInterval(fetchDolar,6*60*60*1000); // reconecta a internet (dólar observado) a diario
   go('graficos');
   logAct('sesion','Inicio de sesión');
 }
@@ -963,6 +957,9 @@ function rowHasRed(r){return rowRedKeys(r).length>0;}
 function anyRed(){return ROWS.some(rowHasRed);}
 function rowComplete(r){return COLS.every(c=>c.calc?true:(''+(r[c.k]==null?'':r[c.k])).trim()!=='');}
 function rowsParaGraficos(){return ROWS.filter(r=>rowComplete(r)&&!rowHasRed(r));}
+/* Filas que SÍ se traspasan a los gráficos/KPIs: TODAS menos las que tengan al menos
+   una celda en ROJO (una fila con error de fechas no contamina los análisis). */
+function gRows(){return ROWS.filter(r=>!rowHasRed(r));}
 function validateConf(ri){
   const r=ROWS[ri];revalRow(ri);
   // Aviso NO bloqueante: solo se re-evalúa el resaltado en rojo (con tooltip). No se usa alert() para que el usuario pueda cambiar la fecha sin interrupciones.
@@ -1209,38 +1206,18 @@ function logAct(action,detail){
   if(!CURRENT)return;
   db.ref('comex_qd_actividad').push({email:CURRENT.email,name:CURRENT.name,action:action,detail:detail,ts:Date.now()}).catch(()=>{});
 }
-/* ===== Exportar planilla a Excel REAL (.xlsx con SheetJS) ===== */
+/* ===== Exportar planilla a Excel REAL (.xlsx) =====
+   Usa EXACTAMENTE el mismo diseño/colores/formato que la exportación de planillas
+   guardadas (función exportarPlanillaExcel con ExcelJS): título azul marino,
+   encabezado FF0F2744 con texto blanco, filas alternadas blanco/FFF6F9FD,
+   montos #,##0.00 y cantidades #,##0 alineados a la derecha, panel congelado. */
 function exportExcel(){
   if(anyRed()){alert('⛔ No se puede exportar: hay fechas en ROJO en la planilla.\n\nCorrija las celdas marcadas en rojo (FECHA CONFIRMACION mayor que DISPONIBILIDAD ORIGEN, o fechas fuera de secuencia) antes de exportar.');return;}
-  // Encabezados + filas; los montos y cantidades van como NÚMERO para que Excel permita fórmulas
-  const aoa=[COLS.map(c=>c.t)];
-  ROWS.forEach(r=>{
-    aoa.push(COLS.map(c=>{
-      let v=(r[c.k]==null?'':r[c.k]);
-      if(v==='')return '';
-      if(c.money)return usdNum(v);
-      if(c.num)return numClean(v);
-      return ''+v;
-    }));
-  });
-  const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols']=COLS.map(c=>({wch:Math.max(12,(''+(c.t||'')).length+2)}));
-  // formato de número para columnas de dinero (#,##0) y cantidades
-  const nrows=ROWS.length;
-  COLS.forEach((c,ci)=>{
-    if(!c.money&&!c.num)return;
-    for(let ri=1;ri<=nrows;ri++){
-      const addr=XLSX.utils.encode_cell({r:ri,c:ci});const cell=ws[addr];
-      if(cell&&typeof cell.v==='number'){cell.t='n';cell.z=c.money?'#,##0.00':'#,##0';}
-    }
-  });
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'COMEX_QD');
-  const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-  const mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-  const blob=new Blob([out],{type:mime});
-  const fname='COMEX_QD_'+new Date().toISOString().slice(0,10)+'.xlsx';
-  saveBlob(blob,fname,mime,'.xlsx','Libro de Excel');
+  const f=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const fname='COMEX_QD_'+f.toISOString().slice(0,10)+'_'+pad(f.getHours())+pad(f.getMinutes())+'.xlsx';
+  const rows=(Array.isArray(ROWS)?ROWS:[]).map(r=>Object.assign(rowObj(),r));
+  exportarPlanillaExcel(rows,fname,'COMEX QD · Planilla del '+f.toLocaleString('es-CL'));
   logAct('exportar','Exportó planilla a Excel (.xlsx)');
 }
 /* Guarda un Blob: si el navegador soporta el selector de carpeta (File System Access API)
@@ -1338,14 +1315,14 @@ function estado(r){
   return 'Pendiente';
 }
 const ESTCLASS={'Disponible':'disp','En CD':'tran','En tránsito':'tran','Pendiente':'pend','Atrasado':'atr'};
-function byZona(){const m={};ROWS.forEach(r=>{const z=r.zona||'—';m[z]=(m[z]||0)+usdNum(r.usd);});return m;}
-function unidByZona(){const m={};ROWS.forEach(r=>{const z=r.zona||'—';m[z]=(m[z]||0)+numClean(r.unid);});return m;}
-function byProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+usdNum(r.usd);});return m;}
-function byEstado(){const m={};ROWS.forEach(r=>{if(isEmptyRow(r))return;const e=estado(r);m[e]=(m[e]||0)+1;});return m;}
-function byMes(){const m={};ROWS.forEach(r=>{const d=r.eta||r.cost||r.lcd||'';const dd=(''+d).match(/^\d{4}-\d{2}/);if(dd){m[dd[0]]=(m[dd[0]]||0)+usdNum(r.usd);}});return m;}
-function totUSD(){return ROWS.reduce((a,r)=>a+usdNum(r.usd),0);}
-function totUnid(){return ROWS.reduce((a,r)=>a+numClean(r.unid),0);}
-function avgTiempo(){const v=ROWS.map(r=>numClean(computeTtot(r))).filter(x=>x>0);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0;}
+function byZona(){const m={};gRows().forEach(r=>{const z=r.zona||'—';m[z]=(m[z]||0)+usdNum(r.usd);});return m;}
+function unidByZona(){const m={};gRows().forEach(r=>{const z=r.zona||'—';m[z]=(m[z]||0)+numClean(r.unid);});return m;}
+function byProv(){const m={};gRows().forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+usdNum(r.usd);});return m;}
+function byEstado(){const m={};gRows().forEach(r=>{if(isEmptyRow(r))return;const e=estado(r);m[e]=(m[e]||0)+1;});return m;}
+function byMes(){const m={};gRows().forEach(r=>{const d=r.eta||r.cost||r.lcd||'';const dd=(''+d).match(/^\d{4}-\d{2}/);if(dd){m[dd[0]]=(m[dd[0]]||0)+usdNum(r.usd);}});return m;}
+function totUSD(){return gRows().reduce((a,r)=>a+usdNum(r.usd),0);}
+function totUnid(){return gRows().reduce((a,r)=>a+numClean(r.unid),0);}
+function avgTiempo(){const v=gRows().map(r=>numClean(computeTtot(r))).filter(x=>x>0);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0;}
 /* Una PO está COMPLETA cuando todas las columnas de la planilla tienen dato (TIEMPO TOTAL se calcula solo).
    Si hay cualquier campo vacío o marcado "Pendiente", la PO se considera PENDIENTE. */
 function rowComplete(r){
@@ -1360,8 +1337,8 @@ function rowComplete(r){
 /* Una fila VACÍA (sin ningún dato escrito) no es una PO: no cuenta como activa ni como pendiente.
    Esto evita que la primera fila en blanco aparezca como "1 pendiente" cuando no hay datos. */
 function isEmptyRow(r){return COLS.every(c=>c.calc?true:(''+(r[c.k]==null?'':r[c.k])).trim()==='');}
-function poActivas(){return ROWS.filter(r=>!isEmptyRow(r)&&rowComplete(r)).length;}
-function poPendientes(){return ROWS.filter(r=>!isEmptyRow(r)&&!rowComplete(r)).length;}
+function poActivas(){return gRows().filter(r=>!isEmptyRow(r)&&rowComplete(r)).length;}
+function poPendientes(){return gRows().filter(r=>!isEmptyRow(r)&&!rowComplete(r)).length;}
 /* ===== Métricas de tiempos del ciclo COMEX ===== */
 // diferencia firmada en días (puede ser negativa); '' si falta algún dato
 function diffSign(a,b){
@@ -1379,16 +1356,16 @@ const TRAMOS=[
   {a:'rpa',  b:'lcd',  lb:'Retiro P/A→\nLlegada a CD'},
   {a:'lcd',  b:'dinv', lb:'Llegada CD→\nDisp. inventario'}
 ];
-function tramoAvg(){return TRAMOS.map(t=>{let s=0,n=0;ROWS.forEach(r=>{const d=diffDias(r[t.a],r[t.b]);if(d!==''){s+=d;n++;}});return {lb:t.lb,d:n?Math.round(s/n):0,n};});}
+function tramoAvg(){return TRAMOS.map(t=>{let s=0,n=0;gRows().forEach(r=>{const d=diffDias(r[t.a],r[t.b]);if(d!==''){s+=d;n++;}});return {lb:t.lb,d:n?Math.round(s/n):0,n};});}
 function cuelloBotella(){const t=tramoAvg().filter(x=>x.n>0);if(!t.length)return null;return t.reduce((a,b)=>b.d>a.d?b:a);}
 // TIEMPO TOTAL promedio por clave (proveedor / zona)
-function ttotByKey(key){const sum={},cnt={};ROWS.forEach(r=>{const d=numClean(computeTtot(r));if(d>0){const k=r[key]||'—';sum[k]=(sum[k]||0)+d;cnt[k]=(cnt[k]||0)+1;}});const m={};Object.keys(sum).forEach(k=>m[k]=Math.round(sum[k]/cnt[k]));return m;}
+function ttotByKey(key){const sum={},cnt={};gRows().forEach(r=>{const d=numClean(computeTtot(r));if(d>0){const k=r[key]||'—';sum[k]=(sum[k]||0)+d;cnt[k]=(cnt[k]||0)+1;}});const m={};Object.keys(sum).forEach(k=>m[k]=Math.round(sum[k]/cnt[k]));return m;}
 function ttotByProv(){return ttotByKey('prov');}
 function ttotByZona(){return ttotByKey('zona');}
 // Costo unitario (USD/unidad) por proveedor
-function costUnitByProv(){const su={},sd={};ROWS.forEach(r=>{const p=r.prov||'—';su[p]=(su[p]||0)+usdNum(r.usd);sd[p]=(sd[p]||0)+numClean(r.unid);});const m={};Object.keys(su).forEach(p=>{if(sd[p]>0)m[p]=su[p]/sd[p];});return m;}
+function costUnitByProv(){const su={},sd={};gRows().forEach(r=>{const p=r.prov||'—';su[p]=(su[p]||0)+usdNum(r.usd);sd[p]=(sd[p]||0)+numClean(r.unid);});const m={};Object.keys(su).forEach(p=>{if(sd[p]>0)m[p]=su[p]/sd[p];});return m;}
 // Desviación de ETA (llegada a CD − ETA) por PO, con signo (+atraso / −adelanto)
-function etaDev(){return ROWS.map(r=>({po:r.po,dev:diffSign(r.eta,r.lcd)})).filter(x=>x.dev!=='');}
+function etaDev(){return gRows().map(r=>({po:r.po,dev:diffSign(r.eta,r.lcd)})).filter(x=>x.dev!=='');}
 function etaOnTimePct(){const d=etaDev();if(!d.length)return null;return Math.round(d.filter(x=>x.dev<=0).length/d.length*100);}
 function etaDevAvg(){const d=etaDev();if(!d.length)return null;return Math.round(d.reduce((a,b)=>a+b.dev,0)/d.length);}
 // Comparativa por modo de transporte (Marítimo / Aéreo): USD total y días promedio
@@ -1404,126 +1381,19 @@ function _normTipo(v){
   if(/terr|land|cami|truck|road|carret/.test(u))return 'Terrestre';
   return s.charAt(0).toUpperCase()+s.slice(1);
 }
-function byModo(){const su={},st={},ct={};ROWS.forEach(r=>{const m=_normTipo(r.tipo);su[m]=(su[m]||0)+usdNum(r.usd);const d=numClean(computeTtot(r));if(d>0){st[m]=(st[m]||0)+d;ct[m]=(ct[m]||0)+1;}});const modos=[...new Set(Object.keys(su).concat(Object.keys(st)))].filter(m=>m!=='—');return modos.map(m=>({modo:m,usd:su[m]||0,dias:ct[m]?Math.round(st[m]/ct[m]):0}));}
+function byModo(){const su={},st={},ct={};gRows().forEach(r=>{const m=_normTipo(r.tipo);su[m]=(su[m]||0)+usdNum(r.usd);const d=numClean(computeTtot(r));if(d>0){st[m]=(st[m]||0)+d;ct[m]=(ct[m]||0)+1;}});const modos=[...new Set(Object.keys(su).concat(Object.keys(st)))].filter(m=>m!=='—');return modos.map(m=>({modo:m,usd:su[m]||0,dias:ct[m]?Math.round(st[m]/ct[m]):0}));}
 // Capital MOVILIZADO (PO con TODOS los cuadros completos) vs EN TRÁNSITO (PO con cuadros incompletos)
-function valorEnTransito(){let trans=0,disp=0;ROWS.forEach(r=>{const v=usdNum(r.usd);if(rowComplete(r))disp+=v;else trans+=v;});return {trans,disp};}
+function valorEnTransito(){let trans=0,disp=0;gRows().forEach(r=>{const v=usdNum(r.usd);if(rowComplete(r))disp+=v;else trans+=v;});return {trans,disp};}
 function mesLabel(ym){const M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];const p=ym.split('-');const i=parseInt(p[1],10)-1;return (M[i]||p[1])+' '+p[0];}
-function trendByMonth(){const su={},sd={},ct={};ROWS.forEach(r=>{const d=(''+(r.dinv||'')).match(/^(\d{4}-\d{2})/);if(!d)return;const k=d[1];su[k]=(su[k]||0)+usdNum(r.usd);const t=numClean(computeTtot(r));if(t>0){sd[k]=(sd[k]||0)+t;ct[k]=(ct[k]||0)+1;}});const keys=Object.keys(su).sort();return keys.map(k=>({mes:k,lb:mesLabel(k),usd:su[k]||0,dias:ct[k]?Math.round(sd[k]/ct[k]):0,n:ct[k]||0}));}
+function trendByMonth(){const su={},sd={},ct={};gRows().forEach(r=>{const d=(''+(r.dinv||'')).match(/^(\d{4}-\d{2})/);if(!d)return;const k=d[1];su[k]=(su[k]||0)+usdNum(r.usd);const t=numClean(computeTtot(r));if(t>0){sd[k]=(sd[k]||0)+t;ct[k]=(ct[k]||0)+1;}});const keys=Object.keys(su).sort();return keys.map(k=>({mes:k,lb:mesLabel(k),usd:su[k]||0,dias:ct[k]?Math.round(sd[k]/ct[k]):0,n:ct[k]||0}));}
 
-/* ===== KPIs ===== */
-let DOLAR=null, DOLAR_FECHA=null, DOLAR_ERR=false, DOLAR_MANUAL=false;
-let DOLAR_YEAR={}; // { '2026': {'2026-06-18':883.46,...} | 'pending' | 'err' }  cache del año completo
-/* "Fecha" de la fila para valorizar en CLP: se usa la fecha de COSTEO (cuando se valoriza la
-   importacion); si esta vacia, se cae a la siguiente fecha disponible de la fila. */
-const FECHA_VAL_COLS=['cost','dinv','lcd','rpa','fdisp','eta','rorig','dorig','fconf'];
-function rowFechaVal(r){
-  for(const k of FECHA_VAL_COLS){
-    const m=(''+(r[k]==null?'':r[k])).match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if(m)return m[1]+'-'+m[2]+'-'+m[3];
-  }
-  return null;
-}
-function _prevDay(y){const p=y.split('-');const d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-/* RENDIMIENTO: se descarga UNA sola vez TODO el año del dólar observado (mindicador.cl/api/dolar/AAAA)
-   y se guarda en caché. Así no se hace una llamada por cada fecha (lo que tardaba minutos) sino 1 por año.
-   El re-dibujo del KPI se agrupa (debounce) para no re-renderizar en cada respuesta. */
-let _histT=null;
-function _rerenderDolarDebounced(){if(_histT)return;_histT=setTimeout(()=>{_histT=null;if($('kpis')&&$('kpis').innerHTML)renderKpis();},200);}
-function loadDolarYear(y){
-  if(!y||(y in DOLAR_YEAR))return;
-  DOLAR_YEAR[y]='pending';
-  fetch('https://mindicador.cl/api/dolar/'+y,{cache:'force-cache'})
-    .then(r=>{if(!r.ok)throw 0;return r.json();})
-    .then(j=>{const m={};((j&&j.serie)||[]).forEach(it=>{const d=(''+it.fecha).slice(0,10);if(d&&it.valor)m[d]=it.valor;});DOLAR_YEAR[y]=m;_rerenderDolarDebounced();})
-    .catch(()=>{DOLAR_YEAR[y]='err';_rerenderDolarDebounced();});
-}
-/* Devuelve el dólar observado de la fecha ymd. Si cae en fin de semana/feriado retrocede hasta 7 días
-   (en la caché local, sin más llamadas). Retorna number | 'pending' | null. */
-function dolarDe(ymd){
-  if(!ymd)return null;
-  let cur=ymd;
-  for(let i=0;i<8;i++){
-    const y=cur.slice(0,4), yr=DOLAR_YEAR[y];
-    if(yr===undefined){loadDolarYear(y);return 'pending';}
-    if(yr==='pending')return 'pending';
-    if(yr!=='err' && (cur in yr))return yr[cur];
-    cur=_prevDay(cur);
-  }
-  return null;
-}
-function loadDolarHist(){const ys={};ROWS.forEach(r=>{if(isEmptyRow(r))return;const fk=rowFechaVal(r);if(fk)ys[fk.slice(0,4)]=1;});Object.keys(ys).forEach(loadDolarYear);}
-/* VALOR EN CLP = Sumatoria ( USD de la fila x dolar observado historico del dia de su Fecha ).
-   Regla (segun el ejemplo del usuario): una fila SIN fecha, o cuya fecha aún no tiene dolar
-   obtenido, NO se suma (su valor en CLP es 0 / guion). NO se usa el dolar actual como respaldo. */
-function valorCLPhist(){
-  let total=0,pend=false,nCon=0,nSin=0;
-  ROWS.forEach(r=>{if(isEmptyRow(r))return;const usd=usdNum(r.usd);if(!usd)return;
-    const fk=rowFechaVal(r);
-    if(!fk){nSin++;return;}            // sin fecha -> no se suma
-    const hv=dolarDe(fk);
-    if(hv==='pending'){pend=true;return;}
-    if(typeof hv==='number'){total+=usd*hv;nCon++;return;}
-    nSin++;                            // sin dolar para esa fecha -> no se suma
-  });
-  return {total,pend,nCon,nSin};
-}
-function _applyDolar(valor,fecha,manual){DOLAR=valor;DOLAR_FECHA=fecha;DOLAR_ERR=false;DOLAR_MANUAL=!!manual;if($('kpis')&&$('kpis').innerHTML)renderKpis();if(typeof CH!=='undefined'&&CH&&CH.cModo){try{drawCharts();}catch(e){}}}
-function fetchDolar(){
-  if(DOLAR_MANUAL)return; // respetar el valor ingresado manualmente
-  // Dólar observado oficial del Banco Central de Chile. La página si3.bcentral.cl NO se
-  // puede leer directo desde el navegador (bloqueo CORS + token de sesión que expira), por
-  // eso se consume el MISMO indicador publicado por el BCCh a través de servicios con CORS.
-  const sources=[
-    {url:'https://mindicador.cl/api/dolar',pick:d=>(d&&d.serie&&d.serie[0])?{v:d.serie[0].valor,f:(''+d.serie[0].fecha).slice(0,10)}:null},
-    {url:'https://cl.dolarapi.com/v1/cotizaciones/usd',pick:d=>(d&&d.venta)?{v:d.venta,f:(''+(d.fechaActualizacion||'')).slice(0,10)}:null}
-  ];
-  let i=0;
-  (function tryNext(){
-    if(i>=sources.length){DOLAR_ERR=true;if($('kpis')&&$('kpis').innerHTML)renderKpis();return;}
-    const s=sources[i++];
-    let done=false;const to=setTimeout(()=>{if(!done){done=true;tryNext();}},9000);
-    fetch(s.url,{cache:'no-store'})
-      .then(r=>{if(!r.ok)throw 0;return r.json();})
-      .then(j=>{const o=s.pick(j);if(done)return;done=true;clearTimeout(to);if(o&&o.v)_applyDolar(o.v,o.f||new Date().toISOString().slice(0,10),false);else tryNext();})
-      .catch(()=>{if(done)return;done=true;clearTimeout(to);tryNext();});
-  })();
-}
-function setManualDolar(){
-  const t=prompt('No se pudo conectar automáticamente al indicador del Banco Central.\n\nIngrese el valor del DÓLAR OBSERVADO (ej: 950,25):', DOLAR?(''+DOLAR):'');
-  if(t==null)return;
-  const v=parseFloat((''+t).replace(/\./g,'').replace(',','.'));
-  if(isNaN(v)||v<=0){alert('Valor no válido.');return;}
-  _applyDolar(v,new Date().toISOString().slice(0,10),true);
-}
-function reintentarDolar(){DOLAR_MANUAL=false;DOLAR_ERR=false;if($('kpis')&&$('kpis').innerHTML)renderKpis();fetchDolar();}
+/* ===== KPIs =====
+   (Indicadores de DÓLAR OBSERVADO y VALOR EN CLP eliminados: la app trabaja solo en USD) */
 function renderKpis(){
   const est=byEstado();
   const atr=est['Atrasado']||0, disp=est['Disponible']||0, tran=(est['En tránsito']||0)+(est['En CD']||0);
   const zonas=Object.keys(byZona()).filter(z=>z&&z!=='—').length;
   const tu=totUSD();
-  const _ml='background:none;border:none;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;padding:0';
-  let dolarKpi;
-  if(DOLAR){
-    const sub='solo informativo · '+(DOLAR_MANUAL?'ingreso manual':'BCCh')+' · '+DOLAR_FECHA+` <button style="${_ml}" onclick="setManualDolar()">editar</button>`;
-    dolarKpi=kpi('gv4','Dólar observado','$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}),sub);
-  }else if(DOLAR_ERR){
-    dolarKpi=kpi('gv4','Dólar observado','sin conexión',`<button style="${_ml}" onclick="reintentarDolar()">reintentar</button> · <button style="${_ml}" onclick="setManualDolar()">ingresar</button>`);
-  }else{
-    dolarKpi=kpi('gv4','Dólar observado','…','conectando al Banco Central');
-  }
-  loadDolarHist();
-  const vc=valorCLPhist();
-  let clp='';
-  if(vc.total>0||vc.nCon){
-    let sub='suma de (USD × dólar observado de su fecha)';
-    if(vc.pend) sub='calculando (dólar de cada fecha)…';
-    if(vc.nSin) sub+=' · '+vc.nSin+' PO sin fecha no se suman';
-    clp=kpi('gv2','Valor en CLP','$'+Math.round(vc.total).toLocaleString('es-CL'),sub);
-  }else if(vc.pend){
-    clp=kpi('gv2','Valor en CLP','calculando…','buscando el dólar de la fecha de cada PO');
-  }else if(vc.nSin){
-    clp=kpi('gv2','Valor en CLP','$0','ninguna PO tiene fecha para buscar el dólar');
-  }
   const nAct=poActivas(), nPend=poPendientes();
   const cb=cuelloBotella();
   const otp=etaOnTimePct(), dva=etaDevAvg();
@@ -1534,9 +1404,7 @@ function renderKpis(){
     ${kpi('ge1','Confiabilidad de ETA',otp!=null?otp+'%':'—','proveedor/ruta llega en fecha','confia')}
     ${kpi('ge2','Desviación ETA',dva!=null?((dva>0?'+':'')+dva+' d'):'—','atraso medio vs ETA','desv')}
     ${kpi('gv1','USD total',fmtMoney(tu),'valor importado','usd')}
-    ${clp}
     ${kpi('gv3','Valor en tránsito',fmtMoney(vt.trans),'capital inmovilizado','transito')}
-    ${dolarKpi}
     ${kpi('go1','PO activas / pend.',nAct+' / '+nPend,'completas / con datos faltantes','po')}
   `;
 }
@@ -2028,12 +1896,11 @@ function exportPPT(){
   },320);
 }
 function limpiarTodo(){
-  if(!confirm('¿Limpiar todos los datos y gráficos? El DÓLAR OBSERVADO se conserva y se actualiza desde internet. (No afecta la nube hasta Guardar)'))return;
+  if(!confirm('¿Limpiar todos los datos y gráficos? (No afecta la nube hasta Guardar)'))return;
   ROWS=[];
   renderPlanilla();renderKpis();renderAlerts();drawCharts();
-  fetchDolar();
-  $('planStatus').textContent='Datos y gráficos limpiados (dólar observado conservado)';
-  logAct('limpiar','Limpió datos y gráficos (dólar observado conservado)');
+  $('planStatus').textContent='Datos y gráficos limpiados';
+  logAct('limpiar','Limpió datos y gráficos');
 }
 const CFG={};
 function mk(id,cfg){CFG[id]=cfg;if(CH[id])CH[id].destroy();const el=$(id);if(!el)return;CH[id]=new Chart(el,cfg);}
@@ -2080,19 +1947,20 @@ Chart.defaults.set('plugins.datalabels',{display:false,clamp:true,clip:false,fon
 function sortEnt(m){return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
 function chip(host,lb,val){const el=$(host);if(el)el.insertAdjacentHTML('beforeend',`<div class="chip"><span>${lb}</span><b>${val}</b></div>`);}
 function clearChips(){['mZona','mProv','mEstado','mTiempo','mUnid','mProvT','mMix','mTicket','mPareto','mTramo','mEta','mZonaT','mCostU','mModo','mTransit','mTrend','mValProv','mUniProv','mZonaV'].forEach(id=>{if($(id))$(id).innerHTML='';});}
-function unidByProv(){const m={};ROWS.forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+numClean(r.unid);});return m;}
-function tiempoByProv(){const sum={},cnt={};ROWS.forEach(r=>{const d=numClean(r.ttot);if(d>0){const p=r.prov||'—';sum[p]=(sum[p]||0)+d;cnt[p]=(cnt[p]||0)+1;}});const m={};Object.keys(sum).forEach(p=>{m[p]=Math.round(sum[p]/cnt[p]);});return m;}
+function unidByProv(){const m={};gRows().forEach(r=>{const p=r.prov||'—';m[p]=(m[p]||0)+numClean(r.unid);});return m;}
+function tiempoByProv(){const sum={},cnt={};gRows().forEach(r=>{const d=numClean(r.ttot);if(d>0){const p=r.prov||'—';sum[p]=(sum[p]||0)+d;cnt[p]=(cnt[p]||0)+1;}});const m={};Object.keys(sum).forEach(p=>{m[p]=Math.round(sum[p]/cnt[p]);});return m;}
 function ticketByZona(){const u=unidByZona(),z=byZona(),m={};Object.keys(z).forEach(k=>{m[k]=u[k]?z[k]/u[k]:0;});return m;}
 function drawCharts(){
   clearChips();
   recalcTtot();
-  // REGLA NUEVA: a los gráficos pasa TODA la planilla, sin excepciones (todas las PO)
-  const _ALL_ROWS=ROWS;
+  // REGLA: una fila con AL MENOS una celda en ROJO NO se traspasa a gráficos/KPIs. Solo esa fila se excluye.
+  const _G=gRows(), _EXCL=ROWS.filter(r=>rowHasRed(r)).length;
   const _nt=$('chartNotice');
   if(_nt){
     const base='margin:2px 0 12px;padding:9px 13px;border-radius:9px;font-size:13px;font-weight:600;line-height:1.4;';
-    if(!_ALL_ROWS.length){_nt.style.cssText='display:none';}
-    else{_nt.style.cssText=base+'display:block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;';_nt.innerHTML='✓ Se graficaron <b>TODAS</b> las <b>'+_ALL_ROWS.length+'</b> PO de la planilla, sin excepciones.';}
+    if(!ROWS.length){_nt.style.cssText='display:none';}
+    else if(_EXCL>0){_nt.style.cssText=base+'display:block;background:#fdecea;color:#8a1c12;border:1px solid #f5a79d;';_nt.innerHTML='⚠ Se excluyó '+(_EXCL===1?'<b>1</b> fila con celda(s) en rojo':'<b>'+_EXCL+'</b> filas con celda(s) en rojo')+'. Se graficaron <b>'+_G.length+'</b> PO.';}
+    else{_nt.style.cssText=base+'display:block;background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;';_nt.innerHTML='✓ Se graficaron las <b>'+_G.length+'</b> PO de la planilla (ninguna fila en rojo).';}
   }
   try{
   const kUSD={ticks:{callback:v=>fmtUSDk(v)}};
@@ -2107,7 +1975,7 @@ function drawCharts(){
   const e=byEstado();
   mk('cEstado',{type:'polarArea',data:{labels:Object.keys(e),datasets:[{data:Object.values(e),backgroundColor:PAL}]},options:{plugins:{legend:{position:'right'},datalabels:{display:true,color:'#0f2744',textAlign:'center',font:{weight:'800',size:13},formatter:(v,ctx)=>v?[ctx.chart.data.labels[ctx.dataIndex],v+' PO']:''}},maintainAspectRatio:false}});
   Object.entries(e).forEach(([k,v])=>chip('mEstado',k,v));
-  const t=ROWS.filter(r=>numClean(r.ttot)>0);
+  const t=gRows().filter(r=>numClean(r.ttot)>0);
   mk('cTiempo',{type:'bar',data:{labels:t.map(r=>r.po),datasets:[{label:'Días',data:t.map(r=>numClean(r.ttot)),backgroundColor:'#0e7490',borderRadius:5}]},options:{plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',color:'#0e7490',font:{weight:'800',size:13},formatter:v=>v}},maintainAspectRatio:false,scales:{y:{beginAtZero:true,title:{display:true,text:'días'}}}}});
   chip('mTiempo','Promedio',avgTiempo()+' d');chip('mTiempo','PO con dato',t.length);
   const u=unidByZona();
@@ -2135,7 +2003,7 @@ function drawCharts(){
   DET['cPareto']={title:'Pareto de gasto por proveedor',labels:pa.map(x=>x[0]),catLabel:'Proveedor',series:[{name:'USD',vals:pa.map(x=>x[1]),fmt:fmtMoney},{name:'% acumulado',vals:paCum,fmt:v=>v+'%'}]};
   drawTimeCharts();
   fillExplains();
-  }finally{ROWS=_ALL_ROWS;} // restaurar el conjunto completo tras graficar solo las PO válidas
+  }catch(e){try{console.error('drawCharts',e);}catch(_){}} // gRows() ya excluye las filas en rojo; no se reasigna ROWS
 }
 function tgEx(id){$(id).classList.toggle('on');}
 /* ===== Gráficos de tiempos/cumplimiento (pestaña GRÁFICOS) ===== */
@@ -2209,10 +2077,10 @@ function drawTimeCharts(){
   const ttv=vtr.trans+vtr.disp;const pMov=ttv?Math.round(vtr.disp/ttv*100):0;{const lv=pMov>=60?'ok':(pMov>=30?'warn':'bad');setT('Transit',fmtDual(vtr.disp)+' movilizado ('+pMov+'% con cuadros completos)');verdict('Transit',lv,'<b>'+fmtDual(vtr.disp)+'</b> ('+pMov+'%) está <b>movilizado</b> (PO con todos los cuadros completos) frente a <b>'+fmtDual(vtr.trans)+'</b> en tránsito (PO con cuadros incompletos). '+(pMov>=60?'La mayor parte ya está completa.':(pMov>=30?'Falta completar varios registros.':'Muchos registros están incompletos: completar los cuadros.')));}
 
   // ===== Títulos ejecutivos dentro de cada gráfico =====
-  chartTitle('cValProv','Valor importado (USD) por proveedor','Montos reales de la planilla, en USD y CLP');
+  chartTitle('cValProv','Valor importado (USD) por proveedor','Montos reales de la planilla, en USD');
   chartTitle('cUniProv','Unidades importadas por proveedor','Volumen físico por proveedor');
-  chartTitle('cZonaV','Valor importado por zona de origen','Distribución del USD (y CLP) según de dónde viene');
-  chartTitle('cModo','Tipo de transporte','Valor importado (USD y CLP) y días de ciclo por modo');
+  chartTitle('cZonaV','Valor importado por zona de origen','Distribución del USD según de dónde viene');
+  chartTitle('cModo','Tipo de transporte','Valor importado (USD) y días de ciclo por modo');
   chartTitle('cTramo','¿Dónde se pierde el tiempo del ciclo?','Días promedio por tramo del proceso');
   chartTitle('cProvT','Tiempo total promedio por proveedor','Días desde la compra hasta bodega');
   chartTitle('cTransit','Capital movilizado vs. en tránsito','Completas (movilizado) vs. incompletas (en tránsito)');
@@ -2237,9 +2105,8 @@ function renderExecSummary(){
   const ciclo=avgTiempo(), cbot=cuelloBotella(), ttp=sortEnt(ttotByProv());
   const partProv=(vp[0]&&tu)?Math.round(vp[0][1]/tu*100):0;
   const partZona=(zz[0]&&tu)?Math.round(zz[0][1]/tu*100):0;
-  const clp=fmtCLPg(tu);
   const kpis=[
-    {k:'Valor importado',v:fmtUSDg(tu),d:clp?('≈ '+clp):(totPO+' PO en total')},
+    {k:'Valor importado',v:fmtUSDg(tu),d:(totPO+' PO en total')},
     {k:'Capital movilizado',v:pMov+'%',d:fmtUSDg(vtr.disp)+' completo'},
     {k:'Ciclo promedio',v:(ciclo?ciclo+' días':'—'),d:'de compra a bodega'},
     {k:'Unidades totales',v:fmtUnid(totUnid()),d:totPO+' órdenes de compra'}
@@ -2270,13 +2137,13 @@ function renderExecSummary(){
 function fillExplains(){
   const S=(id,h)=>{const el=$(id);if(el)el.innerHTML=h;};
   const vp=sortEnt(byProv()),tu=totUSD();
-  S('exValProv',`<b>📊 Qué muestra:</b> el valor importado en dólares por cada proveedor, con el monto real de la planilla (USD y su equivalente en pesos). Es TODA la planilla, sin filtrar.<br><b>🔍 Cómo leerlo:</b> ${vp[0]?'el mayor valor lo concentra <b>'+vp[0][0]+'</b> con '+fmtDual(vp[0][1])+' de un total de '+fmtDual(tu):'aún no hay valores USD cargados'}.<br><b>💡 Para qué sirve:</b> ver en qué proveedores está concentrada la compra. Si uno concentra demasiado, conviene homologar un segundo proveedor para no depender de uno solo.`);
+  S('exValProv',`<b>📊 Qué muestra:</b> el valor importado en dólares por cada proveedor, con el monto real de la planilla (USD). Es TODA la planilla, sin filtrar.<br><b>🔍 Cómo leerlo:</b> ${vp[0]?'el mayor valor lo concentra <b>'+vp[0][0]+'</b> con '+fmtDual(vp[0][1])+' de un total de '+fmtDual(tu):'aún no hay valores USD cargados'}.<br><b>💡 Para qué sirve:</b> ver en qué proveedores está concentrada la compra. Si uno concentra demasiado, conviene homologar un segundo proveedor para no depender de uno solo.`);
   const up=sortEnt(unidByProv());
   S('exUniProv',`<b>📊 Qué muestra:</b> cuántas unidades físicas se importaron por cada proveedor (volumen, no valor).<br><b>🔍 Cómo leerlo:</b> ${up[0]?'el mayor volumen lo aporta <b>'+up[0][0]+'</b> con '+fmtUnid(up[0][1])+' unidades; total '+fmtUnid(totUnid())+' u':'aún no hay unidades cargadas'}.<br><b>💡 Para qué sirve:</b> cruzado con el valor USD, revela dónde el precio por unidad es más alto y ayuda a planificar bodega y logística según el volumen.`);
   const zv=sortEnt(byZona());
-  S('exZonaV',`<b>📊 Qué muestra:</b> cómo se reparte el valor importado (USD y pesos) según la zona de origen, es decir de dónde viene la mercadería.<br><b>🔍 Cómo leerlo:</b> ${zv[0]?'<b>'+zv[0][0]+'</b> concentra '+fmtDual(zv[0][1]):'aún no hay zonas con valor'}.<br><b>💡 Para qué sirve:</b> medir la dependencia geográfica. Si una sola zona concentra la mayor parte del valor, conviene evaluar un doble origen o nearshoring.`);
+  S('exZonaV',`<b>📊 Qué muestra:</b> cómo se reparte el valor importado (USD) según la zona de origen, es decir de dónde viene la mercadería.<br><b>🔍 Cómo leerlo:</b> ${zv[0]?'<b>'+zv[0][0]+'</b> concentra '+fmtDual(zv[0][1]):'aún no hay zonas con valor'}.<br><b>💡 Para qué sirve:</b> medir la dependencia geográfica. Si una sola zona concentra la mayor parte del valor, conviene evaluar un doble origen o nearshoring.`);
   const md=byModo();
-  S('exModo',`<b>📊 Qué muestra:</b> compara cuánto valor traemos por cada tipo de transporte (barras, en USD y pesos) y cuánto tarda cada modo (línea, en días).<br><b>🔍 Cómo leerlo:</b> ${md.map(x=>'<b>'+x.modo+'</b>: '+fmtDual(x.usd)+' / '+x.dias+' d').join(' · ')||'sin datos'}.<br><b>💡 Para qué sirve:</b> ver el equilibrio entre costo y rapidez. El aéreo es más caro pero mucho más rápido: conviene para productos urgentes o de alto valor.`);
+  S('exModo',`<b>📊 Qué muestra:</b> compara cuánto valor traemos por cada tipo de transporte (barras, en USD) y cuánto tarda cada modo (línea, en días).<br><b>🔍 Cómo leerlo:</b> ${md.map(x=>'<b>'+x.modo+'</b>: '+fmtDual(x.usd)+' / '+x.dias+' d').join(' · ')||'sin datos'}.<br><b>💡 Para qué sirve:</b> ver el equilibrio entre costo y rapidez. El aéreo es más caro pero mucho más rápido: conviene para productos urgentes o de alto valor.`);
   const cbot=cuelloBotella();
   S('exTramo',`<b>📊 Qué muestra:</b> el tiempo total repartido en cada etapa del proceso (origen, tránsito internacional, nacionalización, recepción). Cada barra = días promedio de esa etapa.<br><b>🔍 Cómo leerlo:</b> ${cbot?'la etapa más lenta es <b>'+cbot.lb.replace(/\n/g,' ')+'</b> con '+cbot.d+' días; es ahí donde más tiempo se pierde':'aún no hay fechas suficientes para calcularlo'}.<br><b>💡 Para qué sirve:</b> encontrar el “cuello de botella”. El tránsito internacional (ej. barco desde Asia) depende del proveedor y la naviera y <b>no lo controla la empresa</b>; conviene enfocar las mejoras en las etapas internas (nacionalización y recepción en bodega).`);
   const ttp=sortEnt(ttotByProv());
@@ -2304,11 +2171,11 @@ function fillExplainsLegacy(){
 /* ===== Reporte ===== */
 function heatColor(v,max){if(!v)return '#f8fafc';const t=max?v/max:0;const r=Math.round(219-(219-15)*t),g=Math.round(234-(234-51)*t),b=Math.round(251-(251-90)*t);return `rgb(${r},${g},${b})`;}
 function heatmapTable(){
-  const zonas=[...new Set(ROWS.map(r=>r.zona||'—'))];
+  const zonas=[...new Set(gRows().map(r=>r.zona||'—'))];
   const ests=['Pendiente','En tránsito','En CD','Disponible','Atrasado'];
   const grid={};let max=0;
   zonas.forEach(z=>{grid[z]={};ests.forEach(e=>grid[z][e]=0);});
-  ROWS.forEach(r=>{const z=r.zona||'—',e=estado(r);grid[z][e]++;if(grid[z][e]>max)max=grid[z][e];});
+  gRows().forEach(r=>{const z=r.zona||'—',e=estado(r);grid[z][e]++;if(grid[z][e]>max)max=grid[z][e];});
   let h='<table class="hm"><thead><tr><th>ZONA \\ ESTADO</th>'+ests.map(e=>`<th>${e}</th>`).join('')+'</tr></thead><tbody>';
   zonas.forEach(z=>{h+=`<tr><td class="lbl">${esc(z)}</td>`+ests.map(e=>{const v=grid[z][e];return `<td style="background:${heatColor(v,max)};color:${v/max>0.55?'#fff':'#1e293b'}">${v||''}</td>`;}).join('')+'</tr>';});
   h+='</tbody></table>';return h;
@@ -2316,9 +2183,9 @@ function heatmapTable(){
 function buildExecInfografia(){
   const tu=totUSD(),tUn=totUnid(),p=sortEnt(byProv()),z=sortEnt(byZona()),e=byEstado(),ttp=sortEnt(ttotByProv()),modos=byModo();
   const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
-  const nPO=ROWS.filter(r=>!isEmptyRow(r)).length;
+  const nPO=gRows().filter(r=>!isEmptyRow(r)).length;
   const tk=tUn?tu/tUn:0, avg=avgTiempo();
-  const clp=DOLAR?('≈ $'+Math.round(tu*DOLAR).toLocaleString('es-CL')+' CLP'):'';
+  const clp='';
   const pctG=p[0]&&tu?Math.round(p[0][1]/tu*100):0, pctZ=z[0]&&tu?Math.round(z[0][1]/tu*100):0;
   const vtr=(typeof valorEnTransito==='function')?valorEnTransito():{disp:0,trans:0};
   const totC=(vtr.disp||0)+(vtr.trans||0), pMov=totC?Math.round(vtr.disp/totC*100):0;
@@ -2350,11 +2217,11 @@ function buildReportHTML(){
     const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
     const tk=sortEnt(ticketByZona());
     const img=id=>'<div class="rimg" data-chart="'+id+'"><div class="imgpend">⏳ Generando gráfico…</div></div>';
-    const clpTxt=DOLAR?` Al tipo de cambio observado del Banco Central (${'$'+DOLAR.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2})} al ${DOLAR_FECHA}), el portafolio equivale a aproximadamente <b>$${Math.round(tu*DOLAR).toLocaleString('es-CL')} CLP</b>.`:'';
+    const clpTxt='';
     const concTop=p[0]&&tu?Math.round(p[0][1]/tu*100):0;
-    const up=unidByProv(), modos=byModo(), ttp=sortEnt(ttotByProv()), tRows=ROWS.filter(r=>numClean(r.ttot)>0);
+    const up=unidByProv(), modos=byModo(), ttp=sortEnt(ttotByProv()), tRows=gRows().filter(r=>numClean(r.ttot)>0);
     const paTot=p.reduce((a,b)=>a+(+b[1]||0),0); let _n80=0,_acc=0; for(const x of p){_acc+=x[1];_n80++;if(paTot&&_acc/paTot>=0.8)break;}
-    const nPO=ROWS.filter(r=>!isEmptyRow(r)).length;
+    const nPO=gRows().filter(r=>!isEmptyRow(r)).length;
     const pct=(v,t)=>t?Math.round(v/t*100):0;
     const card=(n,ti,id,an)=>'<section class="rcard"><div class="rc-h"><span class="rc-n">'+n+'</span><h3>'+ti+'</h3></div><div class="rc-body"><div class="rimg" data-chart="'+id+'"><div class="imgpend">⏳ Generando gráfico…</div></div><div class="rc-an"><div class="rc-an-t">Análisis e interpretación</div>'+an+'</div></div></section>';
     const html=`<div class="report" id="reportDoc">
