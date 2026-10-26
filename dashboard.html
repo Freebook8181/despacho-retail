@@ -466,7 +466,7 @@ function catFlota(tp){return esProp(tp)?'Flota propia':'Tercerizada / Externa';}
 const F={mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',cl:'all',co:'all'};
 let CUR='op';
 let CURG='ops';
-const GROUP_OF={op:'ops',fin:'ops',log:'ops',aud:'ops',cmp:'ops',diag:'ops',mac:'mod',ver:'mod',devo:'devo'};
+const GROUP_OF={op:'ops',fin:'ops',log:'ops',aud:'ops',cmp:'ops',diag:'ops',mac:'mod',ver:'mod',devo:'devo',devograf:'devo'};
 function setGroup(g){
  CURG=g;
  const tb=document.getElementById('tabs');if(tb){tb.classList.remove('g-ops','g-mod','g-devo');tb.classList.add('g-'+g);}
@@ -476,16 +476,6 @@ function setGroup(g){
 }
 function activateGroup(g){
  setGroup(g);
- // Devoluciones no tiene sub-pestañas: se activa su sección directamente (sin mostrar un botón "Devoluciones" abajo).
- if(g==='devo'){
-  CUR='devo';
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.section').forEach(sx=>sx.classList.toggle('on',sx.id==='s-devo'));
-  var fl=document.querySelector('.filters');if(fl)fl.style.display='none';
-  if(typeof resizeCur==='function')resizeCur();
-  if(typeof updateEmptyState==='function')updateEmptyState();
-  return;
- }
  const sub=[...document.querySelectorAll('#tabs .tab.grp-'+g)];
  const vis=sub.find(t=>t.style.display!=='none');
  if(vis)vis.click();
@@ -1656,7 +1646,7 @@ function devoPlanillas(){
   +'<button class="devo-btn devo-pptbtn" id="devoPptBtn">📊 PPT</button>'
   +'<input type="file" id="devoFile" accept=".xlsx,.xls" style="display:none"/>'
   +'</div>';
- h+='<div class="devo-tabs" id="devoTabs">'+DEVO_ITEMS.map(it=>`<button class="devo-tab" data-tab="${it.id}" style="--tc:${it.c};--tt:${it.tx}">${it.t}</button>`).join('')+'<button class="devo-graficos-btn" id="devoGraficosBtn" title="Ver gr\u00e1ficos por mes y por semana"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>GR\u00c1FICOS</button>'+'</div>';
+ h+='<div class="devo-tabs" id="devoTabs">'+DEVO_ITEMS.map(it=>`<button class="devo-tab" data-tab="${it.id}" style="--tc:${it.c};--tt:${it.tx}">${it.t}</button>`).join('')+'</div>';
  h+='<div id="devoPane"></div>';
  return h;
 }
@@ -1706,8 +1696,8 @@ function devoRenderItem(it){
  const tot=document.getElementById('devoTot_'+it.id);if(tot)tot.textContent=devoFmtVal(devoItemTotal(it.id))||'$0';
 }
 function devoActivateTabStyle(){document.querySelectorAll('#devoTabs .devo-tab').forEach(b=>{b.classList.toggle('on',b.getAttribute('data-tab')===DEVO_ACTIVE);});}
-function devoRender(){devoEnsure();if(DEVO_GRAFVIEW){devoRenderGraficos();return;}const act=DEVO_ITEMS.find(x=>x.id===DEVO_ACTIVE)||DEVO_ITEMS[0];DEVO_ACTIVE=act.id;devoActivateTabStyle();devoRenderItem(act);}
-function devoSetActive(id){DEVO_GRAFVIEW=false;var gb=document.getElementById('devoGraficosBtn');if(gb)gb.classList.remove('on');DEVO_ACTIVE=id;const pane=document.getElementById('devoPane');if(pane)pane.innerHTML='';devoRender();}
+function devoRender(){devoEnsure();const act=DEVO_ITEMS.find(x=>x.id===DEVO_ACTIVE)||DEVO_ITEMS[0];DEVO_ACTIVE=act.id;devoActivateTabStyle();devoRenderItem(act);}
+function devoSetActive(id){DEVO_ACTIVE=id;const pane=document.getElementById('devoPane');if(pane)pane.innerHTML='';devoRender();}
 var devoWriting=false,devoTimer=null;
 function devoFbPush(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;clearTimeout(devoTimer);devoTimer=setTimeout(()=>{try{devoWriting=true;fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;}).catch(e=>{devoWriting=false;console.error('devoFbPush',e);});}catch(e){devoWriting=false;}},500);}
 function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce')||ae.classList.contains('devo-inp'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
@@ -1731,7 +1721,6 @@ function devoWire(){
  const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
  const bC=document.getElementById('devoGraficar');if(bC)bC.addEventListener('click',devoOpenGraficar);
- const bG2=document.getElementById('devoGraficosBtn');if(bG2)bG2.addEventListener('click',function(){devoRenderGraficos();});
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
  const bR=document.getElementById('devoReporteBtn');if(bR)bR.addEventListener('click',devoOpenReporte);
  const bP=document.getElementById('devoPptBtn');if(bP)bP.addEventListener('click',devoOpenPPT);
@@ -2023,7 +2012,7 @@ function devoOpenGraficar(){
 }
 /* ===== GRAFICOS (por MES y por SEMANA del año) de una planilla ===== */
 var DEVO_G2_CH=[];
-var DEVO_GRAFVIEW=false,DEVO_GRAFSEL='cd';
+var DEVO_GRAFSEL='cd';
 var DEVO_MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 function devoISOWeek(iso){var p=iso.split('-');var dt=new Date(Date.UTC(+p[0],+p[1]-1,+p[2]));var dn=(dt.getUTCDay()+6)%7;dt.setUTCDate(dt.getUTCDate()-dn+3);var ft=new Date(Date.UTC(dt.getUTCFullYear(),0,4));var fn=(ft.getUTCDay()+6)%7;ft.setUTCDate(ft.getUTCDate()-fn+3);var wk=1+Math.round((dt-ft)/(7*864e5));return {y:dt.getUTCFullYear(),w:wk};}
 function devoBul(x){var b=parseFloat(String(x==null?'':x).replace(/\./g,'').replace(/,/g,'.'));return isNaN(b)?0:b;}
@@ -2045,19 +2034,18 @@ function devoG2Agg(d){
  return {mes:mes,mesO:mesO,sem:sem,semO:semO,uni:uni,uniO:uniO,com:com,comO:comO,dst:dst,dstO:dstO,obs:obs,obsO:obsO,sinFecha:sinFecha,totReg:totReg};
 }
 function devoTopN(obj,order,metric,n){var a=order.slice().sort(function(x,y){return obj[y][metric]-obj[x][metric];});return a.slice(0,n);}
-function devoRenderGraficos(){
- var pane=document.getElementById('devoPane');if(!pane)return;
- DEVO_GRAFVIEW=true;
- var btn=document.getElementById('devoGraficosBtn');if(btn)btn.classList.add('on');
- document.querySelectorAll('#devoTabs .devo-tab').forEach(function(b){b.classList.remove('on');});
- if(!pane.querySelector('#devoG2Body')){
-  pane.innerHTML='<div class="devo-g2-wrap"><div class="devo-g2-bar"><span class="devo-g2-title">\ud83d\udcca Gr\u00e1ficos de Devoluciones</span><div class="devo-g2-sel"><label>Planilla:</label><select id="devoG2Sel"></select></div></div><div class="devo-g2-body" id="devoG2Body"></div></div>';
-  var sel=document.getElementById('devoG2Sel');sel.innerHTML=DEVO_ITEMS.map(function(it){return '<option value="'+it.id+'"'+(it.id===DEVO_GRAFSEL?' selected':'')+'>'+devoEsc(it.t)+'</option>';}).join('');
+function devoGrafSectionRender(){
+ var sec=document.getElementById('s-devograf');if(!sec)return;
+ var sel=document.getElementById('devoG2Sel');
+ if(sel&&!sel._wired){
+  sel.innerHTML=DEVO_ITEMS.map(function(it){return '<option value="'+it.id+'"'+(it.id===DEVO_GRAFSEL?' selected':'')+'>'+devoEsc(it.t)+'</option>';}).join('');
+  sel.value=DEVO_GRAFSEL;
   sel.addEventListener('change',function(){DEVO_GRAFSEL=this.value;devoEnsure();devoG2Render(DEVO_GRAFSEL,DEVO_DATA[DEVO_GRAFSEL]||{rows:[]});});
+  sel._wired=1;
  }
  devoEnsure();devoG2Render(DEVO_GRAFSEL,DEVO_DATA[DEVO_GRAFSEL]||{rows:[]});
 }
-function devoG2Refresh(){if(DEVO_GRAFVIEW&&document.getElementById('devoG2Body')){devoEnsure();devoG2Render(DEVO_GRAFSEL,DEVO_DATA[DEVO_GRAFSEL]||{rows:[]});}}
+function devoG2Refresh(){var sec=document.getElementById('s-devograf');if(sec&&sec.classList.contains('on')&&document.getElementById('devoG2Body')){devoEnsure();devoG2Render(DEVO_GRAFSEL,DEVO_DATA[DEVO_GRAFSEL]||{rows:[]});}}
 function devoG2Render(id,d){
  try{DEVO_G2_CH.forEach(function(c){try{c.dispose();}catch(e){}});}catch(e){}DEVO_G2_CH=[];
  var it=DEVO_ITEMS.find(function(x){return x.id===id;})||DEVO_ITEMS[0];var col=it.c;
@@ -2241,6 +2229,10 @@ function buildModMarkup(){
  h+=`<section class="section" id="s-devo"><div class="sec-head"><h2 style="color:${MOD_COLOR.devo}">Devoluciones</h2><p>Planillas de control por tipo de devolución</p></div>`;
  h+=(typeof devoPlanillas==='function'?devoPlanillas():'');
  h+=`</section>`;
+ // Gráficos de Devoluciones (pestaña propia)
+ h+=`<section class="section" id="s-devograf"><div class="sec-head"><h2 style="color:#0e7490">Gráficos de Devoluciones</h2><p>Por mes y por semana del año — se actualizan cada vez que guardas las planillas</p></div>`;
+ h+=`<div class="devo-g2-wrap"><div class="devo-g2-bar"><span class="devo-g2-title">📊 Gráficos</span><div class="devo-g2-sel"><label>Planilla:</label><select id="devoG2Sel"></select></div></div><div class="devo-g2-body" id="devoG2Body"></div></div>`;
+ h+=`</section>`;
  M.insertAdjacentHTML('beforeend',h);
  // pestañas con color distinto
  const tabsEl=document.getElementById('tabs');if(tabsEl){
@@ -2249,7 +2241,9 @@ function buildModMarkup(){
    `<div class="tab modtab grp-mod" data-t="mac" style="background:${MOD_COLOR.mac}1f;border:1.5px solid ${MOD_COLOR.mac};color:${MOD_COLOR.mac};font-weight:700;border-radius:9px"><span>MacOnline Distribución</span></div>`+
    `<div class="tab modtab grp-mod" data-t="ver" style="background:${MOD_COLOR.ver}1f;border:1.5px solid ${MOD_COLOR.ver};color:${MOD_COLOR.ver};font-weight:700;border-radius:9px"><span>Vertical Tiendas</span></div>`+
    `<button type="button" class="modactbtn grp-mod mab-rep" id="tabRep">📄 Reporte</button>`+
-   `<button type="button" class="modactbtn grp-mod mab-ppt" id="tabPpt">📊 PPT</button>`);
+   `<button type="button" class="modactbtn grp-mod mab-ppt" id="tabPpt">📊 PPT</button>`+
+   `<div class="tab modtab grp-devo" data-t="devo" style="background:${MOD_COLOR.devo}1f;border:1.5px solid ${MOD_COLOR.devo};color:${MOD_COLOR.devo};font-weight:700;border-radius:9px"><span>Devoluciones</span></div>`+
+   `<div class="tab modtab grp-devo" data-t="devograf" style="background:#0e74901f;border:1.5px solid #0e7490;color:#0e7490;font-weight:700;border-radius:9px"><span>📊 Gráficos</span></div>`);
   var tR=document.getElementById('tabRep');if(tR)tR.addEventListener('click',function(e){e.stopPropagation();if(typeof obReporte==='function')obReporte();});
   var tP=document.getElementById('tabPpt');if(tP)tP.addEventListener('click',function(e){e.stopPropagation();if(typeof obPPT==='function')obPPT();});
  }
@@ -3057,9 +3051,9 @@ function wireMod(){
   const up=document.getElementById(k+'_upBtn'),fi2=document.getElementById(k+'_fileInp');
   if(up&&fi2){up.addEventListener('click',()=>fi2.click());fi2.addEventListener('change',handleModUpload);}
  });
- const modTabs=['mac','ver','devo'];
+ const modTabs=['mac','ver','devo','devograf'];
  const tabsEl=document.getElementById('tabs');
- if(tabsEl)tabsEl.addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;const key=t.dataset.t;const fl=document.querySelector('.filters');if(fl)fl.style.display=modTabs.includes(key)?'none':'';if(key==='mac'||key==='ver'){renderMod(key);try{if(typeof renderVentas==='function')renderVentas(key);}catch(_){}}});
+ if(tabsEl)tabsEl.addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;const key=t.dataset.t;const fl=document.querySelector('.filters');if(fl)fl.style.display=modTabs.includes(key)?'none':'';if(key==='mac'||key==='ver'){renderMod(key);try{if(typeof renderVentas==='function')renderVentas(key);}catch(_){}}if(key==='devograf'){try{devoGrafSectionRender();}catch(_){}}});
 }
 /* ===== OVERRIDE: no ocultar #main en las pestañas de módulos ===== */
 function updateEmptyState(){
@@ -3219,7 +3213,7 @@ function applyRole(){
   // Usuarios NO admin: ven Operaciones & Flota, Finanzas & P&L, Logística & Rutas,
   // Tendencias & Comparativo + MacOnline, Vertical y Devoluciones.
   // Quedan ocultas SOLO Auditoría (aud) y Diagnóstico (diag), y el botón Subir Excel (adminonly).
-  var modOnly=['op','fin','log','cmp','mac','ver','devo'];
+  var modOnly=['op','fin','log','cmp','mac','ver','devo','devograf'];
   document.querySelectorAll('#tabs .tab').forEach(function(el){
    var t=el.getAttribute('data-t');
    if(admin){el.style.display='';}
