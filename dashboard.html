@@ -176,6 +176,11 @@ select:focus{border-color:var(--navy)}
 .devo-g2-empty{height:260px;display:flex;align-items:center;justify-content:center;color:#8a94a0;font-size:14px;text-align:center}
 .devo-g2-sel{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .devo-g2-sel select{border:1.5px solid #c3ccd6;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;color:#1f3a59}
+.devo-g2-sel label{font-size:13px;font-weight:700;color:#44505e}
+.devo-graficos-btn.on{filter:brightness(1.12);box-shadow:0 4px 12px rgba(14,116,144,.45),inset 0 -3px 0 rgba(255,255,255,.55)}
+.devo-g2-wrap{background:#f6f8fa;border:1px solid #e6ebf1;border-radius:12px;padding:14px 16px}
+.devo-g2-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.devo-g2-title{font-size:16px;font-weight:800;color:#0f3a59}
 .devo-ghost{background:#eef1f5;color:#44505e}
 /* overlays/dialogos */
 .devo-ov{display:none;position:fixed;inset:0;background:rgba(20,30,45,.55);z-index:9000;align-items:center;justify-content:center;padding:20px}
@@ -1701,8 +1706,8 @@ function devoRenderItem(it){
  const tot=document.getElementById('devoTot_'+it.id);if(tot)tot.textContent=devoFmtVal(devoItemTotal(it.id))||'$0';
 }
 function devoActivateTabStyle(){document.querySelectorAll('#devoTabs .devo-tab').forEach(b=>{b.classList.toggle('on',b.getAttribute('data-tab')===DEVO_ACTIVE);});}
-function devoRender(){devoEnsure();const act=DEVO_ITEMS.find(x=>x.id===DEVO_ACTIVE)||DEVO_ITEMS[0];DEVO_ACTIVE=act.id;devoActivateTabStyle();devoRenderItem(act);}
-function devoSetActive(id){DEVO_ACTIVE=id;const pane=document.getElementById('devoPane');if(pane)pane.innerHTML='';devoRender();}
+function devoRender(){devoEnsure();if(DEVO_GRAFVIEW){devoRenderGraficos();return;}const act=DEVO_ITEMS.find(x=>x.id===DEVO_ACTIVE)||DEVO_ITEMS[0];DEVO_ACTIVE=act.id;devoActivateTabStyle();devoRenderItem(act);}
+function devoSetActive(id){DEVO_GRAFVIEW=false;var gb=document.getElementById('devoGraficosBtn');if(gb)gb.classList.remove('on');DEVO_ACTIVE=id;const pane=document.getElementById('devoPane');if(pane)pane.innerHTML='';devoRender();}
 var devoWriting=false,devoTimer=null;
 function devoFbPush(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;clearTimeout(devoTimer);devoTimer=setTimeout(()=>{try{devoWriting=true;fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;}).catch(e=>{devoWriting=false;console.error('devoFbPush',e);});}catch(e){devoWriting=false;}},500);}
 function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce')||ae.classList.contains('devo-inp'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
@@ -1726,7 +1731,7 @@ function devoWire(){
  const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
  const bC=document.getElementById('devoGraficar');if(bC)bC.addEventListener('click',devoOpenGraficar);
- const bG2=document.getElementById('devoGraficosBtn');if(bG2)bG2.addEventListener('click',function(){devoOpenGraficos2(DEVO_ACTIVE);});
+ const bG2=document.getElementById('devoGraficosBtn');if(bG2)bG2.addEventListener('click',function(){devoRenderGraficos();});
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
  const bR=document.getElementById('devoReporteBtn');if(bR)bR.addEventListener('click',devoOpenReporte);
  const bP=document.getElementById('devoPptBtn');if(bP)bP.addEventListener('click',devoOpenPPT);
@@ -1771,7 +1776,7 @@ function devoImportExcel(ev){
  rd.readAsArrayBuffer(f);
 }
 /* --- GUARDAR inmediato en Firebase --- */
-function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
+function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;try{devoG2Refresh();}catch(e){}return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
 function devoGuardar(){devoEnsure();
  if(typeof fbDB==='undefined'||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}
  function _doSave(){devoFbSave().then(ok=>{alert(ok?'Informaci\u00f3n guardada en la nube. Todos los usuarios la ver\u00e1n al recargar.':'No se pudo guardar. Revisa los permisos de Firebase (activa el proveedor An\u00f3nimo en Authentication).');});}
@@ -2018,6 +2023,7 @@ function devoOpenGraficar(){
 }
 /* ===== GRAFICOS (por MES y por SEMANA del año) de una planilla ===== */
 var DEVO_G2_CH=[];
+var DEVO_GRAFVIEW=false,DEVO_GRAFSEL='cd';
 var DEVO_MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 function devoISOWeek(iso){var p=iso.split('-');var dt=new Date(Date.UTC(+p[0],+p[1]-1,+p[2]));var dn=(dt.getUTCDay()+6)%7;dt.setUTCDate(dt.getUTCDate()-dn+3);var ft=new Date(Date.UTC(dt.getUTCFullYear(),0,4));var fn=(ft.getUTCDay()+6)%7;ft.setUTCDate(ft.getUTCDate()-fn+3);var wk=1+Math.round((dt-ft)/(7*864e5));return {y:dt.getUTCFullYear(),w:wk};}
 function devoBul(x){var b=parseFloat(String(x==null?'':x).replace(/\./g,'').replace(/,/g,'.'));return isNaN(b)?0:b;}
@@ -2039,35 +2045,29 @@ function devoG2Agg(d){
  return {mes:mes,mesO:mesO,sem:sem,semO:semO,uni:uni,uniO:uniO,com:com,comO:comO,dst:dst,dstO:dstO,obs:obs,obsO:obsO,sinFecha:sinFecha,totReg:totReg};
 }
 function devoTopN(obj,order,metric,n){var a=order.slice().sort(function(x,y){return obj[y][metric]-obj[x][metric];});return a.slice(0,n);}
-function devoOpenGraficos2(id){
- devoEnsureRepCSS();var ov=document.getElementById('devoG2Ov');
- if(!ov){ov=document.createElement('div');ov.id='devoG2Ov';ov.className='devo-ov2';
-  ov.innerHTML='<div class="devo-ov2-card"><div class="devo-ov2-head"><div class="devo-g2-sel"><span class="devo-ov2-h">\ud83d\udcca Gr\u00e1ficos</span><select id="devoG2Sel"></select></div><button class="devo-ov2-x" id="devoG2X">\u2715</button></div><div class="devo-ov2-body" id="devoG2Body"></div></div>';
-  document.body.appendChild(ov);
-  ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
-  document.getElementById('devoG2X').addEventListener('click',function(){ov.style.display='none';});
-  document.getElementById('devoG2Sel').addEventListener('change',function(){devoG2Load(this.value);});
-  window.addEventListener('resize',function(){if(ov.style.display!=='none')DEVO_G2_CH.forEach(function(c){try{c.resize();}catch(e){}});});}
- var sel=document.getElementById('devoG2Sel');sel.innerHTML=DEVO_ITEMS.map(function(it){return '<option value="'+it.id+'"'+(it.id===id?' selected':'')+'>'+devoEsc(it.t)+'</option>';}).join('');
- ov.style.display='flex';devoG2Load(id);
+function devoRenderGraficos(){
+ var pane=document.getElementById('devoPane');if(!pane)return;
+ DEVO_GRAFVIEW=true;
+ var btn=document.getElementById('devoGraficosBtn');if(btn)btn.classList.add('on');
+ document.querySelectorAll('#devoTabs .devo-tab').forEach(function(b){b.classList.remove('on');});
+ if(!pane.querySelector('#devoG2Body')){
+  pane.innerHTML='<div class="devo-g2-wrap"><div class="devo-g2-bar"><span class="devo-g2-title">\ud83d\udcca Gr\u00e1ficos de Devoluciones</span><div class="devo-g2-sel"><label>Planilla:</label><select id="devoG2Sel"></select></div></div><div class="devo-g2-body" id="devoG2Body"></div></div>';
+  var sel=document.getElementById('devoG2Sel');sel.innerHTML=DEVO_ITEMS.map(function(it){return '<option value="'+it.id+'"'+(it.id===DEVO_GRAFSEL?' selected':'')+'>'+devoEsc(it.t)+'</option>';}).join('');
+  sel.addEventListener('change',function(){DEVO_GRAFSEL=this.value;devoEnsure();devoG2Render(DEVO_GRAFSEL,DEVO_DATA[DEVO_GRAFSEL]||{rows:[]});});
+ }
+ devoEnsure();devoG2Render(DEVO_GRAFSEL,DEVO_DATA[DEVO_GRAFSEL]||{rows:[]});
 }
-function devoG2Load(id){
- var body=document.getElementById('devoG2Body');if(!body)return;body.innerHTML='<div class="devo-daynote">Consultando la nube\u2026</div>';
- devoEnsureCloud(function(ok){
-  if(ok&&fbDB){fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){var v=snap.val()||DEVO_DATA;devoG2Render(id,(v&&v[id])?v[id]:{rows:[]});}).catch(function(){devoEnsure();devoG2Render(id,DEVO_DATA[id]||{rows:[]});});}
-  else{devoEnsure();devoG2Render(id,DEVO_DATA[id]||{rows:[]});}
- });
-}
+function devoG2Refresh(){if(DEVO_GRAFVIEW&&document.getElementById('devoG2Body')){devoEnsure();devoG2Render(DEVO_GRAFSEL,DEVO_DATA[DEVO_GRAFSEL]||{rows:[]});}}
 function devoG2Render(id,d){
  try{DEVO_G2_CH.forEach(function(c){try{c.dispose();}catch(e){}});}catch(e){}DEVO_G2_CH=[];
  var it=DEVO_ITEMS.find(function(x){return x.id===id;})||DEVO_ITEMS[0];var col=it.c;
  var body=document.getElementById('devoG2Body');if(!body)return;
  var a=devoG2Agg(d);
- if(!a.totReg){body.innerHTML='<div class="devo-g2-empty">La planilla <b>'+devoEsc(it.t)+'</b> no tiene datos para graficar.</div>';return;}
+ if(!a.totReg){body.innerHTML='<div class="devo-g2-empty">La planilla <b>'+devoEsc(it.t)+'</b> no tiene datos para graficar. Escribe o guarda registros y los gr\u00e1ficos se llenar\u00e1n solos.</div>';return;}
  var cards=[
   ['m_reg','Devoluciones por Mes'],['m_val','Valor por Mes'],['m_bul','Bultos por Mes'],
   ['s_reg','Devoluciones por Semana del A\u00f1o'],['s_val','Valor por Semana del A\u00f1o'],['s_bul','Bultos por Semana del A\u00f1o'],
-  ['uni','Devoluciones por Unidad de Negocio (Valor)','wide'],['com','Top 10 Comunas (Devoluciones)'],['dst','Top 10 Destinatarios (Valor)'],['obs','Motivos / Observaciones']
+  ['uni','Devoluciones por Unidad de Negocio (Valor)','wide'],['com','Top 10 Comunas (Devoluciones)'],['dst','Top 10 Destinatarios (Valor)']
  ];
  body.innerHTML='<div class="devo-g2-note" style="color:#5a6672;font-size:13px;margin-bottom:12px">Planilla <b style="color:'+col+'">'+devoEsc(it.t)+'</b> \u00b7 '+a.totReg+' devoluciones'+(a.sinFecha?(' \u00b7 '+a.sinFecha+' sin fecha (no entran en mes/semana)'):'')+'. Semana seg\u00fan calendario ISO (la semana que cruza el a\u00f1o cuenta como Semana 1).</div><div class="devo-g2-grid">'+cards.map(function(c){return '<div class="devo-g2-card'+(c[2]?' wide':'')+'"><div class="devo-g2-h" style="border-left-color:'+col+'">'+c[1]+'</div><div class="devo-g2-c" id="devoG2_'+c[0]+'"></div></div>';}).join('')+'</div>';
  function mk(cid,opt){var el=document.getElementById('devoG2_'+cid);if(!el)return;var ins=echarts.init(el,null,{renderer:'canvas'});DEVO_G2_CH.push(ins);ins.setOption(opt,true);}
@@ -2082,13 +2082,11 @@ function devoG2Render(id,d){
  mk('s_val',{tooltip:{trigger:'axis',valueFormatter:function(v){return devoFmtVal(v);}},grid:{left:6,right:10,top:14,bottom:24,containLabel:true},xAxis:{type:'category',data:semLab,axisLabel:{fontSize:9,rotate:semLab.length>12?40:0}},yAxis:axV,series:[{type:'line',smooth:true,data:a.semO.map(function(k){return a.sem[k].v;}),itemStyle:{color:'#1e8449'},areaStyle:{opacity:.12}}]});
  mk('s_bul',{tooltip:{trigger:'axis'},grid:{left:6,right:10,top:14,bottom:24,containLabel:true},xAxis:{type:'category',data:semLab,axisLabel:{fontSize:9,rotate:semLab.length>12?40:0}},yAxis:{type:'value',axisLabel:{fontSize:9}},series:[{type:'line',smooth:true,data:a.semO.map(function(k){return a.sem[k].b;}),itemStyle:{color:'#f39c12'},areaStyle:{opacity:.12}}]});
  var uT=devoTopN(a.uni,a.uniO,'v',12);
- mk('uni',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'},valueFormatter:function(v){return devoFmtVal(v);}},grid:{left:6,right:16,top:10,bottom:6,containLabel:true},xAxis:axV,yAxis:{type:'category',data:uT.map(function(k){return k;}).reverse(),axisLabel:{fontSize:10}},series:[{type:'bar',data:uT.map(function(k){return a.uni[k].v;}).reverse(),itemStyle:{color:'#0f3a59',borderRadius:[0,4,4,0]}}]});
+ mk('uni',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'},valueFormatter:function(v){return devoFmtVal(v);}},grid:{left:6,right:16,top:10,bottom:6,containLabel:true},xAxis:axV,yAxis:{type:'category',data:uT.slice().reverse(),axisLabel:{fontSize:10}},series:[{type:'bar',data:uT.map(function(k){return a.uni[k].v;}).reverse(),itemStyle:{color:'#0f3a59',borderRadius:[0,4,4,0]}}]});
  var cT=devoTopN(a.com,a.comO,'r',10);
- mk('com',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:6,right:16,top:10,bottom:6,containLabel:true},xAxis:{type:'value',axisLabel:{fontSize:9}},yAxis:{type:'category',data:cT.reverse(),axisLabel:{fontSize:10}},series:[{type:'bar',data:cT.map(function(k){return a.com[k].r;}),itemStyle:{color:'#7b1e3a',borderRadius:[0,4,4,0]}}]});
+ mk('com',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:6,right:16,top:10,bottom:6,containLabel:true},xAxis:{type:'value',axisLabel:{fontSize:9}},yAxis:{type:'category',data:cT.slice().reverse(),axisLabel:{fontSize:10}},series:[{type:'bar',data:cT.map(function(k){return a.com[k].r;}).reverse(),itemStyle:{color:'#7b1e3a',borderRadius:[0,4,4,0]}}]});
  var dT=devoTopN(a.dst,a.dstO,'v',10);
  mk('dst',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'},valueFormatter:function(v){return devoFmtVal(v);}},grid:{left:6,right:16,top:10,bottom:6,containLabel:true},xAxis:axV,yAxis:{type:'category',data:dT.slice().reverse(),axisLabel:{fontSize:9}},series:[{type:'bar',data:dT.map(function(k){return a.dst[k].v;}).reverse(),itemStyle:{color:'#0d9488',borderRadius:[0,4,4,0]}}]});
- var oT=devoTopN(a.obs,a.obsO,'r',8);
- mk('obs',{tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},legend:{type:'scroll',bottom:0,textStyle:{fontSize:9}},series:[{type:'pie',radius:['38%','66%'],center:['50%','44%'],data:oT.map(function(k){return {name:k,value:a.obs[k].r};}),label:{fontSize:9}}]});
  setTimeout(function(){DEVO_G2_CH.forEach(function(c){try{c.resize();}catch(e){}});},90);
 }
 function devoBuildModals(){
