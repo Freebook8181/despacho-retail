@@ -1731,7 +1731,13 @@ function devoImportExcel(ev){
 }
 /* --- GUARDAR inmediato en Firebase --- */
 function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
-function devoGuardar(){devoEnsure();if(typeof fbReady==='undefined'||!fbReady||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}devoFbSave().then(ok=>{alert(ok?'Informaci\u00f3n guardada en la nube. Todos los usuarios la ver\u00e1n al recargar.':'No se pudo guardar. Revisa los permisos de Firebase.');});}
+function devoGuardar(){devoEnsure();
+ if(typeof fbDB==='undefined'||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}
+ function _doSave(){devoFbSave().then(ok=>{alert(ok?'Informaci\u00f3n guardada en la nube. Todos los usuarios la ver\u00e1n al recargar.':'No se pudo guardar. Revisa los permisos de Firebase (activa el proveedor An\u00f3nimo en Authentication).');});}
+ if(fbReady){_doSave();return;}
+ /* Aun sin sesion: intentar login anonimo AHORA y luego guardar */
+ if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}_doSave();}).catch(function(e){console.error('signInAnonymously',e);alert('No se pudo conectar a la nube.\n\nEntra a Firebase \u2192 Authentication \u2192 Sign-in method y activa el proveedor "An\u00f3nimo". Luego recarga con Ctrl+F5.');});return;}
+ alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');}
 /* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o y colores) --- */
 function devoSheetName(t){return (t||'Hoja').replace(/[\\/?*\[\]:]/g,' ').slice(0,31);}
 function devoExport(ids){
@@ -2870,6 +2876,8 @@ try{applyRole();}catch(e){}
 /* ====== APP11 · Roles granulares, borrado de Excel de tiendas, quitar pedido y selector de exportación ====== */
 /* Nuevo usuario: solo lectura + exportar (sin subir ni borrar, porque eso es acción de administrador) */
 try{USERS['cretamac@quintec.cl']={pass:'123456789',role:'cretamac',name:'Creta Mac'};}catch(e){}
+/* Nuevo usuario NO administrador (rol ops): ve y usa todo lo que no es exclusivo del administrador */
+try{USERS['greyes@quintec.cl']={pass:'123456789',role:'ops',name:'G. Reyes'};}catch(e){}
 /* applyRole con permisos finos:
    - admin: ve TODO
    - cretamac: ve casi todo, EXCEPTO Sugerencias IA, Vaciar datos, pestaña Diagnóstico y pestaña Auditoría; tampoco ve subir/borrar Excel
