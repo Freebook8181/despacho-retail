@@ -26,9 +26,7 @@ html,body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans
 .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 .wrap{max-width:1340px;margin:0 auto;padding:0 22px}
 /* ===== HERO ===== */
-.hero{background:linear-gradient(135deg,var(--navy-d),var(--navy) 60%,#355a85);color:#eaf1f8;padding:30px 0 74px;position:relative;overflow:hidden}
-/* En MacOnline y Vertical y en Devoluciones no hay barra de filtros: quitamos el espacio azul sobrante bajo los botones */
-body.grp-mod .hero,body.grp-devo .hero{padding-bottom:16px}
+.hero{background:linear-gradient(135deg,var(--navy-d),var(--navy) 60%,#355a85);color:#eaf1f8;padding:30px 0 92px;position:relative;overflow:hidden}
 .hero:before{content:'';position:absolute;inset:0;background:radial-gradient(900px 300px at 85% -40%,rgba(90,180,160,.28),transparent 60%);pointer-events:none}
 .hero .wrap{position:relative;z-index:2}
 .brandrow{display:flex;align-items:center;gap:12px;margin-bottom:18px}
@@ -56,39 +54,6 @@ body.grp-mod .hero,body.grp-devo .hero{padding-bottom:16px}
 .tab:hover{background:rgba(255,255,255,.12);color:#fff}
 .tab.on{background:var(--bg);color:var(--navy-d);border-color:var(--bg);font-weight:600}
 .tab svg{width:15px;height:15px}
-/* ===== PESTAÑAS PADRE (navegación de 2 niveles) ===== */
-.ptabs{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
-.ptab{display:flex;align-items:center;gap:9px;font-family:'Sora';font-weight:700;font-size:15px;letter-spacing:.3px;padding:12px 24px;border-radius:12px 12px 0 0;cursor:pointer;border:1px solid transparent;color:#cfe0f0;background:rgba(255,255,255,.07);transition:.18s}
-.ptab:hover{background:rgba(255,255,255,.14);color:#fff}
-.ptab .pdot{display:inline-block;width:11px;height:11px;border-radius:50%}
-/* Operaciones: color sobrio y letra distinta */
-.ptab[data-g="ops"].on{background:var(--teal);color:#fff;border-color:var(--teal)}
-.ptab[data-g="ops"] .pdot{background:#5bbfa6}
-/* MacOnline y Vertical: fondo crema */
-.ptab[data-g="mod"].on{background:#f8f1df;color:#7a3e94;border-color:#e9dcba}
-.ptab[data-g="mod"] .pdot{background:#8e44ad}
-/* Devoluciones: su propia pestaña padre */
-.ptab[data-g="devo"].on{background:#e6f7f2;color:#0d6e5a;border-color:#16a085}
-.ptab[data-g="devo"] .pdot{background:#16a085}
-/* la barra de sub-pestañas se pega al padre */
-nav.tabs#tabs{margin-top:0;border-top:2px solid rgba(255,255,255,.12);padding-top:10px}
-/* mostrar solo las sub-pestañas del grupo activo */
-#tabs.g-ops .grp-mod,#tabs.g-ops .grp-devo{display:none}
-#tabs.g-mod .grp-ops,#tabs.g-mod .grp-devo{display:none}
-#tabs.g-devo .grp-ops,#tabs.g-devo .grp-mod{display:none}
-/* ===== Barra de acciones del módulo Operaciones ===== */
-.opsbar{display:none;gap:8px;flex-wrap:wrap;margin-top:12px}
-.opsbtn{display:flex;align-items:center;gap:7px;font-family:'IBM Plex Sans';font-size:12.5px;font-weight:600;color:#eaf1f8;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);padding:8px 15px;border-radius:8px;cursor:pointer;transition:.16s}
-.opsbtn:hover{background:rgba(255,255,255,.2);transform:translateY(-1px)}
-.opsbtn.ob-del{background:rgba(139,26,26,.55);border-color:rgba(192,80,70,.55);color:#ffe9e5}
-.opsbtn.ob-rep{background:rgba(43,74,111,.6);border-color:rgba(120,150,190,.5)}
-.opsbtn.ob-ppt{background:rgba(200,154,78,.4);border-color:rgba(216,173,96,.6);color:#2a2208}
-.opsbtn.ob-nube{background:rgba(43,108,176,.6);border-color:rgba(110,160,220,.6);color:#eaf4ff}
-.opsbtn.ob-nube svg{width:16px;height:16px;flex:0 0 auto}
-.modactbtn{font-family:'IBM Plex Sans';font-size:12.5px;font-weight:700;letter-spacing:.3px;padding:8px 16px;border-radius:9px;cursor:pointer;transition:.16s;border:1.5px solid}
-.modactbtn:hover{transform:translateY(-1px);filter:brightness(1.05)}
-.modactbtn.mab-rep{background:#2b4a6f;border-color:#2b4a6f;color:#fff}
-.modactbtn.mab-ppt{background:#c89a4e;border-color:#c89a4e;color:#2a2208}
 /* ===== FILTER BAR ===== */
 .filters{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(9px);border-bottom:1px solid var(--line);box-shadow:0 2px 12px rgba(23,42,67,.05);margin-top:-70px;border-radius:12px;margin-bottom:20px}
 .filters .wrap{padding:11px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -194,21 +159,6 @@ select:focus{border-color:var(--navy)}
 .devo-daycell:focus{outline:2px solid #2563eb;background:#eef5ff}
 .devo-daynote,.devo-dayempty{color:#5a6672;font-size:13px;margin-top:14px}
 .devo-dayempty{text-align:center;padding:50px 10px;font-size:15px}
-/* pestañas + nuevas celdas devoluciones */
-.devo-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 2px 14px}
-.devo-tab{border:2px solid var(--tc);background:#fff;color:var(--tc);border-radius:9px 9px 0 0;padding:9px 16px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;transition:all .15s;opacity:.82}
-.devo-tab:hover{opacity:1}
-.devo-tab.on{background:var(--tc);color:var(--tt);opacity:1;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-.devo-nube{background:#2563eb}
-.devo-total{padding:10px 16px;border-top:1px solid #e3e8ef;font-size:13.5px;color:#1f2a37;text-align:right;background:#fbfcfe}
-.devo-totval{font-weight:800;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;margin-left:6px}
-.devo-valcell{text-align:right;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;font-weight:600}
-.devo-valhead{background:rgba(0,0,0,.10)}
-.devo-fechacell{cursor:pointer;background:#fcfbf6}
-.devo-fechacell:hover{background:#fff7e6;outline:1px dashed #c89a4e}
-.devo-horrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.devo-clock{font-family:'IBM Plex Mono',monospace;font-weight:800;color:#16a085;background:#e6f7f2;border:1px solid #16a085;border-radius:7px;padding:3px 9px;font-size:14px;letter-spacing:1px}
-.devo-ins{background:#16a085;padding:6px 12px}
 /* ===== Boton y ventana "Ver analisis" ===== */
 .card{position:relative}
 .an-btn{position:absolute;top:12px;right:12px;z-index:5;border:1px solid var(--line);background:#fff;color:var(--navy-d);font-family:'IBM Plex Sans';font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 4px rgba(23,42,67,.08);transition:.15s}
@@ -351,18 +301,26 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
       <div class="logo">Q</div>
       <div><div class="b1">QUINTEC · KPI LOGÍSTICA</div><div class="b2">Suite Ejecutiva de Operaciones & Finanzas</div></div>
       <div class="htools">
+        <input type="file" id="fileInp" accept=".xlsx,.xls" multiple style="display:none"/>
+        <button class="htool adminonly" id="btnUpload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></svg> Subir mes (.xlsx)</button>
+        <button class="htool adminonly" id="btnClear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14"/></svg> Vaciar datos</button>
+        <button class="htool adminonly" id="btnPdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 15h6M9 18h6M9 12h2"/></svg> Informe PDF</button>
+        <button class="htool adminonly" id="btnReporte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg> Reporte</button>
         <button class="htool sug adminonly" id="btnSug"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2.1h6c0-.8.4-1.6 1-2.1A7 7 0 0012 2z"/></svg> Sugerencias IA</button>
+        <button class="htool pp adminonly" id="btnPpt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M8 8h5a2 2 0 010 4H8V8z"/></svg> PowerPoint</button>
         <div class="userbox" style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
         <button class="htool logout" id="btnLogout" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg> <span id="whoami"></span></button>
+        <button class="htool adminonly" id="btnEliminar" style="background:rgba(139,26,26,.85);border-color:rgba(192,80,70,.6);color:#ffe9e5;justify-content:center;font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14M10 11v6M14 11v6"/></svg> Eliminar todo</button>
+        <input type="file" id="fileInpFull" accept=".xlsx,.xls" multiple style="display:none"/>
+        <button class="htool adminonly" id="btnSubirExcel" style="background:rgba(47,125,107,.9);border-color:rgba(91,191,166,.55);color:#e9fff7;justify-content:center;font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2"/></svg> Subir Excel</button>
         </div>
       </div>
     </div>
     <div class="badge-live" id="loadInfo"><i></i> <span>Datos cargados</span></div>
     <h1>MONITOREO DE FLOTA</h1>
     <p class="sub">Monitoreo volumétrico, valorización financiera, eficiencia de rutas y auditoría de calidad de datos. Filtra por semana, día, vehículo o rango horario y todo el tablero reacciona en vivo.</p>
-    <nav class="ptabs" id="ptabs"></nav>
+    <div class="scope" id="heroScope"></div>
     <nav class="tabs" id="tabs"></nav>
-    <div class="opsbar" id="opsbar"></div>
   </div>
 </header>
 <!-- FILTER BAR -->
@@ -377,6 +335,7 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
     <div class="fg"><label>Unidad</label><select id="fUn"></select></div>
     <div class="fg"><label>Cliente</label><select id="fCli"></select></div>
     <div class="fg"><label>Comuna</label><select id="fCom"></select></div>
+    <button class="reset" id="fReset">✕ Limpiar</button>
     <div class="active-scope" id="activeScope"></div>
   </div>
 </div>
@@ -440,31 +399,6 @@ function catFlota(tp){return esProp(tp)?'Flota propia':'Tercerizada / Externa';}
 /* ====== STATE ====== */
 const F={mes:'all',sem:'all',dia:'all',tp:'all',rg:'all',un:'all',cl:'all',co:'all'};
 let CUR='op';
-let CURG='ops';
-const GROUP_OF={op:'ops',fin:'ops',log:'ops',aud:'ops',cmp:'ops',diag:'ops',mac:'mod',ver:'mod',devo:'devo'};
-function setGroup(g){
- CURG=g;
- const tb=document.getElementById('tabs');if(tb){tb.classList.remove('g-ops','g-mod','g-devo');tb.classList.add('g-'+g);}
- try{document.body.classList.remove('grp-ops','grp-mod','grp-devo');document.body.classList.add('grp-'+g);}catch(_){}
- const ob=document.getElementById('opsbar');if(ob&&typeof obUpdateBar==='function')obUpdateBar();else if(ob)ob.style.display='flex';
- document.querySelectorAll('.ptab').forEach(p=>p.classList.toggle('on',p.dataset.g===g));
-}
-function activateGroup(g){
- setGroup(g);
- // Devoluciones no tiene sub-pestañas: se activa su sección directamente (sin mostrar un botón "Devoluciones" abajo).
- if(g==='devo'){
-  CUR='devo';
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.section').forEach(sx=>sx.classList.toggle('on',sx.id==='s-devo'));
-  var fl=document.querySelector('.filters');if(fl)fl.style.display='none';
-  if(typeof resizeCur==='function')resizeCur();
-  if(typeof updateEmptyState==='function')updateEmptyState();
-  return;
- }
- const sub=[...document.querySelectorAll('#tabs .tab.grp-'+g)];
- const vis=sub.find(t=>t.style.display!=='none');
- if(vis)vis.click();
-}
 const CH={};
 const TT={backgroundColor:'#fff',borderWidth:0,padding:[9,12],textStyle:{color:'#1f2a37',fontFamily:'IBM Plex Sans',fontSize:12},extraCssText:'box-shadow:0 6px 24px rgba(23,42,67,.16);border-radius:8px;'};
 function axCfg(){return{axisLine:{lineStyle:{color:'#d6dce3'}},axisTick:{show:false},axisLabel:{color:'#6b7684',fontSize:11,fontFamily:'IBM Plex Sans'},splitLine:{lineStyle:{color:'#eef1f4'}}};}
@@ -479,16 +413,14 @@ function recomputeMeta(){
  DATA.meta.n=r.length;
 }
 function rowsForMonth(){return F.mes==='all'?DATA.rows:DATA.rows.filter(r=>r.mk===F.mes);}
+
 /* ===== app2.js ===== */
 /* ====== MARKUP ====== */
 const TABS=[['op','Operaciones & Flota',IC.truck],['fin','Finanzas & P&L',IC.money],['log','Logística & Rutas',IC.map],['aud','Auditoría & Excepciones',IC.search],['cmp','Tendencias & Comparativo',IC.cal],['diag','Diagnóstico & Causas',IC.alert]];
 function kpi(id,icon,title,tl){return `<div class="kpi ${tl?'tl':''}"><button class="kinfo adminonly" data-k="${id}" title="¿Qué significa este indicador?">?</button><div class="kt">${icon}<span>${title}</span></div><div class="kv" id="${id}">–</div><div class="kf" id="${id}_f"></div></div>`;}
 function card(id,icon,title,sub,cls,detail){return `<div class="card"><h3>${icon} ${title}${detail?`<button class="vdet" data-detail="${id}" title="Ver todo el detalle">Ver detalle</button>`:''}<button class="cinfo adminonly" data-c="${id}" title="¿Para qué sirve este gráfico?">?</button></h3><div class="cs">${sub}</div><div class="chart ${cls||''}" id="${id}"></div><div class="insight" id="${id}_i"></div></div>`;}
 function buildMarkup(){
- document.getElementById('tabs').innerHTML=TABS.map(t=>`<div class="tab grp-ops ${t[0]=='op'?'on':''} ${t[0]==='diag'?'adminonly':''}" data-t="${t[0]}">${t[2]}<span>${t[1]}</span></div>`).join('');
- document.getElementById('tabs').classList.add('g-ops');
- const _pt=document.getElementById('ptabs');if(_pt)_pt.innerHTML=`<div class="ptab on" data-g="ops"><span class="pdot"></span><span>Operaciones</span></div><div class="ptab" data-g="mod"><span class="pdot"></span><span>MacOnline y Vertical</span></div><div class="ptab" data-g="devo"><span class="pdot"></span><span>Devoluciones</span></div>`;
- const _ob=document.getElementById('opsbar');if(_ob){const _cloud='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 7 17.5"/></svg>';_ob.innerHTML=[['imp','Importar'],['exp','Exportar'],['gua','Guardar'],['del','Eliminar'],['rep','Reporte'],['ppt','PPT'],['nube','NUBE']].map(b=>`<button class="opsbtn ob-${b[0]}" data-ob="${b[0]}">${b[0]==='nube'?_cloud:''}<span>${b[1]}</span></button>`).join('');_ob.style.display='flex';}
+ document.getElementById('tabs').innerHTML=TABS.map(t=>`<div class="tab ${t[0]=='op'?'on':''} ${t[0]==='diag'?'adminonly':''}" data-t="${t[0]}">${t[2]}<span>${t[1]}</span></div>`).join('');
  const M=document.getElementById('main');let h='';
  // ===== OPERACIONES =====
  h+=`<section class="section on" id="s-op"><div class="sec-head"><h2>Operaciones & Desempeño de Flota</h2><p>Rendimiento volumétrico y densidad de despachos</p></div>`;
@@ -540,6 +472,7 @@ function buildMarkup(){
  h+=`</section>`;
  M.innerHTML=h;
 }
+
 /* ===== app3.js ===== */
 /* ====== FILTERS ====== */
 function uniq(a){return [...new Set(a)];}
@@ -667,9 +600,14 @@ function wireFilters(){
  document.getElementById('fUn').addEventListener('change',e=>{F.un=e.target.value;F.cl='all';buildFilters();render();});
  document.getElementById('fCli').addEventListener('change',e=>{F.cl=e.target.value;render();});
  document.getElementById('fCom').addEventListener('change',e=>{F.co=e.target.value;render();});
- var _fr=document.getElementById('fReset');if(_fr)_fr.addEventListener('click',()=>{F.sem='all';F.dia='all';F.tp='all';F.rg='all';F.un='all';F.cl='all';F.co='all';buildFilters();document.getElementById('fRg').value='all';render();});
- document.getElementById('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;CUR=t.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.section').forEach(sx=>sx.classList.toggle('on',sx.id==='s-'+CUR));const _g=GROUP_OF[CUR];if(_g)setGroup(_g);resizeCur();if(typeof updateEmptyState==='function')updateEmptyState();});
- (function(){const pe=document.getElementById('ptabs');if(pe)pe.addEventListener('click',e=>{const p=e.target.closest('.ptab');if(!p)return;activateGroup(p.dataset.g);});})();
+ document.getElementById('fReset').addEventListener('click',()=>{F.sem='all';F.dia='all';F.tp='all';F.rg='all';F.un='all';F.cl='all';F.co='all';buildFilters();document.getElementById('fRg').value='all';render();});
+ document.getElementById('tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;CUR=t.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));document.querySelectorAll('.section').forEach(sx=>sx.classList.toggle('on',sx.id==='s-'+CUR));resizeCur();if(typeof updateEmptyState==='function')updateEmptyState();});
+ document.getElementById('btnUpload').addEventListener('click',()=>document.getElementById('fileInp').click());
+ document.getElementById('fileInp').addEventListener('change',handleUpload);
+ (function(){const bc=document.getElementById('btnClear');if(bc)bc.addEventListener('click',clearSavedMonths);})();
+ document.getElementById('btnPdf').addEventListener('click',exportPDF);
+ document.getElementById('btnPpt').addEventListener('click',exportPPT);
+ document.getElementById('btnReporte').addEventListener('click',exportReporte);
  document.getElementById('btnSug').addEventListener('click',exportSugerencia);
  document.getElementById('ovrClose').addEventListener('click',closeOvr);
  document.getElementById('ovr').addEventListener('click',e=>{if(e.target.id==='ovr')closeOvr();});
@@ -727,7 +665,6 @@ function initAuth(){
      document.body.classList.remove('locked');
      applyRole();
      try{if(typeof render==='function')render();}catch(err){}
-     try{setTimeout(function(){if(typeof opsCheckDailyBackup==='function')opsCheckDailyBackup();},1200);}catch(_){}
      setTimeout(()=>{Object.values(CH).forEach(c=>c.resize());if(typeof resizeCur==='function')resizeCur();},120);
    }else{
      document.getElementById('loginErr').style.display='block';
@@ -769,6 +706,29 @@ function cleanSheet(json,fname){
  out.forEach(o=>{o.mes=label;o.mk=mk;delete o._mo;delete o._dt;});
  return {label,mk,rows:out};
 }
+function handleUpload(e){
+ const files=[...e.target.files];if(!files.length)return;
+ const info=document.getElementById('loadInfo').querySelector('span');info.textContent='Procesando...';
+ let done=0,added=0,msgs=[];
+ files.forEach(file=>{
+   const rd=new FileReader();
+   rd.onload=ev=>{
+     try{
+       const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+       const ws=wb.Sheets[wb.SheetNames[0]];
+       const json=XLSX.utils.sheet_to_json(ws,{defval:null});
+       const res=cleanSheet(json,file.name);
+       if(res){
+         DATA.rows=DATA.rows.filter(r=>r.mk!==res.mk).concat(res.rows);
+         added++;msgs.push(`${res.label}: ${res.rows.length} reg.`);
+         F.mes=res.mk;
+       }else msgs.push(`${file.name}: sin datos válidos`);
+     }catch(err){msgs.push(`${file.name}: error (${err.message})`);}
+     done++;if(done===files.length){recomputeMeta();const ok=saveMonths();buildFilters();render();info.textContent=`${DATA.meta.meses.length} mes(es) · ${fi(DATA.rows.length)} reg.`;if(fbReady){fbPush();alert('Carga completada:\n'+msgs.join('\n')+'\n\n\u2601 Los meses se guardaron en la nube (Firebase): quedan disponibles al volver a abrir y los ven todos los usuarios.');}else{alert('Carga completada:\n'+msgs.join('\n')+'\n\n'+(ok?'\u2713 Los meses quedaron guardados en este navegador.':'\u26a0 No se pudieron guardar en este navegador (espacio lleno). Los datos funcionan en esta sesi\u00f3n, pero se perder\u00e1n al cerrar.'));}}
+   };rd.readAsArrayBuffer(file);
+ });
+ e.target.value='';
+}
 /* ====== PERSISTENCIA LOCAL (localStorage) ====== */
 /* ====== FIREBASE (nube · datos compartidos entre usuarios) ====== */
 const FB_CFG={apiKey:"AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOj0Vzk",authDomain:"despacho-retail.firebaseapp.com",databaseURL:"https://despacho-retail-default-rtdb.firebaseio.com",projectId:"despacho-retail",storageBucket:"despacho-retail.appspot.com",messagingSenderId:"1011000908999",appId:"1:1011000908999:web:08c8630fab0c9537e0b2e2"};
@@ -801,6 +761,11 @@ function fbSubscribe(){
 }
 function fbPush(){if(!fbReady||!fbDB)return;try{fbWriting=true;fbDB.ref(FB_PATH).set(buildStore()).then(()=>{fbWriting=false;}).catch(e=>{fbWriting=false;console.error('fbPush',e);});}catch(e){fbWriting=false;console.error('fbPush',e);}}
 function fbClear(){if(!fbReady||!fbDB)return Promise.resolve();try{return fbDB.ref(FB_PATH).remove();}catch(e){return Promise.resolve();}}
+function clearSavedMonths(){
+ if(!confirm('Esto borrará TODOS los meses guardados (en la nube y en este navegador) para TODOS los usuarios. El tablero volverá a mostrar solo los datos base. ¿Deseas continuar?'))return;
+ try{localStorage.removeItem(LS_KEY);}catch(e){}
+ Promise.resolve(fbClear()).finally(()=>{alert('Listo. Se vaciaron los datos. La página se recargará.');try{location.reload();}catch(e){}});
+}
 function saveMonths(){
  const store={};
  DATA.rows.forEach(r=>{(store[r.mk]=store[r.mk]||{label:r.mes,rows:[]}).rows.push(r);});
@@ -828,6 +793,7 @@ function activeScope(){
  if(F.co!=='all')parts.push(['Comuna',F.co]);
  document.getElementById('activeScope').innerHTML='<span style="font-weight:600;color:var(--navy)">Vista activa:</span>'+parts.map(p=>`<span class="chip">${p[0]}: <b>${p[1]}</b></span>`).join('');
 }
+
 /* ===== app4.js ===== */
 /* ====== CHART CORE ====== */
 function setC(id,opt){const el=document.getElementById(id);if(!el)return;if(!CH[id])CH[id]=echarts.init(el,null,{renderer:'canvas'});CH[id].setOption(opt,true);}
@@ -852,6 +818,7 @@ function render(){
  updateEmptyState();
  const days=[...new Set(f.map(r=>r.f))];const nDays=days.length||1;
  const totV=f.reduce((a,r)=>a+r.v,0);
+ document.getElementById('heroScope').innerHTML=`<span>Periodo: <b>${F.mes==='all'?'Todos los meses':(DATA.meta.meses.find(m=>m.key===F.mes)||{}).label}</b></span><span>Registros en vista: <b>${fi(f.length)}</b></span><span>Valor en vista: <b>${fmShort(totV)}</b></span><span>Flota: <b>${F.tp==='all'?'completa':F.tp}</b></span>`;
  LAST={f,days,nDays,totV};
  renderKPIs(f,days,nDays,totV);
  renderOp(f);renderFin(f,days,nDays,totV);renderLog(f,days);renderAud(f);
@@ -941,6 +908,7 @@ function renderKPIs(f,days,nDays,totV){
  setKV('k_semcrit',semCrit,semCritR?`tasa <b>${(100*semCritR).toFixed(1)}%</b>`:'sin datos');
  LAST.kpis={peakN,peakD,comunas,prop,tot,am,pm,obs:obs.length,reenv,camb,prior,vobs,vmax,vmr,vtop,top5,tipos,med:median(dayCounts),vmed:median(vals),pxv,vehAct,vehProp,hhi,hhiTxt,cv,vProp,vTer,pTkt,nP,pv,comLead,comObs,comObsN,semCrit,semCritR};
 }
+
 /* ===== app5.js ===== */
 /* ====== OPERACIONES ====== */
 function renderOp(f){
@@ -981,6 +949,7 @@ function renderOp(f){
  setC('c_ampmdisp',{tooltip:Object.assign({trigger:'item',formatter:function(p){var v=p.value;return `<b>${(typeof dDMY==='function')?dDMY(v[3]):v[3]}</b><br/>Pedidos AM: <b>${fi(v[0])}</b><br/>Pedidos PM: <b>${fi(v[1])}</b><br/>Total del día: <b>${fi(v[4])}</b><br/>% con observación: <b>${v[2]}%</b>`;}},TT),grid:{left:8,right:16,top:16,bottom:40,containLabel:true},xAxis:Object.assign({type:'value',name:'Pedidos AM',nameLocation:'middle',nameGap:26,nameTextStyle:{color:'#8a95a1',fontSize:11}},axCfg(),{axisLabel:{color:'#6b7684',fontSize:10}}),yAxis:Object.assign({type:'value',name:'Pedidos PM',nameLocation:'middle',nameGap:34,nameTextStyle:{color:'#8a95a1',fontSize:11}},axCfg(),{axisLabel:{color:'#6b7684',fontSize:10}}),visualMap:{min:0,max:obMax||1,dimension:2,calculable:true,orient:'horizontal',right:6,bottom:4,itemWidth:12,itemHeight:60,text:['+ incidencias','- incidencias'],textStyle:{color:'#6b7684',fontSize:10},inRange:{color:['#3a5b80','#c89a4e','#c0504f']}},series:[{type:'scatter',data:pts,symbolSize:function(v){return Math.max(8,Math.min(30,Math.sqrt(v[4])*1.8));},itemStyle:{borderColor:'#fff',borderWidth:1,opacity:.85}}]});
  setI('c_ampmdisp',np?`Cada punto es un día del periodo: a la derecha más pedidos en la mañana (AM), arriba más en la tarde (PM); el tamaño es el total del día y el color la tasa de incidencias (proxy de problemas de entrega). La correlación AM–PM es <b>${rho.toFixed(2)}</b> (${Math.abs(rho)<0.3?'débil':(Math.abs(rho)<0.6?'moderada':'fuerte')}, ${rho>=0?'positiva':'negativa'}). <b>Nota:</b> el Excel actual no registra la hora/tiempo de entrega, por eso el color usa el % de observaciones como aproximación; si agregas una columna de tiempo de entrega, cambio el eje para correlacionarlo directo.`:'Sin datos.');
 }
+
 /* ===== app6.js ===== */
 /* ====== FINANZAS ====== */
 function renderFin(f,days,nDays,totV){
@@ -1047,6 +1016,7 @@ function renderRouteTable(){
  pg.innerHTML=h;
  pg.querySelectorAll('button[data-pg]').forEach(b=>{if(b.disabled)return;b.addEventListener('click',()=>{RT_PAGE=+b.dataset.pg;renderRouteTable();const w=document.querySelector('#rt_tbl').closest('.tblwrap');if(w)w.scrollTop=0;});});
 }
+
 /* ===== app7.js ===== */
 /* ====== AUDITORIA ====== */
 function renderAud(f){
@@ -1070,7 +1040,7 @@ function renderAud(f){
 }
 /* ====== FOOTER ====== */
 function buildFooter(){
- document.getElementById('footc').innerHTML=`<b>QUINTEC · Suite KPI Logística</b> — Dashboard interactivo multi-mes.<br/>Metodología: Valor = suma de columna VALOR (sin impuestos declarados). Comunas normalizadas (mayúsculas/tildes); typo “SERVICO 3PL” → “SERVICIO 3PL”. Flota propia = MOVIL / DON; el resto se considera tercerizada. Todos los KPI reaccionan a los filtros activos.<div class="note">⬆️ Usa <b>“Subir mes (.xlsx)”</b> para añadir Octubre, Noviembre, etc. (mismo formato de columnas). Cada mes queda seleccionable por separado en el filtro <b>Mes</b>.<span id="fbStat" style="display:block;margin-top:6px;font-weight:600;color:#8a95a1">Conectando con la nube…</span></div>`;
+ document.getElementById('footc').innerHTML=`<b>QUINTEC · Suite KPI Logística</b> — Dashboard interactivo multi-mes.<br/>Metodología: Valor = suma de columna VALOR (sin impuestos declarados). Comunas normalizadas (mayúsculas/tildes); typo “SERVICO 3PL” → “SERVICIO 3PL”. Flota propia = MOVIL / DON; el resto se considera tercerizada. Todos los KPI reaccionan a los filtros activos.<div class="note">⬆️ Usa <b>“Subir mes (.xlsx)”</b> para añadir Octubre, Noviembre, etc. (mismo formato de columnas). Cada mes queda seleccionable por separado en el filtro <b>Mes</b>. Exporta el <b>Informe PDF</b> (narrativa + gráficos) o la <b>presentación PowerPoint</b> con los botones superiores.<span id="fbStat" style="display:block;margin-top:6px;font-weight:600;color:#8a95a1">Conectando con la nube…</span></div>`;
 }
 /* ====== BOOT (resiliente: el ingreso SIEMPRE debe quedar activo) ====== */
 // 1) El login se arma PRIMERO y aparte, para que ning\u00fan error de datos/gr\u00e1ficos
@@ -1092,6 +1062,7 @@ try{applyRole();}catch(e){console.error('applyRole2',e);}
 //    y, si falla o no hay internet, el tablero sigue con los datos locales.
 try{if(fbInit())fbSubscribe();}catch(e){console.error('firebase',e);}
 try{setTimeout(()=>{try{Object.values(CH).forEach(c=>c.resize());}catch(_){}} ,150);}catch(e){}
+
 /* ===== app8.js ===== */
 /* ====== CAPTURE CHARTS ====== */
 function captureAll(){
@@ -1181,6 +1152,100 @@ function expGroups(){return [
  ['Tendencias & Comparativo Mensual',['c_mesvol','c_mesval','c_mesheat','c_mesun','c_radar'],['k_cmpmeses','k_cmpbestvol','k_cmpbestval','k_cmpgrow']],
  ['Diagn\u00f3stico & An\u00e1lisis de Causas',['c_treemap','c_dispcom','c_causebar'],['k_dgobs','k_dgtop','k_dgcom','k_dgsem']]];}
 function kpiTable(ids){let r='';ids.forEach(id=>{const extra=kf(id);r+=`<tr><td>${KLBL[id]||id}</td><td class="v">${kv(id)}</td><td class="x">${extra}</td></tr>`;});return `<table class="kpit"><tr><th>Indicador</th><th style="text-align:right">Valor</th><th>Detalle</th></tr>${r}</table>`;}
+/* ====== INFORME PDF DETALLADO ====== */
+function exportPDF(){
+ const imgs=captureAll();const groups=expGroups();
+ const K=LAST.kpis||{},f=LAST.f||[],totV=LAST.totV||0;
+ let h=`<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Informe QUINTEC \u2014 ${scopeLabel()}</title>
+ <style>@page{size:A4;margin:15mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2a37;font-size:12.5px;line-height:1.6}
+ h1{font-size:25px;color:#1f3a59}h2{font-size:18px;color:#1f3a59;border-bottom:2px solid #2f7d6b;padding-bottom:5px;margin:24px 0 12px}h3{font-size:14px;color:#2b4a6f;margin:18px 0 7px}
+ .cover{padding:46px 0 30px;border-bottom:3px solid #1f3a59}.cover .tag{color:#2f7d6b;font-weight:700;letter-spacing:2px;font-size:12px}.cover .sc{color:#555;margin-top:8px;font-size:15px}.cover .meta{margin-top:16px;color:#777;font-size:11px}
+ .big{display:flex;gap:14px;margin:18px 0;flex-wrap:wrap}.bigk{flex:1;min-width:150px;background:#f4f6f8;border-radius:8px;padding:12px 14px}.bigk .l{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:.5px}.bigk .v{font-size:22px;font-weight:700;color:#1f3a59;font-family:Consolas,monospace}
+ p.n{margin:9px 0;text-align:justify}table{width:100%;border-collapse:collapse;margin:10px 0;font-size:11.5px}td,th{border:1px solid #dde3e9;padding:5px 8px;text-align:left}th{background:#1f3a59;color:#fff;font-weight:600}tr:nth-child(even) td{background:#f7f9fb}
+ .kpit td.v{text-align:right;font-family:Consolas,monospace;font-weight:600;color:#1f3a59}.kpit td.x{color:#6b7684;font-size:10.5px}
+ .chartblk{margin:14px 0 20px;page-break-inside:avoid}img{width:100%;border:1px solid #e3e7ec;border-radius:6px;margin:4px 0}
+ .an{background:#eef3f1;border-left:3px solid #2f7d6b;border-radius:0 6px 6px 0;padding:9px 13px;font-size:12px;color:#3a4854;margin-top:6px;text-align:justify}.an2{background:#eef3f8;border-left:3px solid #2b4a6f;border-radius:0 6px 6px 0;padding:9px 13px;font-size:12px;color:#334;margin-top:6px;text-align:justify}.an3{background:#f3f0f7;border-left:3px solid #6a5a92;border-radius:0 6px 6px 0;padding:9px 13px;font-size:12px;color:#3a3350;margin-top:6px;text-align:justify}
+ .note{background:#fbf7ec;border:1px solid #f0e4c4;color:#7a6a3a;padding:10px 13px;border-radius:7px;margin-top:12px;font-size:11.5px}
+ .foot{margin-top:26px;border-top:1px solid #ddd;padding-top:10px;color:#888;font-size:10px}
+ .pb{page-break-before:always}@media print{.noprint{display:none}}
+ .btnbar{position:fixed;top:10px;right:10px}.btnbar button{background:#1f3a59;color:#fff;border:0;padding:10px 16px;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600}</style></head><body>`;
+ h+=`<div class="btnbar noprint"><button onclick="window.print()">\u2193 Guardar como PDF</button></div>`;
+ h+=`<div class="cover"><div class="tag">QUINTEC \u00b7 SUITE KPI LOG\u00cdSTICA</div><h1>Informe Ejecutivo de Operaciones &amp; Finanzas</h1><div class="sc">${scopeLabel()}</div><div class="meta">Generado el ${new Date().toLocaleString('es-CL')} \u00b7 Fuente: datos de despacho QUINTEC \u00b7 ${fi(f.length)} registros en el alcance del informe</div></div>`;
+ h+=`<div class="big"><div class="bigk"><div class="l">Total Pedidos</div><div class="v">${fi(f.length)}</div></div><div class="bigk"><div class="l">Valor Total</div><div class="v">${fmShort(totV)}</div></div><div class="bigk"><div class="l">Ticket Promedio</div><div class="v">${fm(f.length?totV/f.length:0)}</div></div><div class="bigk"><div class="l">Comunas</div><div class="v">${fi(K.comunas||0)}</div></div><div class="bigk"><div class="l">% Flota Propia</div><div class="v">${(100*(K.prop||0)/(K.tot||1)).toFixed(0)}%</div></div></div>`;
+ h+=`<div class="note" style="margin-bottom:14px"><b>Naturaleza del documento:</b> lo que aqu\u00ed se presenta es un <b>an\u00e1lisis t\u00e9cnico</b> elaborado con enfoque de <b>ingenier\u00eda en log\u00edstica</b>. No es un simple listado de datos: cada indicador y gr\u00e1fico va acompa\u00f1ado de su interpretaci\u00f3n, se identifican causas y se proponen acciones de mejora.</div>`;
+ h+=`<h2>1. Objetivo y Alcance</h2>`;
+ h+=`<p class="n"><b>Objetivo:</b> evaluar el desempe\u00f1o operacional, financiero y de calidad de la operaci\u00f3n de despacho de QUINTEC durante el periodo analizado, detectar cuellos de botella y entregar recomendaciones accionables desde la ingenier\u00eda log\u00edstica.</p>`;
+ h+=`<p class="n"><b>Alcance:</b> ${scopeLabel()} \u00b7 ${fi(f.length)} pedidos, ${fi(K.comunas||0)} comunas y la flota propia y tercerizada registradas. Los valores respetan los filtros activos al momento de generar el informe.</p>`;
+ h+=`<p class="n"><b>Metodolog\u00eda:</b> an\u00e1lisis descriptivo y diagn\u00f3stico sobre los datos de despacho (volumen, valor, ventanas horarias, geograf\u00eda, flota y observaciones). Se aplican indicadores de concentraci\u00f3n (HHI, regla 80/20), variabilidad de carga (CV) y un diagrama causa-efecto (Ishikawa, 6M) para ordenar las causas de las incidencias. La limpieza de datos aplicada se detalla en las notas metodol\u00f3gicas al final.</p>`;
+ h+=`<h2>2. Resumen Ejecutivo</h2>`+narrative().map(x=>`<p class="n">${x}</p>`).join('');
+ groups.forEach((g,gi)=>{
+   h+=`<div class="${gi>0?'pb':''}"><h2>${g[0]}</h2>`;
+   h+=`<h3>Indicadores clave de la secci\u00f3n</h3>`+kpiTable(g[2]);
+   h+=`<p class="n">A continuaci\u00f3n se analiza <b>cada gr\u00e1fico de esta secci\u00f3n</b> con enfoque de ingenier\u00eda en log\u00edstica: primero <b>qu\u00e9 muestra</b>, luego <b>qu\u00e9 est\u00e1 pasando</b> en esta vista concreta y, por \u00faltimo, el <b>an\u00e1lisis y la recomendaci\u00f3n</b> para la operaci\u00f3n.</p>`;
+   g[1].forEach(cid=>{if(!imgs[cid])return;h+=`<div class="chartblk"><h3>${CTITLE[cid]||cid}</h3><img src="${imgs[cid]}"/>`+narrHTML(cid)+`</div>`;});
+   h+=`</div>`;
+ });
+ const ishSVG=document.getElementById('c_ish')?document.getElementById('c_ish').innerHTML:'';
+ if(ishSVG){h+=`<div class="pb"><h2>Diagrama de Ishikawa (Espina de Pescado)</h2><div class="chartblk" style="border:1px solid #e3e7ec;border-radius:6px;padding:10px;background:#fff">${ishSVG}</div>${narrHTML('c_ish')}</div>`;}
+ // Conclusiones y recomendaciones (visi\u00f3n de ingenier\u00eda log\u00edstica)
+ try{const L=sugList();if(L&&L.length){h+=`<div class="pb"><h2>Conclusiones y Recomendaciones</h2>`;h+=`<p class="n">A partir del an\u00e1lisis anterior, se priorizan los siguientes focos de mejora desde la ingenier\u00eda log\u00edstica, ordenados por impacto:</p>`;L.forEach((r,i)=>{h+=`<div class="rcard" style="border:1px solid #e3e7ec;border-radius:8px;padding:11px 13px;margin:9px 0;background:#f8fafb"><div style="margin-bottom:4px"><span class="pri" style="display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;color:#fff;background:#${r.c};margin-right:7px">PRIORIDAD ${r.pri.toUpperCase()}</span><b style="color:#1f3a59">${i+1}. ${r.t}</b></div><div class="n" style="margin:3px 0"><b>Diagn\u00f3stico:</b> ${r.d}</div><div class="n" style="background:#eef3f1;border-radius:6px;padding:6px 9px;color:#246153"><b>Acci\u00f3n recomendada:</b> ${r.a}</div></div>`;});h+=`</div>`;}}catch(e){}
+ h+=`<div class="pb"><h2>Notas Metodol\u00f3gicas y Calidad de Datos</h2>`;
+ h+=`<p class="n"><b>Definiciones:</b> Valor = suma de la columna VALOR (sin impuestos declarados). Ticket promedio = Valor / N\u00b0 pedidos. HHI = suma de los cuadrados de las cuotas (%) por comuna; sobre 2.500 se considera concentraci\u00f3n muy alta. CV = desviaci\u00f3n est\u00e1ndar / promedio de pedidos diarios. Flota propia = veh\u00edculos MOVIL* y DON*; el resto (SPOT, SERVICIO, 3PL, RETIRA, B2C) se clasifica como tercerizada/externa.</p>`;
+ h+=`<p class="n"><b>Limpieza aplicada:</b> comunas normalizadas unificando may\u00fasculas y tildes (p.ej. Maip\u00fa, Las Condes, La Florida); correcci\u00f3n del typo \u201cSERVICO 3PL\u201d a \u201cSERVICIO 3PL\u201d.</p>`;
+ h+=`<div class="note"><b>Hallazgos de calidad a revisar:</b> en el dataset base de Septiembre, la Semana 4 y el canal \u201cSERVICIO B2C\u201d concentran una proporci\u00f3n muy alta de pedidos \u2014 se recomienda confirmar si corresponde a un cargue masivo leg\u00edtimo o a una anomal\u00eda de carga. La flota observada no incluye \u201cTRANSGAMBOA\u201d pero s\u00ed \u201cSERVICIO B2C\u201d, \u201cSPOT 3\u201d y \u201cSPOT 4\u201d.</div>`;
+ h+=`<div class="foot">QUINTEC \u00b7 Informe generado autom\u00e1ticamente desde el dashboard interactivo. Los valores respetan los filtros activos al momento de la exportaci\u00f3n (${scopeLabel()}).</div></div>`;
+ h+=`</body></html>`;
+ const w=window.open('','_blank');w.document.write(h);w.document.close();
+}
+//__END2__
+/* ====== POWERPOINT (m\u00e1s diapositivas) ====== */
+function exportPPT(sel){
+ if(sel===undefined){try{openScopePicker('ppt');}catch(e){console.error('scope',e);}return;}
+ if(typeof PptxGenJS==='undefined'){alert('No se pudo cargar la librer\u00eda de PowerPoint (revisa tu conexi\u00f3n a internet).');return;}
+ const imgs=captureAll();const K=LAST.kpis||{},f=LAST.f||[],totV=LAST.totV||0;
+ const CG={};expGroups().forEach((g,i)=>g[1].forEach(c=>CG[c]=i));
+ const p=new PptxGenJS();p.defineLayout({name:'W',width:13.333,height:7.5});p.layout='W';
+ const NAVY='1F3A59',TEAL='2F7D6B',GRAY='6B7684',BG='F4F6F8';
+ const head=(s,t,sub)=>{s.addText(t,{x:0.5,y:0.32,w:12.3,h:0.6,fontSize:25,bold:true,color:NAVY,fontFace:'Segoe UI'});if(sub)s.addText(sub,{x:0.5,y:0.95,w:12.3,h:0.35,fontSize:13,color:TEAL,fontFace:'Segoe UI'});s.addShape(p.ShapeType.line,{x:0.5,y:1.32,w:12.3,h:0,line:{color:'DDE3E9',width:1}});};
+ let s;
+ // 1 portada
+ s=p.addSlide();s.background={color:NAVY};
+ s.addText('QUINTEC \u00b7 SUITE KPI LOG\u00cdSTICA',{x:0.7,y:2.0,w:12,h:0.5,fontSize:16,color:'8FC9BA',bold:true,charSpacing:3,fontFace:'Segoe UI'});
+ s.addText('Operaciones & Finanzas',{x:0.7,y:2.6,w:12,h:1,fontSize:44,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
+ s.addText(scopeLabel(),{x:0.7,y:3.7,w:12,h:0.5,fontSize:20,color:'C9D8E6',fontFace:'Segoe UI'});
+ s.addText(`${fi(f.length)} pedidos  \u00b7  ${fmShort(totV)}  \u00b7  generado ${new Date().toLocaleDateString('es-CL')}`,{x:0.7,y:4.45,w:12,h:0.4,fontSize:13,color:'8CA3BA',fontFace:'Segoe UI'});
+ // 2 KPIs destacados
+ s=p.addSlide();head(s,'Indicadores Destacados',scopeLabel());
+ const cards=[['Total Pedidos',fi(f.length)],['Valor Total',fmShort(totV)],['Ticket Promedio',fm(f.length?totV/f.length:0)],['Comunas Cubiertas',fi(K.comunas||0)],['% Flota Propia',(100*(K.prop||0)/(K.tot||1)).toFixed(0)+'%'],['% Valor Tercerizado',(100*(K.vTer||0)/(totV||1)).toFixed(0)+'%'],['Productividad Ped./Veh.',fi(K.pxv||0)],['Concentraci\u00f3n HHI',fi(K.hhi||0)],['% con Observaci\u00f3n',(100*(K.obs||0)/(K.tot||1)).toFixed(1)+'%'],['% Calidad (sin obs)',(K.tot?(100-100*(K.obs||0)/K.tot):0).toFixed(1)+'%'],['Peak Pedidos/D\u00eda',fi(K.peakN||0)],['Pedido Mayor Valor',fmShort(K.vmax||0)]];
+ cards.forEach((c,i)=>{const col=i%4,row=Math.floor(i/4);const x=0.5+col*3.12,y=1.6+row*1.75;s.addShape(p.ShapeType.roundRect,{x,y,w:2.9,h:1.5,fill:{color:BG},line:{color:'E3E7EC'},rectRadius:0.07});s.addText(c[0],{x:x+0.14,y:y+0.16,w:2.62,h:0.5,fontSize:11,color:GRAY,fontFace:'Segoe UI'});s.addText(c[1],{x:x+0.14,y:y+0.6,w:2.62,h:0.7,fontSize:23,bold:true,color:NAVY,fontFace:'Consolas'});});
+ // 3-4 narrativa (dividida)
+ const nar=narrative().map(x=>x.replace(/<[^>]+>/g,''));
+ const half=Math.ceil(nar.length/2);
+ if(sel.resumen){[nar.slice(0,half),nar.slice(half)].forEach((chunk,ci)=>{s=p.addSlide();head(s,'An\u00e1lisis Narrativo'+(ci?' (cont.)':''));s.addText(chunk.map(x=>({text:x,options:{bullet:{code:'2022'},fontSize:13.5,color:'394552',paraSpaceAfter:10,fontFace:'Segoe UI'}})),{x:0.6,y:1.5,w:12.1,h:5.5,valign:'top'});});}
+ // 5+ gr\u00e1ficos: 1 por diapositiva (gr\u00e1fico grande + an\u00e1lisis)
+ const order=['c_flota','c_unidad','c_prop','c_heat','c_matriz','c_valun','c_valtp','c_evo','c_comval','c_bubble','c_rango','c_comvol','c_pareto','c_obstipo','c_obstp','c_obssem','c_mesvol','c_mesval','c_mesheat','c_mesun','c_radar','c_treemap','c_dispcom','c_causebar'].filter(c=>imgs[c]&&sel.charts&&CG[c]!==undefined&&sel.areas.has(CG[c]));
+ const secOf={c_flota:'Operaciones',c_unidad:'Operaciones',c_prop:'Operaciones',c_heat:'Operaciones',c_matriz:'Operaciones',c_valun:'Finanzas',c_valtp:'Finanzas',c_evo:'Finanzas',c_comval:'Finanzas',c_bubble:'Finanzas',c_rango:'Log\u00edstica',c_comvol:'Log\u00edstica',c_pareto:'Log\u00edstica',c_obstipo:'Auditor\u00eda',c_obstp:'Auditor\u00eda',c_obssem:'Auditor\u00eda',c_mesvol:'Tendencias',c_mesval:'Tendencias',c_mesheat:'Tendencias',c_mesun:'Tendencias',c_radar:'Tendencias',c_treemap:'Diagn\u00f3stico',c_dispcom:'Diagn\u00f3stico',c_causebar:'Diagn\u00f3stico'};
+ order.forEach(cid=>{s=p.addSlide();head(s,(CTITLE[cid]||cid),(secOf[cid]||'')+' \u00b7 '+scopeLabel());
+   s.addImage({data:imgs[cid],x:0.5,y:1.55,w:7.5,h:5.35,sizing:{type:'contain',w:7.5,h:5.35}});
+   const tx=8.25,tw=4.55;
+   const cd=(CDESC[cid]||'').slice(0,470);const ins=insText(cid);const an=(CANALYSIS[cid]||'').slice(0,470);
+   s.addText([{text:'Qu\u00e9 muestra',options:{bold:true,fontSize:12.5,color:TEAL,breakLine:true}},{text:cd,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:1.55,w:tw,h:2.05,valign:'top',fontFace:'Segoe UI',fit:'shrink'});
+   if(!sel.noAnalysis&&ins)s.addText([{text:'Qu\u00e9 est\u00e1 pasando en esta vista',options:{bold:true,fontSize:12.5,color:NAVY,breakLine:true}},{text:ins,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:3.72,w:tw,h:1.3,valign:'top',fontFace:'Segoe UI',fit:'shrink'});
+   if(!sel.noAnalysis&&an)s.addText([{text:'An\u00e1lisis del ingeniero en log\u00edstica',options:{bold:true,fontSize:12.5,color:'6A5A92',breakLine:true}},{text:an,options:{fontSize:10.5,color:'394552'}}],{x:tx,y:5.12,w:tw,h:1.98,valign:'top',fontFace:'Segoe UI',fit:'shrink'});});
+ // Ishikawa (resumen de causas en texto)
+ if(sel.charts&&sel.areas.has(5)&&typeof LASTISH!=='undefined'&&LASTISH&&LASTISH.cats){s=p.addSlide();head(s,'Diagrama de Ishikawa \u2014 Causas','Efecto analizado: '+(LASTISH.effect||'')+' \u00b7 '+(LASTISH.effVal||''));
+  LASTISH.cats.forEach((cat,i)=>{const col=i%3,row=Math.floor(i/3);const x=0.5+col*4.3,y=1.65+row*2.7;
+   s.addShape(p.ShapeType.roundRect,{x,y,w:4.05,h:0.44,fill:{color:(cat.c||'#1f3a59').replace('#','')},rectRadius:0.05});
+   s.addText(cat.t,{x:x+0.12,y:y+0.02,w:3.8,h:0.4,fontSize:12.5,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
+   s.addText(cat.cz.map(c=>({text:c,options:{bullet:{code:'2022'},fontSize:11,color:'394552',paraSpaceAfter:4,fontFace:'Segoe UI'}})),{x:x+0.12,y:y+0.52,w:3.85,h:2.0,valign:'top'});});
+ }
+ // cierre
+ if(sel.sug){s=p.addSlide();head(s,'Hallazgos & Recomendaciones');
+ const recs=sugList().slice(0,6).map(r=>r.t+': '+r.a);
+ s.addText(recs.map(r=>({text:r,options:{bullet:{code:'2022'},fontSize:13.5,color:'394552',paraSpaceAfter:11,fontFace:'Segoe UI'}})),{x:0.7,y:1.55,w:12,h:5.3,valign:'top'});}
+ p.writeFile({fileName:`QUINTEC_Presentacion_${scopeLabel().replace(/[^0-9A-Za-z]+/g,'_')}.pptx`});
+}
+//__END3__
 /* ====== MOTOR DE SUGERENCIAS (IA experta en log\u00edstica) ====== */
 function sugList(){
  const K=LAST.kpis||{},f=LAST.f||[],totV=LAST.totV||0,tot=K.tot||f.length||1;
@@ -1222,6 +1287,41 @@ function exportSugerencia(){
  h+=`<p style="font-size:11px;color:#9aa5b1;margin-top:16px">Sugerencias generadas autom\u00e1ticamente a partir de los indicadores del tablero. No sustituyen el criterio operativo; priorizar seg\u00fan impacto y factibilidad.</p>`;
  openOvr('Sugerencias IA \u00b7 Experto en Log\u00edstica',h);
 }
+function exportReporte(sel){
+ if(sel===undefined){try{openScopePicker('reporte');}catch(e){console.error('scope',e);}return;}
+ const imgs=captureAll();const K=LAST.kpis||{},f=LAST.f||[],totV=LAST.totV||0;const groups0=expGroups();
+ const groups=groups0.filter((g,i)=>sel.areas.has(i));
+ const CG={};groups0.forEach((g,i)=>g[1].forEach(c=>CG[c]=i));
+ let h=`<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte QUINTEC \u2014 ${scopeLabel()}</title>
+ <style>@page{size:A4;margin:15mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2a37;font-size:12.5px;line-height:1.6}
+ h1{font-size:24px;color:#1f3a59}h2{font-size:17px;color:#1f3a59;border-bottom:2px solid #2f7d6b;padding-bottom:5px;margin:22px 0 11px}h3{font-size:13.5px;color:#2b4a6f;margin:14px 0 6px}
+ p.n{margin:8px 0;text-align:justify}
+ table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11.5px}td,th{border:1px solid #dde3e9;padding:5px 8px;text-align:left}th{background:#1f3a59;color:#fff;font-weight:600}tr:nth-child(even) td{background:#f7f9fb}
+ .big{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.bigk{flex:1;min-width:140px;background:#f4f6f8;border-radius:8px;padding:10px 12px}.bigk .l{font-size:10px;color:#777;text-transform:uppercase}.bigk .v{font-size:19px;font-weight:700;color:#1f3a59;font-family:Consolas,monospace}
+ .chartblk{margin:12px 0 16px;page-break-inside:avoid}.chartblk img{width:100%;border:1px solid #e3e7ec;border-radius:6px;margin:4px 0}
+ .an{background:#eef3f1;border-left:3px solid #2f7d6b;border-radius:0 6px 6px 0;padding:8px 12px;font-size:11.8px;color:#3a4854;margin-top:5px;text-align:justify}.an2{background:#eef3f8;border-left:3px solid #2b4a6f;border-radius:0 6px 6px 0;padding:8px 12px;font-size:11.8px;color:#334;margin-top:5px;text-align:justify}.an3{background:#f3f0f7;border-left:3px solid #6a5a92;border-radius:0 6px 6px 0;padding:8px 12px;font-size:11.8px;color:#3a3350;margin-top:5px;text-align:justify}
+ .intro{background:#eef3f1;border-left:4px solid #2f7d6b;border-radius:7px;padding:9px 12px;margin:12px 0 4px;font-size:12.5px;color:#2a4740}
+ .pb{page-break-before:always}.foot{margin-top:22px;border-top:1px solid #ddd;padding-top:9px;color:#888;font-size:10px}
+ .btnbar{position:fixed;top:10px;right:10px}.btnbar button{background:#1f3a59;color:#fff;border:0;padding:10px 16px;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600}@media print{.noprint{display:none}}</style></head><body>`;
+ h+=`<div class="btnbar noprint"><button onclick="window.print()">\u2193 Guardar como PDF</button></div>`;
+ h+=`<h1>Reporte Ejecutivo</h1><div style="color:#2f7d6b;font-weight:600;font-size:13px">QUINTEC \u00b7 Suite KPI Log\u00edstica</div><div style="color:#6b7684;font-size:12.5px;margin:4px 0 10px">${scopeLabel()} \u00b7 generado ${new Date().toLocaleString('es-CL')}</div>`;
+ h+=`<div class="intro" style="margin-top:0">Este reporte entrega una <b>lectura con enfoque de ingenier\u00eda en log\u00edstica</b>: para <b>cada gr\u00e1fico</b> se explica qu\u00e9 muestra, qu\u00e9 est\u00e1 pasando en esta vista y la recomendaci\u00f3n correspondiente. Para presentar en pantalla, se incluyen <b>como m\u00e1ximo dos gr\u00e1ficos por hoja</b>, separados.</div>`;
+ const big=[['Total Pedidos',fi(f.length)],['Valor Total',fmShort(totV)],['Ticket Prom.',fm(f.length?totV/f.length:0)],['Comunas',fi(K.comunas||0)],['% Flota Propia',(100*(K.prop||0)/(K.tot||1)).toFixed(0)+'%'],['% Calidad',(K.tot?(100-100*(K.obs||0)/K.tot):0).toFixed(1)+'%']];
+ h+=`<div class="big">`+big.map(b=>`<div class="bigk"><div class="l">${b[0]}</div><div class="v">${b[1]}</div></div>`).join('')+`</div>`;
+ if(sel.resumen){h+=`<h2>S\u00edntesis del periodo</h2>`+narrative().map(x=>`<p class="n">${x}</p>`).join('');}
+ h+=`<h2>Indicadores por \u00e1rea</h2>`;
+ groups.forEach(g=>{h+=`<h3>${g[0]}</h3><table><tr><th>Indicador</th><th style="text-align:right">Valor</th><th>Detalle</th></tr>`+g[2].map(id=>`<tr><td>${KLBL[id]||id}</td><td style="text-align:right;font-family:Consolas,monospace;font-weight:600;color:#1f3a59">${kv(id)}</td><td style="color:#6b7684;font-size:10.5px">${kf(id)}</td></tr>`).join('')+`</table>`;});
+ const keyC=['c_mesvol','c_flota','c_prop','c_heat','c_valun','c_comval','c_evo','c_rango','c_comvol','c_pareto','c_obstipo','c_obssem','c_causebar'].filter(c=>imgs[c]&&sel.charts&&CG[c]!==undefined&&sel.areas.has(CG[c]));
+ if(keyC.length){h+=`<div class="pb"><h2>An\u00e1lisis gr\u00e1fico por gr\u00e1fico</h2><div class="intro">A continuaci\u00f3n cada gr\u00e1fico va con su an\u00e1lisis completo de ingenier\u00eda en log\u00edstica. Se muestran <b>hasta dos gr\u00e1ficos por hoja</b> para que se lean c\u00f3modos.</div>`;
+  for(let i=0;i<keyC.length;i+=2){const pair=keyC.slice(i,i+2);h+=`<div class="${i>0?'pb':''}">`+pair.map(c=>`<div class="chartblk"><h3>${CTITLE[c]||c}</h3><img src="${imgs[c]}"/>`+narrHTML(c)+`</div>`).join('')+`</div>`;}
+  h+=`</div>`;}
+ const ishR=(sel.charts&&sel.areas.has(5))?(document.getElementById('c_ish')?document.getElementById('c_ish').innerHTML:''):'';
+ if(ishR){h+=`<div class="pb"><h2>Diagrama de Ishikawa</h2><div class="chartblk" style="border:1px solid #e3e7ec;border-radius:6px;padding:8px;background:#fff">${ishR}</div>`+narrHTML('c_ish')+`</div>`;}
+ if(sel.sug){try{const L=sugList().slice(0,4);if(L&&L.length){h+=`<div class="pb"><h2>Conclusiones \u00b7 foco inmediato</h2>`;L.forEach((r,i)=>{h+=`<div style="border:1px solid #e3e7ec;border-radius:7px;padding:9px 12px;margin:7px 0;background:#f8fafb;font-size:12.5px"><b style="color:#1f3a59">${i+1}. ${r.t}</b><div class="n" style="margin:3px 0"><b>Diagn\u00f3stico:</b> ${r.d}</div><div style="background:#eef3f1;border-radius:6px;padding:5px 9px;color:#246153">\u2192 ${r.a}</div></div>`;});h+=`</div>`;}}catch(e){}}
+ h+=`<div class="foot">QUINTEC \u00b7 Reporte generado desde el dashboard. Los valores respetan los filtros activos al momento de la exportaci\u00f3n (${scopeLabel()}).</div></body></html>`;
+ const w=window.open('','_blank');w.document.write(h);w.document.close();
+}
+
 /* ===== app9.js ===== */
 /* ====== TENDENCIAS & COMPARATIVO (multi-mes) ====== */
 /* CMPA/CMPB/LASTAGG/LASTISH declarados como globales en app.js */
@@ -1440,6 +1540,7 @@ function ishikawaSVG(cats,effect,effVal){
  s+=`</svg>`;
  return s;
 }
+
 /* ===== app10.js ===== */
 /* ===== MODULOS TIENDAS: MacOnline Distribucion / Vertical Tiendas / Devoluciones ===== */
 /* Fuente de datos independiente (Excel nuevo con columnas FECHA, VALOR, RANGO, TRANSPORTE,
@@ -1564,7 +1665,7 @@ function modDashboard(k){
  h+=`</div>`;
  return h;
 }
-/* ===== DEVOLUCIONES: planillas editables por tipo (con pestañas) ===== */
+/* ===== DEVOLUCIONES: planillas editables por tipo ===== */
 var DEVO_DATA={};
 const DEVO_ITEMS=[
  {id:'cd',t:'CD',c:'#c0392b',tx:'#fff'},
@@ -1574,93 +1675,50 @@ const DEVO_ITEMS=[
  {id:'stec',t:'SERVICIO TECNICO',c:'#f1c40f',tx:'#3a2f00'},
  {id:'varios',t:'VARIOS',c:'#7f8c8d',tx:'#fff'}
 ];
-const DEVO_COLS=['Fecha','Documentos','Valor','Origen','Destinatarios','Bultos','Contenido','Observaciones'];
-const DEVO_VALCOL=2;
+const DEVO_COLS=['Fecha','Documentos','Origen','Destinatarios','Bultos','Contenido','Observaciones'];
 const DEVO_ROWS=28;
 const FB_PATH_DEVO='quintec/devoluciones';
-var DEVO_ACTIVE='cd';
 function devoEmptyItem(){return{rows:Array.from({length:DEVO_ROWS},()=>Array(DEVO_COLS.length).fill('')),am:'',rec:''};}
-function devoEnsure(){
- if(!DEVO_DATA||typeof DEVO_DATA!=='object')DEVO_DATA={};
- DEVO_ITEMS.forEach(it=>{
-  if(!DEVO_DATA[it.id])DEVO_DATA[it.id]=devoEmptyItem();
-  const d=DEVO_DATA[it.id];
-  if(!Array.isArray(d.rows))d.rows=[];
-  d.rows.forEach(r=>{
-   if(r.length===DEVO_COLS.length-1){r.splice(DEVO_VALCOL,0,'');} /* migración esquema 7->8 cols (inserta VALOR) */
-   while(r.length<DEVO_COLS.length)r.push('');
-  });
-  while(d.rows.length<DEVO_ROWS)d.rows.push(Array(DEVO_COLS.length).fill(''));
-  if(typeof d.am!=='string')d.am='';
-  if(typeof d.rec!=='string')d.rec='';
- });
-}
+function devoEnsure(){if(!DEVO_DATA||typeof DEVO_DATA!=='object')DEVO_DATA={};DEVO_ITEMS.forEach(it=>{if(!DEVO_DATA[it.id])DEVO_DATA[it.id]=devoEmptyItem();const d=DEVO_DATA[it.id];if(!Array.isArray(d.rows))d.rows=[];while(d.rows.length<DEVO_ROWS)d.rows.push(Array(DEVO_COLS.length).fill(''));d.rows.forEach(r=>{while(r.length<DEVO_COLS.length)r.push('');});if(typeof d.am!=='string')d.am='';if(typeof d.rec!=='string')d.rec='';});}
 function devoEsc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-/* --- formato de VALOR (miles con punto, símbolo $, sin redondear) --- */
-function devoNum(s){s=String(s==null?'':s).replace(/\$/g,'').trim();if(s==='')return null;s=s.replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.\-]/g,'');var n=parseFloat(s);return isNaN(n)?null:n;}
-function devoFmtVal(v){var n=(typeof v==='number')?v:devoNum(v);if(n==null)return '';return '$'+n.toLocaleString('es-CL',{maximumFractionDigits:2});}
-function devoItemTotal(id){var d=DEVO_DATA[id];if(!d)return 0;var t=0;d.rows.forEach(r=>{var n=devoNum(r[DEVO_VALCOL]);if(n!=null)t+=n;});return t;}
-/* --- reloj digital (funciona con o sin internet; usa la hora del equipo) --- */
-var DEVO_CLKTMR=null;
-function devoNowTime(){var d=new Date();function p(n){return String(n).padStart(2,'0');}return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
-function devoStartClock(){if(DEVO_CLKTMR)clearInterval(DEVO_CLKTMR);function tick(){var el=document.getElementById('devoClock');if(el)el.textContent=devoNowTime();}tick();DEVO_CLKTMR=setInterval(tick,1000);}
-/* --- maquetado: toolbar + pestañas + panel activo --- */
 function devoPlanillas(){
  devoEnsure();
- let h='<div class="devo-note">Planillas editables por pestaña. Lo que escribas se guarda y se comparte con todos los usuarios al instante.</div>';
+ let h='<div class="devo-note">Planillas editables. Lo que escribas se guarda y se comparte con todos los usuarios al instante.</div>';
  h+='<div class="devo-toolbar">'
   +'<button class="devo-btn devo-imp" id="devoImport">⬆ IMPORTAR EXCEL</button>'
   +'<button class="devo-btn devo-exp" id="devoExport">⬇ EXPORTAR EXCEL</button>'
   +'<button class="devo-btn devo-save" id="devoGuardar">💾 GUARDAR</button>'
   +'<button class="devo-btn devo-del" id="devoBorrar">🗑 BORRAR</button>'
   +'<button class="devo-btn devo-cal" id="devoCal">📅 VER POR FECHA</button>'
-  +'<button class="devo-btn devo-nube" id="devoNube">☁ NUBE</button>'
   +'<input type="file" id="devoFile" accept=".xlsx,.xls" style="display:none"/>'
   +'</div>';
- h+='<div class="devo-tabs" id="devoTabs">'+DEVO_ITEMS.map(it=>`<button class="devo-tab" data-tab="${it.id}" style="--tc:${it.c};--tt:${it.tx}">${it.t}</button>`).join('')+'</div>';
- h+='<div id="devoPane"></div>';
- return h;
-}
-function devoWrapHtml(it){
- let h=`<div class="devo-wrap" data-item="${it.id}">`;
- h+=`<div class="devo-title" style="background:${it.c};color:${it.tx}">${it.t}</div>`;
- h+=`<div class="devo-scroll"><table class="devo-tbl"><thead><tr style="background:${it.c};color:${it.tx}"><th style="width:38px">N\u00b0</th>`;
- DEVO_COLS.forEach((c,ci)=>{h+=`<th${ci===DEVO_VALCOL?' class="devo-valhead"':''}>${c}</th>`;});
- h+=`</tr></thead><tbody id="devob_${it.id}"></tbody></table></div>`;
- h+=`<div class="devo-total">Suma total <b>Valor</b>: <span id="devoTot_${it.id}" class="devo-totval">$0</span></div>`;
- h+=`<div class="devo-foot">`
-  +`<div class="devo-horrow"><b>Horario</b> <span class="devo-clock" id="devoClock">--:--:--</span> <span class="devo-ce" data-i="${it.id}" data-f="am" contenteditable="true"></span> <button class="devo-btn devo-ins" id="devoIns" data-i="${it.id}">⏱ Insertar</button></div>`
-  +`<div><b>Recepciona</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="rec" contenteditable="true"></span> &nbsp; Firma: ______________</div>`
-  +`</div>`;
- h+=`</div>`;
+ DEVO_ITEMS.forEach(it=>{
+  h+=`<div class="devo-wrap" data-item="${it.id}">`;
+  h+=`<div class="devo-title" style="background:${it.c};color:${it.tx}">${it.t}</div>`;
+  h+=`<div class="devo-scroll"><table class="devo-tbl"><thead><tr style="background:${it.c};color:${it.tx}"><th style="width:38px">N\u00b0</th>`;
+  DEVO_COLS.forEach(c=>{h+=`<th>${c}</th>`;});
+  h+=`</tr></thead><tbody id="devob_${it.id}"></tbody></table></div>`;
+  h+=`<div class="devo-foot"><div><b>AM</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="am" contenteditable="true"></span> &nbsp; Firma: ______________</div><div><b>Recepciona</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="rec" contenteditable="true"></span> &nbsp; Firma: ______________</div></div>`;
+  h+=`</div>`;
+ });
  return h;
 }
 function devoRenderItem(it){
- const pane=document.getElementById('devoPane');if(!pane)return;
- if(it.id!==DEVO_ACTIVE)return;
- const cur=pane.querySelector('.devo-wrap');
- if(!cur||cur.getAttribute('data-item')!==it.id){pane.innerHTML=devoWrapHtml(it);devoStartClock();}
  const tb=document.getElementById('devob_'+it.id);if(!tb)return;
  const d=DEVO_DATA[it.id];if(!d)return;let h='';
  const N=Math.max(DEVO_ROWS,d.rows.length);
  for(let r=0;r<N;r++){
   h+=`<tr><td class="devo-num">${r+1}</td>`;
   for(let c=0;c<DEVO_COLS.length;c++){
-   let val=devoEsc(d.rows[r][c]);
-   if(c===0){h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${val}</td>`;}
-   else if(c===DEVO_VALCOL){h+=`<td class="devo-cell devo-valcell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
-   else{h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
+   h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${devoEsc(d.rows[r][c])}</td>`;
   }
   h+='</tr>';
  }
  tb.innerHTML=h;
- const am=pane.querySelector(`.devo-ce[data-i="${it.id}"][data-f="am"]`);if(am&&document.activeElement!==am)am.textContent=d.am||'';
- const rc=pane.querySelector(`.devo-ce[data-i="${it.id}"][data-f="rec"]`);if(rc&&document.activeElement!==rc)rc.textContent=d.rec||'';
- const tot=document.getElementById('devoTot_'+it.id);if(tot)tot.textContent=devoFmtVal(devoItemTotal(it.id))||'$0';
+ const am=document.querySelector(`.devo-ce[data-i="${it.id}"][data-f="am"]`);if(am&&document.activeElement!==am)am.textContent=d.am||'';
+ const rc=document.querySelector(`.devo-ce[data-i="${it.id}"][data-f="rec"]`);if(rc&&document.activeElement!==rc)rc.textContent=d.rec||'';
 }
-function devoActivateTabStyle(){document.querySelectorAll('#devoTabs .devo-tab').forEach(b=>{b.classList.toggle('on',b.getAttribute('data-tab')===DEVO_ACTIVE);});}
-function devoRender(){devoEnsure();const act=DEVO_ITEMS.find(x=>x.id===DEVO_ACTIVE)||DEVO_ITEMS[0];DEVO_ACTIVE=act.id;devoActivateTabStyle();devoRenderItem(act);}
-function devoSetActive(id){DEVO_ACTIVE=id;const pane=document.getElementById('devoPane');if(pane)pane.innerHTML='';devoRender();}
+function devoRender(){devoEnsure();DEVO_ITEMS.forEach(devoRenderItem);}
 var devoWriting=false,devoTimer=null;
 function devoFbPush(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;clearTimeout(devoTimer);devoTimer=setTimeout(()=>{try{devoWriting=true;fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;}).catch(e=>{devoWriting=false;console.error('devoFbPush',e);});}catch(e){devoWriting=false;}},500);}
 function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
@@ -1668,14 +1726,8 @@ function devoWire(){
  const root=document.getElementById('s-devo');if(!root)return;
  root.addEventListener('input',e=>{
   const t=e.target;if(!t||!t.classList)return;
-  if(t.classList.contains('devo-cell')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].rows[r][c]=t.textContent;if(c===DEVO_VALCOL){const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';}devoFbPush();}}
+  if(t.classList.contains('devo-cell')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].rows[r][c]=t.textContent;devoFbPush();}}
   else if(t.classList.contains('devo-ce')){const i=t.dataset.i,f=t.dataset.f;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i][f]=t.textContent;devoFbPush();}}
- });
- root.addEventListener('blur',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('devo-valcell')){const i=t.dataset.i,r=+t.dataset.r;const f=devoFmtVal(t.textContent);if(f!==''){t.textContent=f;if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][DEVO_VALCOL]=f;}const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';devoFbPush();}}},true);
- root.addEventListener('click',e=>{
-  const tab=e.target.closest?e.target.closest('.devo-tab'):null;if(tab){devoSetActive(tab.getAttribute('data-tab'));return;}
-  const ins=e.target.closest?e.target.closest('.devo-ins'):null;if(ins){const i=ins.dataset.i;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].am=devoNowTime();const el=document.querySelector(`.devo-ce[data-i="${i}"][data-f="am"]`);if(el)el.textContent=DEVO_DATA[i].am;devoFbPush();}return;}
-  const fc=e.target.closest?e.target.closest('.devo-fechacell'):null;if(fc){devoOpenEditCal(fc.dataset.i,+fc.dataset.r);return;}
  });
  const bI=document.getElementById('devoImport'),fI=document.getElementById('devoFile');
  if(bI&&fI){bI.addEventListener('click',()=>fI.click());fI.addEventListener('change',devoImportExcel);}
@@ -1683,13 +1735,11 @@ function devoWire(){
  const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
  const bC=document.getElementById('devoCal');if(bC)bC.addEventListener('click',devoOpenCal);
- const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
- devoStartClock();
 }
 /* --- normalizar texto para comparar nombres --- */
 function devoNorm(s){return (s==null?'':String(s)).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');}
 function devoMatchItem(name){const n=devoNorm(name);let best=null;DEVO_ITEMS.forEach(it=>{const k=devoNorm(it.t);if(n===k||n.indexOf(k)>=0||k.indexOf(n)>=0&&n.length>=2)best=best||it;});if(best)return best;return null;}
-function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,VALOR:2,VALORES:2,MONTO:2,MONTOS:2,ORIGEN:3,DESTINATARIOS:4,DESTINATARIO:4,BULTOS:5,BULTO:5,CONTENIDO:6,OBSERVACIONES:7,OBSERVACION:7};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null)map[al[k]]=i;});return map;}
+function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,ORIGEN:2,DESTINATARIOS:3,DESTINATARIO:3,BULTOS:4,BULTO:4,CONTENIDO:5,OBSERVACIONES:6,OBSERVACION:6};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null)map[al[k]]=i;});return map;}
 /* --- IMPORTAR: lee cualquier Excel y coloca filas en la planilla que corresponda --- */
 function devoImportExcel(ev){
  const f=ev.target.files&&ev.target.files[0];if(!f){return;}
@@ -1712,7 +1762,6 @@ function devoImportExcel(ev){
      if(typeCol>=0){const tm=devoMatchItem(row[typeCol]);if(tm)target=tm;}
      if(!target)target=DEVO_ITEMS[DEVO_ITEMS.length-1];
      const cells=DEVO_COLS.map((_,c)=>{const src=cmap[c];let v=(src!=null)?row[src]:'';if(v==null)v='';return String(v).trim();});
-     if(cells[DEVO_VALCOL]){const fv=devoFmtVal(cells[DEVO_VALCOL]);if(fv)cells[DEVO_VALCOL]=fv;}
      DEVO_DATA[target.id].rows.push(cells);added++;
     }
    });
@@ -1726,7 +1775,7 @@ function devoImportExcel(ev){
 /* --- GUARDAR inmediato en Firebase --- */
 function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
 function devoGuardar(){devoEnsure();if(typeof fbReady==='undefined'||!fbReady||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}devoFbSave().then(ok=>{alert(ok?'Informaci\u00f3n guardada en la nube. Todos los usuarios la ver\u00e1n al recargar.':'No se pudo guardar. Revisa los permisos de Firebase.');});}
-/* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o y colores) --- */
+/* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o) --- */
 function devoSheetName(t){return (t||'Hoja').replace(/[\\/?*\[\]:]/g,' ').slice(0,31);}
 function devoExport(ids){
  if(!ids||!ids.length){alert('Selecciona al menos una planilla.');return;}
@@ -1739,22 +1788,20 @@ function devoExport(ids){
   const aoa=[[it.t],['N\u00b0'].concat(DEVO_COLS)];
   const N=Math.max(DEVO_ROWS,d.rows.length);
   for(let r=0;r<N;r++){const row=d.rows[r]||[];aoa.push([r+1].concat(DEVO_COLS.map((_,c)=>row[c]==null?'':row[c])));}
-  const totRow=new Array(ncol).fill('');totRow[DEVO_VALCOL]='TOTAL';totRow[DEVO_VALCOL+1]=devoFmtVal(devoItemTotal(id))||'$0';aoa.push(totRow);
-  aoa.push([]);aoa.push(['Horario:',d.am||'','','','Recepciona Nombre:',d.rec||'','Firma:']);
+  aoa.push([]);aoa.push(['AM Nombre:',d.am||'','','Firma:','','Recepciona Nombre:',d.rec||'','Firma:']);
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
-  ws['!cols']=[{wch:5},{wch:12},{wch:14},{wch:14},{wch:16},{wch:16},{wch:8},{wch:18},{wch:22}];
-  const hex=it.c.replace('#','').toUpperCase();const txt=(['gmac','ecom','back'].indexOf(it.id)>=0)?'FFFFFF':'000000';
+  ws['!cols']=[{wch:5},{wch:12},{wch:16},{wch:16},{wch:18},{wch:8},{wch:16},{wch:22}];
+  const hex=it.c.replace('#','').toUpperCase(),txt=it.tx.replace('#','').toUpperCase();
   const A1=ws['A1'];if(A1)A1.s={font:{bold:true,sz:14,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'left',vertical:'center'}};
   for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:1,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'center',vertical:'center'},border:bd};}
-  for(let r=2;r<2+N;r++){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r,c});const cell=ws[ref];if(cell)cell.s={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:(c===0||c===DEVO_VALCOL+1)?(c===0?'center':'right'):'left'}};}}
-  const totR=2+N;for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:totR,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,color:{rgb:'1F3A59'}},fill:{patternType:'solid',fgColor:{rgb:'EEF1F5'}},alignment:{horizontal:c===DEVO_VALCOL+1?'right':'left',vertical:'center'},border:bd};}
+  for(let r=2;r<2+N;r++){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r,c});const cell=ws[ref];if(cell)cell.s={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:c===0?'center':'left'}};}}
   if(!ws['!rows'])ws['!rows']=[];ws['!rows'][0]={hpt:22};ws['!rows'][1]={hpt:18};
   XLSX.utils.book_append_sheet(wb,ws,devoSheetName(it.t));
  });
  try{XLSX.writeFile(wb,'Devoluciones_QUINTEC.xlsx');}catch(e){console.error('devoExport',e);alert('No se pudo exportar: '+e.message);}
 }
-/* ===== MODALES ===== */
+/* ===== MODALES: seleccionar planillas (exportar/borrar) ===== */
 var DEVO_PICKMODE='exp',DEVO_PW='';
 function devoMaskWire(inp){if(!inp)return;DEVO_PW='';inp.value='';inp.addEventListener('keydown',function(e){if(e.key==='Backspace'){DEVO_PW=DEVO_PW.slice(0,-1);e.preventDefault();inp.value='*'.repeat(DEVO_PW.length);}else if(e.key==='Enter'){e.preventDefault();}else if(e.key&&e.key.length===1&&!e.ctrlKey&&!e.metaKey){DEVO_PW+=e.key;e.preventDefault();inp.value='*'.repeat(DEVO_PW.length);}});inp.addEventListener('paste',function(e){e.preventDefault();});}
 function devoBuildModals(){
@@ -1768,21 +1815,12 @@ function devoBuildModals(){
  pick.addEventListener('click',e=>{if(e.target===pick)pick.style.display='none';});
  document.getElementById('devoPickGo').addEventListener('click',devoPickConfirm);
  devoMaskWire(document.getElementById('devoPw'));
+ // calendario + vista de dia
  const cal=document.createElement('div');cal.className='devo-ov';cal.id='devoCalOv';
  cal.innerHTML='<div class="devo-dlg devo-caldlg"><h3>Ver registros por fecha</h3><div id="devoCalBody"></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoCalCancel">Cerrar</button></div></div>';
  document.body.appendChild(cal);
  document.getElementById('devoCalCancel').addEventListener('click',()=>cal.style.display='none');
  cal.addEventListener('click',e=>{if(e.target===cal)cal.style.display='none';});
- const ecal=document.createElement('div');ecal.className='devo-ov';ecal.id='devoEditCalOv';
- ecal.innerHTML='<div class="devo-dlg devo-caldlg"><h3>Elegir fecha</h3><div id="devoEditCalBody"></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoEditCalCancel">Cerrar</button></div></div>';
- document.body.appendChild(ecal);
- document.getElementById('devoEditCalCancel').addEventListener('click',()=>ecal.style.display='none');
- ecal.addEventListener('click',e=>{if(e.target===ecal)ecal.style.display='none';});
- const nube=document.createElement('div');nube.className='devo-ov';nube.id='devoNubeOv';
- nube.innerHTML='<div class="devo-dlg" style="width:min(560px,94vw)"><h3>☁ Datos guardados en la nube</h3><p class="devo-dlgsub">Resumen de las planillas almacenadas en Firebase.</p><div id="devoNubeBody"></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoNubeClose">Cerrar</button></div></div>';
- document.body.appendChild(nube);
- document.getElementById('devoNubeClose').addEventListener('click',()=>nube.style.display='none');
- nube.addEventListener('click',e=>{if(e.target===nube)nube.style.display='none';});
  const day=document.createElement('div');day.className='devo-fs';day.id='devoDayOv';
  day.innerHTML='<div class="devo-fsbar"><div class="devo-fstit" id="devoDayTit">Registros del d\u00eda</div><button class="devo-btn devo-ghost" id="devoDayClose">\u2715 Cerrar</button></div><div class="devo-fsbody" id="devoDayBody"></div>';
  document.body.appendChild(day);
@@ -1806,6 +1844,7 @@ function devoPickConfirm(){
  const ids=[...document.querySelectorAll('.devo-pickchk:checked')].map(c=>c.value);
  if(!ids.length){alert('Selecciona al menos una planilla.');return;}
  if(DEVO_PICKMODE==='exp'){document.getElementById('devoPickOv').style.display='none';devoExport(ids);return;}
+ // borrar: verificar contrase\u00f1a
  if(DEVO_PW!=='1234'){const m=document.getElementById('devoPwMsg');m.textContent='Contrase\u00f1a incorrecta.';return;}
  const nom=ids.map(id=>(DEVO_ITEMS.find(x=>x.id===id)||{}).t).join(', ');
  if(!confirm('\u00bfBorrar el contenido de: '+nom+'? Esta acci\u00f3n no se puede deshacer.'))return;
@@ -1813,52 +1852,11 @@ function devoPickConfirm(){
  devoRender();devoFbSave();document.getElementById('devoPickOv').style.display='none';
  alert('Planilla(s) borrada(s).');
 }
-/* ===== NUBE: ver lo guardado en Firebase ===== */
-function devoOpenNube(){
- devoBuildModals();
- const ov=document.getElementById('devoNubeOv'),body=document.getElementById('devoNubeBody');
- if(typeof fbReady==='undefined'||!fbReady||!fbDB){body.innerHTML='<div class="devo-dayempty">No hay conexi\u00f3n con la nube (Firebase).</div>';ov.style.display='flex';return;}
- body.innerHTML='<div class="devo-daynote">Consultando la nube\u2026</div>';ov.style.display='flex';
- fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){
-  const v=snap.val()||{};let tReg=0,tVal=0;
-  let h='<table class="devo-daytbl"><thead><tr><th>Planilla</th><th>Registros</th><th>Suma Valor</th></tr></thead><tbody>';
-  DEVO_ITEMS.forEach(function(it){
-   const d=v[it.id]||{};const rows=d.rows||[];
-   const reg=rows.filter(function(r){return r&&r.some(function(x){return x!=null&&String(x).trim()!=='';});}).length;
-   let val=0;rows.forEach(function(r){if(r){const n=devoNum(r[DEVO_VALCOL]);if(n!=null)val+=n;}});
-   tReg+=reg;tVal+=val;
-   h+='<tr><td><span class="devo-dot" style="background:'+it.c+'"></span>'+it.t+'</td><td class="devo-num">'+reg+'</td><td style="text-align:right">'+(devoFmtVal(val)||'$0')+'</td></tr>';
-  });
-  h+='</tbody><tfoot><tr style="font-weight:800;background:#f4f6f9"><td>TOTAL</td><td class="devo-num">'+tReg+'</td><td style="text-align:right">'+(devoFmtVal(tVal)||'$0')+'</td></tr></tfoot></table><div class="devo-daynote">As\u00ed est\u00e1n guardadas las tablas en Firebase ahora mismo.</div>';
-  body.innerHTML=h;
- }).catch(function(e){body.innerHTML='<div class="devo-dayempty">No se pudo leer la nube: '+e.message+'</div>';});
-}
-/* ===== CALENDARIO EN ESPA\u00d1OL ===== */
+/* ===== CALENDARIO EN ESPA\u00d1OL + VISTA DE D\u00cdA ===== */
 var DEVO_CALY,DEVO_CALM;
 const DEVO_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DEVO_DIA=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
 function devoParseFecha(s){s=(s==null?'':String(s)).trim();if(!s)return null;let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;if(mo<1||mo>12||d<1||d>31)return null;return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);if(m){let mo=+m[2],d=+m[3];if(mo<1||mo>12||d<1||d>31)return null;return m[1]+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}return null;}
-/* --- calendario para EDITAR la celda Fecha --- */
-var DEVO_ECAL_I=null,DEVO_ECAL_R=null,DEVO_ECY,DEVO_ECM;
-function devoOpenEditCal(i,r){devoBuildModals();DEVO_ECAL_I=i;DEVO_ECAL_R=r;var cur=devoParseFecha((DEVO_DATA[i]&&DEVO_DATA[i].rows[r])?DEVO_DATA[i].rows[r][0]:'');var d=cur?new Date(cur+'T00:00:00'):new Date();DEVO_ECY=d.getFullYear();DEVO_ECM=d.getMonth();devoDrawEditCal();document.getElementById('devoEditCalOv').style.display='flex';}
-function devoDrawEditCal(){
- var b=document.getElementById('devoEditCalBody');if(!b)return;
- var first=new Date(DEVO_ECY,DEVO_ECM,1);var sd=first.getDay();sd=(sd===0)?6:sd-1;
- var dim=new Date(DEVO_ECY,DEVO_ECM+1,0).getDate();
- var tn=new Date();var tiso=tn.getFullYear()+'-'+String(tn.getMonth()+1).padStart(2,'0')+'-'+String(tn.getDate()).padStart(2,'0');
- var h='<div class="devo-calhead"><button class="devo-calnav" id="devoEPrev">\u2039</button><span class="devo-calmo">'+DEVO_MES[DEVO_ECM]+' '+DEVO_ECY+'</span><button class="devo-calnav" id="devoENext">\u203a</button></div>';
- h+='<div class="devo-calgrid">'+DEVO_DIA.map(d=>'<div class="devo-caldow">'+d+'</div>').join('');
- for(var i=0;i<sd;i++)h+='<div></div>';
- for(var dd=1;dd<=dim;dd++){var iso=DEVO_ECY+'-'+String(DEVO_ECM+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');h+='<button class="devo-calday'+(iso===tiso?' has':'')+'" data-iso="'+iso+'">'+dd+'</button>';}
- h+='</div><div class="devo-dlg-ft" style="margin-top:12px"><button class="devo-btn devo-ghost" id="devoECalToday">Hoy</button></div>';
- b.innerHTML=h;
- document.getElementById('devoEPrev').onclick=function(){DEVO_ECM--;if(DEVO_ECM<0){DEVO_ECM=11;DEVO_ECY--;}devoDrawEditCal();};
- document.getElementById('devoENext').onclick=function(){DEVO_ECM++;if(DEVO_ECM>11){DEVO_ECM=0;DEVO_ECY++;}devoDrawEditCal();};
- document.getElementById('devoECalToday').onclick=function(){var t=new Date();devoSetFecha(t.getFullYear(),t.getMonth()+1,t.getDate());};
- b.querySelectorAll('.devo-calday').forEach(function(btn){btn.onclick=function(){var p=btn.dataset.iso.split('-');devoSetFecha(+p[0],+p[1],+p[2]);};});
-}
-function devoSetFecha(y,mo,d){var txt=String(d).padStart(2,'0')+'-'+String(mo).padStart(2,'0')+'-'+y;devoEnsure();if(DEVO_DATA[DEVO_ECAL_I]&&DEVO_DATA[DEVO_ECAL_I].rows[DEVO_ECAL_R]){DEVO_DATA[DEVO_ECAL_I].rows[DEVO_ECAL_R][0]=txt;devoFbPush();devoRenderItem(DEVO_ITEMS.find(z=>z.id===DEVO_ECAL_I));}document.getElementById('devoEditCalOv').style.display='none';}
-/* --- VER POR FECHA (todas las planillas) --- */
 function devoCountDay(iso){let n=0;devoEnsure();DEVO_ITEMS.forEach(it=>{DEVO_DATA[it.id].rows.forEach(r=>{if(devoParseFecha(r[0])===iso)n++;});});return n;}
 function devoOpenCal(){devoBuildModals();const now=new Date();if(DEVO_CALY==null){DEVO_CALY=now.getFullYear();DEVO_CALM=now.getMonth();}devoDrawCal();document.getElementById('devoCalOv').style.display='flex';}
 function devoDrawCal(){
@@ -1912,12 +1910,9 @@ function buildModMarkup(){
  const tabsEl=document.getElementById('tabs');if(tabsEl){
   const dot=c=>`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:2px"></span>`;
   tabsEl.insertAdjacentHTML('beforeend',
-   `<div class="tab modtab grp-mod" data-t="mac" style="background:${MOD_COLOR.mac}1f;border:1.5px solid ${MOD_COLOR.mac};color:${MOD_COLOR.mac};font-weight:700;border-radius:9px"><span>MacOnline Distribución</span></div>`+
-   `<div class="tab modtab grp-mod" data-t="ver" style="background:${MOD_COLOR.ver}1f;border:1.5px solid ${MOD_COLOR.ver};color:${MOD_COLOR.ver};font-weight:700;border-radius:9px"><span>Vertical Tiendas</span></div>`+
-   `<button type="button" class="modactbtn grp-mod mab-rep" id="tabRep">📄 Reporte</button>`+
-   `<button type="button" class="modactbtn grp-mod mab-ppt" id="tabPpt">📊 PPT</button>`);
-  var tR=document.getElementById('tabRep');if(tR)tR.addEventListener('click',function(e){e.stopPropagation();if(typeof obReporte==='function')obReporte();});
-  var tP=document.getElementById('tabPpt');if(tP)tP.addEventListener('click',function(e){e.stopPropagation();if(typeof obPPT==='function')obPPT();});
+   `<div class="tab modtab" data-t="mac" style="background:${MOD_COLOR.mac}1f;border:1.5px solid ${MOD_COLOR.mac};color:${MOD_COLOR.mac};font-weight:700;border-radius:9px"><span>MacOnline Distribución</span></div>`+
+   `<div class="tab modtab" data-t="ver" style="background:${MOD_COLOR.ver}1f;border:1.5px solid ${MOD_COLOR.ver};color:${MOD_COLOR.ver};font-weight:700;border-radius:9px"><span>Vertical Tiendas</span></div>`+
+   `<div class="tab modtab" data-t="devo" style="background:${MOD_COLOR.devo}1f;border:1.5px solid ${MOD_COLOR.devo};color:${MOD_COLOR.devo};font-weight:700;border-radius:9px"><span>Devoluciones</span></div>`);
  }
 }
 /* ===== FILTRO: POBLAR CONTROLES ===== */
@@ -2087,622 +2082,6 @@ function handleModUpload(e){
  });
  e.target.value='';
 }
-/* ===== IMPORTAR EXCEL DE OPERACIONES (Resumen_Meses_Duplicados: una hoja por mes) =====
-   Separado por completo de MacOnline Distribucion / Vertical Tiendas (MDATA) y de Devoluciones.
-   Vuelca al modelo DATA.rows de Operaciones y persiste en Firebase (quintec/meses). */
-function opsFecha(x){
- if(x==null||x==='')return null;
- if(x instanceof Date)return isNaN(x)?null:new Date(x.getFullYear(),x.getMonth(),x.getDate());
- if(typeof x==='number'){var d=new Date(Math.round((x-25569)*86400*1000));return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());}
- var s=String(x).trim();var m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
- if(m){var dd=+m[1],mm=+m[2],yy=+m[3];if(yy<100)yy+=2000;return new Date(yy,mm-1,dd);}
- m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);
- var d2=new Date(s);return isNaN(d2)?null:new Date(d2.getFullYear(),d2.getMonth(),d2.getDate());
-}
-function opsCleanResumenSheet(aoa){
- if(!aoa||!aoa.length)return null;
- var hdr=-1,idx={};
- for(var i=0;i<Math.min(aoa.length,40);i++){
-  var up=(aoa[i]||[]).map(function(c){return c==null?'':stripAcc(String(c)).trim().toUpperCase();});
-  if(up.indexOf('PEDIDO')>=0&&up.indexOf('VALOR')>=0&&up.indexOf('FECHA')>=0&&up.indexOf('RAZON')>=0){hdr=i;idx={};up.forEach(function(c,j){if(c&&!(c in idx))idx[c]=j;});break;}
- }
- if(hdr<0)return null;
- function col(name){var k=Object.keys(idx).find(function(k){return k===name;});if(k==null)k=Object.keys(idx).find(function(k){return k.indexOf(name)>=0;});return k!=null?idx[k]:-1;}
- var cP=col('PEDIDO'),cS=col('SEMANA'),cF=col('FECHA'),cU=col('UNIDAD NEGOCIO'),cC=col('CLIENTE'),cD=col('DIRECCION'),cCo=col('COMUNA'),cZ=col('ZONA'),cV=col('VALOR'),cM=col('MOVIL'),cR=col('RANGO'),cRa=col('RAZON');
- var map={},byMk={};
- for(var r=hdr+1;r<aoa.length;r++){
-  var row=aoa[r];if(!row)continue;
-  var raz=cRa>=0?row[cRa]:null;if(raz==null)continue;
-  if(stripAcc(String(raz)).trim().toUpperCase()!=='SE SUMA')continue; // dedup: solo SE SUMA (los NO SUMA se omiten)
-  var dt=opsFecha(cF>=0?row[cF]:null);if(!dt)continue;
-  var vRaw=cV>=0?row[cV]:null;
-  var v=(typeof vRaw==='number')?vRaw:parseFloat(String(vRaw==null?'':vRaw).replace(/[^0-9.\-]/g,'')); // VALOR exacto, sin redondear
-  if(!isFinite(v))v=0;
-  var sem=0,sRaw=cS>=0?row[cS]:null;if(sRaw!=null){var mm=String(sRaw).match(/\d+/);if(mm)sem=+mm[0];}
-  if(!sem||sem<1){var _off=(new Date(dt.getFullYear(),dt.getMonth(),1).getDay()+6)%7;sem=Math.floor((dt.getDate()-1+_off)/7)+1;}
-  var zu=stripAcc(String(cZ>=0&&row[cZ]!=null?row[cZ]:'')).toUpperCase();var zona=zu.indexOf('SANT')>=0?'Santiago':(zu.indexOf('REG')>=0?'Regiones':'Sin dato');
-  var tp=(cM>=0&&row[cM]!=null&&String(row[cM]).trim()!=='')?String(row[cM]).trim():'Sin dato';
-  var rg=(cR>=0&&row[cR]!=null&&String(row[cR]).trim()!=='')?String(row[cR]).trim().toUpperCase():'EN BLANCO';
-  var un=(cU>=0&&row[cU]!=null&&String(row[cU]).trim()!=='')?String(row[cU]).trim():'Sin dato';
-  var cl=(cC>=0&&row[cC]!=null&&String(row[cC]).trim()!=='')?String(row[cC]).trim():'Sin dato';
-  var co=canonComuna(cCo>=0?row[cCo]:null,map);
-  var dir=(cD>=0&&row[cD]!=null)?String(row[cD]).trim():'';
-  var ped=cP>=0?row[cP]:null;
-  var yy=dt.getFullYear(),mi=dt.getMonth();
-  var mk=yy+'-'+String(mi+1).padStart(2,'0'),label=MESES_FULL[mi]+' '+yy;
-  (byMk[mk]=byMk[mk]||{label:label,mk:mk,rows:[]}).rows.push({
-   id:(+(ped||0))||0,pedido:ped,f:yy+'-'+String(mi+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),
-   sem:sem,dow:(dt.getDay()+6)%7,un:un,cl:cl,co:co,dir:dir,zona:zona,v:v,ob:'',tp:tp,rg:rg,mes:label,mk:mk});
- }
- return Object.keys(byMk).length?byMk:null;
-}
-function handleOpsUpload(e){
- var files=[].slice.call(e.target.files||[]);if(!files.length)return;
- var done=0,all={},msgs=[],errs=[];
- files.forEach(function(file){
-  var rd=new FileReader();
-  rd.onload=function(ev){
-   try{
-    var wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
-    var found=false;
-    wb.SheetNames.forEach(function(nm){
-     var n=stripAcc(nm).toUpperCase();
-     if(n.indexOf('TOTALES')>=0||n.indexOf('ATIPIC')>=0||n.indexOf('LEYENDA')>=0||n.indexOf('RESUMEN')>=0)return;
-     var aoa=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:null,raw:true});
-     var byMk=opsCleanResumenSheet(aoa);
-     if(byMk){Object.keys(byMk).forEach(function(mk){if(!all[mk])all[mk]=byMk[mk];else all[mk].rows=all[mk].rows.concat(byMk[mk].rows);found=true;});}
-    });
-    if(!found)errs.push(file.name+': sin hojas de meses v\u00e1lidas');
-   }catch(err){errs.push(file.name+': error ('+err.message+')');}
-   done++;if(done===files.length)opsFinishUpload(all,msgs,errs);
-  };rd.readAsArrayBuffer(file);
- });
- e.target.value='';
-}
-function opsFinishUpload(all,msgs,errs){
- var mks=Object.keys(all).sort();
- if(!mks.length){alert('No se pudo importar ninguna hoja de meses.\n'+(errs.join('\n')||''));return;}
- mks.forEach(function(mk){
-  var o=all[mk];
-  DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;}).concat(o.rows); // REEMPLAZA el mes, no duplica
-  var tot=o.rows.reduce(function(a,r){return a+(r.v||0);},0);
-  msgs.push(o.label+': '+fi(o.rows.length)+' pedidos \u00b7 '+fm(tot));
- });
- recomputeMeta();
- try{if(DATA.meta.meses.length){F.mes=DATA.meta.meses[DATA.meta.meses.length-1].key;}}catch(_){}
- try{saveMonths();}catch(_){}
- try{buildFilters();}catch(_){}
- try{render();}catch(_){}
- var tail=(errs.length?('\n\n'+errs.join('\n')):'');
- if(typeof fbReady!=='undefined'&&fbReady){try{fbPush();}catch(_){}alert('\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail+'\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Solo Operaciones; no afecta a MacOnline ni Vertical.');}
- else alert('\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail+'\n\n\u2713 Guardado en este navegador.');
-}
-function opsGuardar(){
- if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
- if(!DATA.rows.length){alert('No hay informaci\u00f3n importada para guardar. Importa primero un Excel de Operaciones.');return;}
- try{saveMonths();}catch(_){}
- if(typeof fbReady!=='undefined'&&fbReady&&fbDB){
-  try{fbPush();}catch(_){}
-  var nM=(DATA.meta&&DATA.meta.meses)?DATA.meta.meses.length:0;
-  var tot=DATA.rows.reduce(function(a,r){return a+(r.v||0);},0);
-  alert('\u2713 Informaci\u00f3n de OPERACIONES guardada.\n\n \u2022 '+fi(DATA.rows.length)+' pedidos en '+nM+' mes(es)\n \u2022 Valor total: '+fm(tot)+'\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Todos los usuarios la ver\u00e1n al recargar.');
- }else{
-  alert('\u26a0 No hay conexi\u00f3n con la nube (Firebase). La informaci\u00f3n se guard\u00f3 solo en este navegador.');
- }
-}
-function opsBuildWorkbook(){
- var wb=XLSX.utils.book_new();
- var rows=DATA.rows.slice().sort(function(a,b){return (a.mk||'').localeCompare(b.mk||'')||((a.sem||0)-(b.sem||0))||(a.f||'').localeCompare(b.f||'')||((a.id||0)-(b.id||0));});
- var det=[['Mes','Semana','Fecha','Pedido','Unidad Negocio','Cliente','Direcci\u00f3n','Comuna','Zona','Transporte','Rango','Valor']];
- rows.forEach(function(r){det.push([r.mes,'Semana '+r.sem,r.f,(r.pedido!=null?r.pedido:r.id),r.un,r.cl,r.dir||'',r.co,r.zona||'',r.tp,r.rg,r.v]);});
- det.push([]);det.push(['','','','','','','','','','','TOTAL',rows.reduce(function(a,r){return a+(r.v||0);},0)]);
- XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(det),'Detalle');
- function aggSheet(keyFn,labelCol){var m={};rows.forEach(function(r){var k=keyFn(r);if(k==null||k==='')k='Sin dato';m[k]=m[k]||{n:0,v:0,st:0,rg:0};m[k].n++;m[k].v+=r.v||0;if(r.zona==='Santiago')m[k].st+=r.v||0;else if(r.zona==='Regiones')m[k].rg+=r.v||0;});var arr=Object.keys(m).map(function(k){return {k:k,o:m[k]};});arr.sort(function(a,b){return b.o.v-a.o.v;});var aoa=[[labelCol,'Pedidos','Valor','Valor Santiago','Valor Regiones']];var T={n:0,v:0,st:0,rg:0};arr.forEach(function(x){aoa.push([x.k,x.o.n,x.o.v,x.o.st,x.o.rg]);T.n+=x.o.n;T.v+=x.o.v;T.st+=x.o.st;T.rg+=x.o.rg;});aoa.push(['TOTAL',T.n,T.v,T.st,T.rg]);return XLSX.utils.aoa_to_sheet(aoa);}
- var mm={};rows.forEach(function(r){mm[r.mk]=mm[r.mk]||{label:r.mes,n:0,v:0,st:0,rg:0};mm[r.mk].n++;mm[r.mk].v+=r.v||0;if(r.zona==='Santiago')mm[r.mk].st+=r.v||0;else if(r.zona==='Regiones')mm[r.mk].rg+=r.v||0;});
- var mAoa=[['Mes','Pedidos','Valor','Valor Santiago','Valor Regiones']];var MT={n:0,v:0,st:0,rg:0};Object.keys(mm).sort().forEach(function(mk){var o=mm[mk];mAoa.push([o.label,o.n,o.v,o.st,o.rg]);MT.n+=o.n;MT.v+=o.v;MT.st+=o.st;MT.rg+=o.rg;});mAoa.push(['TOTAL',MT.n,MT.v,MT.st,MT.rg]);
- XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(mAoa),'Por Mes');
- var sm={};rows.forEach(function(r){var s=r.sem||0;sm[s]=sm[s]||{n:0,v:0,st:0,rg:0};sm[s].n++;sm[s].v+=r.v||0;if(r.zona==='Santiago')sm[s].st+=r.v||0;else if(r.zona==='Regiones')sm[s].rg+=r.v||0;});
- var sAoa=[['Semana','Pedidos','Valor','Valor Santiago','Valor Regiones']];var ST={n:0,v:0,st:0,rg:0};Object.keys(sm).map(Number).sort(function(a,b){return a-b;}).forEach(function(s){var o=sm[s];sAoa.push(['Semana '+s,o.n,o.v,o.st,o.rg]);ST.n+=o.n;ST.v+=o.v;ST.st+=o.st;ST.rg+=o.rg;});sAoa.push(['TOTAL',ST.n,ST.v,ST.st,ST.rg]);
- XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sAoa),'Por Semana');
- var zz={Santiago:{n:0,v:0},Regiones:{n:0,v:0},'Sin dato':{n:0,v:0}};rows.forEach(function(r){var z=zz[r.zona]?r.zona:'Sin dato';zz[z].n++;zz[z].v+=r.v||0;});
- var zAoa=[['Zona','Pedidos','Valor']];['Santiago','Regiones','Sin dato'].forEach(function(z){if(zz[z].n)zAoa.push([z,zz[z].n,zz[z].v]);});zAoa.push(['TOTAL',rows.length,rows.reduce(function(a,r){return a+(r.v||0);},0)]);
- XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(zAoa),'Por Zona');
- XLSX.utils.book_append_sheet(wb,aggSheet(function(r){return r.un;},'Unidad Negocio'),'Por Unidad');
- XLSX.utils.book_append_sheet(wb,aggSheet(function(r){return r.cl;},'Cliente'),'Por Cliente');
- XLSX.utils.book_append_sheet(wb,aggSheet(function(r){return r.tp;},'Transporte'),'Por Transporte');
- return wb;
-}
-function opsExport(){
- if(!DATA.rows.length){alert('No hay informaci\u00f3n para exportar. Importa primero un Excel de Operaciones.');return;}
- try{XLSX.writeFile(opsBuildWorkbook(),'Operaciones_QUINTEC_'+(new Date().toISOString().slice(0,10))+'.xlsx');}catch(e){alert('No se pudo exportar: '+e.message);}
-}
-
-function opsEliminar(){
- if(!obIsAdmin()){alert('Solo el administrador puede eliminar informaci\u00f3n.');return;}
- if(!DATA.rows.length){alert('No hay informaci\u00f3n guardada para eliminar.');return;}
- var meses=(DATA.meta&&DATA.meta.meses)?DATA.meta.meses.slice():[];
- var byMk={};DATA.rows.forEach(function(r){byMk[r.mk]=byMk[r.mk]||{label:r.mes,n:0,v:0};byMk[r.mk].n++;byMk[r.mk].v+=r.v||0;});
- if(!meses.length){meses=Object.keys(byMk).sort().map(function(mk){return {key:mk,label:byMk[mk].label};});}
- var listHtml=meses.map(function(m){var o=byMk[m.key]||{n:0,v:0};return '<label class="opsdel-row"><input type="checkbox" class="opsdel-chk" value="'+m.key+'"><span class="opsdel-mes">'+m.label+'</span><span class="opsdel-stat">'+fi(o.n)+' pedidos \u00b7 '+fm(o.v)+'</span></label>';}).join('');
- var ov=document.createElement('div');ov.className='ob-modal';
- ov.innerHTML='<div class="ob-box" style="width:470px;max-width:94vw">'
-  +'<div class="ob-h">Eliminar informaci\u00f3n de la nube</div>'
-  +'<div class="ob-m">Selecciona los meses de OPERACIONES que deseas borrar de este programa y de la nube (Firebase \u00b7 quintec/meses). Esta acci\u00f3n no se puede deshacer.</div>'
-  +'<label class="opsdel-row opsdel-all"><input type="checkbox" id="opsDelAll"><span class="opsdel-mes"><b>Seleccionar todos</b></span></label>'
-  +'<div class="opsdel-list">'+listHtml+'</div>'
-  +'<div class="opsdel-pwlbl">Contrase\u00f1a</div>'
-  +'<input type="password" class="ob-inp" id="opsDelPw" maxlength="12" placeholder="\u2022\u2022\u2022\u2022" autocomplete="off">'
-  +'<div class="ob-err" id="opsDelErr" style="display:none">Contrase\u00f1a incorrecta</div>'
-  +'<div class="ob-btns"><button class="ob-c" id="opsDelCancel">Cancelar</button><button class="ob-ok" id="opsDelOk">Eliminar seleccionados</button></div>'
-  +'</div>';
- document.body.appendChild(ov);
- var pw=ov.querySelector('#opsDelPw');setTimeout(function(){pw.focus();},30);
- function close(){if(ov.parentNode)document.body.removeChild(ov);}
- ov.querySelector('#opsDelAll').onchange=function(){var on=this.checked;ov.querySelectorAll('.opsdel-chk').forEach(function(c){c.checked=on;});};
- ov.querySelector('#opsDelCancel').onclick=close;
- ov.querySelector('#opsDelOk').onclick=function(){
-  var sel=[].slice.call(ov.querySelectorAll('.opsdel-chk:checked')).map(function(c){return c.value;});
-  if(!sel.length){alert('Selecciona al menos un mes para eliminar.');return;}
-  if(pw.value!=='1234'){ov.querySelector('#opsDelErr').style.display='';pw.value='';pw.focus();return;}
-  var labels=sel.map(function(mk){return (byMk[mk]||{}).label||mk;});
-  if(!confirm('\u26a0 ELIMINACI\u00d3N DEFINITIVA\n\nSe borrar\u00e1n estos meses de OPERACIONES:\n \u2022 '+labels.join('\n \u2022 ')+'\n\nSe eliminar\u00e1 de este programa y de la nube (Firebase). No se puede deshacer.\n\n\u00bfDeseas continuar?'))return;
-  if(!confirm('\u00bfEst\u00e1s seguro? Esta es la \u00faltima confirmaci\u00f3n antes de borrar definitivamente.'))return;
-  DATA.rows=DATA.rows.filter(function(r){return sel.indexOf(r.mk)<0;});
-  try{recomputeMeta();}catch(_){}
-  try{if(typeof F!=='undefined'&&DATA.meta&&DATA.meta.meses&&!DATA.meta.meses.find(function(m){return m.key===F.mes;})){F.mes=DATA.meta.meses.length?DATA.meta.meses[DATA.meta.meses.length-1].key:'all';}}catch(_){}
-  try{saveMonths();}catch(_){}
-  if(typeof fbReady!=='undefined'&&fbReady&&fbDB){try{if(DATA.rows.length)fbPush();else fbClear();}catch(_){}}
-  try{buildFilters();}catch(_){}
-  try{render();}catch(_){}
-  close();
-  alert('\u2713 Meses eliminados de OPERACIONES y de la nube (Firebase):\n \u2022 '+labels.join('\n \u2022 '));
- };
- pw.addEventListener('keydown',function(e){if(e.key==='Enter')ov.querySelector('#opsDelOk').click();if(e.key==='Escape')close();});
-}
-
-function obBuildGroupWb(grp){
- var rows=obRows(grp);if(!rows.length)return null;
- var lbl=grp==='mac'?'MacOnline':'Vertical';
- var wb=XLSX.utils.book_new();
- var sorted=rows.slice().sort(function(a,b){return (a.zona||'').localeCompare(b.zona||'')||(a.region||'').localeCompare(b.region||'')||(a.tienda||'').localeCompare(b.tienda||'')||(a.mk||'').localeCompare(b.mk||'')||((a.sem||0)-(b.sem||0))||(a.f||'').localeCompare(b.f||'');});
- var det=[['Zona','Regi\u00f3n','Comuna','Tienda','Mes','Semana','Fecha','Unidad Negocio','Veh\u00edculo','Rango','Pedido','Valor']];
- sorted.forEach(function(r){det.push([r.zona,r.region,r.co,r.tienda,r.mes,'Sem '+r.sem,r.f,r.un,r.tp,r.rg,r.pedido,r.v]);});
- XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(det),lbl+' Detalle');
- var agg=obAgg(grp);var mesesKeys=agg.meses.map(function(m){return m.label;});
- var tm=[['Tienda','Zona','Regi\u00f3n'].concat(mesesKeys).concat(['Total'])];
- var tieMap={};rows.forEach(function(r){var key=r.tienda;tieMap[key]=tieMap[key]||{zona:r.zona,region:r.region,m:{}};tieMap[key].m[r.mes]=(tieMap[key].m[r.mes]||0)+r.v;});
- Object.keys(tieMap).sort().forEach(function(t){var o=tieMap[t];var row=[t,o.zona,o.region];var tot=0;mesesKeys.forEach(function(ml){var v=o.m[ml]||0;row.push(v);tot+=v;});row.push(tot);tm.push(row);});
- XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tm),lbl+' x Tienda-Mes');
- var sm=[['Semana','Pedidos','Valor']];agg.sems.forEach(function(x){sm.push(['Semana '+x.s,x.n,x.v]);});sm.push(['TOTAL',agg.nPed,agg.totV]);
- XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sm),lbl+' x Semana');
- var rz=[['Zona','Pedidos','Valor'],['Santiago',agg.byZona.Santiago.n,agg.byZona.Santiago.v],['Regiones',agg.byZona.Regiones.n,agg.byZona.Regiones.v]];
- XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rz),lbl+' x Zona');
- return wb;
-}
-function opsSaveAllCloud(){
- try{if(typeof fbReady!=='undefined'&&fbReady&&fbDB){
-   if(DATA.rows.length&&typeof fbPush==='function')fbPush();
-   if(typeof MDATA!=='undefined'&&MDATA.rows.length&&typeof modFbPush==='function')modFbPush();
-   if(typeof devoFbSave==='function')devoFbSave();
- }}catch(_){}
- setTimeout(function(){alert('\u2713 Respaldo diario completado.\n\nSe exportaron en Excel (por separado): Operaciones, MacOnline Distribuci\u00f3n, Vertical Tiendas y Devoluciones.\n\n\u2601 Adem\u00e1s se guard\u00f3 todo en la nube (Firebase).');},300);
-}
-function opsExportTodo(){
- var stamp=new Date().toISOString().slice(0,10);
- var tasks=[];
- if(typeof DATA!=='undefined'&&DATA.rows.length){tasks.push(function(){try{XLSX.writeFile(opsBuildWorkbook(),'Operaciones_QUINTEC_'+stamp+'.xlsx');}catch(e){}});}
- if(typeof MDATA!=='undefined'&&MDATA.rows.length){
-  tasks.push(function(){var wb=obBuildGroupWb('mac');if(wb){try{XLSX.writeFile(wb,'MacOnline_Distribucion_QUINTEC_'+stamp+'.xlsx');}catch(e){}}});
-  tasks.push(function(){var wb=obBuildGroupWb('ver');if(wb){try{XLSX.writeFile(wb,'Vertical_Tiendas_QUINTEC_'+stamp+'.xlsx');}catch(e){}}});
- }
- if(typeof DEVO_ITEMS!=='undefined'&&DEVO_ITEMS.length){tasks.push(function(){try{devoExport(DEVO_ITEMS.map(function(it){return it.id;}));}catch(e){}});}
- if(!tasks.length){alert('No hay informaci\u00f3n cargada para respaldar todav\u00eda.');return;}
- var i=0;(function next(){if(i>=tasks.length){opsSaveAllCloud();return;}try{tasks[i]();}catch(_){}i++;setTimeout(next,900);})();
-}
-function opsBackupKey(){var d=new Date();return 'quintec_backup_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function opsMarkBackupDone(){try{localStorage.setItem(opsBackupKey(),'1');}catch(_){}}
-function opsShowBackupPrompt(){
- if(document.getElementById('opsBkOv'))return;
- var ov=document.createElement('div');ov.id='opsBkOv';ov.className='ops-bk-ov';
- ov.innerHTML='<div class="ops-bk-card">'
-  +'<div class="ops-bk-ic">\ud83d\udce4</div>'
-  +'<h2>Respaldo diario \u00b7 8:00 AM</h2>'
-  +'<p>Buenos d\u00edas. Es momento de <b>exportar y respaldar toda la informaci\u00f3n del programa</b> en Excel, cada m\u00f3dulo por separado:</p>'
-  +'<ul class="ops-bk-list"><li>Operaciones</li><li>MacOnline Distribuci\u00f3n</li><li>Vertical Tiendas</li><li>Devoluciones</li></ul>'
-  +'<p class="ops-bk-sub">Se descargar\u00e1n archivos Excel ordenados y, adem\u00e1s, se guardar\u00e1 todo en la nube (Firebase).</p>'
-  +'<div class="ops-bk-btns"><button class="ops-bk-no" id="opsBkNo">Ahora no</button><button class="ops-bk-yes" id="opsBkYes">S\u00ed, exportar y guardar todo</button></div>'
-  +'</div>';
- document.body.appendChild(ov);
- document.getElementById('opsBkNo').onclick=function(){opsMarkBackupDone();ov.remove();};
- document.getElementById('opsBkYes').onclick=function(){opsMarkBackupDone();ov.remove();opsExportTodo();};
-}
-function opsCheckDailyBackup(){
- try{
-  if(!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin'))return;
-  var d=new Date();var dow=d.getDay();if(dow===0||dow===6)return;
-  if(d.getHours()<8)return;
-  if(localStorage.getItem(opsBackupKey()))return;
-  opsShowBackupPrompt();
- }catch(_){}
-}
-
-var OPS_NUBE_EDIT=false;
-function opsNube(){
- var ov=document.getElementById('opsNubeOvr');
- if(!ov){ov=document.createElement('div');ov.id='opsNubeOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">\u2601 Excel de Operaciones guardados en la nube (Firebase)</div><button class="ob-rep-b ops-nedit">\u270e EDITAR</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-body" id="opsNubeBody"></div></div>';document.body.appendChild(ov);
-  ov.querySelector('.ob-rep-x').onclick=function(){OPS_NUBE_EDIT=false;ov.style.display='none';};
-  ov.querySelector('.ops-nedit').onclick=function(){obAskPass('Editar en la nube','Ingresa la contrase\u00f1a para habilitar la edici\u00f3n. La contrase\u00f1a no se mostrar\u00e1 en pantalla.',function(){OPS_NUBE_EDIT=true;opsNubeRender();});};}
- OPS_NUBE_EDIT=false;opsNubeRender();ov.style.display='block';
-}
-function opsNubeRender(){
- var body=document.getElementById('opsNubeBody');if(!body)return;
- var conn=(typeof fbReady!=='undefined'&&fbReady);
- var head='<div class="nube-conn '+(conn?'ok':'off')+'">'+(conn?'\u25cf Conectado a la nube \u00b7 quintec/meses':'\u25cb Sin conexi\u00f3n con la nube')+(OPS_NUBE_EDIT?' \u00b7 <b>Modo edici\u00f3n activo</b>':'')+'</div>';
- var byMk={};DATA.rows.forEach(function(r){byMk[r.mk]=byMk[r.mk]||{label:r.mes,n:0,v:0};byMk[r.mk].n++;byMk[r.mk].v+=r.v||0;});
- var mks=Object.keys(byMk).sort();
- var tv=DATA.rows.reduce(function(a,r){return a+(r.v||0);},0);
- var items=mks.length?mks.map(function(mk){var o=byMk[mk];return '<div class="nube-row"><div class="nube-mes">'+o.label+'</div><div class="nube-stat">'+fi(o.n)+' pedidos \u00b7 '+fm(o.v)+'</div>'+(OPS_NUBE_EDIT?'<button class="nube-del" data-mk="'+mk+'">Eliminar mes</button>':'')+'</div>';}).join(''):'<div class="nube-empty">Sin Excel de Operaciones en la nube.</div>';
- body.innerHTML=head+'<div class="nube-cols"><div class="nube-col"><div class="nube-h" style="background:#1f3a59">Operaciones</div><div class="nube-tot">'+fi(DATA.rows.length)+' pedidos \u00b7 '+fm(tv)+' \u00b7 '+fi(mks.length)+' mes(es)</div>'+items+'</div></div>';
- body.querySelectorAll('.nube-del').forEach(function(b){b.onclick=function(){var mk=b.getAttribute('data-mk');if(!obIsAdmin()){alert('Solo el administrador puede editar.');return;}var lbl=(byMk[mk]||{}).label||mk;if(!confirm('\u00bfEliminar de la nube el Excel del mes '+lbl+' (Operaciones)?\n\nEsta acci\u00f3n se aplica tambi\u00e9n en Firebase (quintec/meses) y no se puede deshacer.'))return;DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;});try{recomputeMeta();}catch(_){}try{saveMonths();}catch(_){}if(typeof fbReady!=='undefined'&&fbReady&&fbDB){try{if(DATA.rows.length)fbPush();else fbClear();}catch(_){}}try{buildFilters();}catch(_){}try{render();}catch(_){}opsNubeRender();};});
-}
-
-var OPS_REPORT=null;
-var OPS_REP_TABS=[
- {id:'op',title:'Operaciones & Flota',kpis:[['k_ped','Total Pedidos'],['k_prom','Prom. Pedidos/D\u00eda'],['k_peak','Peak Pedidos D\u00eda'],['k_com','Comunas Cubiertas'],['k_veh','Veh\u00edculos Activos'],['k_dias','D\u00edas Operados'],['k_prop','% Flota Propia'],['k_med','Mediana Pedidos/D\u00eda']],charts:[['c_flota','Eficiencia de Flota'],['c_unidad','Participaci\u00f3n por Unidad de Negocio'],['c_prop','Flota Propia vs Tercerizada'],['c_heat','Ritmo Operativo (D\u00eda \u00d7 Semana)'],['c_matriz','Matriz de Control Semanal'],['c_ampmdisp','Dispersi\u00f3n AM / PM por D\u00eda']]},
- {id:'fin',title:'Finanzas & P&L',kpis:[['k_val','Valor Total Operado'],['k_tkt','Ticket Promedio/Pedido'],['k_vdia','Valor Promedio/D\u00eda']],charts:[['c_valun','Valor por Unidad de Negocio'],['c_valtp','Valor Movilizado por Veh\u00edculo'],['c_evo','Evoluci\u00f3n Diaria del Capital'],['c_comval','Top Comunas por Valorizaci\u00f3n'],['c_bubble','Volumen vs Valor por Veh\u00edculo']]},
- {id:'log',title:'Log\u00edstica & Rutas',kpis:[['k_am','% Despachos AM'],['k_pm','% Despachos PM'],['k_top5','Concentraci\u00f3n Top 5 Comunas'],['k_pcom','Pedidos Prom./Comuna']],charts:[['c_rango','Distribuci\u00f3n por Rango Horario'],['c_comvol','Cobertura \u2014 Top 10 Comunas'],['c_pareto','Pareto de Comunas (80/20)']]},
- {id:'aud',title:'Auditor\u00eda & Excepciones',kpis:[['k_cal','% Calidad (sin obs.)'],['k_vobsavg','Valor Prom. Observado'],['k_vmax','Pedido de Mayor Valor']],charts:[['c_obstipo','Distribuci\u00f3n de Observaciones'],['c_obstp','Observaciones por Veh\u00edculo'],['c_obssem','Observaciones por Semana']]},
- {id:'cmp',title:'Tendencias & Comparativo',kpis:[['k_cmpbestvol','Mes de Mayor Volumen'],['k_cmpbestval','Mes de Mayor Valor'],['k_cmpgrow','Crecimiento (1\u00ba vs \u00faltimo)']],charts:[['c_mesvol','Pedidos por Mes'],['c_mesval','Valor Movilizado por Mes'],['c_mesheat','Campo de Calor Mes \u00d7 Semana'],['c_mesun','Mezcla de Unidades por Mes'],['cmp_c_sem','Pedidos y Valor por Semana'],['cmp_c_ampm','Pedidos AM vs PM por Mes']]},
- {id:'diag',title:'Diagn\u00f3stico & Causas',kpis:[['k_dgobs','% Pedidos con Observaci\u00f3n'],['k_dgtop','Causa M\u00e1s Frecuente'],['k_dgcom','Comuna Foco'],['k_dgsem','Semana M\u00e1s Cr\u00edtica']],charts:[['c_ish','Diagrama de Ishikawa'],['c_treemap','Mapa de \u00c1rbol de Comunas'],['c_dispcom','Riesgo por Comuna'],['c_causebar','Pareto de Causas']]}
-];
-function opsScopeLabel(){try{if(F.mes==='all')return 'Todos los meses';var m=(DATA.meta.meses||[]).find(function(x){return x.key===F.mes;});return m?m.label:'Todos los meses';}catch(_){return '';}}
-function opsCapture(){
- var imgs={},kpis={};
- var secs=[].slice.call(document.querySelectorAll('.section'));
- var prev=secs.map(function(s){return s.classList.contains('on');});
- try{
-  OPS_REP_TABS.forEach(function(t){
-   var sec=document.getElementById('s-'+t.id);if(!sec)return;
-   secs.forEach(function(s){s.classList.toggle('on',s===sec);});
-   t.charts.forEach(function(c){var inst=(typeof CH!=='undefined')?CH[c[0]]:null;if(inst){try{inst.resize();}catch(_){}try{imgs[c[0]]=inst.getDataURL({pixelRatio:2,backgroundColor:'#ffffff'});}catch(_){}}});
-   t.kpis.forEach(function(k){var el=document.getElementById(k[0]);if(el)kpis[k[0]]=(el.textContent||'').trim();});
-  });
- }catch(_){}
- secs.forEach(function(s,i){s.classList.toggle('on',prev[i]);});
- try{resizeCur();}catch(_){}
- return {imgs:imgs,kpis:kpis};
-}
-var OPS_PPT_CSS=".ppt-wrap{max-width:1000px;margin:0 auto}"
-+".ppt-slide{background:#fff;border:1px solid #d9e0e8;border-radius:12px;box-shadow:0 8px 24px rgba(20,40,70,.1);margin:0 auto 20px;padding:18px 22px;aspect-ratio:16/9;display:flex;flex-direction:column;overflow:hidden}"
-+".ppt-cover{background:linear-gradient(135deg,#1f3a59,#2b4a6f);color:#fff;align-items:center;justify-content:center;text-align:center}"
-+".ppt-cv-t{font-size:30px;font-weight:800;font-family:'Sora',Arial}.ppt-cv-s{font-size:15px;margin-top:10px;color:#cdd9e6}"
-+".ppt-head{font-size:19px;font-weight:700;color:#1f3a59;font-family:'Sora',Arial;border-bottom:2px solid #eef2f6;padding-bottom:8px;margin-bottom:10px}"
-+".ppt-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}"
-+".ppt-cell{display:flex;flex-direction:column;min-height:0}.ppt-ct{font-size:12px;font-weight:600;color:#44505e;margin-bottom:4px}"
-+".ppt-cell img{width:100%;height:100%;object-fit:contain;border:1px solid #eef2f6;border-radius:6px;min-height:0}";
-
-function opsBuildReportHtml(cap){
- var tabs=OPS_REP_TABS.filter(function(t){return t.charts.some(function(c){return cap.imgs[c[0]];});});
- var N=tabs.length;
- return tabs.map(function(t,idx){
-   var band='<div class="rep-band" style="background:#1f3a59"><div class="rep-bt">Operaciones \u00b7 <span>'+t.title+'</span></div><div class="rep-bs">Hoja '+(idx+1)+' de '+N+' \u00b7 QUINTEC KPI Log\u00edstica \u00b7 '+opsScopeLabel()+'</div></div>';
-   var kp=t.kpis.map(function(k){var v=(cap.kpis[k[0]]||'\u2013');return '<div class="rep-k"><div class="rep-kt">'+k[1]+'</div><div class="rep-kv">'+v+'</div></div>';}).join('');
-   var kpis=kp?'<div class="rep-kpis">'+kp+'</div>':'';
-   var cells=t.charts.filter(function(c){return cap.imgs[c[0]];}).map(function(c){
-     var narr=(typeof chartNarr==='function')?chartNarr(c[0]):'';
-     return '<div class="rep-cell"><div class="rep-ct">'+c[1]+'</div><img class="rep-img2" src="'+cap.imgs[c[0]]+'"/>'+(narr?'<div class="rep-exp">'+narr+'</div>':'')+'</div>';
-   }).join('');
-   return '<div class="rep-page">'+band+kpis+'<div class="rep-grid2">'+cells+'</div></div>';
- }).join('');
-}
-function opsReporte(){
- if(!DATA.rows.length){alert('No hay informaci\u00f3n para generar el reporte. Importa primero un Excel de Operaciones.');return;}
- var cap=opsCapture();OPS_REPORT=cap;
- var html=opsBuildReportHtml(cap);
- if(!html){alert('No hay gr\u00e1ficos disponibles para el reporte todav\u00eda.');return;}
- var ov=document.getElementById('opsRepOvr');
- if(!ov){ov=document.createElement('div');ov.id='opsRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo \u00b7 Operaciones</div><button class="ob-rep-b ops-rep-pdf">\u2913 Guardar PDF</button><button class="ob-rep-b ops-rep-print">\ud83d\udda8 Imprimir</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-body" id="opsRepBody"></div></div>';document.body.appendChild(ov);
-  ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
-  ov.querySelector('.ops-rep-pdf').onclick=function(){opsReportPrint(true);};
-  ov.querySelector('.ops-rep-print').onclick=function(){opsReportPrint(false);};}
- document.getElementById('opsRepBody').innerHTML='<div class="rep-wrap">'+html+'</div>';
- ov.style.display='block';
-}
-function opsReportPrint(isPdf){
- if(!OPS_REPORT)return;
- var html='<div class="rep-wrap">'+opsBuildReportHtml(OPS_REPORT)+'</div>';
- var w=window.open('','_blank');
- if(!w){alert('El navegador bloque\u00f3 la ventana. Permite las ventanas emergentes para '+(isPdf?'guardar el PDF':'imprimir')+'.');return;}
- w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Operaciones \u2014 QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{page-break-after:always;box-shadow:none;border:0;margin:0 auto}@page{size:A4 landscape;margin:8mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},500);}<\/scr'+'ipt></body></html>');
- w.document.close();
-}
-
-function opsBuildPptPreviewHtml(cap){
- var tabs=OPS_REP_TABS.filter(function(t){return t.charts.some(function(c){return cap.imgs[c[0]];});});
- var slides=[];
- slides.push('<div class="ppt-slide ppt-cover"><div class="ppt-cv-t">Presentaci\u00f3n Operaciones</div><div class="ppt-cv-s">QUINTEC KPI Log\u00edstica \u00b7 '+opsScopeLabel()+'</div></div>');
- tabs.forEach(function(t){
-   var imgs=t.charts.filter(function(c){return cap.imgs[c[0]];});
-   for(var i=0;i<imgs.length;i+=4){
-     var grp=imgs.slice(i,i+4);
-     var cells=grp.map(function(c){var narr=(typeof chartNarr==='function')?chartNarr(c[0]):'';return '<div class="ppt-cell"><div class="ppt-ct">'+c[1]+'</div><img class="ppt-img" src="'+cap.imgs[c[0]]+'"/>'+(narr?'<div class="ppt-exp">'+narr+'</div>':'')+'</div>';}).join('');
-     slides.push('<div class="ppt-slide"><div class="ppt-sh">'+t.title+'</div><div class="ppt-grid g'+grp.length+'">'+cells+'</div></div>');
-   }
- });
- return slides.join('');
-}
-function opsPPT(){
- if(!DATA.rows.length){alert('No hay informaci\u00f3n para generar la presentaci\u00f3n. Importa primero un Excel de Operaciones.');return;}
- var cap=opsCapture();OPS_REPORT=cap;
- var html=opsBuildPptPreviewHtml(cap);
- var ov=document.getElementById('opsPptOvr');
- if(!ov){ov=document.createElement('div');ov.id='opsPptOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Presentaci\u00f3n \u00b7 Operaciones</div><button class="ob-rep-b ops-ppt-save">\u2913 Guardar PPT</button><button class="ob-rep-b ops-ppt-print">\ud83d\udda8 Imprimir</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-body ppt-body" id="opsPptBody"></div></div>';document.body.appendChild(ov);
-  ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
-  ov.querySelector('.ops-ppt-save').onclick=function(){opsBuildPptx(OPS_REPORT);};
-  ov.querySelector('.ops-ppt-print').onclick=function(){opsPptPrint();};}
- document.getElementById('opsPptBody').innerHTML='<div class="ppt-wrap">'+html+'</div>';
- ov.style.display='block';
-}
-function opsPptPrint(){
- if(!OPS_REPORT)return;
- var html='<div class="ppt-wrap">'+opsBuildPptPreviewHtml(OPS_REPORT)+'</div>';
- var w=window.open('','_blank');
- if(!w){alert('El navegador bloque\u00f3 la ventana. Permite las ventanas emergentes para imprimir.');return;}
- w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Presentaci\u00f3n Operaciones \u2014 QUINTEC</title><style>'+OPS_PPT_CSS+' body{margin:0;background:#fff}.ppt-wrap{max-width:none}.ppt-slide{page-break-after:always;box-shadow:none;margin:0 auto}@page{size:A4 landscape;margin:0}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},500);}<\/scr'+'ipt></body></html>');
- w.document.close();
-}
-function opsBuildPptx(cap){
- if(typeof PptxGenJS==='undefined'){
-   obLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js',function(){opsBuildPptx(cap);});
-   return;
- }
- var pptx=new PptxGenJS();pptx.defineLayout({name:'W',width:13.333,height:7.5});pptx.layout='W';
- var cv=pptx.addSlide();cv.background={color:'1F3A59'};
- cv.addText('Presentaci\u00f3n Operaciones',{x:0.6,y:2.6,w:12.1,h:1.0,fontSize:40,bold:true,color:'FFFFFF'});
- cv.addText('QUINTEC KPI Log\u00edstica \u00b7 '+opsScopeLabel(),{x:0.6,y:3.7,w:12.1,h:0.6,fontSize:18,color:'BBD0E6'});
- var tabs=OPS_REP_TABS.filter(function(t){return t.charts.some(function(c){return cap.imgs[c[0]];});});
- tabs.forEach(function(t){
-   var imgs=t.charts.filter(function(c){return cap.imgs[c[0]];});
-   for(var i=0;i<imgs.length;i+=4){
-     var grp=imgs.slice(i,i+4);var sl=pptx.addSlide();
-     sl.addText(t.title,{x:0.4,y:0.25,w:12.5,h:0.55,fontSize:22,bold:true,color:'1F3A59'});
-     var pos=[[0.4,1.0],[6.86,1.0],[0.4,4.25],[6.86,4.25]];
-     grp.forEach(function(c,j){var p=pos[j];
-       sl.addText(c[1],{x:p[0],y:p[1]-0.02,w:6.1,h:0.35,fontSize:11,bold:true,color:'1F3A59'});
-       sl.addImage({data:cap.imgs[c[0]],x:p[0],y:p[1]+0.34,w:6.1,h:2.7});
-     });
-   }
- });
- pptx.writeFile({fileName:'Operaciones_QUINTEC.pptx'});
-}
-
-/* ===== OPSBAR: IMPORTAR/EXPORTAR/ELIMINAR/REPORTE/PPT/NUBE (MacOnline Distribucion + Vertical Tiendas) ===== */
-var OB_REPORT=null,OB_NUBE_EDIT=false;
-function obIsAdmin(){try{return !!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin');}catch(e){return false;}}
-function obUpdateBar(){var ob=document.getElementById('opsbar');if(!ob)return;var show=(CURG==='ops');ob.style.display=show?'flex':'none';}
-function obRows(grp){return MDATA.rows.filter(function(r){return r.grp===grp;});}
-function obAgg(grp){
- var rows=obRows(grp);
- var totV=rows.reduce(function(a,r){return a+(r.v||0);},0);
- var tiendas=new Set(rows.map(function(r){return r.tienda;}).filter(function(t){return t&&t!=='Sin dato';})).size;
- var byMes={};rows.forEach(function(r){byMes[r.mk]=byMes[r.mk]||{label:r.mes,n:0,v:0};byMes[r.mk].n++;byMes[r.mk].v+=r.v||0;});
- var meses=Object.keys(byMes).sort().map(function(mk){return {mk:mk,label:byMes[mk].label,n:byMes[mk].n,v:byMes[mk].v};});
- var byTie={};rows.forEach(function(r){var t=r.tienda||'Sin dato';byTie[t]=byTie[t]||{n:0,v:0};byTie[t].n++;byTie[t].v+=r.v||0;});
- var tieTop=Object.keys(byTie).map(function(t){return {k:t,n:byTie[t].n,v:byTie[t].v};}).filter(function(x){return x.k!=='Sin dato';}).sort(function(a,b){return b.v-a.v;});
- var byZona={Santiago:{n:0,v:0},Regiones:{n:0,v:0}};rows.forEach(function(r){if(byZona[r.zona]){byZona[r.zona].n++;byZona[r.zona].v+=r.v||0;}});
- var bySem={};rows.forEach(function(r){var s=r.sem||0;if(s>0){bySem[s]=bySem[s]||{n:0,v:0};bySem[s].n++;bySem[s].v+=r.v||0;}});
- var sems=Object.keys(bySem).map(Number).sort(function(a,b){return a-b;}).map(function(s){return {s:s,n:bySem[s].n,v:bySem[s].v};});
- var byTp={};rows.forEach(function(r){var t=r.tp||'Sin dato';byTp[t]=byTp[t]||{n:0,v:0};byTp[t].n++;byTp[t].v+=r.v||0;});
- var tp=Object.keys(byTp).map(function(t){return {k:t,n:byTp[t].n,v:byTp[t].v};}).filter(function(x){return x.k!=='Sin dato';}).sort(function(a,b){return b.v-a.v;});
- var am=rows.filter(function(r){return r.rg==='AM';}).length,pm=rows.filter(function(r){return r.rg==='PM';}).length;
- return {rows:rows,totV:totV,nPed:rows.length,tiendas:tiendas,meses:meses,tieTop:tieTop,byZona:byZona,sems:sems,tp:tp,am:am,pm:pm};
-}
-function obChartImg(w,h,option){
- var d=document.createElement('div');d.style.cssText='position:fixed;left:-10000px;top:0;width:'+w+'px;height:'+h+'px;';
- document.body.appendChild(d);
- var inst=echarts.init(d,null,{renderer:'canvas'});
- option.animation=false;option.backgroundColor='#ffffff';
- inst.setOption(option,true);
- var img='';try{img=inst.getDataURL({pixelRatio:2,backgroundColor:'#ffffff'});}catch(e){img='';}
- inst.dispose();document.body.removeChild(d);
- return img;
-}
-function obGenImages(grp){
- var a=obAgg(grp),col=MOD_COLOR[grp];var out={};
- out.mes=obChartImg(820,380,{grid:{left:8,right:20,top:24,bottom:28,containLabel:true},tooltip:{},xAxis:{type:'category',data:a.meses.map(function(m){return m.label;}),axisLabel:{color:'#6b7684'}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{type:'bar',data:a.meses.map(function(m){return m.v;}),itemStyle:{color:col,borderRadius:[5,5,0,0]},barWidth:'55%',label:{show:true,position:'top',fontSize:10,color:'#1f3a59',formatter:function(p){return fmShort(p.value);}}}]});
- out.zona=obChartImg(400,360,{tooltip:{},legend:{bottom:0},series:[{type:'pie',radius:['40%','70%'],data:[{name:'Santiago',value:a.byZona.Santiago.v,itemStyle:{color:col}},{name:'Regiones',value:a.byZona.Regiones.v,itemStyle:{color:'#c3d0dd'}}],label:{formatter:'{b}\n{d}%',fontSize:12}}]});
- var tt=a.tieTop.slice(0,10).slice().reverse();
- out.tie=obChartImg(430,360,{grid:{left:8,right:76,top:10,bottom:10,containLabel:true},tooltip:{},xAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},yAxis:{type:'category',data:tt.map(function(x){return x.k;}),axisLabel:{width:130,overflow:'truncate',color:'#6b7684',fontSize:10}},series:[{type:'bar',data:tt.map(function(x){return x.v;}),itemStyle:{color:col,borderRadius:[0,4,4,0]},label:{show:true,position:'right',fontSize:9,color:'#1f3a59',formatter:function(p){return fmShort(p.value);}}}]});
- out.sem=obChartImg(430,340,{grid:{left:8,right:20,top:20,bottom:28,containLabel:true},tooltip:{},xAxis:{type:'category',data:a.sems.map(function(s){return 'S'+s.s;}),axisLabel:{color:'#6b7684'}},yAxis:{type:'value',axisLabel:{color:'#6b7684'}},series:[{type:'line',smooth:true,data:a.sems.map(function(s){return s.n;}),lineStyle:{color:col,width:3},itemStyle:{color:col},areaStyle:{color:'rgba(0,0,0,.05)'},symbol:'circle',symbolSize:6}]});
- var tp=a.tp.slice(0,8).slice().reverse();
- out.tp=obChartImg(430,340,{grid:{left:8,right:76,top:10,bottom:10,containLabel:true},tooltip:{},xAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},yAxis:{type:'category',data:tp.map(function(x){return x.k;}),axisLabel:{color:'#6b7684',fontSize:10}},series:[{type:'bar',data:tp.map(function(x){return x.v;}),itemStyle:{color:'#2b4a6f',borderRadius:[0,4,4,0]},label:{show:true,position:'right',fontSize:9,color:'#1f3a59',formatter:function(p){return fmShort(p.value);}}}]});
- return {a:a,col:col,img:out};
-}
-function obReportHtml(grp,startPage){
- var g=obGenImages(grp),a=g.a,col=g.col,img=g.img;
- var lbl=grp==='mac'?'MacOnline Distribucion':'Vertical Tiendas';
- var ticket=a.nPed?a.totV/a.nPed:0;
- var topMes=a.meses.slice().sort(function(x,y){return y.v-x.v;})[0];
- var topTie=a.tieTop[0];
- var stgShare=a.totV?100*a.byZona.Santiago.v/a.totV:0;
- var topTp=a.tp[0];
- var band=function(sub,n){return '<div class="rep-band" style="background:'+col+'"><div class="rep-bt">'+lbl+' · <span>'+sub+'</span></div><div class="rep-bs">Hoja '+n+' de 6 · QUINTEC KPI Logística</div></div>';};
- var kpi=function(t,v,s){return '<div class="rep-k"><div class="rep-kt">'+t+'</div><div class="rep-kv">'+v+'</div><div class="rep-ks">'+s+'</div></div>';};
- var p1='<div class="rep-page">'+band('Resumen Ejecutivo',startPage)+'<div class="rep-kpis">'+kpi('Pedidos / salidas',fi(a.nPed),fi(a.meses.length)+' meses cargados')+kpi('Valor movilizado',fm(a.totV),'Monto total exacto')+kpi('Tiendas activas',fi(a.tiendas),'con despachos')+kpi('Ticket promedio',fm(ticket),'valor por pedido')+'</div><img class="rep-img" src="'+img.mes+'"/><div class="rep-exp"><b>Explicación.</b> El gráfico muestra el <b>valor movilizado por mes</b> en '+lbl+', sumando la columna VALOR de cada pedido sin redondear. Cada barra corresponde a un mes cargado.</div><div class="rep-an"><b>Análisis.</b> '+(topMes?('El mes de mayor valor es <b>'+topMes.label+'</b> con <b>'+fm(topMes.v)+'</b>. '):'')+'En total se movilizaron <b>'+fm(a.totV)+'</b> en <b>'+fi(a.nPed)+'</b> pedidos, con un ticket promedio de <b>'+fm(ticket)+'</b>.</div></div>';
- var p2='<div class="rep-page">'+band('Distribución Territorial',startPage+1)+'<div class="rep-duo"><div><div class="rep-ct">Valor por zona</div><img class="rep-img2" src="'+img.zona+'"/></div><div><div class="rep-ct">Top 10 tiendas por valor</div><img class="rep-img2" src="'+img.tie+'"/></div></div><div class="rep-exp"><b>Explicación.</b> A la izquierda, la repartición del valor entre <b>Santiago</b> y <b>Regiones</b>; a la derecha, las 10 tiendas que concentran mayor valor.</div><div class="rep-an"><b>Análisis.</b> Santiago concentra el <b>'+stgShare.toFixed(0)+'%</b> del valor y Regiones el <b>'+(100-stgShare).toFixed(0)+'%</b>. '+(topTie?('La tienda líder es <b>'+topTie.k+'</b> con <b>'+fm(topTie.v)+'</b>.'):'')+'</div></div>';
- var p3='<div class="rep-page">'+band('Operación y Logística',startPage+2)+'<div class="rep-duo"><div><div class="rep-ct">Pedidos por semana</div><img class="rep-img2" src="'+img.sem+'"/></div><div><div class="rep-ct">Valor por vehículo</div><img class="rep-img2" src="'+img.tp+'"/></div></div><div class="rep-exp"><b>Explicación.</b> Evolución de los <b>pedidos por semana del año</b> y el <b>valor movilizado por tipo de transporte</b>. Rango horario: AM <b>'+fi(a.am)+'</b> · PM <b>'+fi(a.pm)+'</b>.</div><div class="rep-an"><b>Análisis.</b> '+(topTp?('El transporte de mayor valor es <b>'+topTp.k+'</b> con <b>'+fm(topTp.v)+'</b>. '):'')+'La operación se distribuye en <b>'+a.sems.length+'</b> semanas con un total de <b>'+fi(a.nPed)+'</b> pedidos.</div></div>';
- return {html:p1+p2+p3,imgs:img,agg:a,lbl:lbl,col:col};
-}
-function obAskPass(titulo,msg,cb){
- var ov=document.createElement('div');ov.className='ob-modal';
- ov.innerHTML='<div class="ob-box"><div class="ob-h">'+titulo+'</div><div class="ob-m">'+msg+'</div><input type="password" class="ob-inp" maxlength="12" placeholder="••••" autocomplete="off"><div class="ob-err" style="display:none">Contraseña incorrecta</div><div class="ob-btns"><button class="ob-c">Cancelar</button><button class="ob-ok">Aceptar</button></div></div>';
- document.body.appendChild(ov);
- var inp=ov.querySelector('.ob-inp');setTimeout(function(){inp.focus();},30);
- function close(){if(ov.parentNode)document.body.removeChild(ov);}
- function ok(){if(inp.value==='1234'){close();if(cb)cb();}else{ov.querySelector('.ob-err').style.display='';inp.value='';inp.focus();}}
- ov.querySelector('.ob-c').onclick=close;
- ov.querySelector('.ob-ok').onclick=ok;
- inp.onkeydown=function(e){if(e.key==='Enter')ok();if(e.key==='Escape')close();};
-}
-function obImport(){
- if(!obIsAdmin()){alert('Solo el administrador puede importar información.');return;}
- var inp=document.getElementById('opsFileInput');
- if(!inp){inp=document.createElement('input');inp.type='file';inp.id='opsFileInput';inp.accept='.xlsx,.xls';inp.multiple=true;inp.style.display='none';document.body.appendChild(inp);
-  inp.addEventListener('change',function(e){alert('☁ Se importará el Excel de OPERACIONES (una hoja por mes, p. ej. Resumen_Meses_Duplicados).\n\n • Solo se suman los pedidos marcados "SE SUMA" (los duplicados "NO SUMA" se omiten).\n • El VALOR se mantiene EXACTO, sin redondear.\n • Los datos se separan en Santiago y Regiones.\n • Si vuelves a importar un mes, ese mes se REEMPLAZA (no se duplica).\n\nAl terminar se GUARDARÁ en la nube (Firebase) solo para Operaciones; no afecta a MacOnline ni Vertical.');handleOpsUpload(e);});}
- inp.click();
-}
-function obExport(){
- if(!MDATA.rows.length){alert('No hay información para exportar.');return;}
- try{
-  var wb=XLSX.utils.book_new();
-  [['mac','MacOnline'],['ver','Vertical']].forEach(function(g){
-    var grp=g[0],rows=obRows(grp);if(!rows.length)return;
-    var sorted=rows.slice().sort(function(a,b){return (a.zona||'').localeCompare(b.zona||'')||(a.region||'').localeCompare(b.region||'')||(a.tienda||'').localeCompare(b.tienda||'')||(a.mk||'').localeCompare(b.mk||'')||((a.sem||0)-(b.sem||0))||(a.f||'').localeCompare(b.f||'');});
-    var det=[['Zona','Región','Comuna','Tienda','Mes','Semana','Fecha','Unidad Negocio','Vehículo','Rango','Pedido','Valor']];
-    sorted.forEach(function(r){det.push([r.zona,r.region,r.co,r.tienda,r.mes,'Sem '+r.sem,r.f,r.un,r.tp,r.rg,r.pedido,r.v]);});
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(det),g[1]+' Detalle');
-    var agg=obAgg(grp);var mesesKeys=agg.meses.map(function(m){return m.label;});
-    var tm=[['Tienda','Zona','Región'].concat(mesesKeys).concat(['Total'])];
-    var tieMap={};rows.forEach(function(r){var key=r.tienda;tieMap[key]=tieMap[key]||{zona:r.zona,region:r.region,m:{}};tieMap[key].m[r.mes]=(tieMap[key].m[r.mes]||0)+r.v;});
-    Object.keys(tieMap).sort().forEach(function(t){var o=tieMap[t];var row=[t,o.zona,o.region];var tot=0;mesesKeys.forEach(function(ml){var v=o.m[ml]||0;row.push(v);tot+=v;});row.push(tot);tm.push(row);});
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tm),g[1]+' x Tienda-Mes');
-    var sm=[['Semana','Pedidos','Valor']];agg.sems.forEach(function(s){sm.push(['Semana '+s.s,s.n,s.v]);});sm.push(['TOTAL',agg.nPed,agg.totV]);
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sm),g[1]+' x Semana');
-    var rz=[['Zona','Pedidos','Valor'],['Santiago',agg.byZona.Santiago.n,agg.byZona.Santiago.v],['Regiones',agg.byZona.Regiones.n,agg.byZona.Regiones.v]];
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rz),g[1]+' x Zona');
-  });
-  if(!wb.SheetNames.length){alert('No hay información para exportar.');return;}
-  XLSX.writeFile(wb,'Tiendas_QUINTEC_'+(new Date().toISOString().slice(0,10))+'.xlsx');
- }catch(e){alert('No se pudo exportar: '+e.message);}
-}
-function obDelete(){
- if(!obIsAdmin()){alert('Solo el administrador puede eliminar información.');return;}
- if(!MDATA.rows.length){alert('No hay información cargada para eliminar.');return;}
- if(typeof fbReady==='undefined'||!fbReady||!fbDB){alert('⚠ La información solo puede eliminarse si está guardada en la nube (Firebase). En este momento no hay conexión con Firebase.');return;}
- obAskPass('Eliminar información','Ingresa la contraseña para continuar. La contraseña no se mostrará en pantalla.',function(){
-   var mac=obRows('mac').length,ver=obRows('ver').length;
-   var ok=confirm('⚠ ELIMINACIÓN DEFINITIVA\n\nSe borrará TODA la información de:\n • MacOnline Distribución ('+mac+' registros)\n • Vertical Tiendas ('+ver+' registros)\n\nSe eliminará de ESTA plataforma y de la base de datos en la NUBE (Firebase: quintec/tiendas_meses).\n\nEsta acción NO se puede deshacer y la información NO se podrá recuperar.\n\n¿Deseas continuar?');
-   if(!ok)return;
-   MDATA.rows=[];try{localStorage.removeItem(MLS_KEY);}catch(_){}
-   modFbClear().then(function(){
-     ['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});
-     if(CUR==='mac'||CUR==='ver')renderMod(CUR);
-     alert('✓ Información eliminada de la plataforma y de la nube (Firebase). No se puede recuperar.');
-   });
- });
-}
-function obReporte(){
- if(!MDATA.rows.length){alert('No hay información para generar el reporte. Importa primero un Excel.');return;}
- var mac=obReportHtml('mac',1),ver=obReportHtml('ver',4);
- OB_REPORT={mac:mac,ver:ver};
- var ov=document.getElementById('obRepOvr');
- if(!ov){ov=document.createElement('div');ov.id='obRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo · MacOnline Distribución y Vertical Tiendas</div><button class="ob-rep-b ob-pdf">⤓ PDF</button><button class="ob-rep-b ob-imp">🖨 IMPRIMIR</button><button class="ob-rep-x">✕</button></div><div class="ob-rep-body" id="obRepBody"></div></div>';document.body.appendChild(ov);
-  ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
-  ov.querySelector('.ob-pdf').onclick=function(){obPrintReport(true);};
-  ov.querySelector('.ob-imp').onclick=function(){obPrintReport(false);};}
- document.getElementById('obRepBody').innerHTML='<div class="rep-wrap">'+mac.html+ver.html+'</div>';
- ov.style.display='block';
-}
-function obPrintReport(isPdf){
- if(!OB_REPORT)return;
- var html='<div class="rep-wrap">'+OB_REPORT.mac.html+OB_REPORT.ver.html+'</div>';
- var w=window.open('','_blank');
- if(!w){alert('El navegador bloqueó la ventana. Permite las ventanas emergentes para '+(isPdf?'guardar el PDF':'imprimir')+'.');return;}
- w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{page-break-after:always;box-shadow:none;border:0;margin:0 auto}@page{size:A4;margin:9mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
- w.document.close();
-}
-function obLoadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
-function obPPT(){
- if(!MDATA.rows.length){alert('No hay información para generar el PPT. Importa primero un Excel.');return;}
- var mac=obReportHtml('mac',1),ver=obReportHtml('ver',4);
- var load=(typeof PptxGenJS!=='undefined')?Promise.resolve():obLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
- load.then(function(){obBuildPPT(mac,ver);}).catch(function(){alert('No se pudo cargar el generador de PPT. Revisa tu conexión a internet e inténtalo de nuevo.');});
-}
-function obBuildPPT(mac,ver){
- try{
-  var pptx=new PptxGenJS();pptx.defineLayout({name:'QA',width:13.33,height:7.5});pptx.layout='QA';
-  var s0=pptx.addSlide();s0.background={color:'1F3A59'};
-  s0.addText('Reporte Ejecutivo de Tiendas',{x:0.8,y:2.5,w:11.7,h:1,fontSize:36,bold:true,color:'FFFFFF',fontFace:'Arial'});
-  s0.addText('MacOnline Distribución y Vertical Tiendas  ·  QUINTEC KPI Logística',{x:0.8,y:3.6,w:11.7,h:0.6,fontSize:18,color:'C3D0DD'});
-  [mac,ver].forEach(function(R){obPPTSlides(pptx,R);});
-  pptx.writeFile({fileName:'Reporte_Tiendas_QUINTEC.pptx'});
- }catch(e){alert('No se pudo generar el PPT: '+e.message);}
-}
-function obPPTSlides(pptx,R){
- var a=R.agg,img=R.imgs,col=(R.col||'#1f3a59').replace('#',''),lbl=R.lbl;
- var ticket=a.nPed?a.totV/a.nPed:0;
- var s1=pptx.addSlide();
- s1.addText(lbl+'  ·  Resumen Ejecutivo',{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:col});
- s1.addText('Pedidos: '+fi(a.nPed)+'      Valor: '+fm(a.totV)+'      Tiendas: '+fi(a.tiendas)+'      Ticket: '+fm(ticket),{x:0.5,y:0.95,w:12.3,h:0.5,fontSize:14,color:'333333'});
- if(img.mes)s1.addImage({data:img.mes,x:1.1,y:1.65,w:7.3,h:3.4});
- s1.addText('Explicación: valor movilizado por mes (columna VALOR, sin redondear).',{x:8.8,y:1.9,w:4.1,h:3,fontSize:13,color:'333333'});
- var s2=pptx.addSlide();
- s2.addText(lbl+'  ·  Distribución Territorial',{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:col});
- if(img.zona)s2.addImage({data:img.zona,x:0.6,y:1.4,w:4.2,h:3.7});
- if(img.tie)s2.addImage({data:img.tie,x:5.1,y:1.4,w:4.3,h:3.6});
- s2.addText('Reparto Santiago / Regiones y las 10 tiendas de mayor valor.',{x:9.7,y:1.7,w:3.2,h:3,fontSize:13,color:'333333'});
- var s3=pptx.addSlide();
- s3.addText(lbl+'  ·  Operación y Logística',{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:col});
- if(img.sem)s3.addImage({data:img.sem,x:0.6,y:1.4,w:4.3,h:3.4});
- if(img.tp)s3.addImage({data:img.tp,x:5.1,y:1.4,w:4.3,h:3.4});
- s3.addText('Pedidos por semana y valor por transporte. AM '+fi(a.am)+' · PM '+fi(a.pm)+'.',{x:9.7,y:1.7,w:3.2,h:3,fontSize:13,color:'333333'});
-}
-function obNube(){
- var ov=document.getElementById('obNubeOvr');
- if(!ov){ov=document.createElement('div');ov.id='obNubeOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">☁ Información guardada en la nube (Firebase)</div><button class="ob-rep-b ob-edit">✎ EDITAR</button><button class="ob-rep-x">✕</button></div><div class="ob-rep-body" id="obNubeBody"></div></div>';document.body.appendChild(ov);
-  ov.querySelector('.ob-rep-x').onclick=function(){OB_NUBE_EDIT=false;ov.style.display='none';};
-  ov.querySelector('.ob-edit').onclick=function(){obAskPass('Editar en la nube','Ingresa la contraseña para habilitar la edición. La contraseña no se mostrará en pantalla.',function(){OB_NUBE_EDIT=true;obNubeRender();});};}
- OB_NUBE_EDIT=false;obNubeRender();ov.style.display='block';
-}
-function obNubeRender(){
- var body=document.getElementById('obNubeBody');if(!body)return;
- var conn=(typeof fbReady!=='undefined'&&fbReady);
- var head='<div class="nube-conn '+(conn?'ok':'off')+'">'+(conn?'● Conectado a la nube · quintec/tiendas_meses':'○ Sin conexión con la nube')+(OB_NUBE_EDIT?' · <b>Modo edición activo</b>':'')+'</div>';
- var cols='';
- [['mac','MacOnline Distribución'],['ver','Vertical Tiendas']].forEach(function(g){
-   var grp=g[0],rows=obRows(grp);
-   var byMk={};rows.forEach(function(r){byMk[r.mk]=byMk[r.mk]||{label:r.mes,n:0,v:0};byMk[r.mk].n++;byMk[r.mk].v+=r.v||0;});
-   var mks=Object.keys(byMk).sort();
-   var items=mks.length?mks.map(function(mk){var o=byMk[mk];return '<div class="nube-row"><div class="nube-mes">'+o.label+'</div><div class="nube-stat">'+fi(o.n)+' registros · '+fm(o.v)+'</div>'+(OB_NUBE_EDIT?'<button class="nube-del" data-grp="'+grp+'" data-mk="'+mk+'">Eliminar mes</button>':'')+'</div>';}).join(''):'<div class="nube-empty">Sin información en la nube.</div>';
-   var tv=rows.reduce(function(a,r){return a+(r.v||0);},0);
-   cols+='<div class="nube-col"><div class="nube-h" style="background:'+MOD_COLOR[grp]+'">'+g[1]+'</div><div class="nube-tot">'+fi(rows.length)+' registros · '+fm(tv)+'</div>'+items+'</div>';
- });
- body.innerHTML=head+'<div class="nube-cols">'+cols+'</div>';
- body.querySelectorAll('.nube-del').forEach(function(b){b.onclick=function(){var grp=b.getAttribute('data-grp'),mk=b.getAttribute('data-mk');if(!obIsAdmin()){alert('Solo el administrador puede editar.');return;}if(!confirm('¿Eliminar de la nube el mes seleccionado de '+(grp==='mac'?'MacOnline Distribución':'Vertical Tiendas')+'?\n\nEsta acción se aplica también en Firebase y no se puede deshacer.'))return;MDATA.rows=MDATA.rows.filter(function(r){return !(r.grp===grp&&r.mk===mk);});try{modSaveLocal();}catch(_){}if(typeof modFbPush==='function')modFbPush();['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});if(CUR==='mac'||CUR==='ver')renderMod(CUR);obNubeRender();};});
-}
-var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
-+".rep-page{background:#fff;border:1px solid #e3e8ef;border-radius:10px;box-shadow:0 6px 20px rgba(20,40,70,.08);padding:0 0 18px;margin:0 auto 22px;overflow:hidden}"
-+".rep-band{padding:16px 22px;color:#fff}.rep-bt{font-size:19px;font-weight:700;font-family:'Sora',Arial}.rep-bt span{font-weight:400;opacity:.9}.rep-bs{font-size:11px;opacity:.85;margin-top:3px}"
-+".rep-kpis{display:flex;gap:12px;padding:16px 22px 4px;flex-wrap:wrap}.rep-k{flex:1;min-width:130px;background:#f6f9fc;border:1px solid #e6edf4;border-radius:8px;padding:10px 12px}.rep-kt{font-size:11px;color:#6b7684;font-weight:600}.rep-kv{font-size:19px;font-weight:700;color:#1f3a59;font-family:'Sora',Arial;margin:2px 0}.rep-ks{font-size:10.5px;color:#8a95a1}"
-+".rep-img{display:block;width:calc(100% - 44px);margin:14px 22px;border:1px solid #eef2f6;border-radius:8px}"
-+".rep-duo{display:flex;gap:14px;padding:14px 22px}.rep-duo>div{flex:1;min-width:0}.rep-ct{font-size:12.5px;font-weight:700;color:#1f3a59;margin-bottom:6px}.rep-img2{width:100%;border:1px solid #eef2f6;border-radius:8px}"
-+".rep-exp,.rep-an{margin:6px 22px;padding:11px 14px;border-radius:8px;font-size:12.5px;line-height:1.6}.rep-exp{background:#eef5f2;border:1px solid #d6e8e1;color:#2a4a40}.rep-an{background:#eef3fa;border:1px solid #d6e1f0;color:#24415f}"
-+".ob-rep-ovr{position:fixed;inset:0;z-index:950;background:rgba(16,28,42,.6);display:none;padding:22px}"
-+".ob-rep-card{max-width:1000px;height:100%;margin:0 auto;background:#eef2f6;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(10,25,45,.45)}"
-+".ob-rep-head{display:flex;align-items:center;gap:10px;padding:14px 20px;background:#1f3a59;color:#fff}.ob-rep-h{flex:1;font-family:'Sora',Arial;font-weight:600;font-size:15px}"
-+".ob-rep-b{font-size:12.5px;font-weight:600;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;border-radius:7px;padding:7px 14px;cursor:pointer}.ob-rep-b:hover{background:rgba(255,255,255,.26)}"
-+".ob-rep-x{background:transparent;border:0;color:#cdd9e6;font-size:20px;cursor:pointer;line-height:1}"
-+".ob-rep-body{flex:1;overflow:auto;padding:18px}"
-+".ob-modal{position:fixed;inset:0;z-index:1000;background:rgba(16,28,42,.55);display:flex;align-items:center;justify-content:center}"
-+".ob-box{background:#fff;border-radius:12px;padding:22px;width:340px;box-shadow:0 20px 60px rgba(10,25,45,.4);font-family:'IBM Plex Sans',Arial}"
-+".ob-h{font-size:16px;font-weight:700;color:#1f3a59;margin-bottom:6px}.ob-m{font-size:12.5px;color:#5a6672;line-height:1.5;margin-bottom:12px}"
-+".ob-inp{width:100%;box-sizing:border-box;font-size:20px;letter-spacing:6px;text-align:center;padding:10px;border:1.5px solid #cfd8e3;border-radius:8px;outline:none}.ob-inp:focus{border-color:#2f7d6b}"
-+".ob-err{color:#c0392b;font-size:12px;margin-top:7px;font-weight:600}.ob-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}"
-+".ob-btns button{font-size:13px;font-weight:600;padding:8px 16px;border-radius:7px;cursor:pointer;border:1px solid #cfd8e3;background:#fff;color:#4a5968}.ob-ok{background:#2f7d6b!important;border-color:#2f7d6b!important;color:#fff!important}"
-+".nube-conn{font-size:12.5px;padding:8px 12px;border-radius:7px;margin-bottom:14px;font-weight:600}.nube-conn.ok{background:#e6f5ef;color:#1d6b56}.nube-conn.off{background:#fbecec;color:#b4442f}"
-+".nube-cols{display:flex;gap:16px;flex-wrap:wrap}.nube-col{flex:1;min-width:300px;background:#fff;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden}"
-+".nube-h{padding:12px 16px;color:#fff;font-weight:700;font-size:15px}.nube-tot{padding:10px 16px;background:#f6f9fc;font-size:12.5px;color:#4a5968;font-weight:600;border-bottom:1px solid #eef2f6}"
-+".nube-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f3f7}.nube-mes{flex:1;font-weight:600;color:#1f3a59;font-size:13px}.nube-stat{font-size:12px;color:#6b7684}"
-+".nube-del{background:#b4442f;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer}.nube-empty{padding:16px;color:#8a95a1;font-size:13px}"+".opsdel-list{max-height:240px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;margin:4px 0 12px;background:#fbfcfe}"+".opsdel-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid #eef2f7;font-size:13px;color:#1f2a37;cursor:pointer}"+".opsdel-row:last-child{border-bottom:0}.opsdel-row input{width:16px;height:16px;cursor:pointer;accent-color:#1f3a59}"+".opsdel-all{border:0;background:transparent;padding:2px 2px 8px}"+".opsdel-mes{flex:1;font-weight:600;color:#1f3a59}.opsdel-stat{font-size:11.5px;color:#6b7684;white-space:nowrap}"+".opsdel-pwlbl{font-size:12.5px;color:#44505e;font-weight:600;margin-bottom:5px}"+".ops-bk-ov{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,rgba(15,30,55,.97),rgba(31,58,89,.97));display:flex;align-items:center;justify-content:center;padding:20px}"+".ops-bk-card{background:#fff;border-radius:18px;max-width:560px;width:100%;padding:34px 40px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center;font-family:inherit}"+".ops-bk-ic{font-size:46px;line-height:1}"+".ops-bk-card h2{margin:12px 0 10px;font-size:23px;color:#1f3a59}"+".ops-bk-card p{font-size:14.5px;color:#3a4654;line-height:1.55;margin:8px 0}"+".ops-bk-sub{font-size:12.5px !important;color:#6b7684 !important}"+".ops-bk-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;list-style:none;padding:6px 0 2px;margin:10px 0}"+".ops-bk-list li{background:#eef3f9;color:#1f3a59;font-weight:600;font-size:13px;padding:7px 14px;border-radius:20px}"+".ops-bk-btns{display:flex;gap:12px;justify-content:center;margin-top:20px}"+".ops-bk-no{background:#eef1f5;color:#44505e;border:0;border-radius:9px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer}"+".ops-bk-yes{background:#1f3a59;color:#fff;border:0;border-radius:9px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(31,58,89,.35)}"+".ops-bk-yes:hover{background:#264a73}"
-+".rep-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 22px}"
-+".rep-cell{display:flex;flex-direction:column;min-width:0}"
-+".rep-cell .rep-ct{font-size:12.5px;font-weight:700;color:#1f3a59;margin-bottom:6px}"
-+".rep-cell .rep-img2{width:100%;border:1px solid #eef2f6;border-radius:8px}"
-+".rep-cell .rep-exp{margin:8px 0 0}";
-(function(){
- try{var st=document.createElement('style');st.textContent=OB_REP_CSS+OPS_PPT_CSS;document.head.appendChild(st);}catch(e){}
- document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('#opsbar [data-ob]'):null;if(!b)return;var k=b.getAttribute('data-ob');if(k==='imp')obImport();else if(k==='exp')opsExport();else if(k==='gua')opsGuardar();else if(k==='del')opsEliminar();else if(k==='rep')opsReporte();else if(k==='ppt')opsPPT();else if(k==='nube')opsNube();}); try{setInterval(function(){if(typeof opsCheckDailyBackup==='function')opsCheckDailyBackup();},60000);}catch(_){}
-})();
 /* ===== WIRE ===== */
 function wireMod(){
  ['mac','ver'].forEach(k=>{
@@ -2850,6 +2229,116 @@ function modReporteSeccion(k,imgs,kpis,ins){
  h+='</section>';
  return h;
 }
+function modExportReporte(){
+ try{
+  const macI=modCaptureImgs('mac'),verI=modCaptureImgs('ver');
+  const macK=modKpiRead('mac'),verK=modKpiRead('ver');
+  const macIn=modInsightRead('mac'),verIn=modInsightRead('ver');
+  try{renderMod(CUR);}catch(e){}
+  const css='body{font-family:Inter,Segoe UI,Arial,sans-serif;background:#f4f6f9;color:#1f2a37;margin:0;padding:0}'
+   +'.wrap{max-width:1000px;margin:0 auto;padding:28px 26px 60px}'
+   +'.rhead{text-align:center;margin:8px 0 26px}.rhead h1{margin:0;font-size:26px;color:#172a43}.rhead p{margin:6px 0 0;color:#5a6672;font-size:13px}'
+   +'.mod-sec{background:#fff;border:1px solid #e3e7ec;border-radius:14px;padding:22px 24px;margin-bottom:26px;box-shadow:0 6px 22px rgba(23,42,67,.06)}'
+   +'.sec-head{padding-left:14px;margin-bottom:18px}.sec-head h2{margin:0;font-size:20px}.sec-head p{margin:3px 0 0;color:#6b7684;font-size:12.5px}'
+   +'.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}'
+   +'.kpi{background:#f8fafc;border:1px solid #eef1f5;border-radius:10px;padding:11px 12px}'
+   +'.kt{font-size:11px;color:#6b7684;font-weight:600;margin-bottom:4px}.kv{font-size:20px;font-weight:800;color:#172a43;font-family:IBM Plex Mono,monospace}.kf{font-size:10.5px;color:#7a8794;margin-top:3px;min-height:12px}'
+   +'.ch-block{margin:0 0 24px;page-break-inside:avoid}.ch-block h3{margin:0 0 8px;font-size:15px}.ch-block img{width:100%;border:1px solid #eef1f5;border-radius:8px;display:block}'
+   +'.an{margin-top:9px;font-size:12.5px;line-height:1.6;color:#3f4b59;background:#f8fafc;border-left:3px solid #c3cdd8;padding:9px 12px;border-radius:0 8px 8px 0}'
+   +'.dtab{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}.dtab th{background:#16a085;color:#fff;padding:8px 10px;text-align:left;font-size:12px}.dtab td{border:1px solid #eef1f5;padding:7px 10px}.dtab tr:nth-child(even) td{background:#f8fafc}.dtab tr.tot td{font-weight:800;background:#eafaf4;color:#0e6b57}.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:middle}'
+   +'.bar{position:sticky;top:0;z-index:5;background:#172a43;color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center}'
+   +'.bar button{background:#fff;color:#172a43;border:0;border-radius:8px;padding:9px 18px;font-weight:700;font-size:13px;cursor:pointer}'
+   +'@media print{.bar{display:none}body{background:#fff}.mod-sec{box-shadow:none;border:none;padding:0;margin-bottom:30px}.wrap{padding:0}}';
+  let body='<div class="bar"><div style="font-weight:700">Reporte Ejecutivo — QUINTEC Tiendas</div><button onclick="window.print()">💾 Guardar como PDF</button></div>';
+  body+='<div class="wrap"><div class="rhead"><h1>Reporte Ejecutivo de Despacho a Tiendas</h1><p>MacOnline Distribución + Vertical Tiendas + Devoluciones · '+modEsc(modMesLbl())+'</p></div>';
+  body+=modReporteSeccion('mac',macI,macK,macIn);
+  body+=modReporteSeccion('ver',verI,verK,verIn);
+  body+=modDevoSeccion();
+  body+='</div>';
+  const w=window.open('','_blank');
+  if(!w){alert('Permite las ventanas emergentes para ver el reporte.');return;}
+  w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Reporte Ejecutivo QUINTEC Tiendas</title><style>'+css+'</style></head><body>'+body+'</body></html>');
+  w.document.close();
+ }catch(e){console.error('modExportReporte',e);alert('No se pudo generar el reporte: '+e.message);}
+}
+function modExportPPT(){
+ try{
+  if(typeof PptxGenJS==='undefined'){alert('No se pudo cargar la librería de PowerPoint (revisa tu conexión a internet).');return;}
+  const DATOS={mac:{img:modCaptureImgs('mac'),kpi:modKpiRead('mac'),lab:'MacOnline Distribución',col:'8E44AD'},ver:{img:modCaptureImgs('ver'),kpi:modKpiRead('ver'),lab:'Vertical Tiendas',col:'E67E22'}};
+  try{renderMod(CUR);}catch(e){}
+  const p=new PptxGenJS();p.defineLayout({name:'W',width:13.333,height:7.5});p.layout='W';
+  const NAVY='1F3A59',GRAY='6B7684',BG='F4F6F8';
+  const head=function(s,t,sub,c){s.addText(t,{x:0.5,y:0.32,w:12.3,h:0.6,fontSize:25,bold:true,color:NAVY,fontFace:'Segoe UI'});if(sub)s.addText(sub,{x:0.5,y:0.95,w:12.3,h:0.35,fontSize:13,color:(c||'2F7D6B'),fontFace:'Segoe UI'});s.addShape(p.ShapeType.line,{x:0.5,y:1.32,w:12.3,h:0,line:{color:'DDE3E9',width:1}});};
+  const mes=modMesLbl();let s;
+  s=p.addSlide();s.background={color:NAVY};
+  s.addText('QUINTEC · DESPACHO A TIENDAS',{x:0.7,y:2.0,w:12,h:0.5,fontSize:16,color:'C9A6DD',bold:true,charSpacing:3,fontFace:'Segoe UI'});
+  s.addText('Reporte Visual de Tiendas',{x:0.7,y:2.6,w:12,h:1,fontSize:44,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
+  s.addText('MacOnline Distribución + Vertical Tiendas + Devoluciones',{x:0.7,y:3.7,w:12,h:0.5,fontSize:18,color:'C9D8E6',fontFace:'Segoe UI'});
+  s.addText(mes+'  ·  generado '+new Date().toLocaleDateString('es-CL'),{x:0.7,y:4.45,w:12,h:0.4,fontSize:13,color:'8CA3BA',fontFace:'Segoe UI'});
+  ['mac','ver'].forEach(function(k){
+   const D=DATOS[k];
+   s=p.addSlide();s.background={color:D.col};
+   s.addText(D.lab,{x:0.7,y:3.0,w:12,h:1,fontSize:40,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
+   s.addText('Indicadores y gráficos · '+mes,{x:0.7,y:4.1,w:12,h:0.5,fontSize:18,color:'FFFFFF',fontFace:'Segoe UI'});
+   s=p.addSlide();head(s,'Indicadores — '+D.lab,mes,D.col);
+   D.kpi.forEach(function(c,i){const col=i%4,row=Math.floor(i/4);const x=0.5+col*3.12,y=1.6+row*1.75;s.addShape(p.ShapeType.roundRect,{x:x,y:y,w:2.9,h:1.5,fill:{color:BG},line:{color:'E3E7EC'},rectRadius:0.07});s.addText(c.label,{x:x+0.14,y:y+0.16,w:2.62,h:0.5,fontSize:11,color:GRAY,fontFace:'Segoe UI'});s.addText(c.value,{x:x+0.14,y:y+0.58,w:2.62,h:0.6,fontSize:22,bold:true,color:NAVY,fontFace:'Consolas'});if(c.detail)s.addText(c.detail,{x:x+0.14,y:y+1.14,w:2.62,h:0.3,fontSize:8.5,color:GRAY,fontFace:'Segoe UI'});});
+   MOD_META.forEach(function(m){const cid=m[0];if(!D.img[cid])return;s=p.addSlide();head(s,m[1],D.lab+' · '+mes,D.col);
+    s.addImage({data:D.img[cid],x:0.5,y:1.55,w:7.9,h:5.4,sizing:{type:'contain',w:7.9,h:5.4}});
+    s.addText([{text:'Qué muestra este gráfico',options:{bold:true,fontSize:14,color:D.col,breakLine:true,paraSpaceAfter:8}},{text:m[2],options:{fontSize:13,color:'394552'}}],{x:8.6,y:1.7,w:4.25,h:5,valign:'top',fontFace:'Segoe UI',fit:'shrink'});});
+  });
+  var DST=devoStats();
+  s=p.addSlide();s.background={color:'16A085'};
+  s.addText('Devoluciones',{x:0.7,y:3.0,w:12,h:1,fontSize:40,bold:true,color:'FFFFFF',fontFace:'Segoe UI'});
+  s.addText('Control de devoluciones por tipo · '+mes,{x:0.7,y:4.1,w:12,h:0.5,fontSize:18,color:'FFFFFF',fontFace:'Segoe UI'});
+  s=p.addSlide();head(s,'Devoluciones por Tipo',mes,'16A085');
+  var drows=[[{text:'Tipo de devolución',options:{bold:true,color:'FFFFFF',fill:{color:'16A085'}}},{text:'Registros',options:{bold:true,color:'FFFFFF',fill:{color:'16A085'},align:'right'}},{text:'Bultos',options:{bold:true,color:'FFFFFF',fill:{color:'16A085'},align:'right'}}]];
+  DST.items.forEach(function(x){drows.push([{text:x.label,options:{color:'394552'}},{text:fi(x.reg),options:{align:'right',color:'394552'}},{text:fi(Math.round(x.bul)),options:{align:'right',color:'394552'}}]);});
+  drows.push([{text:'TOTAL',options:{bold:true,fill:{color:'EAFAF4'},color:'0E6B57'}},{text:fi(DST.totReg),options:{align:'right',bold:true,fill:{color:'EAFAF4'},color:'0E6B57'}},{text:fi(Math.round(DST.totBul)),options:{align:'right',bold:true,fill:{color:'EAFAF4'},color:'0E6B57'}}]);
+  s.addTable(drows,{x:0.5,y:1.6,w:7.3,colW:[4.1,1.6,1.6],border:{type:'solid',color:'E3E7EC',pt:1},fontSize:12,fontFace:'Segoe UI',valign:'middle',rowH:0.42});
+  s.addText([{text:'Qué muestra',options:{bold:true,fontSize:14,color:'16A085',breakLine:true,paraSpaceAfter:8}},{text:'Resumen de las devoluciones registradas en cada planilla: número de registros y total de bultos devueltos por tipo (CD, Garantía Mac, Ecommerce, BackOnline, Servicio Técnico y Varios). Permite ver de un vistazo dónde se concentra el flujo inverso de mercadería.',options:{fontSize:13,color:'394552'}}],{x:8.6,y:1.7,w:4.25,h:5,valign:'top',fontFace:'Segoe UI',fit:'shrink'});
+  p.writeFile({fileName:'QUINTEC_Tiendas_'+(mes.replace(/[^0-9A-Za-z]+/g,'_'))+'.pptx'});
+ }catch(e){console.error('modExportPPT',e);alert('No se pudo generar el PowerPoint: '+e.message);}
+}
+function openScopePicker(kind){
+ const old=document.getElementById('scopePickOv');if(old)old.remove();
+ const ppt=(kind==='ppt');
+ const ov=document.createElement('div');ov.id='scopePickOv';
+ ov.style.cssText='position:fixed;inset:0;background:rgba(15,25,40,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px';
+ const titulo=ppt?'Armar PowerPoint':'Armar Reporte';
+ const sub=ppt?'Elige qué presentación quieres generar.':'Elige qué reporte quieres generar.';
+ const cardCss='display:flex;gap:14px;align-items:flex-start;padding:16px 16px;border:1.5px solid #e3e7ec;border-radius:12px;margin:10px 0;cursor:pointer;transition:.15s;background:#fff';
+ ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:540px;width:100%;box-shadow:0 24px 70px rgba(10,20,35,.4);overflow:hidden">'+
+  '<div style="padding:20px 24px;border-bottom:1px solid #eef1f4;background:linear-gradient(135deg,#1f3a59,#2b4a6f)"><div style="font-size:20px;font-weight:800;color:#fff">'+titulo+'</div><div style="font-size:13px;color:#c9d8e6;margin-top:3px">'+sub+'</div></div>'+
+  '<div style="padding:18px 22px">'+
+   '<div class="scOpt" data-s="ops" style="'+cardCss+';border-left:5px solid #2f7d6b">'+
+    '<div style="font-size:26px">📊</div><div><div style="font-size:15.5px;font-weight:800;color:#1f3a59">Operaciones</div>'+
+    '<div style="font-size:12.5px;color:#5a6672;margin-top:3px;line-height:1.5">Operación &amp; Flota, Finanzas &amp; P&amp;L y Tendencias &amp; Comparativo. Todos los gráficos con '+(ppt?'su explicación.':'análisis y explicación.')+'</div></div></div>'+
+   '<div class="scOpt" data-s="mod" style="'+cardCss+';border-left:5px solid #8e44ad">'+
+    '<div style="font-size:26px">🏪</div><div><div style="font-size:15.5px;font-weight:800;color:#1f3a59">MacOnline y Vertical</div>'+
+    '<div style="font-size:12.5px;color:#5a6672;margin-top:3px;line-height:1.5">MacOnline Distribución, Vertical Tiendas y Devoluciones. Gráficos con '+(ppt?'su explicación.':'análisis y explicación.')+'</div></div></div>'+
+  '</div>'+
+  '<div style="padding:12px 22px 18px;display:flex;justify-content:flex-end"><button id="scCancel" style="background:#eef1f4;color:#44515f;border:0;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">Cancelar</button></div>'+
+  '</div>';
+ document.body.appendChild(ov);
+ const close=function(){ov.remove();};
+ ov.addEventListener('click',function(e){if(e.target===ov)close();});
+ const cEl=document.getElementById('scCancel');if(cEl)cEl.addEventListener('click',close);
+ ov.querySelectorAll('.scOpt').forEach(function(el){
+  el.addEventListener('mouseenter',function(){el.style.boxShadow='0 6px 20px rgba(23,42,67,.12)';el.style.transform='translateY(-1px)';});
+  el.addEventListener('mouseleave',function(){el.style.boxShadow='';el.style.transform='';});
+  el.addEventListener('click',function(){
+   const s=el.dataset.s;close();
+   try{
+    if(s==='ops'){
+     if(ppt)exportPPT({areas:new Set([0,1,4]),resumen:false,charts:true,sug:false,noAnalysis:true});
+     else exportReporte({areas:new Set([0,1,4]),resumen:true,charts:true,sug:false});
+    }else{
+     if(ppt)modExportPPT();else modExportReporte();
+    }
+   }catch(e){console.error('scope go',e);alert('No se pudo generar: '+e.message);}
+  });
+ });
+}
 try{buildModMarkup();}catch(e){console.error('buildModMarkup',e);}
 try{wireMod();}catch(e){console.error('wireMod',e);}
 try{modLoadLocal();}catch(e){console.error('modLoadLocal',e);}
@@ -2860,10 +2349,12 @@ try{devoBuildModals();}catch(e){console.error('devoBuildModals',e);}
 try{devoWire();}catch(e){console.error('devoWire',e);}
 try{if(typeof fbReady!=='undefined'&&fbReady)devoFbSubscribe();}catch(e){console.error('devoFbSubscribe',e);}
 try{applyRole();}catch(e){}
+
 /* ===== app11.js ===== */
 /* ====== APP11 · Roles granulares, borrado de Excel de tiendas, quitar pedido y selector de exportación ====== */
 /* Nuevo usuario: solo lectura + exportar (sin subir ni borrar, porque eso es acción de administrador) */
 try{USERS['cretamac@quintec.cl']={pass:'123456789',role:'cretamac',name:'Creta Mac'};}catch(e){}
+
 /* applyRole con permisos finos:
    - admin: ve TODO
    - cretamac: ve casi todo, EXCEPTO Sugerencias IA, Vaciar datos, pestaña Diagnóstico y pestaña Auditoría; tampoco ve subir/borrar Excel
@@ -2898,6 +2389,7 @@ function applyRole(){
   var w=document.getElementById('whoami');if(w)w.textContent=SESSION?('Salir · '+SESSION.name):'';
  }catch(err){console.error('applyRole11',err);}
 }
+
 /* ====== Borrar el Excel de tiendas (plataforma + nube) ====== */
 function modDeleteExcel(scope){
  if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede borrar el Excel.');return;}
@@ -2949,6 +2441,7 @@ function modDeleteExcel(scope){
   }catch(e){done();}
  });
 }
+
 /* ====== Quitar un pedido por su N° (plataforma + nube) con selección y contraseña ====== */
 function modFmtMoney(v){try{if(typeof fm==='function')return fm(v);}catch(e){}return '$'+(v||0).toLocaleString('es-CL');}
 function modRemovePedido(){
@@ -2999,10 +2492,12 @@ function modRemovePedido(){
   alert('Listo. Se quitó el valor de '+chks.length+' registro(s) del pedido N° '+target+' en la plataforma y en la nube.\nEl pedido sigue contando como salida en los gráficos.');
  });
 }
+
 function wireModExtra(){
  ['mac','ver','devo'].forEach(function(k){var d=document.getElementById(k+'_delBtn');if(d&&!d._wired){d._wired=1;d.addEventListener('click',function(){modDeleteExcel(k);});}});
  var rb=document.getElementById('mac_retBtn');if(rb&&!rb._wired){rb._wired=1;rb.addEventListener('click',modRemovePedido);}
 }
+
 /* ====== Ventana de selección para el Reporte / PowerPoint ====== */
 function openExportPicker(kind,cb){
  var groups=expGroups();
@@ -3040,9 +2535,13 @@ function openExportPicker(kind,cb){
    close();try{cb(sel);}catch(e){console.error('cb export',e);}
  });
 }
+
 /* ====== Reclasificar botones de exportación: ahora los ve admin y cretamac ====== */
+try{['btnPdf','btnReporte','btnPpt'].forEach(function(id){var b=document.getElementById(id);if(b){b.classList.remove('adminonly');b.classList.add('staffonly');}});}catch(e){}
+
 try{wireModExtra();}catch(e){console.error('wireModExtra',e);}
 try{applyRole();}catch(e){console.error('applyRole-init11',e);}
+
 /* ===== app12.js ===== */
 /* ===== VISTA NUEVA: VENTAS POR TIENDA Y MES (MacOnline y Vertical) =====
    Lee un Excel tipo matriz (una fila por tienda, meses en columnas, secciones
@@ -3581,6 +3080,7 @@ function initVentasFor(k){
 }
 function initVentas(){vLoadLocal();['mac','ver'].forEach(k=>{try{initVentasFor(k);}catch(e){console.error('initVentasFor',k,e);}});try{if(typeof fbReady!=='undefined'&&fbReady)vFbSubscribe();}catch(e){console.error('vFbSubscribe',e);}try{if(typeof applyRole==='function')applyRole();}catch(e){}}
 try{initVentas();}catch(e){console.error('initVentas',e);}
+
 /* ===== app13.js ===== */
 /* ====== APP13 · Botón "Ver análisis" en cada gráfico / campo de calor ======
    Agrega un botón a cada tarjeta con gráfico. Al pulsarlo abre una ventana
@@ -3686,6 +3186,101 @@ try{initVentas();}catch(e){console.error('initVentas',e);}
  /* También al hacer click en pestañas */
  try{var tabsEl=document.getElementById('tabs');if(tabsEl)tabsEl.addEventListener('click',schedule);}catch(e){}
 })();
+
+/* ====== BOTON "ELIMINAR TODO" (solo admin · contrasena 1234) ======
+   Borra TODOS los datos de los modulos de Despachos (Operaciones y Flota,
+   Finanzas y P&L, Logistica y Rutas, Auditoria y Excepciones, Tendencias y
+   Comparativo y Diagnostico y Causas) de la nube (Firebase: quintec/meses) y
+   de este navegador. NO toca MacOnline, Vertical ni Devoluciones (esos tienen
+   su propio boton, usan quintec/ventas). */
+function eliminarTodoDespachos(){
+ try{
+  if(!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin')){
+   alert('Solo el usuario administrador puede eliminar los datos.');return;
+  }
+  var pass=prompt('ELIMINAR TODO - Despachos\n\nEsto borrara todos los datos de:\n- Operaciones y Flota\n- Finanzas y P&L\n- Logistica y Rutas\n- Auditoria y Excepciones\n- Tendencias y Comparativo\n- Diagnostico y Causas\n\n(NO afecta a MacOnline, Vertical ni Devoluciones)\n\nEscribe la contrasena para continuar:');
+  if(pass===null)return;
+  if(pass!=='1234'){alert('Contrasena incorrecta. No se elimino nada.');return;}
+  if(!confirm('ATENCION - VERIFICACION FINAL\n\nSe borraran DEFINITIVAMENTE todos los datos de los modulos de Despachos, tanto de la nube (Firebase) como de este navegador, para TODOS los usuarios.\n\nEsta accion NO se puede deshacer.\n\nConfirmas que deseas ELIMINAR todo?'))return;
+  try{if(typeof LS_KEY!=='undefined')localStorage.removeItem(LS_KEY);}catch(e){}
+  var fbP=(typeof fbClear==='function')?fbClear():null;
+  Promise.resolve(fbP).finally(function(){
+   try{if(typeof DATA!=='undefined')DATA.rows=[];}catch(_){}
+   try{if(typeof recomputeMeta==='function')recomputeMeta();}catch(_){}
+   try{if(typeof buildFilters==='function')buildFilters();}catch(_){}
+   try{if(typeof render==='function')render();}catch(_){}
+   alert('Listo. Se eliminaron todos los datos de Despachos. La pagina se recargara.');
+   try{location.reload();}catch(e){}
+  });
+ }catch(err){alert('No se pudo eliminar ('+err.message+').');}
+}
+(function(){
+ function wireEl(){var b=document.getElementById('btnEliminar');if(b&&!b._wired){b._wired=1;b.addEventListener('click',eliminarTodoDespachos);}}
+ if(document.readyState!=='loading')wireEl();else document.addEventListener('DOMContentLoaded',wireEl);
+ try{if(typeof applyRole==='function')applyRole();}catch(e){}
+})();
+
+/* ====== BOTON "SUBIR EXCEL" (solo admin) ======
+   Sube un Excel y genera los graficos de los 6 modulos de Despachos
+   (Operaciones y Flota, Finanzas y P&L, Logistica y Rutas, Auditoria y
+   Excepciones, Tendencias y Comparativo, Diagnostico y Causas). Lee TODAS las
+   hojas de datos crudos (las que tienen columnas FECHA y VALOR, por ejemplo
+   "Datos SEPTIEMBRE", "Datos OCTUBRE", etc.) y las combina por mes. NO afecta a
+   MacOnline, Vertical ni Devoluciones (esos tienen su propio boton). */
+function handleUploadFull(e){
+ var files=[].slice.call(e.target.files||[]);
+ if(!files.length)return;
+ if(!(typeof SESSION!=='undefined'&&SESSION&&SESSION.role==='admin')){alert('Solo el usuario administrador puede subir datos.');e.target.value='';return;}
+ var infoEl=document.getElementById('loadInfo');var info=infoEl?infoEl.querySelector('span'):null;if(info)info.textContent='Procesando Excel...';
+ var done=0,msgs=[];
+ files.forEach(function(file){
+  var rd=new FileReader();
+  rd.onload=function(ev){
+   try{
+    var wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+    var sheets=[];
+    wb.SheetNames.forEach(function(nm){
+     try{
+      var head=(XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:null})[0])||[];
+      var H=head.map(function(x){return stripAcc(String(x==null?'':x)).toUpperCase().trim();});
+      if(H.indexOf('FECHA')>=0&&H.indexOf('VALOR')>=0)sheets.push(nm);
+     }catch(_){}
+    });
+    if(!sheets.length)sheets=[wb.SheetNames[0]];
+    var lastMk=null,added=0;
+    sheets.forEach(function(nm){
+     try{
+      var json=XLSX.utils.sheet_to_json(wb.Sheets[nm],{defval:null});
+      // Ignorar la columna SEMANA global del Excel: se recalcula la semana del mes desde la FECHA
+      json.forEach(function(r){try{delete r['SEMANA'];delete r['Unnamed: 0'];}catch(_){}});
+      var res=cleanSheet(json,nm);
+      if(res){DATA.rows=DATA.rows.filter(function(x){return x.mk!==res.mk;}).concat(res.rows);msgs.push(res.label+': '+res.rows.length+' reg.');added+=res.rows.length;lastMk=res.mk;}
+     }catch(err2){msgs.push(nm+': error ('+err2.message+')');}
+    });
+    if(lastMk)F.mes=lastMk;
+    if(!added)msgs.push(file.name+': sin datos validos (se necesitan columnas FECHA y VALOR)');
+   }catch(err){msgs.push(file.name+': error ('+err.message+')');}
+   done++;
+   if(done===files.length){
+    try{recomputeMeta();}catch(_){}
+    var ok=false;try{ok=saveMonths();}catch(_){}
+    try{buildFilters();}catch(_){}
+    try{render();}catch(_){}
+    if(info)info.textContent=(DATA.meta&&DATA.meta.meses?DATA.meta.meses.length:0)+' mes(es) - '+fi(DATA.rows.length)+' reg.';
+    if(typeof fbReady!=='undefined'&&fbReady){try{fbPush();}catch(_){}alert('Carga completada:\n'+msgs.join('\n')+'\n\nLos datos se guardaron en la nube (Firebase): quedan disponibles al volver a abrir y los ven todos los usuarios.');}
+    else{alert('Carga completada:\n'+msgs.join('\n')+'\n\n'+(ok?'Los datos quedaron guardados en este navegador.':'No se pudieron guardar en este navegador (espacio lleno).'));}
+   }
+  };
+  rd.readAsArrayBuffer(file);
+ });
+ e.target.value='';
+}
+(function(){
+ function wireSub(){var b=document.getElementById('btnSubirExcel');var f=document.getElementById('fileInpFull');if(b&&f&&!b._wired){b._wired=1;b.addEventListener('click',function(){f.click();});f.addEventListener('change',handleUploadFull);}}
+ if(document.readyState!=='loading')wireSub();else document.addEventListener('DOMContentLoaded',wireSub);
+ try{if(typeof applyRole==='function')applyRole();}catch(e){}
+})();
+
 </script>
 </body>
 </html>
