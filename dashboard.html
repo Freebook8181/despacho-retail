@@ -150,6 +150,9 @@ select:focus{border-color:var(--navy)}
 .devo-tbl td{border:1px solid #d9e0e8;padding:5px 7px;min-width:72px;height:26px;vertical-align:top}
 .devo-tbl td.devo-num{text-align:center;background:#f4f6f9;color:#5a6672;font-weight:600;min-width:34px}
 .devo-cell:focus{outline:2px solid #2563eb;background:#eef5ff}
+.devo-tbl td.devo-inpcell{padding:0}
+.devo-inp{width:100%;min-width:120px;border:0;background:transparent;font:inherit;color:inherit;padding:5px 7px;outline:none;box-sizing:border-box}
+.devo-inp:focus{background:#eef5ff;outline:2px solid #2563eb}
 .devo-foot{display:flex;flex-wrap:wrap;gap:30px;padding:12px 16px;border-top:1px solid #e3e8ef;font-size:13px;color:#1f2a37}
 .devo-ce{display:inline-block;min-width:160px;border-bottom:1px solid #9aa6b2;padding:1px 4px}
 .devo-ce:focus{outline:none;background:#eef5ff}
@@ -1581,8 +1584,15 @@ const DEVO_ITEMS=[
  {id:'stec',t:'SERVICIO TECNICO',c:'#f1c40f',tx:'#3a2f00'},
  {id:'varios',t:'VARIOS',c:'#7f8c8d',tx:'#fff'}
 ];
-const DEVO_COLS=['Fecha','Documentos','Valor','Origen','Destinatarios','Bultos','Contenido','Observaciones'];
+const DEVO_COLS=['Fecha','Documentos','Valor','Unidad Negocio','Destinatarios','Comuna','Bultos','Contenido','Observaciones'];
 const DEVO_VALCOL=2;
+const DEVO_UNCOL=3,DEVO_DESTCOL=4,DEVO_COMCOL=5,DEVO_BULCOL=6;
+const DEVO_UNIDADES=['MacOnline Distribucion','MacOnline Empresas','MacOnline Tienda WEB','QD-Mayorista','QD-Web','SSTT Quintec','MacOnline Administracion','Vertical Tiendas','Vertical Web','MacOnline Tiendas','CD Quintec','Vertical Retail S.A.','QD-Retail'];
+const DEVO_COMUNA_PAIRS=[['MacOnline Parque Arauco','Las Condes'],['MacOnline Costanera Center','Providencia'],['MacOnline Alto Las Condes','Las Condes'],['MacOnline Arauco Maipú','Maipú'],['MacOnline Casa Costanera','Vitacura'],['MacOnline Plaza Egaña','La Reina'],['MacOnline Plaza Los Dominicos','Las Condes'],['MacOnline Plaza Norte','Huechuraba'],['MacOnline Plaza Tobalaba','Puente Alto'],['MacOnline Portal La Dehesa','Lo Barnechea'],['MacOnline Mercado Urbano','Las Condes'],['MacOnline Pie Andino','Lo Barnechea'],['MacOnline Portal Ñuñoa','Ñuñoa'],['MacOnline Huérfanos','Santiago'],['MacOnline Florida Center','La Florida'],['MacOnline Vespucio','La Florida'],['MacOnline Los Trapenses','Lo Barnechea'],['MacOnline Mall Plaza Alameda','Estacion Central'],['MacOnline Plaza Oeste','Cerrillos'],['MacOnline Administración','Las Condes'],['CASA CENTRAL','Las Condes'],['Vertical BackOnline Apumanque','Las Condes'],['Vertical BackOnline Mercado Urbano','Las Condes'],['Vertical BackOnline La Reina','Las Condes'],['Vertical BackOnline Costanera','Providencia'],['Vertical BackOnline Marina','Viña del Mar'],['MacOnline Marina','Viña del Mar'],['MacOnline Curicó','Curicó'],['MacOnline Concepción','Concepcion'],['MacOnline Plaza Trébol','Talcahuano'],['MacOnline Coquimbo','Coquimbo'],['MacOnline Plaza Calama','Antofagasta'],['MacOnline Portal Antofagasta','Antofagasta'],['MacOnline Plaza Iquique','Iquique'],['MacOnline Plaza Arica','Arica'],['MacOnline Valdivia','Valdivia'],['MacOnline La Serena','La Serena'],['MacOnline Temuco','Temuco'],['MacOnline Osorno','Osorno'],['MacOnline Rancagua','Rancagua'],['MacOnline Copiapó','Copiapó'],['MacOnline Chillán','Chillán'],['MacOnline Puerto Montt','Puerto Montt'],['MacOnline Talca','Talca'],['MacOnline Los Ángeles','Los Ángeles'],['MacOnline Plaza Antofagasta','Antofagasta'],['MacOnline Punta Arenas','Punta Arenas']];
+const DEVO_TIENDAS=DEVO_COMUNA_PAIRS.map(function(p){return p[0];});
+var DEVO_COMUNA={};DEVO_COMUNA_PAIRS.forEach(function(p){DEVO_COMUNA[devoNorm(p[0])]=p[1];});
+var DEVO_COMUNAS_UNICAS=(function(){var s=[],seen={};DEVO_COMUNA_PAIRS.forEach(function(p){if(!seen[p[1]]){seen[p[1]]=1;s.push(p[1]);}});return s.sort();})();
+function devoAttr(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 const DEVO_ROWS=28;
 const FB_PATH_DEVO='quintec/devoluciones';
 var DEVO_ACTIVE='cd';
@@ -1594,7 +1604,8 @@ function devoEnsure(){
   const d=DEVO_DATA[it.id];
   if(!Array.isArray(d.rows))d.rows=[];
   d.rows.forEach(r=>{
-   if(r.length===DEVO_COLS.length-1){r.splice(DEVO_VALCOL,0,'');} /* migración esquema 7->8 cols (inserta VALOR) */
+   if(r.length===7){r.splice(DEVO_VALCOL,0,'');} /* migración 7->8 (inserta VALOR) */
+   if(r.length===8){r.splice(DEVO_COMCOL,0,'');} /* migración 8->9 (inserta COMUNA tras Destinatarios) */
    while(r.length<DEVO_COLS.length)r.push('');
   });
   while(d.rows.length<DEVO_ROWS)d.rows.push(Array(DEVO_COLS.length).fill(''));
@@ -1632,6 +1643,9 @@ function devoPlanillas(){
 }
 function devoWrapHtml(it){
  let h=`<div class="devo-wrap" data-item="${it.id}">`;
+ h+='<datalist id="devoUNList">'+DEVO_UNIDADES.map(u=>'<option value="'+devoAttr(u)+'">').join('')+'</datalist>';
+ h+='<datalist id="devoTiendaList">'+DEVO_TIENDAS.map(t=>'<option value="'+devoAttr(t)+'">').join('')+'</datalist>';
+ h+='<datalist id="devoComunaList">'+DEVO_COMUNAS_UNICAS.map(c=>'<option value="'+devoAttr(c)+'">').join('')+'</datalist>';
  h+=`<div class="devo-title" style="background:${it.c};color:${it.tx}">${it.t}</div>`;
  h+=`<div class="devo-scroll"><table class="devo-tbl"><thead><tr style="background:${it.c};color:${it.tx}"><th style="width:38px">N\u00b0</th>`;
  DEVO_COLS.forEach((c,ci)=>{h+=`<th${ci===DEVO_VALCOL?' class="devo-valhead"':''}>${c}</th>`;});
@@ -1658,6 +1672,9 @@ function devoRenderItem(it){
    let val=devoEsc(d.rows[r][c]);
    if(c===0){h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${val}</td>`;}
    else if(c===DEVO_VALCOL){h+=`<td class="devo-cell devo-valcell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
+   else if(c===DEVO_UNCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp" list="devoUNList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}" placeholder="Unidad Negocio"></td>`;}
+   else if(c===DEVO_DESTCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-dest" list="devoTiendaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}" placeholder="Tienda / Destinatario"></td>`;}
+   else if(c===DEVO_COMCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-comuna" list="devoComunaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}" placeholder="Comuna"></td>`;}
    else{h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
   }
   h+='</tr>';
@@ -1672,13 +1689,14 @@ function devoRender(){devoEnsure();const act=DEVO_ITEMS.find(x=>x.id===DEVO_ACTI
 function devoSetActive(id){DEVO_ACTIVE=id;const pane=document.getElementById('devoPane');if(pane)pane.innerHTML='';devoRender();}
 var devoWriting=false,devoTimer=null;
 function devoFbPush(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;clearTimeout(devoTimer);devoTimer=setTimeout(()=>{try{devoWriting=true;fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;}).catch(e=>{devoWriting=false;console.error('devoFbPush',e);});}catch(e){devoWriting=false;}},500);}
-function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
+function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce')||ae.classList.contains('devo-inp'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
 function devoWire(){
  const root=document.getElementById('s-devo');if(!root)return;
  root.addEventListener('input',e=>{
   const t=e.target;if(!t||!t.classList)return;
   if(t.classList.contains('devo-cell')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].rows[r][c]=t.textContent;if(c===DEVO_VALCOL){const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';}devoFbPush();}}
   else if(t.classList.contains('devo-ce')){const i=t.dataset.i,f=t.dataset.f;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i][f]=t.textContent;devoFbPush();}}
+  else if(t.classList.contains('devo-inp')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][c]=t.value;if(t.classList.contains('devo-dest')){const com=DEVO_COMUNA[devoNorm(t.value)];if(com){const cc=root.querySelector('.devo-comuna[data-i="'+i+'"][data-r="'+r+'"]');if(cc)cc.value=com;DEVO_DATA[i].rows[r][DEVO_COMCOL]=com;}}devoFbPush();}}
  });
  root.addEventListener('blur',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('devo-valcell')){const i=t.dataset.i,r=+t.dataset.r;const f=devoFmtVal(t.textContent);if(f!==''){t.textContent=f;if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][DEVO_VALCOL]=f;}const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';devoFbPush();}}},true);
  root.addEventListener('click',e=>{
@@ -1700,7 +1718,7 @@ function devoWire(){
 /* --- normalizar texto para comparar nombres --- */
 function devoNorm(s){return (s==null?'':String(s)).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');}
 function devoMatchItem(name){const n=devoNorm(name);let best=null;DEVO_ITEMS.forEach(it=>{const k=devoNorm(it.t);if(n===k||n.indexOf(k)>=0||k.indexOf(n)>=0&&n.length>=2)best=best||it;});if(best)return best;return null;}
-function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,VALOR:2,VALORES:2,MONTO:2,MONTOS:2,ORIGEN:3,DESTINATARIOS:4,DESTINATARIO:4,BULTOS:5,BULTO:5,CONTENIDO:6,OBSERVACIONES:7,OBSERVACION:7};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null)map[al[k]]=i;});return map;}
+function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,VALOR:2,VALORES:2,MONTO:2,MONTOS:2,ORIGEN:3,UNIDADNEGOCIO:3,UNIDADDENEGOCIO:3,DESTINATARIOS:4,DESTINATARIO:4,TIENDA:4,TIENDAS:4,COMUNA:5,COMUNAS:5,BULTOS:6,BULTO:6,CONTENIDO:7,OBSERVACIONES:8,OBSERVACION:8};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null)map[al[k]]=i;});return map;}
 /* --- IMPORTAR: lee cualquier Excel y coloca filas en la planilla que corresponda --- */
 function devoImportExcel(ev){
  const f=ev.target.files&&ev.target.files[0];if(!f){return;}
@@ -1724,6 +1742,7 @@ function devoImportExcel(ev){
      if(!target)target=DEVO_ITEMS[DEVO_ITEMS.length-1];
      const cells=DEVO_COLS.map((_,c)=>{const src=cmap[c];let v=(src!=null)?row[src]:'';if(v==null)v='';return String(v).trim();});
      if(cells[DEVO_VALCOL]){const fv=devoFmtVal(cells[DEVO_VALCOL]);if(fv)cells[DEVO_VALCOL]=fv;}
+     if(!cells[DEVO_COMCOL]&&cells[DEVO_DESTCOL]){const cm=DEVO_COMUNA[devoNorm(cells[DEVO_DESTCOL])];if(cm)cells[DEVO_COMCOL]=cm;}
      DEVO_DATA[target.id].rows.push(cells);added++;
     }
    });
@@ -1848,7 +1867,7 @@ function devoPptSlidesHTML(){
   h+='<div class="devo-slide"><div class="devo-sl-head" style="background:'+it.c+';color:'+(it.tx||'#fff')+'">'+devoEsc(it.t)+'</div><div class="devo-sl-body">';
   h+='<div class="devo-sl-stats"><span>Registros: <b>'+fi(s.reg)+'</b></span><span>Bultos: <b>'+fi(Math.round(s.bul))+'</b></span><span>Valor: <b>'+(devoFmtVal(devoItemTotal(it.id))||'$0')+'</b></span></div>';
   if(rows.length){h+='<table class="devo-sl-tab"><thead><tr><th>N\u00b0</th><th>Fecha</th><th>Documentos</th><th>Valor</th><th>Bultos</th><th>Destinatarios</th></tr></thead><tbody>';
-   rows.slice(0,10).forEach(function(o){h+='<tr><td>'+o.n+'</td><td>'+devoEsc(o.r[0])+'</td><td>'+devoEsc(o.r[1])+'</td><td>'+devoEsc(o.r[2])+'</td><td>'+devoEsc(o.r[5])+'</td><td>'+devoEsc(o.r[4])+'</td></tr>';});
+   rows.slice(0,10).forEach(function(o){h+='<tr><td>'+o.n+'</td><td>'+devoEsc(o.r[0])+'</td><td>'+devoEsc(o.r[1])+'</td><td>'+devoEsc(o.r[2])+'</td><td>'+devoEsc(o.r[DEVO_BULCOL])+'</td><td>'+devoEsc(o.r[4])+'</td></tr>';});
    h+='</tbody></table>';if(rows.length>10)h+='<p class="devo-sl-more">+ '+(rows.length-10)+' registros m\u00e1s (ver reporte completo)</p>';}
   else{h+='<p class="devo-sl-empty">Sin registros.</p>';}
   h+='</div></div>';});
@@ -1867,7 +1886,7 @@ function devoPptSave(){var gen=function(){try{
    sl.addText(it.t,{x:0,y:0,w:13.33,h:0.9,fontSize:26,bold:true,color:txhex,fill:{color:hex},align:'left',valign:'middle',margin:[0,0,0,14]});
    sl.addText('Registros: '+fi(sm.reg)+'     Bultos: '+fi(Math.round(sm.bul))+'     Valor: '+(devoFmtVal(devoItemTotal(it.id))||'$0'),{x:0.4,y:1.05,w:12.5,h:0.4,fontSize:13,color:'333333'});
    if(rows.length){var head=['N\u00b0','Fecha','Documentos','Valor','Bultos','Destinatarios'];
-    var body=rows.slice(0,12).map(function(o){return [String(o.n),String(o.r[0]||''),String(o.r[1]||''),String(o.r[2]||''),String(o.r[5]||''),String(o.r[4]||'')];});
+    var body=rows.slice(0,12).map(function(o){return [String(o.n),String(o.r[0]||''),String(o.r[1]||''),String(o.r[2]||''),String(o.r[DEVO_BULCOL]||''),String(o.r[4]||'')];});
     var tbl=[head.map(function(hh){return {text:hh,options:{bold:true,color:'FFFFFF',fill:{color:hex}}};})].concat(body.map(function(rr){return rr.map(function(cc){return {text:cc};});}));
     sl.addTable(tbl,{x:0.4,y:1.6,w:12.5,fontSize:10,border:{type:'solid',color:'D9DEE5',pt:0.5},valign:'middle'});
     if(rows.length>12)sl.addText('+ '+(rows.length-12)+' registros m\u00e1s',{x:0.4,y:7.0,w:12,h:0.3,fontSize:10,italic:true,color:'888888'});}
@@ -1899,7 +1918,7 @@ function devoGraphAgg(d){
   if(!r)return;var hasData=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!hasData)return;
   var fecha=(r[0]!=null&&String(r[0]).trim()!=='')?String(r[0]).trim():'Sin fecha';
   var val=devoNum(r[DEVO_VALCOL]);if(val==null)val=0;
-  var bul=parseFloat(String(r[5]==null?'':r[5]).replace(/\./g,'').replace(/,/g,'.'));if(isNaN(bul))bul=0;
+  var bul=parseFloat(String(r[DEVO_BULCOL]==null?'':r[DEVO_BULCOL]).replace(/\./g,'').replace(/,/g,'.'));if(isNaN(bul))bul=0;
   if(!map[fecha]){map[fecha]={v:0,b:0};order.push(fecha);}
   map[fecha].v+=val;map[fecha].b+=bul;
  });
@@ -2991,7 +3010,7 @@ function devoStats(){
   (d.rows||[]).forEach(function(r){
    const full=(r||[]).some(function(c){return (c||'').toString().trim()!=='';});
    if(full)reg++;
-   const b=parseFloat(((r&&r[4])||'').toString().replace(/\./g,'').replace(/,/g,'.'));
+   const b=parseFloat(((r&&r[DEVO_BULCOL])||'').toString().replace(/\./g,'').replace(/,/g,'.'));
    if(!isNaN(b))bul+=b;
   });
   tReg+=reg;tBul+=bul;
