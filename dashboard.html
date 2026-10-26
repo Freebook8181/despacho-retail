@@ -1633,7 +1633,6 @@ function devoPlanillas(){
   +'<button class="devo-btn devo-exp" id="devoExport">⬇ EXPORTAR EXCEL</button>'
   +'<button class="devo-btn devo-save" id="devoGuardar">💾 GUARDAR</button>'
   +'<button class="devo-btn devo-del" id="devoBorrar">🗑 BORRAR</button>'
-  +'<button class="devo-btn devo-graf" id="devoGraficar">📈 GRAFICAR</button>'
   +'<button class="devo-btn devo-nube" id="devoNube">☁ NUBE</button>'
   +'<button class="devo-btn devo-repbtn" id="devoReporteBtn">📄 REPORTE</button>'
   +'<button class="devo-btn devo-pptbtn" id="devoPptBtn">📊 PPT</button>'
@@ -1764,7 +1763,7 @@ function devoGuardar(){devoEnsure();
  function _doSave(){devoFbSave().then(ok=>{alert(ok?'Informaci\u00f3n guardada en la nube. Todos los usuarios la ver\u00e1n al recargar.':'No se pudo guardar. Revisa los permisos de Firebase (activa el proveedor An\u00f3nimo en Authentication).');});}
  if(fbReady){_doSave();return;}
  /* Aun sin sesion: intentar login anonimo AHORA y luego guardar */
- if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}_doSave();}).catch(function(e){console.error('signInAnonymously',e);alert('No se pudo conectar a la nube.\n\nEntra a Firebase \u2192 Authentication \u2192 Sign-in method y activa el proveedor "An\u00f3nimo". Luego recarga con Ctrl+F5.');});return;}
+ if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}_doSave();}).catch(function(e){console.error('signInAnonymously',e);var code=(e&&e.code)||'';var extra='';if(code==='auth/operation-not-allowed'||code==='auth/admin-restricted-operation')extra='\n\nCausa: el proveedor "An\u00f3nimo" NO est\u00e1 activado.';else if(code==='auth/configuration-not-found')extra='\n\nCausa: a\u00fan no has configurado Authentication en este proyecto.';else if(code==='auth/network-request-failed')extra='\n\nCausa: sin conexi\u00f3n a internet.';alert('No se pudo conectar a la nube.'+extra+'\n\nSoluci\u00f3n: entra a Firebase \u2192 Authentication \u2192 Sign-in method y activa el proveedor "An\u00f3nimo". Luego recarga con Ctrl+F5.'+(code?('\n\n[detalle: '+code+']'):''));});return;}
  alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');}
 /* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o y colores) --- */
 function devoSheetName(t){return (t||'Hoja').replace(/[\\/?*\[\]:]/g,' ').slice(0,31);}
