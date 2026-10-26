@@ -1621,6 +1621,8 @@ function devoPlanillas(){
   +'<button class="devo-btn devo-del" id="devoBorrar">🗑 BORRAR</button>'
   +'<button class="devo-btn devo-cal" id="devoCal">📅 VER POR FECHA</button>'
   +'<button class="devo-btn devo-nube" id="devoNube">☁ NUBE</button>'
+  +'<button class="devo-btn devo-repbtn" id="devoReporteBtn">📄 REPORTE</button>'
+  +'<button class="devo-btn devo-pptbtn" id="devoPptBtn">📊 PPT</button>'
   +'<input type="file" id="devoFile" accept=".xlsx,.xls" style="display:none"/>'
   +'</div>';
  h+='<div class="devo-tabs" id="devoTabs">'+DEVO_ITEMS.map(it=>`<button class="devo-tab" data-tab="${it.id}" style="--tc:${it.c};--tt:${it.tx}">${it.t}</button>`).join('')+'</div>';
@@ -1690,6 +1692,8 @@ function devoWire(){
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
  const bC=document.getElementById('devoCal');if(bC)bC.addEventListener('click',devoOpenCal);
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
+ const bR=document.getElementById('devoReporteBtn');if(bR)bR.addEventListener('click',devoOpenReporte);
+ const bP=document.getElementById('devoPptBtn');if(bP)bP.addEventListener('click',devoOpenPPT);
  devoStartClock();
 }
 /* --- normalizar texto para comparar nombres --- */
@@ -1769,6 +1773,110 @@ function devoExport(ids){
 /* ===== MODALES ===== */
 var DEVO_PICKMODE='exp',DEVO_PW='';
 function devoMaskWire(inp){if(!inp)return;DEVO_PW='';inp.value='';inp.addEventListener('keydown',function(e){if(e.key==='Backspace'){DEVO_PW=DEVO_PW.slice(0,-1);e.preventDefault();inp.value='*'.repeat(DEVO_PW.length);}else if(e.key==='Enter'){e.preventDefault();}else if(e.key&&e.key.length===1&&!e.ctrlKey&&!e.metaKey){DEVO_PW+=e.key;e.preventDefault();inp.value='*'.repeat(DEVO_PW.length);}});inp.addEventListener('paste',function(e){e.preventDefault();});}
+/* ===== REPORTE Y PPT SOLO DE DEVOLUCIONES ===== */
+var DEVO_REP_CSS=".devo-ov2{position:fixed;inset:0;background:rgba(15,25,40,.6);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px}"
++".devo-ov2-card{background:#fff;border-radius:14px;max-width:1040px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(10,20,35,.45)}"
++".devo-ov2-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid #eef1f4;flex-wrap:wrap}"
++".devo-ov2-h{font-size:18px;font-weight:800;color:#1f3a59}.devo-ov2-btns{display:flex;gap:8px;align-items:center}"
++".devo-ov2-x{background:#eef1f4;color:#44515f;border:0;width:34px;height:34px;border-radius:8px;font-size:16px;cursor:pointer}"
++".devo-ov2-body{padding:18px 22px;overflow:auto;background:#f6f8fa}"
++".devo-repbtn{background:#8e44ad}.devo-pptbtn{background:#d35400}"
++".devo-rep{max-width:900px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#243244}"
++".devo-rep-cover{text-align:center;padding:10px 0 18px;border-bottom:3px solid #16a085;margin-bottom:16px}"
++".devo-rep-cover h1{margin:0;font-size:28px;color:#16a085}.devo-rep-sub{color:#6b7684;font-size:14px;margin-top:4px}"
++".devo-rep-kpis{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}"
++".devo-rep-k{flex:1;min-width:150px;background:#fff;border:1px solid #e3e7ec;border-top:3px solid #16a085;border-radius:10px;padding:12px 14px;text-align:center}"
++".devo-rep-k span{display:block;font-size:12px;color:#6b7684;text-transform:uppercase;letter-spacing:.4px}.devo-rep-k b{display:block;font-size:22px;color:#1f3a59;margin-top:4px}"
++".devo-rep-sumtab,.devo-rep-tab{width:100%;border-collapse:collapse;background:#fff;margin-bottom:18px;font-size:12.5px}"
++".devo-rep-sumtab th,.devo-rep-sumtab td,.devo-rep-tab th,.devo-rep-tab td{border:1px solid #dfe4ea;padding:6px 8px;text-align:left;vertical-align:top}"
++".devo-rep-sumtab th,.devo-rep-tab th{background:#1f3a59;color:#fff;font-weight:700}"
++".devo-rep-tab td.num,.devo-rep-sumtab td:last-child{text-align:right;white-space:nowrap}"
++".devo-rep-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}"
++".devo-rep-sec{margin-bottom:18px}.devo-rep-sec h2{font-size:17px;padding-left:10px;margin:0 0 8px}"
++".devo-rep-tot td{font-weight:700;background:#eef1f5;color:#1f3a59}.devo-rep-empty{color:#999;font-size:13px;padding:4px 0 10px}"
++".devo-ppt-body{background:#334;padding:20px}"
++".devo-slide{width:900px;max-width:100%;aspect-ratio:16/9;background:#fff;margin:0 auto 20px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);overflow:hidden;display:flex;flex-direction:column}"
++".devo-sl-cover{height:100%;background:#0f3a59;color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}"
++".devo-sl-cover h1{font-size:44px;margin:0}.devo-sl-cover p{color:#bbd0e6;font-size:18px;margin:6px 0 20px}"
++".devo-sl-k{display:flex;gap:30px}.devo-sl-k div{text-align:center}.devo-sl-k b{display:block;font-size:26px}.devo-sl-k span{font-size:12px;color:#bbd0e6}"
++".devo-sl-head{padding:14px 22px;font-size:22px;font-weight:800}.devo-sl-body{padding:14px 22px;overflow:auto}"
++".devo-sl-stats{display:flex;gap:22px;font-size:13px;color:#33475b;margin-bottom:10px}"
++".devo-sl-tab{width:100%;border-collapse:collapse;font-size:11.5px}.devo-sl-tab th,.devo-sl-tab td{border:1px solid #dfe4ea;padding:4px 7px;text-align:left}.devo-sl-tab th{background:#16a085;color:#fff}"
++".devo-sl-more{font-size:11px;color:#888;font-style:italic;margin-top:6px}.devo-sl-empty{color:#999}";
+function devoEnsureRepCSS(){if(document.getElementById('devoRepCss'))return;var s=document.createElement('style');s.id='devoRepCss';s.textContent=DEVO_REP_CSS;document.head.appendChild(s);}
+function devoReportRows(id){var d=DEVO_DATA[id]||{rows:[]};var out=[];(d.rows||[]).forEach(function(r,idx){var full=(r||[]).some(function(c){return (c||'').toString().trim()!=='';});if(full)out.push({n:idx+1,r:r});});return out;}
+function devoReportHTML(){
+ devoEnsure();var st=devoStats();var mes=(typeof modMesLbl==='function')?modMesLbl():'';
+ var totVal=0;DEVO_ITEMS.forEach(function(it){totVal+=devoItemTotal(it.id);});
+ var h='<div class="devo-rep"><div class="devo-rep-cover"><h1>Reporte de Devoluciones</h1><div class="devo-rep-sub">Control por tipo de devoluci\u00f3n'+(mes?(' \u00b7 '+devoEsc(mes)):'')+'</div></div>';
+ h+='<div class="devo-rep-kpis"><div class="devo-rep-k"><span>Registros totales</span><b>'+fi(st.totReg)+'</b></div><div class="devo-rep-k"><span>Bultos totales</span><b>'+fi(Math.round(st.totBul))+'</b></div><div class="devo-rep-k"><span>Valor total</span><b>'+(devoFmtVal(totVal)||'$0')+'</b></div></div>';
+ h+='<table class="devo-rep-sumtab"><thead><tr><th>Tipo</th><th>Registros</th><th>Bultos</th><th>Valor</th></tr></thead><tbody>';
+ st.items.forEach(function(s){h+='<tr><td><span class="devo-rep-dot" style="background:'+s.hex+'"></span>'+devoEsc(s.label)+'</td><td>'+fi(s.reg)+'</td><td>'+fi(Math.round(s.bul))+'</td><td>'+(devoFmtVal(devoItemTotal(s.id))||'$0')+'</td></tr>';});
+ h+='</tbody></table>';
+ DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);
+  h+='<div class="devo-rep-sec"><h2 style="border-left:6px solid '+it.c+';color:'+it.c+'">'+devoEsc(it.t)+'</h2>';
+  if(!rows.length){h+='<p class="devo-rep-empty">Sin registros.</p>';}
+  else{h+='<table class="devo-rep-tab"><thead><tr><th>N\u00b0</th>';DEVO_COLS.forEach(function(c){h+='<th>'+devoEsc(c)+'</th>';});h+='</tr></thead><tbody>';
+   rows.forEach(function(o){h+='<tr><td>'+o.n+'</td>';for(var c=0;c<DEVO_COLS.length;c++){h+='<td'+(c===DEVO_VALCOL?' class="num"':'')+'>'+devoEsc(o.r[c])+'</td>';}h+='</tr>';});
+   h+='<tr class="devo-rep-tot"><td colspan="'+(DEVO_VALCOL+1)+'">TOTAL</td><td class="num">'+(devoFmtVal(devoItemTotal(it.id))||'$0')+'</td><td colspan="'+(DEVO_COLS.length-DEVO_VALCOL-1)+'"></td></tr></tbody></table>';}
+  h+='</div>';});
+ return h+'</div>';
+}
+function devoReportPrint(){var html=devoReportHTML();var w=window.open('','_blank');if(!w){alert('Permite las ventanas emergentes para generar el PDF o imprimir.');return;}
+ w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte de Devoluciones \u2014 QUINTEC</title><style>'+DEVO_REP_CSS+' body{margin:0;padding:18px;background:#fff;font-family:Arial,Helvetica,sans-serif}@page{size:A4;margin:12mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');w.document.close();}
+function devoOpenReporte(){devoEnsureRepCSS();var ov=document.getElementById('devoRepOv');
+ if(!ov){ov=document.createElement('div');ov.id='devoRepOv';ov.className='devo-ov2';
+  ov.innerHTML='<div class="devo-ov2-card"><div class="devo-ov2-head"><div class="devo-ov2-h">Reporte de Devoluciones</div><div class="devo-ov2-btns"><button class="devo-btn" id="devoRepPdf">\u2b07 PDF</button><button class="devo-btn devo-cal" id="devoRepPrint">\ud83d\udda8 Imprimir</button><button class="devo-ov2-x" id="devoRepX">\u2715</button></div></div><div class="devo-ov2-body" id="devoRepBody"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
+  document.getElementById('devoRepX').addEventListener('click',function(){ov.style.display='none';});
+  document.getElementById('devoRepPdf').addEventListener('click',devoReportPrint);
+  document.getElementById('devoRepPrint').addEventListener('click',devoReportPrint);}
+ document.getElementById('devoRepBody').innerHTML=devoReportHTML();ov.style.display='flex';}
+function devoPptSlidesHTML(){
+ devoEnsure();var st=devoStats();var mes=(typeof modMesLbl==='function')?modMesLbl():'';
+ var totVal=0;DEVO_ITEMS.forEach(function(it){totVal+=devoItemTotal(it.id);});
+ var h='<div class="devo-slide"><div class="devo-sl-cover"><h1>Devoluciones</h1><p>'+(mes?devoEsc(mes):'Control por tipo de devoluci\u00f3n')+'</p><div class="devo-sl-k"><div><b>'+fi(st.totReg)+'</b><span>Registros</span></div><div><b>'+fi(Math.round(st.totBul))+'</b><span>Bultos</span></div><div><b>'+(devoFmtVal(totVal)||'$0')+'</b><span>Valor</span></div></div></div></div>';
+ DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);var s=st.items.filter(function(x){return x.id===it.id;})[0]||{reg:0,bul:0};
+  h+='<div class="devo-slide"><div class="devo-sl-head" style="background:'+it.c+';color:'+(it.tx||'#fff')+'">'+devoEsc(it.t)+'</div><div class="devo-sl-body">';
+  h+='<div class="devo-sl-stats"><span>Registros: <b>'+fi(s.reg)+'</b></span><span>Bultos: <b>'+fi(Math.round(s.bul))+'</b></span><span>Valor: <b>'+(devoFmtVal(devoItemTotal(it.id))||'$0')+'</b></span></div>';
+  if(rows.length){h+='<table class="devo-sl-tab"><thead><tr><th>N\u00b0</th><th>Fecha</th><th>Documentos</th><th>Valor</th><th>Bultos</th><th>Destinatarios</th></tr></thead><tbody>';
+   rows.slice(0,10).forEach(function(o){h+='<tr><td>'+o.n+'</td><td>'+devoEsc(o.r[0])+'</td><td>'+devoEsc(o.r[1])+'</td><td>'+devoEsc(o.r[2])+'</td><td>'+devoEsc(o.r[5])+'</td><td>'+devoEsc(o.r[4])+'</td></tr>';});
+   h+='</tbody></table>';if(rows.length>10)h+='<p class="devo-sl-more">+ '+(rows.length-10)+' registros m\u00e1s (ver reporte completo)</p>';}
+  else{h+='<p class="devo-sl-empty">Sin registros.</p>';}
+  h+='</div></div>';});
+ return h;}
+function devoPptPrint(){var html=devoPptSlidesHTML();var w=window.open('','_blank');if(!w){alert('Permite las ventanas emergentes para imprimir.');return;}
+ w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Presentaci\u00f3n Devoluciones \u2014 QUINTEC</title><style>'+DEVO_REP_CSS+' body{margin:0;background:#fff}.devo-slide{page-break-after:always;box-shadow:none;margin:0 auto;border-radius:0}@page{size:A4 landscape;margin:0}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},450);}<\/scr'+'ipt></body></html>');w.document.close();}
+function devoPptSave(){var gen=function(){try{
+  var pptx=new PptxGenJS();pptx.defineLayout({name:'DV',width:13.33,height:7.5});pptx.layout='DV';
+  var st=devoStats();var mes=(typeof modMesLbl==='function')?modMesLbl():'';var totVal=0;DEVO_ITEMS.forEach(function(it){totVal+=devoItemTotal(it.id);});
+  var s0=pptx.addSlide();s0.background={color:'0F3A59'};
+  s0.addText('Devoluciones',{x:0.6,y:2.2,w:12,h:1.2,fontSize:48,bold:true,color:'FFFFFF'});
+  s0.addText(mes||'Control por tipo de devoluci\u00f3n',{x:0.6,y:3.4,w:12,h:0.6,fontSize:20,color:'BBD0E6'});
+  s0.addText('Registros: '+fi(st.totReg)+'    Bultos: '+fi(Math.round(st.totBul))+'    Valor: '+(devoFmtVal(totVal)||'$0'),{x:0.6,y:4.5,w:12,h:0.6,fontSize:16,color:'FFFFFF'});
+  DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);var sm=st.items.filter(function(x){return x.id===it.id;})[0]||{reg:0,bul:0};
+   var sl=pptx.addSlide();var hex=(it.c||'#16a085').replace('#','');var txhex=(it.tx||'#ffffff').replace('#','');
+   sl.addText(it.t,{x:0,y:0,w:13.33,h:0.9,fontSize:26,bold:true,color:txhex,fill:{color:hex},align:'left',valign:'middle',margin:[0,0,0,14]});
+   sl.addText('Registros: '+fi(sm.reg)+'     Bultos: '+fi(Math.round(sm.bul))+'     Valor: '+(devoFmtVal(devoItemTotal(it.id))||'$0'),{x:0.4,y:1.05,w:12.5,h:0.4,fontSize:13,color:'333333'});
+   if(rows.length){var head=['N\u00b0','Fecha','Documentos','Valor','Bultos','Destinatarios'];
+    var body=rows.slice(0,12).map(function(o){return [String(o.n),String(o.r[0]||''),String(o.r[1]||''),String(o.r[2]||''),String(o.r[5]||''),String(o.r[4]||'')];});
+    var tbl=[head.map(function(hh){return {text:hh,options:{bold:true,color:'FFFFFF',fill:{color:hex}}};})].concat(body.map(function(rr){return rr.map(function(cc){return {text:cc};});}));
+    sl.addTable(tbl,{x:0.4,y:1.6,w:12.5,fontSize:10,border:{type:'solid',color:'D9DEE5',pt:0.5},valign:'middle'});
+    if(rows.length>12)sl.addText('+ '+(rows.length-12)+' registros m\u00e1s',{x:0.4,y:7.0,w:12,h:0.3,fontSize:10,italic:true,color:'888888'});}
+   else{sl.addText('Sin registros.',{x:0.4,y:2.0,w:12,h:0.5,fontSize:16,color:'888888'});}});
+  pptx.writeFile({fileName:'Devoluciones_QUINTEC.pptx'});
+ }catch(e){alert('No se pudo generar el PPT: '+e.message);}};
+ if(typeof PptxGenJS==='undefined'){if(typeof obLoadScript==='function'){obLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js').then(gen).catch(function(){alert('No se pudo cargar el generador de PPT. Revisa tu conexi\u00f3n a internet.');});}else{alert('No se pudo cargar el generador de PPT.');}}else gen();}
+function devoOpenPPT(){devoEnsureRepCSS();var ov=document.getElementById('devoPptOv');
+ if(!ov){ov=document.createElement('div');ov.id='devoPptOv';ov.className='devo-ov2';
+  ov.innerHTML='<div class="devo-ov2-card"><div class="devo-ov2-head"><div class="devo-ov2-h">Presentaci\u00f3n \u00b7 Devoluciones</div><div class="devo-ov2-btns"><button class="devo-btn devo-save" id="devoPptSave">\u2b07 Guardar PPT</button><button class="devo-btn devo-cal" id="devoPptPrint">\ud83d\udda8 Imprimir</button><button class="devo-ov2-x" id="devoPptX">\u2715</button></div></div><div class="devo-ov2-body devo-ppt-body" id="devoPptBody"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
+  document.getElementById('devoPptX').addEventListener('click',function(){ov.style.display='none';});
+  document.getElementById('devoPptSave').addEventListener('click',devoPptSave);
+  document.getElementById('devoPptPrint').addEventListener('click',devoPptPrint);}
+ document.getElementById('devoPptBody').innerHTML=devoPptSlidesHTML();ov.style.display='flex';}
 function devoBuildModals(){
  if(document.getElementById('devoPickOv'))return;
  const chk=DEVO_ITEMS.map(it=>`<label class="devo-chkrow"><input type="checkbox" class="devo-pickchk" value="${it.id}"> <span class="devo-dot" style="background:${it.c}"></span>${it.t}</label>`).join('');
