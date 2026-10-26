@@ -1293,7 +1293,7 @@ function importExcel(inp){
 
 /* ===== Imprimir ===== */
 function imprimir(which){
-  if(which==='reporte'&&anyRed()){alert('⛔ No se puede imprimir/exportar el reporte: hay fechas en ROJO en la planilla. Corrija las celdas marcadas antes de continuar.');return;}
+  // Las filas con fechas en ROJO se excluyen del reporte (gRows), pero NO bloquean la impresión/exportación.
   const target=which==='reporte'?'tab-reporte':'tab-planilla';
   document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('printing'));
   $(target).classList.add('printing');
@@ -2259,7 +2259,7 @@ function abrirReporteModal(){
 }
 function cerrarReporteModal(){ $('reportModal').classList.remove('on'); }
 function imprimirReporteModal(){
-  if(anyRed()){alert('⛔ No se puede imprimir el reporte: hay fechas en ROJO en la planilla. Corrija las celdas marcadas antes de continuar.');return;}
+  // Las filas en ROJO ya quedan fuera del reporte; se permite imprimir igualmente.
   document.body.classList.add('print-report');
   window.print();
   setTimeout(()=>document.body.classList.remove('print-report'),600);
@@ -2267,7 +2267,7 @@ function imprimirReporteModal(){
 }
 /* Exporta el reporte a PDF en tamaño CARTA, por bloques, para que ningún gráfico quede cortado entre páginas */
 function exportarPDF(host){
-  if(anyRed()){alert('⛔ No se puede exportar a PDF: hay fechas en ROJO en la planilla.\n\nCorrija todas las celdas marcadas en rojo (FECHA CONFIRMACION mayor que DISPONIBILIDAD ORIGEN, o fechas fuera de secuencia) y vuelva a intentar.');return;}
+  // Las filas con fechas en ROJO NO se toman en cuenta ni se muestran en el reporte, pero SÍ se permite descargar el PDF.
   const el=(host&&host.querySelector)?host.querySelector('.report'):$('reportDoc');
   if(!el){alert('Primero genere el reporte con el botón “Generar / actualizar reporte”.');return;}
   const jsPDFns=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
