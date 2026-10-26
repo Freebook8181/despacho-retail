@@ -201,6 +201,7 @@ select:focus{border-color:var(--navy)}
 .devo-tab:hover{opacity:1}
 .devo-tab.on{background:var(--tc);color:var(--tt);opacity:1;box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .devo-nube{background:#2563eb}
+.devo-graf{background:#0e7490}
 .devo-total{padding:10px 16px;border-top:1px solid #e3e8ef;font-size:13.5px;color:#1f2a37;text-align:right;background:#fbfcfe}
 .devo-totval{font-weight:800;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;margin-left:6px}
 .devo-valcell{text-align:right;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;font-weight:600}
@@ -1619,7 +1620,7 @@ function devoPlanillas(){
   +'<button class="devo-btn devo-exp" id="devoExport">⬇ EXPORTAR EXCEL</button>'
   +'<button class="devo-btn devo-save" id="devoGuardar">💾 GUARDAR</button>'
   +'<button class="devo-btn devo-del" id="devoBorrar">🗑 BORRAR</button>'
-  +'<button class="devo-btn devo-cal" id="devoCal">📅 VER POR FECHA</button>'
+  +'<button class="devo-btn devo-graf" id="devoGraficar">📈 GRAFICAR</button>'
   +'<button class="devo-btn devo-nube" id="devoNube">☁ NUBE</button>'
   +'<button class="devo-btn devo-repbtn" id="devoReporteBtn">📄 REPORTE</button>'
   +'<button class="devo-btn devo-pptbtn" id="devoPptBtn">📊 PPT</button>'
@@ -1690,7 +1691,7 @@ function devoWire(){
  const bE=document.getElementById('devoExport');if(bE)bE.addEventListener('click',()=>devoOpenPick('exp'));
  const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
- const bC=document.getElementById('devoCal');if(bC)bC.addEventListener('click',devoOpenCal);
+ const bC=document.getElementById('devoGraficar');if(bC)bC.addEventListener('click',devoOpenGraficar);
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
  const bR=document.getElementById('devoReporteBtn');if(bR)bR.addEventListener('click',devoOpenReporte);
  const bP=document.getElementById('devoPptBtn');if(bP)bP.addEventListener('click',devoOpenPPT);
@@ -1802,7 +1803,13 @@ var DEVO_REP_CSS=".devo-ov2{position:fixed;inset:0;background:rgba(15,25,40,.6);
 +".devo-sl-head{padding:14px 22px;font-size:22px;font-weight:800}.devo-sl-body{padding:14px 22px;overflow:auto}"
 +".devo-sl-stats{display:flex;gap:22px;font-size:13px;color:#33475b;margin-bottom:10px}"
 +".devo-sl-tab{width:100%;border-collapse:collapse;font-size:11.5px}.devo-sl-tab th,.devo-sl-tab td{border:1px solid #dfe4ea;padding:4px 7px;text-align:left}.devo-sl-tab th{background:#16a085;color:#fff}"
-+".devo-sl-more{font-size:11px;color:#888;font-style:italic;margin-top:6px}.devo-sl-empty{color:#999}";
++".devo-sl-more{font-size:11px;color:#888;font-style:italic;margin-top:6px}.devo-sl-empty{color:#999}"
++".devo-gr-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}"
++".devo-gr-card{background:#fff;border:1px solid #e3e7ec;border-radius:10px;padding:10px 12px}"
++".devo-gr-h{font-size:14px;font-weight:800;padding-left:8px;margin-bottom:6px}"
++".devo-gr-c{width:100%;height:240px}"
++".devo-gr-empty{color:#999;font-size:13px;display:flex;align-items:center;justify-content:center;height:100%}"
++"@media(max-width:760px){.devo-gr-grid{grid-template-columns:1fr}}";
 function devoEnsureRepCSS(){if(document.getElementById('devoRepCss'))return;var s=document.createElement('style');s.id='devoRepCss';s.textContent=DEVO_REP_CSS;document.head.appendChild(s);}
 function devoReportRows(id){var d=DEVO_DATA[id]||{rows:[]};var out=[];(d.rows||[]).forEach(function(r,idx){var full=(r||[]).some(function(c){return (c||'').toString().trim()!=='';});if(full)out.push({n:idx+1,r:r});});return out;}
 function devoReportHTML(){
@@ -1877,6 +1884,59 @@ function devoOpenPPT(){devoEnsureRepCSS();var ov=document.getElementById('devoPp
   document.getElementById('devoPptSave').addEventListener('click',devoPptSave);
   document.getElementById('devoPptPrint').addEventListener('click',devoPptPrint);}
  document.getElementById('devoPptBody').innerHTML=devoPptSlidesHTML();ov.style.display='flex';}
+/* ===== Asegurar conexion a la nube (login anonimo on-demand) ===== */
+function devoEnsureCloud(cb){
+ if(typeof fbDB==='undefined'||!fbDB){cb(false);return;}
+ if(typeof fbReady!=='undefined'&&fbReady){cb(true);return;}
+ if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}cb(true);}).catch(function(e){console.error('signInAnonymously',e);cb(false);});}
+ else cb(false);
+}
+/* ===== GRAFICAR DEVOLUCIONES (un grafico por tipo, datos de la nube) ===== */
+var DEVO_GR_CH=[];
+function devoGraphAgg(d){
+ var map={},order=[];
+ (d&&d.rows||[]).forEach(function(r){
+  if(!r)return;var hasData=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!hasData)return;
+  var fecha=(r[0]!=null&&String(r[0]).trim()!=='')?String(r[0]).trim():'Sin fecha';
+  var val=devoNum(r[DEVO_VALCOL]);if(val==null)val=0;
+  var bul=parseFloat(String(r[5]==null?'':r[5]).replace(/\./g,'').replace(/,/g,'.'));if(isNaN(bul))bul=0;
+  if(!map[fecha]){map[fecha]={v:0,b:0};order.push(fecha);}
+  map[fecha].v+=val;map[fecha].b+=bul;
+ });
+ order.sort(function(a,b){var pa=devoParseFecha(a),pb=devoParseFecha(b);if(pa&&pb)return pa<pb?-1:(pa>pb?1:0);if(pa)return -1;if(pb)return 1;return 0;});
+ return {labels:order,vals:order.map(function(k){return map[k].v;}),buls:order.map(function(k){return map[k].b;})};
+}
+function devoGraphRender(data){
+ try{DEVO_GR_CH.forEach(function(c){try{c.dispose();}catch(e){}});}catch(e){}DEVO_GR_CH=[];
+ var body=document.getElementById('devoGrBody');if(!body)return;
+ var grid='<div class="devo-gr-grid">';
+ DEVO_ITEMS.forEach(function(it){grid+='<div class="devo-gr-card"><div class="devo-gr-h" style="color:'+it.c+';border-left:5px solid '+it.c+'">'+devoEsc(it.t)+'</div><div class="devo-gr-c" id="devoGr_'+it.id+'"></div></div>';});
+ body.innerHTML=grid+'</div>';
+ DEVO_ITEMS.forEach(function(it){
+  var d=(data&&data[it.id])?data[it.id]:{rows:[]};var agg=devoGraphAgg(d);var el=document.getElementById('devoGr_'+it.id);if(!el)return;
+  if(!agg.labels.length){el.innerHTML='<div class="devo-gr-empty">Sin datos para graficar.</div>';return;}
+  var inst=echarts.init(el,null,{renderer:'canvas'});DEVO_GR_CH.push(inst);
+  inst.setOption({tooltip:{trigger:'axis'},legend:{data:['Valor','Bultos'],bottom:0,textStyle:{fontSize:10}},grid:{left:8,right:12,top:14,bottom:38,containLabel:true},
+   xAxis:{type:'category',data:agg.labels,axisLabel:{fontSize:9,rotate:agg.labels.length>5?35:0}},
+   yAxis:[{type:'value',name:'Valor',nameTextStyle:{fontSize:9},axisLabel:{fontSize:9,formatter:function(v){return v>=1e6?(v/1e6)+'M':(v>=1e3?(v/1e3)+'K':v);}}},{type:'value',name:'Bultos',nameTextStyle:{fontSize:9},axisLabel:{fontSize:9}}],
+   series:[{name:'Valor',type:'bar',data:agg.vals,itemStyle:{color:it.c}},{name:'Bultos',type:'line',yAxisIndex:1,data:agg.buls,smooth:true,itemStyle:{color:'#f39c12'}}]},true);
+ });
+ setTimeout(function(){DEVO_GR_CH.forEach(function(c){try{c.resize();}catch(e){}});},80);
+}
+function devoOpenGraficar(){
+ devoEnsureRepCSS();var ov=document.getElementById('devoGrOv');
+ if(!ov){ov=document.createElement('div');ov.id='devoGrOv';ov.className='devo-ov2';
+  ov.innerHTML='<div class="devo-ov2-card"><div class="devo-ov2-head"><div class="devo-ov2-h">Gr\u00e1ficos de Devoluciones</div><div class="devo-ov2-btns"><button class="devo-ov2-x" id="devoGrX">\u2715</button></div></div><div class="devo-ov2-body" id="devoGrBody"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
+  document.getElementById('devoGrX').addEventListener('click',function(){ov.style.display='none';});
+  window.addEventListener('resize',function(){if(ov.style.display!=='none')DEVO_GR_CH.forEach(function(c){try{c.resize();}catch(e){}});});}
+ var body=document.getElementById('devoGrBody');body.innerHTML='<div class="devo-daynote">Consultando la nube\u2026</div>';ov.style.display='flex';
+ devoEnsureCloud(function(ok){
+  if(ok&&fbDB){fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){devoGraphRender(snap.val()||DEVO_DATA);}).catch(function(){devoGraphRender(DEVO_DATA);});}
+  else{devoEnsure();devoGraphRender(DEVO_DATA);}
+ });
+}
 function devoBuildModals(){
  if(document.getElementById('devoPickOv'))return;
  const chk=DEVO_ITEMS.map(it=>`<label class="devo-chkrow"><input type="checkbox" class="devo-pickchk" value="${it.id}"> <span class="devo-dot" style="background:${it.c}"></span>${it.t}</label>`).join('');
@@ -1937,21 +1997,23 @@ function devoPickConfirm(){
 function devoOpenNube(){
  devoBuildModals();
  const ov=document.getElementById('devoNubeOv'),body=document.getElementById('devoNubeBody');
- if(typeof fbReady==='undefined'||!fbReady||!fbDB){body.innerHTML='<div class="devo-dayempty">No hay conexi\u00f3n con la nube (Firebase).</div>';ov.style.display='flex';return;}
  body.innerHTML='<div class="devo-daynote">Consultando la nube\u2026</div>';ov.style.display='flex';
- fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){
-  const v=snap.val()||{};let tReg=0,tVal=0;
-  let h='<table class="devo-daytbl"><thead><tr><th>Planilla</th><th>Registros</th><th>Suma Valor</th></tr></thead><tbody>';
-  DEVO_ITEMS.forEach(function(it){
-   const d=v[it.id]||{};const rows=d.rows||[];
-   const reg=rows.filter(function(r){return r&&r.some(function(x){return x!=null&&String(x).trim()!=='';});}).length;
-   let val=0;rows.forEach(function(r){if(r){const n=devoNum(r[DEVO_VALCOL]);if(n!=null)val+=n;}});
-   tReg+=reg;tVal+=val;
-   h+='<tr><td><span class="devo-dot" style="background:'+it.c+'"></span>'+it.t+'</td><td class="devo-num">'+reg+'</td><td style="text-align:right">'+(devoFmtVal(val)||'$0')+'</td></tr>';
-  });
-  h+='</tbody><tfoot><tr style="font-weight:800;background:#f4f6f9"><td>TOTAL</td><td class="devo-num">'+tReg+'</td><td style="text-align:right">'+(devoFmtVal(tVal)||'$0')+'</td></tr></tfoot></table><div class="devo-daynote">As\u00ed est\u00e1n guardadas las tablas en Firebase ahora mismo.</div>';
-  body.innerHTML=h;
- }).catch(function(e){body.innerHTML='<div class="devo-dayempty">No se pudo leer la nube: '+e.message+'</div>';});
+ devoEnsureCloud(function(ok){
+  if(!ok||!fbDB){body.innerHTML='<div class="devo-dayempty">No hay conexi\u00f3n con la nube (Firebase).<br>Activa el proveedor "An\u00f3nimo" en Firebase \u2192 Authentication \u2192 Sign-in method y recarga con Ctrl+F5.</div>';return;}
+  fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){
+   const v=snap.val()||{};let tReg=0,tVal=0;
+   let h='<table class="devo-daytbl"><thead><tr><th>Planilla</th><th>Registros</th><th>Suma Valor</th></tr></thead><tbody>';
+   DEVO_ITEMS.forEach(function(it){
+    const d=v[it.id]||{};const rows=d.rows||[];
+    const reg=rows.filter(function(r){return r&&r.some(function(x){return x!=null&&String(x).trim()!=='';});}).length;
+    let val=0;rows.forEach(function(r){if(r){const n=devoNum(r[DEVO_VALCOL]);if(n!=null)val+=n;}});
+    tReg+=reg;tVal+=val;
+    h+='<tr><td><span class="devo-dot" style="background:'+it.c+'"></span>'+it.t+'</td><td class="devo-num">'+reg+'</td><td style="text-align:right">'+(devoFmtVal(val)||'$0')+'</td></tr>';
+   });
+   h+='</tbody><tfoot><tr style="font-weight:800;background:#f4f6f9"><td>TOTAL</td><td class="devo-num">'+tReg+'</td><td style="text-align:right">'+(devoFmtVal(tVal)||'$0')+'</td></tr></tfoot></table><div class="devo-daynote">As\u00ed est\u00e1n guardadas las tablas en Firebase ahora mismo.</div>';
+   body.innerHTML=h;
+  }).catch(function(e){body.innerHTML='<div class="devo-dayempty">No se pudo leer la nube: '+e.message+'</div>';});
+ });
 }
 /* ===== CALENDARIO EN ESPA\u00d1OL ===== */
 var DEVO_CALY,DEVO_CALM;
