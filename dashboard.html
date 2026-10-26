@@ -162,7 +162,20 @@ select:focus{border-color:var(--navy)}
 .devo-toolbar{display:flex;flex-wrap:wrap;gap:10px;margin:0 2px 20px}
 .devo-btn{border:none;border-radius:9px;padding:9px 15px;font-size:12.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;color:#fff;background:#16a085;transition:filter .15s}
 .devo-btn:hover{filter:brightness(1.07)}
+.devo-btn{display:inline-flex;align-items:center;gap:7px}
+.devo-btn svg{flex:0 0 auto}
 .devo-imp{background:#1d4ed8}.devo-exp{background:#0d9488}.devo-save{background:#1e8449}.devo-del{background:#c0392b}.devo-cal{background:#7b1e3a}
+.devo-graficos-btn{border:2px solid #0e7490;background:#0e7490;color:#fff;border-radius:9px 9px 0 0;padding:9px 16px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;margin-left:auto;box-shadow:0 4px 12px rgba(14,116,144,.25)}
+.devo-graficos-btn:hover{filter:brightness(1.08)}
+.devo-g2-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:760px){.devo-g2-grid{grid-template-columns:1fr}}
+.devo-g2-card{background:#fff;border:1px solid #e6ebf1;border-radius:12px;padding:12px 14px;box-shadow:0 4px 14px rgba(23,42,67,.06)}
+.devo-g2-card.wide{grid-column:1/-1}
+.devo-g2-h{font-size:13.5px;font-weight:800;color:#0f3a59;margin-bottom:8px;border-left:5px solid #0e7490;padding-left:8px}
+.devo-g2-c{width:100%;height:280px}
+.devo-g2-empty{height:260px;display:flex;align-items:center;justify-content:center;color:#8a94a0;font-size:14px;text-align:center}
+.devo-g2-sel{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.devo-g2-sel select{border:1.5px solid #c3ccd6;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;color:#1f3a59}
 .devo-ghost{background:#eef1f5;color:#44505e}
 /* overlays/dialogos */
 .devo-ov{display:none;position:fixed;inset:0;background:rgba(20,30,45,.55);z-index:9000;align-items:center;justify-content:center;padding:20px}
@@ -1629,16 +1642,16 @@ function devoPlanillas(){
  devoEnsure();
  let h='<div class="devo-note">Planillas editables por pestaña. Lo que escribas se guarda y se comparte con todos los usuarios al instante.</div>';
  h+='<div class="devo-toolbar">'
-  +'<button class="devo-btn devo-imp" id="devoImport">⬆ IMPORTAR EXCEL</button>'
-  +'<button class="devo-btn devo-exp" id="devoExport">⬇ EXPORTAR EXCEL</button>'
-  +'<button class="devo-btn devo-save" id="devoGuardar">💾 GUARDAR</button>'
-  +'<button class="devo-btn devo-del" id="devoBorrar">🗑 BORRAR</button>'
+  +'<button class="devo-btn devo-imp" id="devoImport"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg>IMPORTAR EXCEL</button>'
+  +'<button class="devo-btn devo-exp" id="devoExport"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>EXPORTAR EXCEL</button>'
+  +'<button class="devo-btn devo-save" id="devoGuardar"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>GUARDAR</button>'
+  +'<button class="devo-btn devo-del" id="devoBorrar"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>BORRAR</button>'
   +'<button class="devo-btn devo-nube" id="devoNube">☁ NUBE</button>'
   +'<button class="devo-btn devo-repbtn" id="devoReporteBtn">📄 REPORTE</button>'
   +'<button class="devo-btn devo-pptbtn" id="devoPptBtn">📊 PPT</button>'
   +'<input type="file" id="devoFile" accept=".xlsx,.xls" style="display:none"/>'
   +'</div>';
- h+='<div class="devo-tabs" id="devoTabs">'+DEVO_ITEMS.map(it=>`<button class="devo-tab" data-tab="${it.id}" style="--tc:${it.c};--tt:${it.tx}">${it.t}</button>`).join('')+'</div>';
+ h+='<div class="devo-tabs" id="devoTabs">'+DEVO_ITEMS.map(it=>`<button class="devo-tab" data-tab="${it.id}" style="--tc:${it.c};--tt:${it.tx}">${it.t}</button>`).join('')+'<button class="devo-graficos-btn" id="devoGraficosBtn" title="Ver gr\u00e1ficos por mes y por semana"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>GR\u00c1FICOS</button>'+'</div>';
  h+='<div id="devoPane"></div>';
  return h;
 }
@@ -1713,6 +1726,7 @@ function devoWire(){
  const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
  const bC=document.getElementById('devoGraficar');if(bC)bC.addEventListener('click',devoOpenGraficar);
+ const bG2=document.getElementById('devoGraficosBtn');if(bG2)bG2.addEventListener('click',function(){devoOpenGraficos2(DEVO_ACTIVE);});
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
  const bR=document.getElementById('devoReporteBtn');if(bR)bR.addEventListener('click',devoOpenReporte);
  const bP=document.getElementById('devoPptBtn');if(bP)bP.addEventListener('click',devoOpenPPT);
@@ -2001,6 +2015,81 @@ function devoOpenGraficar(){
   if(ok&&fbDB){fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){devoGraphLoaded(snap.val()||DEVO_DATA);}).catch(function(){devoGraphLoaded(DEVO_DATA);});}
   else{devoEnsure();devoGraphLoaded(DEVO_DATA);}
  });
+}
+/* ===== GRAFICOS (por MES y por SEMANA del año) de una planilla ===== */
+var DEVO_G2_CH=[];
+var DEVO_MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function devoISOWeek(iso){var p=iso.split('-');var dt=new Date(Date.UTC(+p[0],+p[1]-1,+p[2]));var dn=(dt.getUTCDay()+6)%7;dt.setUTCDate(dt.getUTCDate()-dn+3);var ft=new Date(Date.UTC(dt.getUTCFullYear(),0,4));var fn=(ft.getUTCDay()+6)%7;ft.setUTCDate(ft.getUTCDate()-fn+3);var wk=1+Math.round((dt-ft)/(7*864e5));return {y:dt.getUTCFullYear(),w:wk};}
+function devoBul(x){var b=parseFloat(String(x==null?'':x).replace(/\./g,'').replace(/,/g,'.'));return isNaN(b)?0:b;}
+function devoG2Agg(d){
+ var mes={},mesO=[],sem={},semO=[],uni={},uniO=[],com={},comO=[],dst={},dstO=[],obs={},obsO=[],sinFecha=0,totReg=0;
+ (d&&d.rows||[]).forEach(function(r){
+  if(!r)return;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!has)return;totReg++;
+  var val=devoNum(r[DEVO_VALCOL]);if(val==null)val=0;var bul=devoBul(r[DEVO_BULCOL]);
+  var iso=devoParseFecha(r[0]);
+  if(iso){var mk=iso.slice(0,7);if(!mes[mk]){mes[mk]={r:0,v:0,b:0};mesO.push(mk);}mes[mk].r++;mes[mk].v+=val;mes[mk].b+=bul;
+   var wi=devoISOWeek(iso);var wk=wi.y+'-'+String(wi.w).padStart(2,'0');if(!sem[wk]){sem[wk]={r:0,v:0,b:0,w:wi.w,y:wi.y};semO.push(wk);}sem[wk].r++;sem[wk].v+=val;sem[wk].b+=bul;}
+  else sinFecha++;
+  var un=(r[DEVO_UNCOL]!=null&&String(r[DEVO_UNCOL]).trim()!=='')?String(r[DEVO_UNCOL]).trim():'(Sin unidad)';if(!uni[un]){uni[un]={r:0,v:0,b:0};uniO.push(un);}uni[un].r++;uni[un].v+=val;uni[un].b+=bul;
+  var cm=(r[DEVO_COMCOL]!=null&&String(r[DEVO_COMCOL]).trim()!=='')?String(r[DEVO_COMCOL]).trim():'(Sin comuna)';if(!com[cm]){com[cm]={r:0,v:0,b:0};comO.push(cm);}com[cm].r++;com[cm].v+=val;com[cm].b+=bul;
+  var de=(r[DEVO_DESTCOL]!=null&&String(r[DEVO_DESTCOL]).trim()!=='')?String(r[DEVO_DESTCOL]).trim():'(Sin destinatario)';if(!dst[de]){dst[de]={r:0,v:0,b:0};dstO.push(de);}dst[de].r++;dst[de].v+=val;dst[de].b+=bul;
+  var ob=(r[8]!=null&&String(r[8]).trim()!=='')?String(r[8]).trim():'(Sin observación)';if(!obs[ob]){obs[ob]={r:0};obsO.push(ob);}obs[ob].r++;
+ });
+ mesO.sort();semO.sort();
+ return {mes:mes,mesO:mesO,sem:sem,semO:semO,uni:uni,uniO:uniO,com:com,comO:comO,dst:dst,dstO:dstO,obs:obs,obsO:obsO,sinFecha:sinFecha,totReg:totReg};
+}
+function devoTopN(obj,order,metric,n){var a=order.slice().sort(function(x,y){return obj[y][metric]-obj[x][metric];});return a.slice(0,n);}
+function devoOpenGraficos2(id){
+ devoEnsureRepCSS();var ov=document.getElementById('devoG2Ov');
+ if(!ov){ov=document.createElement('div');ov.id='devoG2Ov';ov.className='devo-ov2';
+  ov.innerHTML='<div class="devo-ov2-card"><div class="devo-ov2-head"><div class="devo-g2-sel"><span class="devo-ov2-h">\ud83d\udcca Gr\u00e1ficos</span><select id="devoG2Sel"></select></div><button class="devo-ov2-x" id="devoG2X">\u2715</button></div><div class="devo-ov2-body" id="devoG2Body"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
+  document.getElementById('devoG2X').addEventListener('click',function(){ov.style.display='none';});
+  document.getElementById('devoG2Sel').addEventListener('change',function(){devoG2Load(this.value);});
+  window.addEventListener('resize',function(){if(ov.style.display!=='none')DEVO_G2_CH.forEach(function(c){try{c.resize();}catch(e){}});});}
+ var sel=document.getElementById('devoG2Sel');sel.innerHTML=DEVO_ITEMS.map(function(it){return '<option value="'+it.id+'"'+(it.id===id?' selected':'')+'>'+devoEsc(it.t)+'</option>';}).join('');
+ ov.style.display='flex';devoG2Load(id);
+}
+function devoG2Load(id){
+ var body=document.getElementById('devoG2Body');if(!body)return;body.innerHTML='<div class="devo-daynote">Consultando la nube\u2026</div>';
+ devoEnsureCloud(function(ok){
+  if(ok&&fbDB){fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){var v=snap.val()||DEVO_DATA;devoG2Render(id,(v&&v[id])?v[id]:{rows:[]});}).catch(function(){devoEnsure();devoG2Render(id,DEVO_DATA[id]||{rows:[]});});}
+  else{devoEnsure();devoG2Render(id,DEVO_DATA[id]||{rows:[]});}
+ });
+}
+function devoG2Render(id,d){
+ try{DEVO_G2_CH.forEach(function(c){try{c.dispose();}catch(e){}});}catch(e){}DEVO_G2_CH=[];
+ var it=DEVO_ITEMS.find(function(x){return x.id===id;})||DEVO_ITEMS[0];var col=it.c;
+ var body=document.getElementById('devoG2Body');if(!body)return;
+ var a=devoG2Agg(d);
+ if(!a.totReg){body.innerHTML='<div class="devo-g2-empty">La planilla <b>'+devoEsc(it.t)+'</b> no tiene datos para graficar.</div>';return;}
+ var cards=[
+  ['m_reg','Devoluciones por Mes'],['m_val','Valor por Mes'],['m_bul','Bultos por Mes'],
+  ['s_reg','Devoluciones por Semana del A\u00f1o'],['s_val','Valor por Semana del A\u00f1o'],['s_bul','Bultos por Semana del A\u00f1o'],
+  ['uni','Devoluciones por Unidad de Negocio (Valor)','wide'],['com','Top 10 Comunas (Devoluciones)'],['dst','Top 10 Destinatarios (Valor)'],['obs','Motivos / Observaciones']
+ ];
+ body.innerHTML='<div class="devo-g2-note" style="color:#5a6672;font-size:13px;margin-bottom:12px">Planilla <b style="color:'+col+'">'+devoEsc(it.t)+'</b> \u00b7 '+a.totReg+' devoluciones'+(a.sinFecha?(' \u00b7 '+a.sinFecha+' sin fecha (no entran en mes/semana)'):'')+'. Semana seg\u00fan calendario ISO (la semana que cruza el a\u00f1o cuenta como Semana 1).</div><div class="devo-g2-grid">'+cards.map(function(c){return '<div class="devo-g2-card'+(c[2]?' wide':'')+'"><div class="devo-g2-h" style="border-left-color:'+col+'">'+c[1]+'</div><div class="devo-g2-c" id="devoG2_'+c[0]+'"></div></div>';}).join('')+'</div>';
+ function mk(cid,opt){var el=document.getElementById('devoG2_'+cid);if(!el)return;var ins=echarts.init(el,null,{renderer:'canvas'});DEVO_G2_CH.push(ins);ins.setOption(opt,true);}
+ var vfmt=function(v){return v>=1e6?(Math.round(v/1e5)/10)+'M':(v>=1e3?(Math.round(v/100)/10)+'K':v);};
+ var axV={type:'value',axisLabel:{fontSize:9,formatter:vfmt}};
+ var mesLab=a.mesO.map(function(k){var p=k.split('-');return DEVO_MESES[(+p[1])-1]+' '+p[0].slice(2);});
+ var semLab=a.semO.map(function(k){return 'S'+a.sem[k].w;});
+ mk('m_reg',{tooltip:{trigger:'axis'},grid:{left:6,right:10,top:14,bottom:24,containLabel:true},xAxis:{type:'category',data:mesLab,axisLabel:{fontSize:10}},yAxis:{type:'value',axisLabel:{fontSize:9}},series:[{type:'bar',data:a.mesO.map(function(k){return a.mes[k].r;}),itemStyle:{color:col,borderRadius:[4,4,0,0]},label:{show:true,position:'top',fontSize:9}}]});
+ mk('m_val',{tooltip:{trigger:'axis',valueFormatter:function(v){return devoFmtVal(v);}},grid:{left:6,right:10,top:14,bottom:24,containLabel:true},xAxis:{type:'category',data:mesLab,axisLabel:{fontSize:10}},yAxis:axV,series:[{type:'bar',data:a.mesO.map(function(k){return a.mes[k].v;}),itemStyle:{color:'#1e8449',borderRadius:[4,4,0,0]}}]});
+ mk('m_bul',{tooltip:{trigger:'axis'},grid:{left:6,right:10,top:14,bottom:24,containLabel:true},xAxis:{type:'category',data:mesLab,axisLabel:{fontSize:10}},yAxis:{type:'value',axisLabel:{fontSize:9}},series:[{type:'bar',data:a.mesO.map(function(k){return a.mes[k].b;}),itemStyle:{color:'#f39c12',borderRadius:[4,4,0,0]}}]});
+ mk('s_reg',{tooltip:{trigger:'axis'},grid:{left:6,right:10,top:14,bottom:24,containLabel:true},xAxis:{type:'category',data:semLab,axisLabel:{fontSize:9,rotate:semLab.length>12?40:0}},yAxis:{type:'value',axisLabel:{fontSize:9}},series:[{type:'line',smooth:true,data:a.semO.map(function(k){return a.sem[k].r;}),itemStyle:{color:col},areaStyle:{opacity:.12}}]});
+ mk('s_val',{tooltip:{trigger:'axis',valueFormatter:function(v){return devoFmtVal(v);}},grid:{left:6,right:10,top:14,bottom:24,containLabel:true},xAxis:{type:'category',data:semLab,axisLabel:{fontSize:9,rotate:semLab.length>12?40:0}},yAxis:axV,series:[{type:'line',smooth:true,data:a.semO.map(function(k){return a.sem[k].v;}),itemStyle:{color:'#1e8449'},areaStyle:{opacity:.12}}]});
+ mk('s_bul',{tooltip:{trigger:'axis'},grid:{left:6,right:10,top:14,bottom:24,containLabel:true},xAxis:{type:'category',data:semLab,axisLabel:{fontSize:9,rotate:semLab.length>12?40:0}},yAxis:{type:'value',axisLabel:{fontSize:9}},series:[{type:'line',smooth:true,data:a.semO.map(function(k){return a.sem[k].b;}),itemStyle:{color:'#f39c12'},areaStyle:{opacity:.12}}]});
+ var uT=devoTopN(a.uni,a.uniO,'v',12);
+ mk('uni',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'},valueFormatter:function(v){return devoFmtVal(v);}},grid:{left:6,right:16,top:10,bottom:6,containLabel:true},xAxis:axV,yAxis:{type:'category',data:uT.map(function(k){return k;}).reverse(),axisLabel:{fontSize:10}},series:[{type:'bar',data:uT.map(function(k){return a.uni[k].v;}).reverse(),itemStyle:{color:'#0f3a59',borderRadius:[0,4,4,0]}}]});
+ var cT=devoTopN(a.com,a.comO,'r',10);
+ mk('com',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:6,right:16,top:10,bottom:6,containLabel:true},xAxis:{type:'value',axisLabel:{fontSize:9}},yAxis:{type:'category',data:cT.reverse(),axisLabel:{fontSize:10}},series:[{type:'bar',data:cT.map(function(k){return a.com[k].r;}),itemStyle:{color:'#7b1e3a',borderRadius:[0,4,4,0]}}]});
+ var dT=devoTopN(a.dst,a.dstO,'v',10);
+ mk('dst',{tooltip:{trigger:'axis',axisPointer:{type:'shadow'},valueFormatter:function(v){return devoFmtVal(v);}},grid:{left:6,right:16,top:10,bottom:6,containLabel:true},xAxis:axV,yAxis:{type:'category',data:dT.slice().reverse(),axisLabel:{fontSize:9}},series:[{type:'bar',data:dT.map(function(k){return a.dst[k].v;}).reverse(),itemStyle:{color:'#0d9488',borderRadius:[0,4,4,0]}}]});
+ var oT=devoTopN(a.obs,a.obsO,'r',8);
+ mk('obs',{tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},legend:{type:'scroll',bottom:0,textStyle:{fontSize:9}},series:[{type:'pie',radius:['38%','66%'],center:['50%','44%'],data:oT.map(function(k){return {name:k,value:a.obs[k].r};}),label:{fontSize:9}}]});
+ setTimeout(function(){DEVO_G2_CH.forEach(function(c){try{c.resize();}catch(e){}});},90);
 }
 function devoBuildModals(){
  if(document.getElementById('devoPickOv'))return;
