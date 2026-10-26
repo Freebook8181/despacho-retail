@@ -1916,7 +1916,18 @@ function reportImg(id){
   try{
     // clonar labels y datasets para NO reutilizar el config ya ligado al gráfico vivo (evita que salga en blanco/roto)
     const data2={labels:(cfg.data.labels||[]).slice(),datasets:(cfg.data.datasets||[]).map(ds=>Object.assign({},ds,{data:(ds.data||[]).slice()}))};
-    const rc={type:cfg.type,data:data2,options:Object.assign({},cfg.options||{},{animation:false,responsive:false,maintainAspectRatio:false,devicePixelRatio:2})};
+    // Agrandar los números (datalabels), ejes y leyenda SÓLO en la imagen del reporte, para que se vean grandes.
+    const _src=cfg.options||{};
+    const o=Object.assign({},_src,{animation:false,responsive:false,maintainAspectRatio:false,devicePixelRatio:2});
+    o.plugins=Object.assign({},_src.plugins||{});
+    const _dl=Object.assign({},o.plugins.datalabels||{});
+    _dl.font=Object.assign({},_dl.font||{},{weight:'800',size:(((_dl.font&&_dl.font.size)||13)+7)});
+    o.plugins.datalabels=_dl;
+    const _lg=Object.assign({},o.plugins.legend||{});
+    _lg.labels=Object.assign({},_lg.labels||{},{font:{size:15,weight:'700'}});
+    o.plugins.legend=_lg;
+    if(_src.scales){const _sc={};Object.keys(_src.scales).forEach(k=>{const ax=Object.assign({},_src.scales[k]);ax.ticks=Object.assign({},ax.ticks||{},{font:{size:14,weight:'600'}});_sc[k]=ax;});o.scales=_sc;}
+    const rc={type:cfg.type,data:data2,options:o};
     const c=new Chart(cv,rc);
     c.update('none');
     c.draw();
@@ -2285,7 +2296,7 @@ function exportarPDF(host){
     } else blocks.push(ch);
   });
   const opt={scale:2,backgroundColor:'#ffffff',useCORS:true};
-  const GAP=3, usable=ph-2*M, MAXP=5;
+  const GAP=3, usable=ph-2*M;
   (async()=>{
     // 1) Pre-renderizar cada bloque una sola vez y medir su alto natural a ancho de columna completo
     const items=[];
@@ -2293,37 +2304,32 @@ function exportarPDF(host){
       if(!b.offsetWidth&&!b.offsetHeight) continue;
       const canvas=await html2canvas(b,opt);
       const hFull=cw*canvas.height/canvas.width;   // alto en mm si se dibuja a todo el ancho
-      items.push({canvas,hFull,ratio:canvas.height/canvas.width});
+      const isCard=!!(b.classList&&b.classList.contains('rcard'));
+      items.push({canvas,hFull,ratio:canvas.height/canvas.width,isCard});
     }
-    // 2) Contar cuántas páginas ocupa el reporte con un factor de escala s
-    const countPages=s=>{
-      let y=M,pages=1;
-      for(const it of items){
-        let h=Math.min(it.hFull*s,usable);
-        if(y+h>ph-M){ pages++; y=M; }
+    // 2) Dibujar: las TARJETAS DE GRÁFICO van de a 2 POR HOJA; los demás bloques fluyen normal.
+    const cardMaxH=(usable-GAP)/2;   // alto máximo para que entren 2 tarjetas por hoja
+    let y=M, cardsOnPage=0;
+    for(const it of items){
+      if(it.isCard){
+        let h=Math.min(it.hFull,cardMaxH);
+        let w=cw*(h/it.hFull);       // mantener proporción
+        if(cardsOnPage>=2 || y+h>ph-M){ pdf.addPage(); y=M; cardsOnPage=0; }
+        const x=M+(cw-w)/2;
+        pdf.addImage(it.canvas.toDataURL('image/jpeg',0.95),'JPEG',x,y,w,h);
+        y+=h+GAP; cardsOnPage++;
+      } else {
+        let w=cw, h=it.hFull;
+        if(h>usable){ h=usable; w=h/it.ratio; }
+        if(y+h>ph-M){ pdf.addPage(); y=M; }
+        cardsOnPage=0;              // un bloque ancho corta la fila de tarjetas
+        const x=M+(cw-w)/2;
+        pdf.addImage(it.canvas.toDataURL('image/jpeg',0.95),'JPEG',x,y,w,h);
         y+=h+GAP;
       }
-      return pages;
-    };
-    // 3) Búsqueda binaria del mayor factor s que garantice ≤5 páginas
-    let s=1;
-    if(countPages(1)>MAXP){
-      let lo=0.40,hi=1;
-      for(let i=0;i<24;i++){ const mid=(lo+hi)/2; if(countPages(mid)<=MAXP){lo=mid;}else{hi=mid;} }
-      s=lo;
-    }
-    // 4) Dibujar con el factor encontrado, centrado y sin cortar bloques
-    let y=M;
-    for(const it of items){
-      let w=cw*s, h=it.hFull*s;
-      if(h>usable){ h=usable; w=h/it.ratio; }
-      if(y+h>ph-M){ pdf.addPage(); y=M; }
-      const x=M+(cw-w)/2;
-      pdf.addImage(it.canvas.toDataURL('image/jpeg',0.95),'JPEG',x,y,w,h);
-      y+=h+GAP;
     }
     pdf.save('Reporte_COMEX_QD_'+new Date().toISOString().slice(0,10)+'.pdf');
-    logAct('reporte','Exportó el reporte a PDF (carta, ≤5 págs)');
+    logAct('reporte','Exportó el reporte a PDF (carta, 2 gráficos por hoja)');
   })().catch(e=>{alert('Error al exportar PDF: '+(e&&e.message||e));});
 }
 /* ===== Sugerencias IA (solo analista) ===== */
