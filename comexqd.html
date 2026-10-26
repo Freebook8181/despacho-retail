@@ -2226,14 +2226,6 @@ function buildReportHTML(){
     const card=(n,ti,id,an)=>'<section class="rcard"><div class="rc-h"><span class="rc-n">'+n+'</span><h3>'+ti+'</h3></div><div class="rc-body"><div class="rimg" data-chart="'+id+'"><div class="imgpend">⏳ Generando gráfico…</div></div><div class="rc-an"><div class="rc-an-t">Análisis e interpretación</div>'+an+'</div></div></section>';
     const html=`<div class="report" id="reportDoc">
       <div class="rhead"><h1>Reporte de Control de Importaciones — COMEX QD</h1><div class="meta">Generado el ${new Date().toLocaleString('es-CL')} por ${esc(CURRENT.name)} · Quintec · Suite Logística</div></div>
-      <div class="rk">
-        <div class="b"><div class="l">PO activas</div><div class="v">${nPO}</div></div>
-        <div class="b"><div class="l">USD total</div><div class="v">${fmtMoney(tu)}</div></div>
-        <div class="b"><div class="l">Unidades</div><div class="v">${fmtUnid(totUnid())}</div></div>
-        <div class="b"><div class="l">Ticket prom.</div><div class="v">${fmtMoney(totUnid()?tu/totUnid():0)}</div></div>
-        <div class="b"><div class="l">Lead time prom.</div><div class="v">${avgTiempo()} d</div></div>
-        <div class="b"><div class="l">Atrasadas</div><div class="v">${atr}</div></div>
-      </div>
       ${buildExecInfografia()}
       ${card(1,'Valor importado por zona de origen','cZona', (z[0]?'<p>La zona <b>'+z[0][0]+'</b> concentra <b>'+fmtMoney(z[0][1])+'</b> ('+pct(z[0][1],tu)+'% del valor importado)'+(z[1]?', seguida de <b>'+z[1][0]+'</b> con '+fmtMoney(z[1][1])+' ('+pct(z[1][1],tu)+'%)':'')+'.</p>':'<p>Aún no hay valor importado por zona cargado en la planilla.</p>')+'<p>Una concentración elevada en una sola zona expone al negocio a riesgo cambiario, arancelario, de congestión portuaria y de variación de fletes en un único corredor.'+(z[0]&&tu&&z[0][1]/tu>0.5?' La dependencia actual de <b>'+z[0][0]+'</b> es alta: conviene evaluar un doble origen o estrategias de nearshoring.':' La distribución geográfica se mantiene razonablemente diversificada.')+'</p>')}
       ${card(2,'Unidades importadas por zona','cUnid', '<p>Se importaron <b>'+fmtUnid(totUnid())+' unidades</b> en total.'+(u[0]?' El mayor volumen proviene de <b>'+u[0][0]+'</b> con <b>'+fmtUnid(u[0][1])+' u</b> ('+pct(u[0][1],totUnid())+'%).':'')+'</p><p>Comparar este gráfico de volumen con el de valor (USD) revela dónde el precio por unidad es más alto: una zona con mucho USD pero pocas unidades indica mercadería de alto valor unitario, mientras que mucho volumen con bajo USD corresponde a productos tipo commodity.</p>')}
