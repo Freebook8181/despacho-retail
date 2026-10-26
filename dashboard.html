@@ -153,6 +153,8 @@ select:focus{border-color:var(--navy)}
 .devo-tbl td.devo-inpcell{padding:0}
 .devo-inp{width:100%;min-width:120px;border:0;background:transparent;font:inherit;color:inherit;padding:5px 7px;outline:none;box-sizing:border-box}
 .devo-inp:focus{background:#eef5ff;outline:2px solid #2563eb}
+.devo-tbl tr.devo-row-dup td{background:#FFC7CE}
+.devo-tbl tr.devo-row-dup .devo-inp{color:#9C0006}
 .devo-foot{display:flex;flex-wrap:wrap;gap:30px;padding:12px 16px;border-top:1px solid #e3e8ef;font-size:13px;color:#1f2a37}
 .devo-ce{display:inline-block;min-width:160px;border-bottom:1px solid #9aa6b2;padding:1px 4px}
 .devo-ce:focus{outline:none;background:#eef5ff}
@@ -1666,15 +1668,17 @@ function devoRenderItem(it){
  const tb=document.getElementById('devob_'+it.id);if(!tb)return;
  const d=DEVO_DATA[it.id];if(!d)return;let h='';
  const N=Math.max(DEVO_ROWS,d.rows.length);
+ const dupC=devoDocCountsGlobal();
  for(let r=0;r<N;r++){
-  h+=`<tr><td class="devo-num">${r+1}</td>`;
+  const isdup=devoIsDupDoc(dupC,d.rows[r]);
+  h+=`<tr${isdup?' class="devo-row-dup"':''}><td class="devo-num">${r+1}</td>`;
   for(let c=0;c<DEVO_COLS.length;c++){
    let val=devoEsc(d.rows[r][c]);
    if(c===0){h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${val}</td>`;}
    else if(c===DEVO_VALCOL){h+=`<td class="devo-cell devo-valcell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
-   else if(c===DEVO_UNCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp" list="devoUNList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}" placeholder="Unidad Negocio"></td>`;}
-   else if(c===DEVO_DESTCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-dest" list="devoTiendaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}" placeholder="Tienda / Destinatario"></td>`;}
-   else if(c===DEVO_COMCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-comuna" list="devoComunaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}" placeholder="Comuna"></td>`;}
+   else if(c===DEVO_UNCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp" list="devoUNList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
+   else if(c===DEVO_DESTCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-dest" list="devoTiendaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
+   else if(c===DEVO_COMCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-comuna" list="devoComunaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
    else{h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
   }
   h+='</tr>';
@@ -1828,9 +1832,24 @@ var DEVO_REP_CSS=".devo-ov2{position:fixed;inset:0;background:rgba(15,25,40,.6);
 +".devo-gr-h{font-size:14px;font-weight:800;padding-left:8px;margin-bottom:6px}"
 +".devo-gr-c{width:100%;height:240px}"
 +".devo-gr-empty{color:#999;font-size:13px;display:flex;align-items:center;justify-content:center;height:100%}"
++".devo-rep-dup td{background:#FFC7CE !important;color:#9C0006}"
++".devo-sl-dup td{background:#FFC7CE !important;color:#9C0006}"
++".devo-bar{background:#eef1f5;border-radius:4px;height:14px;width:100%;overflow:hidden}.devo-bar span{display:block;height:100%;background:#0F3A59;border-radius:4px}"
++".devo-analysis{background:#f4f8fb;border:1px solid #d8e2ec;border-left:5px solid #0F3A59;border-radius:8px;padding:10px 14px;margin-top:6px}"
++".devo-analysis h3{margin:0 0 6px;font-size:15px;color:#0F3A59}.devo-analysis ul{margin:0;padding-left:18px}.devo-analysis li{font-size:13px;color:#33475b;margin-bottom:5px;line-height:1.45}"
++".devo-sl-an{font-size:15px;color:#33475b;line-height:1.5;padding-left:20px}.devo-sl-an li{margin-bottom:10px}"
++".devo-grtog{background:#607d8b}.devo-grtog.on{background:#0F3A59}"
 +"@media(max-width:760px){.devo-gr-grid{grid-template-columns:1fr}}";
 function devoEnsureRepCSS(){if(document.getElementById('devoRepCss'))return;var s=document.createElement('style');s.id='devoRepCss';s.textContent=DEVO_REP_CSS;document.head.appendChild(s);}
 function devoReportRows(id){var d=DEVO_DATA[id]||{rows:[]};var out=[];(d.rows||[]).forEach(function(r,idx){var full=(r||[]).some(function(c){return (c||'').toString().trim()!=='';});if(full)out.push({n:idx+1,r:r});});return out;}
+/* --- Documentos duplicados (mismo número de pedido) --- */
+function devoDocCounts(list){var c={};(list||[]).forEach(function(r){if(!r)return;var k=(r[1]==null?'':String(r[1]).trim());if(k)c[k]=(c[k]||0)+1;});return c;}
+function devoDocCountsGlobal(){try{devoEnsure();}catch(e){}var c={};DEVO_ITEMS.forEach(function(it){var d=DEVO_DATA[it.id]||{rows:[]};(d.rows||[]).forEach(function(r){if(!r)return;var k=(r[1]==null?'':String(r[1]).trim());if(k)c[k]=(c[k]||0)+1;});});return c;}
+function devoIsDupDoc(counts,r){if(!r)return false;var k=(r[1]==null?'':String(r[1]).trim());return k!==''&&counts[k]>1;}
+/* --- Agregado por Unidad de Negocio (todas las planillas) --- */
+function devoUnegStats(){try{devoEnsure();}catch(e){}var map={},order=[];DEVO_ITEMS.forEach(function(it){var d=DEVO_DATA[it.id]||{rows:[]};(d.rows||[]).forEach(function(r){if(!r)return;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!has)return;var un=(r[DEVO_UNCOL]!=null&&String(r[DEVO_UNCOL]).trim()!=='')?String(r[DEVO_UNCOL]).trim():'(Sin unidad)';var val=devoNum(r[DEVO_VALCOL]);if(val==null)val=0;var bul=parseFloat(String(r[DEVO_BULCOL]==null?'':r[DEVO_BULCOL]).replace(/\./g,'').replace(/,/g,'.'));if(isNaN(bul))bul=0;if(!map[un]){map[un]={reg:0,val:0,bul:0};order.push(un);}map[un].reg++;map[un].val+=val;map[un].bul+=bul;});});var arr=order.map(function(k){return {un:k,reg:map[k].reg,val:map[k].val,bul:map[k].bul};});arr.sort(function(a,b){return b.val-a.val;});return arr;}
+function devoBuildAnalysis(un,st,totVal){var out=[];var totReg=(st&&st.totReg)||0;out.push('En el período se registraron '+fi(totReg)+' devoluciones por un valor total de '+(devoFmtVal(totVal)||'$0')+' y '+fi(Math.round((st&&st.totBul)||0))+' bultos.');if(un&&un.length){var top=un[0];var pct=totVal>0?(top.val/totVal*100):0;out.push('La unidad de negocio con mayor valor de devoluciones es '+top.un+', que concentra '+(devoFmtVal(top.val)||'$0')+' ('+pct.toFixed(1)+'% del total) en '+fi(top.reg)+' registro(s).');if(un.length>1){var seg=un[1];out.push('Le sigue '+seg.un+' con '+(devoFmtVal(seg.val)||'$0')+' en '+fi(seg.reg)+' registro(s).');}var t3=0;un.slice(0,3).forEach(function(x){t3+=x.val;});var p3=totVal>0?(t3/totVal*100):0;out.push('Las 3 principales unidades representan el '+p3.toFixed(1)+'% del valor total, lo que '+(p3>=70?'evidencia una fuerte concentración de las devoluciones':'muestra una distribución relativamente repartida entre unidades')+'.');}if(st&&st.items&&st.items.length){var mx=st.items.slice().sort(function(a,b){return b.reg-a.reg;})[0];if(mx&&mx.reg>0)out.push('Por tipo de devolución, '+mx.label+' acumula la mayor cantidad de registros ('+fi(mx.reg)+').');}return out;}
+function devoUnegSectionHTML(un,st,totVal){var h='<div class="devo-rep-sec"><h2 style="border-left:6px solid #0F3A59;color:#0F3A59">Detalle por Unidad de Negocio</h2>';if(!un||!un.length){h+='<p class="devo-rep-empty">Sin datos por unidad de negocio.</p>';}else{var maxv=Math.max.apply(null,un.map(function(x){return x.val;}).concat([1]));h+='<table class="devo-rep-tab"><thead><tr><th>Unidad de Negocio</th><th>Registros</th><th>Bultos</th><th>Valor</th><th style="width:30%">Distribución</th></tr></thead><tbody>';un.forEach(function(x){var w=maxv>0?Math.round(x.val/maxv*100):0;h+='<tr><td>'+devoEsc(x.un)+'</td><td>'+fi(x.reg)+'</td><td>'+fi(Math.round(x.bul))+'</td><td class="num">'+(devoFmtVal(x.val)||'$0')+'</td><td><div class="devo-bar"><span style="width:'+w+'%"></span></div></td></tr>';});h+='</tbody></table>';}var an=devoBuildAnalysis(un,st,totVal);h+='<div class="devo-analysis"><h3>Análisis de los gráficos</h3><ul>'+an.map(function(t){return '<li>'+devoEsc(t)+'</li>';}).join('')+'</ul></div>';h+='</div>';return h;}
 function devoReportHTML(){
  devoEnsure();var st=devoStats();var mes=(typeof modMesLbl==='function')?modMesLbl():'';
  var totVal=0;DEVO_ITEMS.forEach(function(it){totVal+=devoItemTotal(it.id);});
@@ -1839,11 +1858,13 @@ function devoReportHTML(){
  h+='<table class="devo-rep-sumtab"><thead><tr><th>Tipo</th><th>Registros</th><th>Bultos</th><th>Valor</th></tr></thead><tbody>';
  st.items.forEach(function(s){h+='<tr><td><span class="devo-rep-dot" style="background:'+s.hex+'"></span>'+devoEsc(s.label)+'</td><td>'+fi(s.reg)+'</td><td>'+fi(Math.round(s.bul))+'</td><td>'+(devoFmtVal(devoItemTotal(s.id))||'$0')+'</td></tr>';});
  h+='</tbody></table>';
- DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);
+ h+=devoUnegSectionHTML(devoUnegStats(),st,totVal);
+ var dupG=devoDocCountsGlobal();
+ DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);var dupC=dupG;
   h+='<div class="devo-rep-sec"><h2 style="border-left:6px solid '+it.c+';color:'+it.c+'">'+devoEsc(it.t)+'</h2>';
   if(!rows.length){h+='<p class="devo-rep-empty">Sin registros.</p>';}
   else{h+='<table class="devo-rep-tab"><thead><tr><th>N\u00b0</th>';DEVO_COLS.forEach(function(c){h+='<th>'+devoEsc(c)+'</th>';});h+='</tr></thead><tbody>';
-   rows.forEach(function(o){h+='<tr><td>'+o.n+'</td>';for(var c=0;c<DEVO_COLS.length;c++){h+='<td'+(c===DEVO_VALCOL?' class="num"':'')+'>'+devoEsc(o.r[c])+'</td>';}h+='</tr>';});
+   rows.forEach(function(o){var dd=devoIsDupDoc(dupC,o.r);h+='<tr'+(dd?' class="devo-rep-dup"':'')+'><td>'+o.n+'</td>';for(var c=0;c<DEVO_COLS.length;c++){h+='<td'+(c===DEVO_VALCOL?' class="num"':'')+'>'+devoEsc(o.r[c])+'</td>';}h+='</tr>';});
    h+='<tr class="devo-rep-tot"><td colspan="'+(DEVO_VALCOL+1)+'">TOTAL</td><td class="num">'+(devoFmtVal(devoItemTotal(it.id))||'$0')+'</td><td colspan="'+(DEVO_COLS.length-DEVO_VALCOL-1)+'"></td></tr></tbody></table>';}
   h+='</div>';});
  return h+'</div>';
@@ -1863,11 +1884,17 @@ function devoPptSlidesHTML(){
  devoEnsure();var st=devoStats();var mes=(typeof modMesLbl==='function')?modMesLbl():'';
  var totVal=0;DEVO_ITEMS.forEach(function(it){totVal+=devoItemTotal(it.id);});
  var h='<div class="devo-slide"><div class="devo-sl-cover"><h1>Devoluciones</h1><p>'+(mes?devoEsc(mes):'Control por tipo de devoluci\u00f3n')+'</p><div class="devo-sl-k"><div><b>'+fi(st.totReg)+'</b><span>Registros</span></div><div><b>'+fi(Math.round(st.totBul))+'</b><span>Bultos</span></div><div><b>'+(devoFmtVal(totVal)||'$0')+'</b><span>Valor</span></div></div></div></div>';
- DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);var s=st.items.filter(function(x){return x.id===it.id;})[0]||{reg:0,bul:0};
+ var un=devoUnegStats();
+ h+='<div class="devo-slide"><div class="devo-sl-head" style="background:#0f3a59;color:#fff">Detalle por Unidad de Negocio</div><div class="devo-sl-body">';
+ if(un.length){var maxv=Math.max.apply(null,un.map(function(x){return x.val;}).concat([1]));h+='<table class="devo-sl-tab"><thead><tr><th>Unidad de Negocio</th><th>Registros</th><th>Bultos</th><th>Valor</th><th style="width:28%">Distribuci\u00f3n</th></tr></thead><tbody>';un.forEach(function(x){var w=maxv>0?Math.round(x.val/maxv*100):0;h+='<tr><td>'+devoEsc(x.un)+'</td><td>'+fi(x.reg)+'</td><td>'+fi(Math.round(x.bul))+'</td><td style="text-align:right">'+(devoFmtVal(x.val)||'$0')+'</td><td><div class="devo-bar"><span style="width:'+w+'%"></span></div></td></tr>';});h+='</tbody></table>';}else{h+='<p class="devo-sl-empty">Sin datos por unidad de negocio.</p>';}
+ h+='</div></div>';
+ var an=devoBuildAnalysis(un,st,totVal);
+ h+='<div class="devo-slide"><div class="devo-sl-head" style="background:#0f3a59;color:#fff">An\u00e1lisis de los gr\u00e1ficos</div><div class="devo-sl-body"><ul class="devo-sl-an">'+an.map(function(t){return '<li>'+devoEsc(t)+'</li>';}).join('')+'</ul></div></div>';
+ DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);var dupC=devoDocCountsGlobal();var s=st.items.filter(function(x){return x.id===it.id;})[0]||{reg:0,bul:0};
   h+='<div class="devo-slide"><div class="devo-sl-head" style="background:'+it.c+';color:'+(it.tx||'#fff')+'">'+devoEsc(it.t)+'</div><div class="devo-sl-body">';
   h+='<div class="devo-sl-stats"><span>Registros: <b>'+fi(s.reg)+'</b></span><span>Bultos: <b>'+fi(Math.round(s.bul))+'</b></span><span>Valor: <b>'+(devoFmtVal(devoItemTotal(it.id))||'$0')+'</b></span></div>';
   if(rows.length){h+='<table class="devo-sl-tab"><thead><tr><th>N\u00b0</th><th>Fecha</th><th>Documentos</th><th>Valor</th><th>Bultos</th><th>Destinatarios</th></tr></thead><tbody>';
-   rows.slice(0,10).forEach(function(o){h+='<tr><td>'+o.n+'</td><td>'+devoEsc(o.r[0])+'</td><td>'+devoEsc(o.r[1])+'</td><td>'+devoEsc(o.r[2])+'</td><td>'+devoEsc(o.r[DEVO_BULCOL])+'</td><td>'+devoEsc(o.r[4])+'</td></tr>';});
+   rows.slice(0,10).forEach(function(o){var dd=devoIsDupDoc(dupC,o.r);h+='<tr'+(dd?' class="devo-sl-dup"':'')+'><td>'+o.n+'</td><td>'+devoEsc(o.r[0])+'</td><td>'+devoEsc(o.r[1])+'</td><td>'+devoEsc(o.r[2])+'</td><td>'+devoEsc(o.r[DEVO_BULCOL])+'</td><td>'+devoEsc(o.r[4])+'</td></tr>';});
    h+='</tbody></table>';if(rows.length>10)h+='<p class="devo-sl-more">+ '+(rows.length-10)+' registros m\u00e1s (ver reporte completo)</p>';}
   else{h+='<p class="devo-sl-empty">Sin registros.</p>';}
   h+='</div></div>';});
@@ -1881,13 +1908,26 @@ function devoPptSave(){var gen=function(){try{
   s0.addText('Devoluciones',{x:0.6,y:2.2,w:12,h:1.2,fontSize:48,bold:true,color:'FFFFFF'});
   s0.addText(mes||'Control por tipo de devoluci\u00f3n',{x:0.6,y:3.4,w:12,h:0.6,fontSize:20,color:'BBD0E6'});
   s0.addText('Registros: '+fi(st.totReg)+'    Bultos: '+fi(Math.round(st.totBul))+'    Valor: '+(devoFmtVal(totVal)||'$0'),{x:0.6,y:4.5,w:12,h:0.6,fontSize:16,color:'FFFFFF'});
-  DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);var sm=st.items.filter(function(x){return x.id===it.id;})[0]||{reg:0,bul:0};
+  var un=devoUnegStats();
+  var slu=pptx.addSlide();slu.addText('Detalle por Unidad de Negocio',{x:0,y:0,w:13.33,h:0.9,fontSize:26,bold:true,color:'FFFFFF',fill:{color:'0F3A59'},valign:'middle',align:'left',margin:[0,0,0,14]});
+  if(un.length){
+   var chd=[{name:'Valor',labels:un.map(function(x){return x.un;}),values:un.map(function(x){return x.val;})}];
+   slu.addChart(pptx.ChartType.bar,chd,{x:0.4,y:1.15,w:6.3,h:5.6,barDir:'bar',showValue:false,showLegend:false,catAxisLabelFontSize:8,valAxisLabelFontSize:8,chartColors:['0F3A59']});
+   var uhead=['Unidad de Negocio','Reg.','Bultos','Valor'];
+   var ubody=un.map(function(x){return [x.un,String(x.reg),String(Math.round(x.bul)),(devoFmtVal(x.val)||'$0')];});
+   var utbl=[uhead.map(function(hh){return {text:hh,options:{bold:true,color:'FFFFFF',fill:{color:'0F3A59'}}};})].concat(ubody.map(function(rr){return rr.map(function(cc){return {text:cc};});}));
+   slu.addTable(utbl,{x:6.95,y:1.15,w:5.95,fontSize:9,border:{type:'solid',color:'D9DEE5',pt:0.5},valign:'middle'});
+  }else{slu.addText('Sin datos por unidad de negocio.',{x:0.4,y:2,w:12,h:0.5,fontSize:16,color:'888888'});}
+  var sla=pptx.addSlide();sla.addText('An\u00e1lisis de los gr\u00e1ficos',{x:0,y:0,w:13.33,h:0.9,fontSize:26,bold:true,color:'FFFFFF',fill:{color:'0F3A59'},valign:'middle',align:'left',margin:[0,0,0,14]});
+  var anTxt=devoBuildAnalysis(un,st,totVal);
+  sla.addText(anTxt.map(function(t){return {text:t,options:{bullet:{code:'2022'},breakLine:true,paraSpaceAfter:10}};}),{x:0.6,y:1.2,w:12.1,h:5.8,fontSize:15,color:'333333',valign:'top'});
+  DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);var dupC=devoDocCountsGlobal();var sm=st.items.filter(function(x){return x.id===it.id;})[0]||{reg:0,bul:0};
    var sl=pptx.addSlide();var hex=(it.c||'#16a085').replace('#','');var txhex=(it.tx||'#ffffff').replace('#','');
    sl.addText(it.t,{x:0,y:0,w:13.33,h:0.9,fontSize:26,bold:true,color:txhex,fill:{color:hex},align:'left',valign:'middle',margin:[0,0,0,14]});
    sl.addText('Registros: '+fi(sm.reg)+'     Bultos: '+fi(Math.round(sm.bul))+'     Valor: '+(devoFmtVal(devoItemTotal(it.id))||'$0'),{x:0.4,y:1.05,w:12.5,h:0.4,fontSize:13,color:'333333'});
    if(rows.length){var head=['N\u00b0','Fecha','Documentos','Valor','Bultos','Destinatarios'];
-    var body=rows.slice(0,12).map(function(o){return [String(o.n),String(o.r[0]||''),String(o.r[1]||''),String(o.r[2]||''),String(o.r[DEVO_BULCOL]||''),String(o.r[4]||'')];});
-    var tbl=[head.map(function(hh){return {text:hh,options:{bold:true,color:'FFFFFF',fill:{color:hex}}};})].concat(body.map(function(rr){return rr.map(function(cc){return {text:cc};});}));
+    var dataRows=rows.slice(0,12);
+    var tbl=[head.map(function(hh){return {text:hh,options:{bold:true,color:'FFFFFF',fill:{color:hex}}};})].concat(dataRows.map(function(o){var dd=devoIsDupDoc(dupC,o.r);var cells=[String(o.n),String(o.r[0]||''),String(o.r[1]||''),String(o.r[2]||''),String(o.r[DEVO_BULCOL]||''),String(o.r[4]||'')];return cells.map(function(cc){var opt={};if(dd){opt.fill={color:'FFC7CE'};opt.color='9C0006';}return {text:cc,options:opt};});}));
     sl.addTable(tbl,{x:0.4,y:1.6,w:12.5,fontSize:10,border:{type:'solid',color:'D9DEE5',pt:0.5},valign:'middle'});
     if(rows.length>12)sl.addText('+ '+(rows.length-12)+' registros m\u00e1s',{x:0.4,y:7.0,w:12,h:0.3,fontSize:10,italic:true,color:'888888'});}
    else{sl.addText('Sin registros.',{x:0.4,y:2.0,w:12,h:0.5,fontSize:16,color:'888888'});}});
@@ -1912,6 +1952,7 @@ function devoEnsureCloud(cb){
 }
 /* ===== GRAFICAR DEVOLUCIONES (un grafico por tipo, datos de la nube) ===== */
 var DEVO_GR_CH=[];
+var DEVO_GR_DATA=null,DEVO_GR_MODE='tipo';
 function devoGraphAgg(d){
  var map={},order=[];
  (d&&d.rows||[]).forEach(function(r){
@@ -1942,18 +1983,24 @@ function devoGraphRender(data){
  });
  setTimeout(function(){DEVO_GR_CH.forEach(function(c){try{c.resize();}catch(e){}});},80);
 }
+function devoGraphDetalleAgg(data){var map={},order=[];DEVO_ITEMS.forEach(function(it){var d=(data&&data[it.id])?data[it.id]:{rows:[]};(d.rows||[]).forEach(function(r){if(!r)return;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!has)return;var un=(r[DEVO_UNCOL]!=null&&String(r[DEVO_UNCOL]).trim()!=='')?String(r[DEVO_UNCOL]).trim():'(Sin unidad)';var val=devoNum(r[DEVO_VALCOL]);if(val==null)val=0;var bul=parseFloat(String(r[DEVO_BULCOL]==null?'':r[DEVO_BULCOL]).replace(/\./g,'').replace(/,/g,'.'));if(isNaN(bul))bul=0;if(!map[un]){map[un]={v:0,b:0,r:0};order.push(un);}map[un].v+=val;map[un].b+=bul;map[un].r++;});});order.sort(function(a,b){return map[b].v-map[a].v;});return {labels:order,vals:order.map(function(k){return map[k].v;}),buls:order.map(function(k){return map[k].b;}),regs:order.map(function(k){return map[k].r;})};}
+function devoGraphRenderDetalle(data){try{DEVO_GR_CH.forEach(function(c){try{c.dispose();}catch(e){}});}catch(e){}DEVO_GR_CH=[];var body=document.getElementById('devoGrBody');if(!body)return;var agg=devoGraphDetalleAgg(data);if(!agg.labels.length){body.innerHTML='<div class="devo-gr-empty" style="height:200px">Sin datos por unidad de negocio. Completa la columna Unidad Negocio en las planillas.</div>';return;}var h='<div class="devo-gr-h" style="color:#0f3a59;border-left:5px solid #0f3a59;margin-bottom:8px">Devoluciones por Unidad de Negocio (Valor y Bultos)</div>';h+='<div id="devoGrDet" style="width:100%;height:'+Math.max(300,agg.labels.length*34)+'px"></div>';h+='<table class="devo-rep-tab" style="margin-top:14px"><thead><tr><th>Unidad de Negocio</th><th>Registros</th><th>Bultos</th><th>Valor</th></tr></thead><tbody>';var tot={r:0,b:0,v:0};agg.labels.forEach(function(k,i){tot.r+=agg.regs[i];tot.b+=agg.buls[i];tot.v+=agg.vals[i];h+='<tr><td>'+devoEsc(k)+'</td><td>'+fi(agg.regs[i])+'</td><td>'+fi(Math.round(agg.buls[i]))+'</td><td class="num">'+(devoFmtVal(agg.vals[i])||'$0')+'</td></tr>';});h+='<tr class="devo-rep-tot"><td>TOTAL</td><td>'+fi(tot.r)+'</td><td>'+fi(Math.round(tot.b))+'</td><td class="num">'+(devoFmtVal(tot.v)||'$0')+'</td></tr>';h+='</tbody></table>';body.innerHTML=h;var el=document.getElementById('devoGrDet');var inst=echarts.init(el,null,{renderer:'canvas'});DEVO_GR_CH.push(inst);inst.setOption({tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},legend:{data:['Valor','Bultos'],top:0},grid:{left:8,right:18,top:28,bottom:8,containLabel:true},xAxis:{type:'value',axisLabel:{fontSize:9,formatter:function(v){return v>=1e6?(v/1e6)+'M':(v>=1e3?(v/1e3)+'K':v);}}},yAxis:{type:'category',data:agg.labels.slice().reverse(),axisLabel:{fontSize:9}},series:[{name:'Valor',type:'bar',data:agg.vals.slice().reverse(),itemStyle:{color:'#0f3a59'}},{name:'Bultos',type:'bar',data:agg.buls.slice().reverse(),itemStyle:{color:'#f39c12'}}]},true);setTimeout(function(){try{inst.resize();}catch(e){}},80);}
+function devoGraphShow(mode){DEVO_GR_MODE=mode;var bt=document.getElementById('devoGrTipo'),bd=document.getElementById('devoGrDetalle');if(bt)bt.classList.toggle('on',mode==='tipo');if(bd)bd.classList.toggle('on',mode==='detalle');var data=DEVO_GR_DATA||DEVO_DATA;if(mode==='detalle')devoGraphRenderDetalle(data);else devoGraphRender(data);}
+function devoGraphLoaded(data){DEVO_GR_DATA=data;devoGraphShow(DEVO_GR_MODE);}
 function devoOpenGraficar(){
  devoEnsureRepCSS();var ov=document.getElementById('devoGrOv');
  if(!ov){ov=document.createElement('div');ov.id='devoGrOv';ov.className='devo-ov2';
-  ov.innerHTML='<div class="devo-ov2-card"><div class="devo-ov2-head"><div class="devo-ov2-h">Gr\u00e1ficos de Devoluciones</div><div class="devo-ov2-btns"><button class="devo-ov2-x" id="devoGrX">\u2715</button></div></div><div class="devo-ov2-body" id="devoGrBody"></div></div>';
+  ov.innerHTML='<div class="devo-ov2-card"><div class="devo-ov2-head"><div class="devo-ov2-h">Gr\u00e1ficos de Devoluciones</div><div class="devo-ov2-btns"><button class="devo-btn devo-grtog on" id="devoGrTipo">\ud83d\udcc8 Por Tipo</button><button class="devo-btn devo-grtog" id="devoGrDetalle">\ud83c\udfe2 Ver Detalle</button><button class="devo-ov2-x" id="devoGrX">\u2715</button></div></div><div class="devo-ov2-body" id="devoGrBody"></div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
   document.getElementById('devoGrX').addEventListener('click',function(){ov.style.display='none';});
+  document.getElementById('devoGrTipo').addEventListener('click',function(){devoGraphShow('tipo');});
+  document.getElementById('devoGrDetalle').addEventListener('click',function(){devoGraphShow('detalle');});
   window.addEventListener('resize',function(){if(ov.style.display!=='none')DEVO_GR_CH.forEach(function(c){try{c.resize();}catch(e){}});});}
- var body=document.getElementById('devoGrBody');body.innerHTML='<div class="devo-daynote">Consultando la nube\u2026</div>';ov.style.display='flex';
+ var body=document.getElementById('devoGrBody');body.innerHTML='<div class="devo-daynote">Consultando la nube\u2026</div>';ov.style.display='flex';DEVO_GR_MODE='tipo';
  devoEnsureCloud(function(ok){
-  if(ok&&fbDB){fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){devoGraphRender(snap.val()||DEVO_DATA);}).catch(function(){devoGraphRender(DEVO_DATA);});}
-  else{devoEnsure();devoGraphRender(DEVO_DATA);}
+  if(ok&&fbDB){fbDB.ref(FB_PATH_DEVO).once('value').then(function(snap){devoGraphLoaded(snap.val()||DEVO_DATA);}).catch(function(){devoGraphLoaded(DEVO_DATA);});}
+  else{devoEnsure();devoGraphLoaded(DEVO_DATA);}
  });
 }
 function devoBuildModals(){
