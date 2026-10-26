@@ -2430,7 +2430,8 @@ function opsCleanResumenSheet(aoa){
  var hdr=-1,idx={};
  for(var i=0;i<Math.min(aoa.length,40);i++){
   var up=(aoa[i]||[]).map(function(c){return c==null?'':stripAcc(String(c)).trim().toUpperCase();});
-  if(up.indexOf('PEDIDO')>=0&&up.indexOf('VALOR')>=0&&up.indexOf('FECHA')>=0&&up.indexOf('RAZON')>=0){hdr=i;idx={};up.forEach(function(c,j){if(c&&!(c in idx))idx[c]=j;});break;}
+  var hasP=up.some(function(c){return c.indexOf('PEDIDO')>=0;}),hasV=up.some(function(c){return c.indexOf('VALOR')>=0;}),hasF=up.some(function(c){return c.indexOf('FECHA')>=0;}),hasR=up.some(function(c){return c.indexOf('RAZON')>=0;});
+  if(hasP&&hasV&&hasF&&hasR){hdr=i;idx={};up.forEach(function(c,j){if(c&&!(c in idx))idx[c]=j;});break;}
  }
  if(hdr<0)return null;
  function col(name){var k=Object.keys(idx).find(function(k){return k===name;});if(k==null)k=Object.keys(idx).find(function(k){return k.indexOf(name)>=0;});return k!=null?idx[k]:-1;}
