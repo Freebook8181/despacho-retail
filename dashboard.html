@@ -2508,14 +2508,17 @@ function opsGuardar(){
  if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
  if(!DATA.rows.length){alert('No hay informaci\u00f3n importada para guardar. Importa primero un Excel de Operaciones.');return;}
  try{saveMonths();}catch(_){}
- if(typeof fbReady!=='undefined'&&fbReady&&fbDB){
-  try{fbPush();}catch(_){}
-  var nM=(DATA.meta&&DATA.meta.meses)?DATA.meta.meses.length:0;
-  var tot=DATA.rows.reduce(function(a,r){return a+(r.v||0);},0);
-  alert('\u2713 Informaci\u00f3n de OPERACIONES guardada.\n\n \u2022 '+fi(DATA.rows.length)+' pedidos en '+nM+' mes(es)\n \u2022 Valor total: '+fm(tot)+'\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Todos los usuarios la ver\u00e1n al recargar.');
- }else{
-  alert('\u26a0 No hay conexi\u00f3n con la nube (Firebase). La informaci\u00f3n se guard\u00f3 solo en este navegador.');
+ var nM=(DATA.meta&&DATA.meta.meses)?DATA.meta.meses.length:0;
+ var tot=DATA.rows.reduce(function(a,r){return a+(r.v||0);},0);
+ function _okMsg(){alert('\u2713 Informaci\u00f3n de OPERACIONES guardada.\n\n \u2022 '+fi(DATA.rows.length)+' pedidos en '+nM+' mes(es)\n \u2022 Valor total: '+fm(tot)+'\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Todos los usuarios la ver\u00e1n al recargar.');}
+ function _doPush(){
+  try{fbWriting=true;fbDB.ref(FB_PATH).set(buildStore()).then(function(){fbWriting=false;_okMsg();}).catch(function(e){fbWriting=false;console.error('opsGuardar push',e);var code=(e&&e.code)||'';var extra='';if(code==='PERMISSION_DENIED'||/permission/i.test(String(e&&e.message)))extra='\n\nCausa: las Reglas de Firebase (Realtime Database) no permiten escribir en "quintec/meses". Agrega esa ruta con .read/.write = auth != null y Publica.';alert('\u26a0 No se pudo guardar en la nube.'+extra+'\n\nLa informaci\u00f3n qued\u00f3 guardada solo en este navegador.'+(code?('\n\n[detalle: '+code+']'):''));});}
+  catch(e){fbWriting=false;console.error('opsGuardar push',e);alert('\u26a0 No se pudo guardar en la nube. La informaci\u00f3n qued\u00f3 guardada solo en este navegador.');}
  }
+ if(typeof fbDB==='undefined'||!fbDB){alert('\u26a0 No hay conexi\u00f3n con la nube (Firebase). La informaci\u00f3n se guard\u00f3 solo en este navegador.');return;}
+ if(typeof fbReady!=='undefined'&&fbReady){_doPush();return;}
+ if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}_doPush();}).catch(function(e){console.error('signInAnonymously',e);var code=(e&&e.code)||'';var extra='';if(code==='auth/operation-not-allowed'||code==='auth/admin-restricted-operation')extra='\n\nCausa: el proveedor "An\u00f3nimo" NO est\u00e1 activado en Firebase.';else if(code==='auth/configuration-not-found')extra='\n\nCausa: a\u00fan no has configurado Authentication en este proyecto.';else if(code==='auth/network-request-failed')extra='\n\nCausa: sin conexi\u00f3n a internet.';alert('\u26a0 No se pudo conectar a la nube.'+extra+'\n\nSoluci\u00f3n: entra a Firebase \u2192 Authentication \u2192 Sign-in method y activa el proveedor "An\u00f3nimo". Luego recarga con Ctrl+F5.\n\nLa informaci\u00f3n qued\u00f3 guardada solo en este navegador.'+(code?('\n\n[detalle: '+code+']'):''));});}
+ else{alert('\u26a0 No hay conexi\u00f3n con la nube (Firebase). La informaci\u00f3n se guard\u00f3 solo en este navegador.');}
 }
 function opsBuildWorkbook(){
  var wb=XLSX.utils.book_new();
