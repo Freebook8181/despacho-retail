@@ -2966,21 +2966,79 @@ function obDelete(){
    });
  });
 }
+var OB_REP_SEL={mac:null,ver:null};
+var OB_REP_PAGES=null;
+function obRepSelInit(k){
+ var D=VSTORE[k]||{};var ms=(D.months||[]).slice();var ws=(D.weeks||[]).slice().sort(function(a,b){return a-b;});
+ OB_REP_SEL[k]={zona:'all',
+   mA:ms.length>1?ms[ms.length-2]:(ms.length?ms[0]:null),
+   mB:ms.length?ms[ms.length-1]:null,
+   wA:ws.length>1?ws[ws.length-2]:(ws.length?ws[0]:null),
+   wB:ws.length?ws[ws.length-1]:null};
+}
 function obReporte(){
- if(!MDATA.rows.length){alert('No hay información para generar el reporte. Importa primero un Excel.');return;}
- var mac=obReportHtml('mac',1),ver=obReportHtml('ver',4);
- OB_REPORT={mac:mac,ver:ver};
+ if(!(VSTORE.mac.rows.length||VSTORE.ver.rows.length)){alert('No hay información de "Ventas por tienda y mes" para generar el reporte. Carga primero el Excel de ventas en la pestaña "Ventas por tienda y mes".');return;}
+ obRepSelInit('mac');obRepSelInit('ver');
  var ov=document.getElementById('obRepOvr');
- if(!ov){ov=document.createElement('div');ov.id='obRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo · MacOnline Distribución y Vertical Tiendas</div><button class="ob-rep-b ob-pdf">⤓ PDF</button><button class="ob-rep-b ob-imp">🖨 IMPRIMIR</button><button class="ob-rep-x">✕</button></div><div class="ob-rep-body" id="obRepBody"></div></div>';document.body.appendChild(ov);
+ if(!ov){ov=document.createElement('div');ov.id='obRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo · MacOnline Distribución y Vertical Tiendas</div><button class="ob-rep-b ob-pdf">⤓ PDF</button><button class="ob-rep-b ob-imp">🖨 IMPRIMIR</button><button class="ob-rep-x">✕</button></div><div class="ob-rep-ctl" id="obRepCtl"></div><div class="ob-rep-body" id="obRepBody"></div></div>';document.body.appendChild(ov);
   ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
   ov.querySelector('.ob-pdf').onclick=function(){obPrintReport(true);};
   ov.querySelector('.ob-imp').onclick=function(){obPrintReport(false);};}
- document.getElementById('obRepBody').innerHTML='<div class="rep-wrap">'+mac.html+ver.html+'</div>';
+ obRepRefresh();
  ov.style.display='block';
 }
+function obRepRefresh(){
+ var units=[];if(VSTORE.mac.rows.length)units.push('mac');if(VSTORE.ver.rows.length)units.push('ver');
+ var pages=[];units.forEach(function(k){pages=pages.concat(obRepBuildPages(k));});
+ OB_REP_PAGES=pages;
+ var body=document.getElementById('obRepBody');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';
+ obRepFillControls();
+}
+function obRepFillControls(){
+ var box=document.getElementById('obRepCtl');if(!box)return;
+ var units=[];if(VSTORE.mac.rows.length)units.push('mac');if(VSTORE.ver.rows.length)units.push('ver');
+ var optMonths=function(k){var D=VSTORE[k];return (D.months||[]).map(function(mi){return '<option value="'+mi+'">'+MESES_FULL[mi]+' '+vMesYear(D,mi)+'</option>';}).join('');};
+ var optWeeks=function(k){var D=VSTORE[k];var ws=(D.weeks||[]).slice().sort(function(a,b){return a-b;});if(!ws.length)return '';return ws.map(function(w){return '<option value="'+w+'">S'+w+'</option>';}).join('');};
+ var h='';
+ units.forEach(function(k){
+   var lbl=VLABEL[k];var mo=optMonths(k);var wo=optWeeks(k);
+   h+='<div class="rep-ctl-row"><span class="rep-ctl-lbl" style="color:'+MOD_COLOR[k]+'">'+lbl+'</span>'
+    +'<span class="rep-ctl-g">Mes A <select data-k="'+k+'" data-f="mA">'+mo+'</select> vs B <select data-k="'+k+'" data-f="mB">'+mo+'</select></span>'
+    +'<span class="rep-ctl-g">Semana A <select data-k="'+k+'" data-f="wA">'+(wo||'<option value="">(sin semanas)</option>')+'</select> vs B <select data-k="'+k+'" data-f="wB">'+(wo||'<option value="">(sin semanas)</option>')+'</select></span>'
+    +'<span class="rep-ctl-g">Zona <select data-k="'+k+'" data-f="zona"><option value="all">Todas</option><option value="Santiago">Santiago</option><option value="Regiones">Regiones</option></select></span>'
+    +'</div>';
+ });
+ box.innerHTML=h;
+ box.querySelectorAll('select').forEach(function(s){
+   var k=s.getAttribute('data-k'),f=s.getAttribute('data-f');var v=OB_REP_SEL[k][f];if(v!=null&&v!=='')s.value=String(v);
+   s.addEventListener('change',function(){var vv=s.value;OB_REP_SEL[k][f]=(f==='zona')?vv:(vv===''?null:+vv);obRepRefresh();});
+ });
+}
+function obRepExpBox(t){return t?('<div class="rep-exp"><div class="rep-exp-h">Explicación</div><div class="rep-exp-t">'+t+'</div></div>'):'';}
+function obRepAnBox(t){return t?('<div class="rep-an"><b>Análisis.</b> '+t+'</div>'):'';}
+function obRepPagesHTML(pages){
+ var total=pages.length;
+ return pages.map(function(pg,idx){
+   var col=pg.color;
+   var band='<div class="rep-band" style="background:'+col+'"><div class="rep-bt">'+pg.unit+' · <span>'+pg.section+'</span></div><div class="rep-bs">Hoja '+(idx+1)+' de '+total+' · '+pg.title+' · QUINTEC KPI Logística</div></div>';
+   var kp='';
+   if(pg.kpis&&pg.kpis.length){kp='<div class="rep-kpis">'+pg.kpis.map(function(k){return '<div class="rep-k"><div class="rep-kt">'+k.t+'</div><div class="rep-kv">'+k.v+'</div><div class="rep-ks">'+(k.s||'')+'</div></div>';}).join('')+'</div>';}
+   var body='';
+   if(pg.note){body='<div class="rep-an" style="margin:16px 22px;background:#fbecec;border-color:#f0c9c2;color:#8a3324">'+pg.note+'</div>';}
+   else{
+     var imgs=pg.charts||[];
+     if(imgs.length===1){var c=imgs[0];body='<img class="rep-img" src="'+c.img+'"/>'+obRepExpBox(c.exp)+obRepAnBox(c.an);}
+     else{
+       body='<div class="rep-duo">'+imgs.map(function(c){return '<div><div class="rep-ct">'+c.title+'</div><img class="rep-img2" src="'+c.img+'"/></div>';}).join('')+'</div>';
+       body+=imgs.map(function(c){return obRepExpBox('<b>'+c.title+'.</b> '+c.exp)+obRepAnBox(c.an);}).join('');
+     }
+   }
+   return '<div class="rep-page">'+band+kp+body+'</div>';
+ }).join('');
+}
 function obPrintReport(isPdf){
- if(!OB_REPORT)return;
- var html='<div class="rep-wrap">'+OB_REPORT.mac.html+OB_REPORT.ver.html+'</div>';
+ if(!OB_REP_PAGES)return;
+ var html='<div class="rep-wrap">'+obRepPagesHTML(OB_REP_PAGES)+'</div>';
  var w=window.open('','_blank');
  if(!w){alert('El navegador bloqueó la ventana. Permite las ventanas emergentes para '+(isPdf?'guardar el PDF':'imprimir')+'.');return;}
  w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{page-break-after:always;box-shadow:none;border:0;margin:0 auto}@page{size:A4;margin:9mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
@@ -2988,39 +3046,118 @@ function obPrintReport(isPdf){
 }
 function obLoadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 function obPPT(){
- if(!MDATA.rows.length){alert('No hay información para generar el PPT. Importa primero un Excel.');return;}
- var mac=obReportHtml('mac',1),ver=obReportHtml('ver',4);
+ if(!(VSTORE.mac.rows.length||VSTORE.ver.rows.length)){alert('No hay información de "Ventas por tienda y mes" para generar el PPT. Carga primero el Excel de ventas.');return;}
+ obRepSelInit('mac');obRepSelInit('ver');
+ var units=[];if(VSTORE.mac.rows.length)units.push('mac');if(VSTORE.ver.rows.length)units.push('ver');
+ var pages=[];units.forEach(function(k){pages=pages.concat(obRepBuildPages(k));});
  var load=(typeof PptxGenJS!=='undefined')?Promise.resolve():obLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
- load.then(function(){obBuildPPT(mac,ver);}).catch(function(){alert('No se pudo cargar el generador de PPT. Revisa tu conexión a internet e inténtalo de nuevo.');});
+ load.then(function(){obRepPPT(pages);}).catch(function(){alert('No se pudo cargar el generador de PPT. Revisa tu conexión a internet e inténtalo de nuevo.');});
 }
-function obBuildPPT(mac,ver){
+function obRepPPT(pages){
  try{
   var pptx=new PptxGenJS();pptx.defineLayout({name:'QA',width:13.33,height:7.5});pptx.layout='QA';
   var s0=pptx.addSlide();s0.background={color:'1F3A59'};
-  s0.addText('Reporte Ejecutivo de Tiendas',{x:0.8,y:2.5,w:11.7,h:1,fontSize:36,bold:true,color:'FFFFFF',fontFace:'Arial'});
-  s0.addText('MacOnline Distribución y Vertical Tiendas  ·  QUINTEC KPI Logística',{x:0.8,y:3.6,w:11.7,h:0.6,fontSize:18,color:'C3D0DD'});
-  [mac,ver].forEach(function(R){obPPTSlides(pptx,R);});
+  s0.addText('Reporte Ejecutivo de Tiendas',{x:0.8,y:2.6,w:11.7,h:1,fontSize:36,bold:true,color:'FFFFFF',fontFace:'Arial'});
+  s0.addText('MacOnline Distribución y Vertical Tiendas  ·  QUINTEC KPI Logística',{x:0.8,y:3.7,w:11.7,h:0.6,fontSize:18,color:'C3D0DD'});
+  var strip=function(h){return (h==null?'':String(h)).replace(/<[^>]*>/g,'');};
+  pages.forEach(function(pg){
+    var s=pptx.addSlide();var col=(pg.color||'#1f3a59').replace('#','');
+    s.addText(pg.unit+'  ·  '+pg.section,{x:0.5,y:0.28,w:12.3,h:0.5,fontSize:20,bold:true,color:col});
+    s.addText(strip(pg.title),{x:0.5,y:0.78,w:12.3,h:0.4,fontSize:14,color:'5a6672'});
+    var y0=1.35;
+    if(pg.kpis&&pg.kpis.length){s.addText(pg.kpis.map(function(k){return strip(k.t)+': '+strip(k.v);}).join('     '),{x:0.5,y:1.22,w:12.3,h:0.4,fontSize:12,color:'1f3a59',bold:true});y0=1.72;}
+    if(pg.note){s.addText(strip(pg.note),{x:0.6,y:y0+0.4,w:12.1,h:1.5,fontSize:15,color:'C0392B',valign:'top'});return;}
+    var imgs=(pg.charts||[]).filter(function(c){return c.img;});
+    if(imgs.length===1){
+      s.addImage({data:imgs[0].img,x:0.6,y:y0,w:7.6,h:4.0});
+      s.addText([{text:'Explicación. ',options:{bold:true}},{text:strip(imgs[0].exp)},{text:'\n\nAnálisis. ',options:{bold:true}},{text:strip(imgs[0].an)}],{x:8.5,y:y0,w:4.3,h:4.0,fontSize:12,color:'333333',valign:'top'});
+    }else if(imgs.length>=2){
+      s.addImage({data:imgs[0].img,x:0.45,y:y0,w:6.05,h:3.45});
+      s.addImage({data:imgs[1].img,x:6.85,y:y0,w:6.05,h:3.45});
+      s.addText([{text:strip(imgs[0].title)+'. ',options:{bold:true}},{text:strip(imgs[0].an||imgs[0].exp)},{text:'      '+strip(imgs[1].title)+'. ',options:{bold:true}},{text:strip(imgs[1].an||imgs[1].exp)}],{x:0.5,y:y0+3.55,w:12.3,h:1.6,fontSize:12,color:'333333',valign:'top'});
+    }
+  });
   pptx.writeFile({fileName:'Reporte_Tiendas_QUINTEC.pptx'});
  }catch(e){alert('No se pudo generar el PPT: '+e.message);}
 }
-function obPPTSlides(pptx,R){
- var a=R.agg,img=R.imgs,col=(R.col||'#1f3a59').replace('#',''),lbl=R.lbl;
- var ticket=a.nPed?a.totV/a.nPed:0;
- var s1=pptx.addSlide();
- s1.addText(lbl+'  ·  Resumen Ejecutivo',{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:col});
- s1.addText('Pedidos: '+fi(a.nPed)+'      Valor: '+fm(a.totV)+'      Tiendas: '+fi(a.tiendas)+'      Ticket: '+fm(ticket),{x:0.5,y:0.95,w:12.3,h:0.5,fontSize:14,color:'333333'});
- if(img.mes)s1.addImage({data:img.mes,x:1.1,y:1.65,w:7.3,h:3.4});
- s1.addText('Explicación: valor movilizado por mes (columna VALOR, sin redondear).',{x:8.8,y:1.9,w:4.1,h:3,fontSize:13,color:'333333'});
- var s2=pptx.addSlide();
- s2.addText(lbl+'  ·  Distribución Territorial',{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:col});
- if(img.zona)s2.addImage({data:img.zona,x:0.6,y:1.4,w:4.2,h:3.7});
- if(img.tie)s2.addImage({data:img.tie,x:5.1,y:1.4,w:4.3,h:3.6});
- s2.addText('Reparto Santiago / Regiones y las 10 tiendas de mayor valor.',{x:9.7,y:1.7,w:3.2,h:3,fontSize:13,color:'333333'});
- var s3=pptx.addSlide();
- s3.addText(lbl+'  ·  Operación y Logística',{x:0.5,y:0.3,w:12.3,h:0.6,fontSize:24,bold:true,color:col});
- if(img.sem)s3.addImage({data:img.sem,x:0.6,y:1.4,w:4.3,h:3.4});
- if(img.tp)s3.addImage({data:img.tp,x:5.1,y:1.4,w:4.3,h:3.4});
- s3.addText('Pedidos por semana y valor por transporte. AM '+fi(a.am)+' · PM '+fi(a.pm)+'.',{x:9.7,y:1.7,w:3.2,h:3,fontSize:13,color:'333333'});
+var OBR_ZCOL={Santiago:'#8e44ad',Regiones:'#c88a6a'};
+function obRepVentas(k){
+ var col=MOD_COLOR[k];var ZCOL=OBR_ZCOL;
+ var D=VSTORE[k];var rows=D.rows||[];var months=(D.months||[]).slice();
+ var mLabels=months.map(function(mi){return MESES_FULL[mi];});
+ var sByZ=function(z,mi){return rows.filter(function(r){return r.zona===z;}).reduce(function(a,r){return a+(r.m[mi]||0);},0);};
+ var mSant=months.map(function(mi){return sByZ('Santiago',mi);});
+ var mRegi=months.map(function(mi){return sByZ('Regiones',mi);});
+ var mTot=months.map(function(mi,i){return mSant[i]+mRegi[i];});
+ var santi=rows.filter(function(r){return r.zona==='Santiago';}).reduce(function(a,r){return a+r.total;},0);
+ var regio=rows.filter(function(r){return r.zona==='Regiones';}).reduce(function(a,r){return a+r.total;},0);
+ var total=santi+regio;
+ var tie=rows.map(function(r){return {k:r.tienda,v:r.total,z:r.zona};}).filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;});
+ var nAct=tie.length;var prom=nAct?total/nAct:0;
+ var top5=tie.slice(0,5).reduce(function(a,x){return a+x.v;},0);
+ var acc=0,c80=0;for(var i=0;i<tie.length;i++){acc+=tie[i].v;c80++;if(total&&acc>=0.8*total)break;}
+ var bestIdx=0;mTot.forEach(function(v,i){if(v>mTot[bestIdx])bestIdx=i;});
+ var bestLbl=months.length?(MESES_FULL[months[bestIdx]]+' '+vMesYear(D,months[bestIdx])):'';var bestV=months.length?mTot[bestIdx]:0;
+ var lblr=function(mi){return MESES_FULL[mi].slice(0,3)+" '"+String(vMesYear(D,mi)).slice(-2);};
+ var xLab=months.map(lblr);
+ var imgMes=obChartImg(840,360,{grid:{left:8,right:16,top:34,bottom:30,containLabel:true},legend:{top:4,data:['Santiago','Regiones'],textStyle:{color:'#6b7684',fontSize:11}},xAxis:{type:'category',data:xLab,axisLabel:{color:'#6b7684',interval:0,rotate:xLab.length>8?28:0}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{name:'Santiago',type:'bar',stack:'z',data:mSant,itemStyle:{color:ZCOL.Santiago},barWidth:'55%',label:{show:true,color:'#fff',fontSize:9,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:'Regiones',type:'bar',stack:'z',data:mRegi,itemStyle:{color:ZCOL.Regiones,borderRadius:[4,4,0,0]},label:{show:true,color:'#fff',fontSize:9,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:'Total',type:'bar',stack:'z',data:mTot.map(function(){return 0;}),label:{show:true,position:'top',color:'#1f3a59',fontWeight:600,fontSize:10,formatter:function(x){return mTot[x.dataIndex]?fmShort(mTot[x.dataIndex]):'';}},silent:true}]});
+ var tt=tie.slice(0,10).slice().reverse();
+ var imgTie=obChartImg(440,360,{grid:{left:8,right:84,top:10,bottom:10,containLabel:true},xAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},yAxis:{type:'category',data:tt.map(function(x){return x.k;}),axisLabel:{width:150,overflow:'truncate',fontSize:10,color:'#6b7684'}},series:[{type:'bar',data:tt.map(function(x){return {value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[0,4,4,0]}};}),barWidth:'62%',label:{show:true,position:'right',fontSize:9,color:'#1f3a59',formatter:function(x){return fmShort(x.value);}}}]});
+ var imgZona=obChartImg(440,360,{legend:{bottom:0,textStyle:{color:'#6b7684',fontSize:12}},series:[{type:'pie',radius:['45%','72%'],center:['50%','45%'],itemStyle:{borderColor:'#fff',borderWidth:2},data:[{name:'Santiago',value:santi,itemStyle:{color:ZCOL.Santiago}},{name:'Regiones',value:regio,itemStyle:{color:ZCOL.Regiones}}],label:{formatter:'{b}\n{d}%',fontSize:12,color:'#111',fontWeight:600}}]});
+ var par=tie.slice(0,12);var cum=[];var _c=0;par.forEach(function(x){_c+=x.v;cum.push(total?+(100*_c/total).toFixed(1):0);});
+ var imgPareto=obChartImg(840,390,{grid:{left:8,right:50,top:34,bottom:78,containLabel:true},legend:{top:4,textStyle:{color:'#6b7684',fontSize:11}},xAxis:{type:'category',data:par.map(function(x){return x.k;}),axisLabel:{interval:0,rotate:34,fontSize:9,width:84,overflow:'truncate',color:'#6b7684'}},yAxis:[{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},{type:'value',max:100,position:'right',axisLabel:{formatter:'{value}%',color:'#c0392b'},splitLine:{show:false}}],series:[{name:'Ventas',type:'bar',data:par.map(function(x){return {value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[4,4,0,0]}};}),barWidth:'55%'},{name:'% Acumulado',type:'line',yAxisIndex:1,data:cum,smooth:true,symbol:'circle',symbolSize:5,lineStyle:{color:'#c0392b',width:2},itemStyle:{color:'#c0392b'},markLine:{silent:true,symbol:'none',data:[{yAxis:80}],lineStyle:{color:'#c0392b',type:'dashed'},label:{formatter:'80%',color:'#c0392b'}}}]});
+ var grow=mTot.map(function(v,i){return i===0?null:(mTot[i-1]?+(100*(v-mTot[i-1])/mTot[i-1]).toFixed(1):null);});
+ var growBest=null;grow.forEach(function(g,i){if(g!=null&&(growBest==null||g>growBest.g))growBest={g:g,lbl:mLabels[i]};});
+ var imgCrec=obChartImg(840,340,{grid:{left:8,right:16,top:16,bottom:30,containLabel:true},xAxis:{type:'category',data:xLab,axisLabel:{color:'#6b7684',interval:0,rotate:xLab.length>8?28:0}},yAxis:{type:'value',axisLabel:{formatter:'{value}%',color:'#6b7684'}},series:[{type:'line',data:grow,smooth:true,symbol:'circle',symbolSize:7,connectNulls:true,lineStyle:{color:col,width:2.5},itemStyle:{color:col},areaStyle:{color:col,opacity:.08},label:{show:true,color:col,fontSize:9,formatter:function(x){return x.value==null?'':((x.value>0?'+':'')+x.value+'%');}},markLine:{silent:true,symbol:'none',data:[{yAxis:0}],lineStyle:{color:'#9aa7b4',type:'dashed'}}}]});
+ return {months:months,total:total,santi:santi,regio:regio,nAct:nAct,prom:prom,top5:top5,c80:c80,tie:tie,bestLbl:bestLbl,bestV:bestV,growBest:growBest,imgMes:imgMes,imgTie:imgTie,imgZona:imgZona,imgPareto:imgPareto,imgCrec:imgCrec};
+}
+function obRepCmp(k,mode){
+ var col=MOD_COLOR[k];var ZCOL=OBR_ZCOL;var Bcol='#c88a6a';
+ var D=VSTORE[k];var sel=OB_REP_SEL[k]||{};var zona=sel.zona||'all';
+ var periods,aId,bId,labOf,shortOf;var yr=D.year||2026;
+ if(mode==='mes'){periods=(D.months||[]).slice();aId=sel.mA;bId=sel.mB;labOf=function(id){return MESES_FULL[id]+' '+vMesYear(D,id);};shortOf=function(id){return MESES_FULL[id].slice(0,3);};}
+ else{periods=(D.weeks||[]).slice().sort(function(a,b){return a-b;});aId=sel.wA;bId=sel.wB;labOf=function(id){var r=isoWeekRange(yr,id);return 'S'+id+' ('+fmtDM(r.desde)+'–'+fmtDM(r.hasta)+')';};shortOf=function(id){return 'S'+id;};}
+ if(!periods.length||aId==null||bId==null)return null;
+ var rows=D.rows||[];var fRows=rows.filter(function(r){return zona==='all'||r.zona===zona;});
+ var val=function(r,id){if(id==null)return 0;return mode==='mes'?(r.m[id]||0):((r.w&&r.w[id])||0);};
+ var labA=labOf(aId),labB=labOf(bId);
+ var totA=fRows.reduce(function(a,r){return a+val(r,aId);},0);var totB=fRows.reduce(function(a,r){return a+val(r,bId);},0);
+ var santiA=rows.filter(function(r){return r.zona==='Santiago';}).reduce(function(a,r){return a+val(r,aId);},0);
+ var regioA=rows.filter(function(r){return r.zona==='Regiones';}).reduce(function(a,r){return a+val(r,aId);},0);
+ var santiB=rows.filter(function(r){return r.zona==='Santiago';}).reduce(function(a,r){return a+val(r,bId);},0);
+ var regioB=rows.filter(function(r){return r.zona==='Regiones';}).reduce(function(a,r){return a+val(r,bId);},0);
+ var varPct=totA?(100*(totB-totA)/totA):0;
+ var perTie=fRows.map(function(r){return {k:r.tienda,a:val(r,aId),b:val(r,bId),z:r.zona};}).filter(function(x){return x.a>0||x.b>0;});
+ var best=null;perTie.forEach(function(x){var d=x.b-x.a;if(best==null||d>best.d)best={k:x.k,d:d};});
+ var vals=periods.map(function(id){return fRows.reduce(function(a,r){return a+val(r,id);},0);});
+ var lab=periods.map(shortOf);
+ var cols=periods.map(function(id){return String(id)===String(aId)?col:(String(id)===String(bId)?Bcol:'#cbd3db');});
+ var imgEvo=obChartImg(840,340,{grid:{left:8,right:16,top:16,bottom:34,containLabel:true},xAxis:{type:'category',data:lab,axisLabel:{color:'#45505c',interval:0,rotate:lab.length>8?32:0,fontWeight:600}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{type:'bar',data:periods.map(function(id,i){return {value:vals[i],itemStyle:{color:cols[i],borderRadius:[4,4,0,0]}};}),barWidth:periods.length<=2?'30%':'55%',label:{show:true,position:'top',fontSize:9,color:'#45505c',formatter:function(x){return x.value?fmShort(x.value):'';}}}]});
+ var imgTot=obChartImg(440,360,{legend:{top:4,textStyle:{color:'#6b7684',fontSize:11}},grid:{left:8,right:16,top:34,bottom:8,containLabel:true},xAxis:{type:'category',data:[shortOf(aId),shortOf(bId)],axisLabel:{color:'#45505c',fontWeight:600}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{name:'Santiago',type:'bar',stack:'z',barWidth:'46%',data:[santiA,santiB],itemStyle:{color:ZCOL.Santiago},label:{show:true,color:'#fff',fontSize:10,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:'Regiones',type:'bar',stack:'z',data:[regioA,regioB],itemStyle:{color:ZCOL.Regiones,borderRadius:[4,4,0,0]},label:{show:true,color:'#fff',fontSize:10,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:'Total',type:'bar',stack:'z',data:[0,0],label:{show:true,position:'top',color:'#1f3a59',fontWeight:600,fontSize:11,formatter:function(x){var t=x.dataIndex===0?(santiA+regioA):(santiB+regioB);return t?fmShort(t):'';}},silent:true}]});
+ var imgZonaC=obChartImg(440,360,{legend:{top:4,textStyle:{color:'#6b7684',fontSize:11}},grid:{left:8,right:16,top:34,bottom:8,containLabel:true},xAxis:{type:'category',data:['Santiago','Regiones'],axisLabel:{color:'#45505c'}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{name:shortOf(aId),type:'bar',data:[santiA,regioA],itemStyle:{color:col,borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:col,fontSize:9,formatter:function(x){return fmShort(x.value);}}},{name:shortOf(bId),type:'bar',data:[santiB,regioB],itemStyle:{color:Bcol,borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:'#9a6a4e',fontSize:9,formatter:function(x){return fmShort(x.value);}}}]});
+ var topT=perTie.slice().sort(function(x,y){return (y.a+y.b)-(x.a+x.b);}).slice(0,10).reverse();
+ var imgTieC=obChartImg(840,400,{legend:{top:4,textStyle:{color:'#6b7684',fontSize:11}},grid:{left:8,right:84,top:34,bottom:8,containLabel:true},xAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},yAxis:{type:'category',data:topT.map(function(x){return x.k;}),axisLabel:{color:'#45505c',fontSize:10,width:160,overflow:'truncate'}},series:[{name:shortOf(aId),type:'bar',data:topT.map(function(x){return x.a;}),itemStyle:{color:col,borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:col,fontSize:9,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:shortOf(bId),type:'bar',data:topT.map(function(x){return x.b;}),itemStyle:{color:Bcol,borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#9a6a4e',fontSize:9,formatter:function(x){return x.value?fmShort(x.value):'';}}}]});
+ return {labA:labA,labB:labB,totA:totA,totB:totB,varPct:varPct,best:best,imgEvo:imgEvo,imgTot:imgTot,imgZona:imgZonaC,imgTie:imgTieC};
+}
+function obRepBuildPages(k){
+ if(!(VSTORE[k]&&VSTORE[k].rows&&VSTORE[k].rows.length))return [];
+ var lbl=VLABEL[k];var col=MOD_COLOR[k];var pages=[];
+ var V=obRepVentas(k);
+ pages.push({unit:lbl,color:col,section:'VENTAS POR TIENDA Y MES',title:'Resumen y evolución mensual',kpis:[{t:'Venta total',v:fm(V.total),s:fi(V.months.length)+' meses'},{t:'Santiago',v:fm(V.santi),s:(V.total?(100*V.santi/V.total).toFixed(0):0)+'% del total'},{t:'Regiones',v:fm(V.regio),s:(V.total?(100*V.regio/V.total).toFixed(0):0)+'% del total'},{t:'Tiendas activas',v:fi(V.nAct),s:'con ventas'}],charts:[{title:'Ventas por Mes',img:V.imgMes,exp:'Monto vendido por mes, apilando Santiago y Regiones (columna VALOR, sin redondear).',an:(V.bestLbl?('El mes de mayor venta es <b>'+V.bestLbl+'</b> con <b>'+fm(V.bestV)+'</b>. '):'')+'En total se vendieron <b>'+fm(V.total)+'</b>.'}]});
+ pages.push({unit:lbl,color:col,section:'VENTAS POR TIENDA Y MES',title:'Participación por zona y ranking de tiendas',kpis:[{t:'Venta promedio x tienda',v:fm(V.prom),s:'por tienda activa'},{t:'Mejor mes',v:V.bestLbl||'—',s:fmShort(V.bestV)},{t:'Participación Top 5',v:(V.total?(100*V.top5/V.total).toFixed(0):0)+'%',s:'de las ventas'},{t:'Concentración 80%',v:fi(V.c80),s:'tiendas = 80%'}],charts:[{title:'Santiago vs Regiones',img:V.imgZona,exp:'Reparto de la venta total entre ambas zonas.',an:'Santiago concentra el <b>'+(V.total?(100*V.santi/V.total).toFixed(0):0)+'%</b> y Regiones el <b>'+(V.total?(100*V.regio/V.total).toFixed(0):0)+'%</b>.'},{title:'Top 10 Tiendas',img:V.imgTie,exp:'Las 10 tiendas de mayor venta en el periodo.',an:(V.tie[0]?('La tienda líder es <b>'+V.tie[0].k+'</b> con <b>'+fm(V.tie[0].v)+'</b>.'):'Sin datos.')}]});
+ pages.push({unit:lbl,color:col,section:'VENTAS POR TIENDA Y MES',title:'Concentración (Pareto) y crecimiento',charts:[{title:'Pareto de Tiendas (80/20)',img:V.imgPareto,exp:'Tiendas ordenadas de mayor a menor con el porcentaje acumulado.',an:'<b>'+fi(V.c80)+'</b> de <b>'+fi(V.nAct)+'</b> tiendas concentran el <b>80%</b> de las ventas.'},{title:'Crecimiento Mensual',img:V.imgCrec,exp:'Variación porcentual de cada mes respecto al mes anterior.',an:(V.growBest?('El mayor crecimiento fue en <b>'+V.growBest.lbl+'</b> con <b>'+(V.growBest.g>0?'+':'')+V.growBest.g+'%</b>.'):'Sin datos suficientes.')}]});
+ var Cm=obRepCmp(k,'mes');
+ if(Cm){
+   pages.push({unit:lbl,color:col,section:'COMPARATIVO POR MES',title:Cm.labA+' vs '+Cm.labB,kpis:[{t:'Total A',v:fm(Cm.totA),s:Cm.labA},{t:'Total B',v:fm(Cm.totB),s:Cm.labB},{t:'Variación B vs A',v:(Cm.varPct>0?'+':'')+Cm.varPct.toFixed(1)+'%',s:Cm.totB>=Cm.totA?'B supera a A':'B baja'},{t:'Tienda que más crece',v:(Cm.best?Cm.best.k:'—'),s:(Cm.best?((Cm.best.d>=0?'+':'')+fmShort(Cm.best.d)):'')}],charts:[{title:'Ventas por Mes (todos)',img:Cm.imgEvo,exp:'Todos los meses cargados; se resaltan el mes A y el mes B.',an:'En <b>'+Cm.labB+'</b> las ventas '+(Cm.varPct>=0?'subieron':'bajaron')+' <b>'+(Cm.varPct>=0?'+':'')+Cm.varPct.toFixed(1)+'%</b> respecto de <b>'+Cm.labA+'</b>.'},{title:'Comparación A vs B',img:Cm.imgTot,exp:'Venta total por zona (Santiago/Regiones) en cada mes.',an:'Total A <b>'+fm(Cm.totA)+'</b> vs Total B <b>'+fm(Cm.totB)+'</b>.'}]});
+   pages.push({unit:lbl,color:col,section:'COMPARATIVO POR MES',title:'Zonas y tiendas · '+Cm.labA+' vs '+Cm.labB,charts:[{title:'Zona en A vs B',img:Cm.imgZona,exp:'Santiago y Regiones comparados entre los dos meses.',an:'Permite ver en qué zona se concentra el cambio entre '+Cm.labA+' y '+Cm.labB+'.'},{title:'Tiendas A vs B',img:Cm.imgTie,exp:'Las 10 tiendas más grandes, comparadas entre A y B.',an:(Cm.best?('La tienda con mayor crecimiento es <b>'+Cm.best.k+'</b> ('+(Cm.best.d>=0?'+':'')+fmShort(Cm.best.d)+').'):'Sin datos.')}]});
+ }
+ var Cw=obRepCmp(k,'sem');
+ if(Cw){
+   pages.push({unit:lbl,color:col,section:'COMPARATIVO POR SEMANA',title:Cw.labA+' vs '+Cw.labB,kpis:[{t:'Total A',v:fm(Cw.totA),s:Cw.labA},{t:'Total B',v:fm(Cw.totB),s:Cw.labB},{t:'Variación B vs A',v:(Cw.varPct>0?'+':'')+Cw.varPct.toFixed(1)+'%',s:Cw.totB>=Cw.totA?'B supera a A':'B baja'},{t:'Tienda que más crece',v:(Cw.best?Cw.best.k:'—'),s:(Cw.best?((Cw.best.d>=0?'+':'')+fmShort(Cw.best.d)):'')}],charts:[{title:'Ventas por Semana (todas)',img:Cw.imgEvo,exp:'Todas las semanas cargadas; se resaltan la semana A y la semana B.',an:'En <b>'+Cw.labB+'</b> las ventas '+(Cw.varPct>=0?'subieron':'bajaron')+' <b>'+(Cw.varPct>=0?'+':'')+Cw.varPct.toFixed(1)+'%</b> respecto de <b>'+Cw.labA+'</b>.'},{title:'Comparación A vs B',img:Cw.imgTot,exp:'Venta total por zona (Santiago/Regiones) en cada semana.',an:'Total A <b>'+fm(Cw.totA)+'</b> vs Total B <b>'+fm(Cw.totB)+'</b>.'}]});
+ }else{
+   pages.push({unit:lbl,color:col,section:'COMPARATIVO POR SEMANA',title:'Comparación semanal',note:'Este archivo de ventas no incluye detalle por semana. Para comparar por semana, carga el Excel de "Ventas por tienda y mes" que incluya la hoja de semanas (lunes–viernes); luego vuelve a abrir el reporte y elige las semanas A y B arriba.'});
+ }
+ return pages;
 }
 function obNube(){
  var ov=document.getElementById('obNubeOvr');
@@ -3081,7 +3218,12 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".rep-cell{display:flex;flex-direction:column;min-width:0}"
 +".rep-cell .rep-ct{font-size:12.5px;font-weight:700;color:#1f3a59;margin-bottom:6px}"
 +".rep-cell .rep-img2{width:100%;border:1px solid #eef2f6;border-radius:8px}"
-+".rep-cell .rep-exp{margin:8px 0 0}";
++".rep-cell .rep-exp{margin:8px 0 0}"
++".ob-rep-ctl{background:#fff;border-bottom:1px solid #dde4ec;padding:10px 16px;display:flex;flex-direction:column;gap:8px;font-size:12px;color:#44505e}"
++".rep-ctl-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}"
++".rep-ctl-lbl{font-weight:800;min-width:150px}"
++".rep-ctl-g{display:inline-flex;align-items:center;gap:5px}"
++".ob-rep-ctl select{font-size:12px;padding:3px 5px;border:1px solid #cfd8e3;border-radius:6px;background:#fff;color:#2b3a4a}";
 (function(){
  try{var st=document.createElement('style');st.textContent=OB_REP_CSS+OPS_PPT_CSS;document.head.appendChild(st);}catch(e){}
  document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('#opsbar [data-ob]'):null;if(!b)return;var k=b.getAttribute('data-ob');if(k==='imp')obImport();else if(k==='gua')opsGuardar();else if(k==='del')opsEliminar();else if(k==='rep')opsReporte();else if(k==='ppt')opsPPT();else if(k==='nube')opsNube();}); try{setInterval(function(){if(typeof opsCheckDailyBackup==='function')opsCheckDailyBackup();},60000);}catch(_){}
