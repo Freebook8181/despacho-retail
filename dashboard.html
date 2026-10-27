@@ -786,7 +786,7 @@ function cleanSheet(json,fname){
 }
 /* ====== PERSISTENCIA LOCAL (localStorage) ====== */
 /* ====== FIREBASE (nube · datos compartidos entre usuarios) ====== */
-const FB_CFG={apiKey:"AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOj0Vzk",authDomain:"despacho-retail.firebaseapp.com",databaseURL:"https://despacho-retail-default-rtdb.firebaseio.com",projectId:"despacho-retail",storageBucket:"despacho-retail.appspot.com",messagingSenderId:"1011000908999",appId:"1:1011000908999:web:08c8630fab0c9537e0b2e2"};
+const FB_CFG={apiKey:"AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOjOVzk",authDomain:"despacho-retail.firebaseapp.com",databaseURL:"https://despacho-retail-default-rtdb.firebaseio.com",projectId:"despacho-retail",storageBucket:"despacho-retail.firebasestorage.app",messagingSenderId:"1011000908999",appId:"1:1011000908999:web:08c8630fab0c9537e0b2e2"};
 const FB_PATH='quintec/meses';
 let fbDB=null,fbReady=false,fbWriting=false,fbSubsDone=false;
 function buildStore(){const store={};DATA.rows.forEach(r=>{(store[r.mk]=store[r.mk]||{label:r.mes,rows:[]}).rows.push(r);});return store;}
