@@ -473,7 +473,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
     <button class="ib" onclick="document.getElementById('impFile').click()" aria-label="Importar"><span class="ic">📥</span><span class="ibl">Importar</span></button>
     <input type="file" id="impFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this)">
     <button class="ib" onclick="exportExcel()" aria-label="Exportar"><span class="ic">📄</span><span class="ibl">Exportar</span></button>
-    <button class="ib" onclick="exportPowerBI()" aria-label="Exportar a Power BI" title="Descarga un dataset limpio (CSV) listo para cargar en Power BI"><span class="ic">📈</span><span class="ibl">Power BI</span></button>
+    <button class="ib" onclick="exportPowerBI()" aria-label="Exportar a Power BI" title="Descarga un dataset limpio (.xlsx) listo para importar en Power BI"><span class="ic">📈</span><span class="ibl">Power BI</span></button>
     <button class="ib" onclick="imprimir()" aria-label="Imprimir"><span class="ic">🖨️</span><span class="ibl">Imprimir</span></button>
     <button class="ib" onclick="go('graficos')" aria-label="Gráficos"><span class="ic">📊</span><span class="ibl">Gráficos</span></button>
     <span class="tbsep"></span>
@@ -1241,49 +1241,71 @@ function exportExcel(){
   exportarPlanillaExcel(rows,fname,'COMEX QD · Planilla del '+f.toLocaleString('es-CL'));
   logAct('exportar','Exportó planilla a Excel (.xlsx)');
 }
-/* ===== Exportar DATASET listo para Power BI (CSV) =====
-   Genera un archivo CSV limpio (UTF-8 con BOM), UNA fila por PO, pensado para
-   cargarlo directo en Power BI (Obtener datos → Texto/CSV) y armar los gráficos
-   arrastrando campos. Reglas respetadas:
+/* ===== Exportar DATASET listo para Power BI (.xlsx) =====
+   Genera un libro de Excel limpio (UNA hoja, UNA fila por PO) pensado para
+   importarlo directo en Power BI (web: Importar → Desde este equipo → .xlsx;
+   o Desktop: Obtener datos → Excel) y armar los gráficos arrastrando campos.
+   Reglas respetadas:
    - Se EXCLUYEN las filas con celda(s) en ROJO (gRows()), igual que los gráficos.
-   - Los montos USD y las unidades van CRUDOS, SIN redondear, sin separador de miles
-     ni símbolo $ (punto decimal), para que Power BI los lea como número.
+   - Montos USD y unidades como NÚMERO crudo, SIN redondear (sin $ ni separador),
+     para que Power BI los lea como valor numérico.
    - Columnas calculadas útiles: Estado, Ticket Unitario USD, Días tránsito total,
      Capital (Movilizado / En tránsito) y Año-Mes para el eje temporal. */
-function pbNum(v){var n=usdNum(v);if(isNaN(n)||!isFinite(n))return '';return (''+n);}
-function pbNumU(v){var n=numClean(v);if(isNaN(n)||!isFinite(n))return '';return (''+n);}
-function csvCell(v){v=(v==null?'':''+v);if(/[",;\n\r]/.test(v)){v='"'+v.replace(/"/g,'""')+'"';}return v;}
 function exportPowerBI(){
+  if(typeof ExcelJS==='undefined'){alert('No se pudo cargar la librería de Excel. Verifique su conexión a internet y reintente.');return;}
   var filas=gRows().filter(function(r){return !isEmptyRow(r);});
   if(!filas.length){alert('No hay PO para exportar.\n\n(Las filas vacías y las que tienen fechas en ROJO no se incluyen.)');return;}
-  var cols=['PO','Proveedor','Tipo Transporte','Zona Origen','Unidades','USD','Ticket Unitario USD',
-            'Estado','Capital','Dias Transito Total','Año-Mes',
-            'Fecha Confirmacion','Disponibilidad Origen','Retiro en Origen','Dias T Origen',
-            'ETA','Fecha Disp Puerto-Aeropuerto','Retiro P-A','Llegada a CD','Costeo','Disponibilidad Inventario'];
-  var lineas=[cols.join(',')];
-  filas.forEach(function(r){
+  var cols=[
+    {h:'PO',t:'t'},{h:'Proveedor',t:'t'},{h:'Tipo Transporte',t:'t'},{h:'Zona Origen',t:'t'},
+    {h:'Unidades',t:'n'},{h:'USD',t:'n'},{h:'Ticket Unitario USD',t:'n'},
+    {h:'Estado',t:'t'},{h:'Capital',t:'t'},{h:'Dias Transito Total',t:'n'},{h:'Año-Mes',t:'t'},
+    {h:'Fecha Confirmacion',t:'t'},{h:'Disponibilidad Origen',t:'t'},{h:'Retiro en Origen',t:'t'},{h:'Dias T Origen',t:'t'},
+    {h:'ETA',t:'t'},{h:'Fecha Disp Puerto-Aeropuerto',t:'t'},{h:'Retiro P-A',t:'t'},{h:'Llegada a CD',t:'t'},{h:'Costeo',t:'t'},{h:'Disponibilidad Inventario',t:'t'}
+  ];
+  var wb=new ExcelJS.Workbook();
+  var ws=wb.addWorksheet('COMEX_QD',{views:[{state:'frozen',ySplit:1}]});
+  var hr=ws.getRow(1);
+  cols.forEach(function(c,i){
+    var cell=hr.getCell(i+1);cell.value=c.h;
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F2744'}};
+    cell.font={bold:true,size:10,color:{argb:'FFFFFFFF'}};
+    cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+  });
+  hr.height=26;
+  filas.forEach(function(r,ri){
     var usd=usdNum(r.usd), unid=numClean(r.unid);
     var ticket=(unid>0)?(usd/unid):'';
     var ym=(''+((r.dinv||r.eta||r.lcd||r.cost)||'')).match(/^(\d{4}-\d{2})/);
     var ttot=computeTtot(r);
     var cap=rowComplete(r)?'Movilizado':'En tránsito';
-    var fila=[
+    var vals=[
       r.po||'', r.prov||'', _normTipo(r.tipo), r.zona||'',
-      pbNumU(unid), pbNum(usd), (ticket===''?'':(''+ticket)),
-      estado(r), cap, (ttot===''?'':(''+ttot)), (ym?ym[1]:''),
+      (isNaN(unid)?'':unid), (isNaN(usd)?'':usd), (ticket===''?'':ticket),
+      estado(r), cap, (ttot===''?'':Number(ttot)), (ym?ym[1]:''),
       r.fconf||'', r.dorig||'', r.rorig||'', r.diast||'',
       r.eta||'', r.fdisp||'', r.rpa||'', r.lcd||'', r.cost||'', r.dinv||''
     ];
-    lineas.push(fila.map(csvCell).join(','));
+    var row=ws.getRow(ri+2);
+    cols.forEach(function(c,ci){
+      var cell=row.getCell(ci+1);var v=vals[ci];
+      if(c.t==='n'){
+        if(v===''||v===null||isNaN(v)){cell.value=null;}
+        else{cell.value=Number(v);cell.numFmt='0.############';cell.alignment={horizontal:'right'};}
+      }else{cell.value=(v===''?null:(''+v));}
+      cell.font={size:10,color:{argb:'FF334155'}};
+      if(ri%2===1)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF6F9FD'}};
+    });
   });
-  var csv='\ufeff'+lineas.join('\r\n');
+  cols.forEach(function(c,i){ws.getColumn(i+1).width=Math.max(12,Math.min(30,c.h.length+4));});
   var f=new Date(),pad=function(n){return String(n).padStart(2,'0');};
-  var fname='COMEX_QD_PowerBI_'+f.toISOString().slice(0,10)+'_'+pad(f.getHours())+pad(f.getMinutes())+'.csv';
-  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;
-  document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);
-  try{logAct('exportar','Exportó dataset para Power BI (CSV, '+filas.length+' PO)');}catch(e){}
-  alert('✅ Dataset para Power BI descargado: '+filas.length+' PO.\n\nEn Power BI: Obtener datos → Texto/CSV → selecciona este archivo.\nCada fila es una PO (sin filas en rojo) con montos crudos listos para graficar.');
+  var fname='COMEX_QD_PowerBI_'+f.toISOString().slice(0,10)+'_'+pad(f.getHours())+pad(f.getMinutes())+'.xlsx';
+  wb.xlsx.writeBuffer().then(function(buf){
+    var mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    var blob=new Blob([buf],{type:mime});
+    saveBlob(blob,fname,mime,'.xlsx','Libro de Excel');
+    try{logAct('exportar','Exportó dataset para Power BI (.xlsx, '+filas.length+' PO)');}catch(e){}
+    alert('✅ Dataset para Power BI descargado (.xlsx): '+filas.length+' PO.\n\nEn Power BI web: Mi área de trabajo → Importar → Desde este equipo → elige este archivo .xlsx.\nLuego crea un informe sobre el modelo y arrastra los campos a los gráficos.');
+  }).catch(function(e){alert('Error al exportar a Excel: '+((e&&e.message)||e));});
 }
 /* Guarda un Blob: si el navegador soporta el selector de carpeta (File System Access API)
    deja ELEGIR dónde guardar; si no, cae a la descarga normal del navegador. */
