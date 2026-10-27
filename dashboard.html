@@ -2820,18 +2820,39 @@ function opsBuildReportHtml(cap){
    return '<div class="rep-page">'+band+kpis+'<div class="rep-grid2">'+cells+'</div></div>';
  }).join('');
 }
+var OPS_COL='#2b4a6f';var OPS_REP_SEL=null;var OPS_REP_PAGES=null;var OPS_PDF_VAR='eq';
+function opsMonthsSorted(){var seen={};var list=[];(DATA.rows||[]).forEach(function(r){if(r.mk&&!seen[r.mk]){seen[r.mk]=1;list.push({mk:r.mk,label:r.mes||r.mk});}});list.sort(function(a,b){return a.mk<b.mk?-1:(a.mk>b.mk?1:0);});return list;}
+function opsWeeksSorted(){var s={};(DATA.rows||[]).forEach(function(r){if(r.sem>0)s[r.sem]=1;});return Object.keys(s).map(Number).sort(function(a,b){return a-b;});}
+function opsRepSelInit(){var ms=opsMonthsSorted();var ws=opsWeeksSorted();OPS_REP_SEL={zona:'all',mA:ms.length>1?ms[ms.length-2].mk:(ms.length?ms[0].mk:null),mB:ms.length?ms[ms.length-1].mk:null,wA:ws.length>1?ws[ws.length-2]:(ws.length?ws[0]:null),wB:ws.length?ws[ws.length-1]:null};}
 function opsReporte(){
  if(!DATA.rows.length){alert('No hay informaci\u00f3n para generar el reporte. Importa primero un Excel de Operaciones.');return;}
- var cap=opsCapture();OPS_REPORT=cap;
- var html=opsBuildReportHtml(cap);
- if(!html){alert('No hay gr\u00e1ficos disponibles para el reporte todav\u00eda.');return;}
+ opsRepSelInit();
  var ov=document.getElementById('opsRepOvr');
- if(!ov){ov=document.createElement('div');ov.id='opsRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo \u00b7 Operaciones</div><button class="ob-rep-b ops-rep-pdf">\u2913 Guardar PDF</button><button class="ob-rep-b ops-rep-print">\ud83d\udda8 Imprimir</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-body" id="opsRepBody"></div></div>';document.body.appendChild(ov);
+ if(!ov){ov=document.createElement('div');ov.id='opsRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo \u00b7 Operaciones</div><select class="ob-rep-selvar" id="opsPdfVar" title="Tama\u00f1o del PDF"><option value="eq">PDF: Equilibrado</option><option value="cp">PDF: Compacto</option><option value="am">PDF: Amplio</option></select><button class="ob-rep-b ops-pdf">\u2913 PDF</button><button class="ob-rep-b ops-imp">\ud83d\udda8 IMPRIMIR</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-ctl" id="opsRepCtl"></div><div class="ob-rep-body" id="opsRepBody"></div></div>';document.body.appendChild(ov);
   ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
-  ov.querySelector('.ops-rep-pdf').onclick=function(){opsReportPrint(true);};
-  ov.querySelector('.ops-rep-print').onclick=function(){opsReportPrint(false);};}
- document.getElementById('opsRepBody').innerHTML='<div class="rep-wrap">'+html+'</div>';
+  var sv=ov.querySelector('#opsPdfVar');if(sv){sv.value=OPS_PDF_VAR;sv.onchange=function(){OPS_PDF_VAR=sv.value;};}
+  ov.querySelector('.ops-pdf').onclick=function(){obPrintPages(true,OPS_REP_PAGES,OPS_PDF_VAR,'Reporte Operaciones');};
+  ov.querySelector('.ops-imp').onclick=function(){obPrintPages(false,OPS_REP_PAGES,OPS_PDF_VAR,'Reporte Operaciones');};}
+ opsRepRefresh();
  ov.style.display='block';
+}
+function opsRepBuildAll(){var pages=opsRepBuildPages();OPS_REP_PAGES=pages;return pages;}
+function opsRepRefresh(){var pages=opsRepBuildAll();var body=document.getElementById('opsRepBody');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';opsRepFillControls('opsRepCtl',opsRepRefresh);}
+function opsPptRefresh(){var pages=opsRepBuildAll();var body=document.getElementById('opsPptBody');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';opsRepFillControls('opsPptCtl',opsPptRefresh);}
+function opsRepFillControls(boxId,onChange){
+ var box=document.getElementById(boxId);if(!box||!OPS_REP_SEL)return;
+ var ms=opsMonthsSorted();var ws=opsWeeksSorted();
+ var mo=ms.map(function(m){return '<option value="'+m.mk+'">'+m.label+'</option>';}).join('');
+ var wo=ws.map(function(w){return '<option value="'+w+'">S'+w+'</option>';}).join('');
+ var h='<div class="rep-ctl-row"><span class="rep-ctl-lbl" style="color:'+OPS_COL+'">Operaciones</span>'
+  +'<span class="rep-ctl-g">Mes A <select data-f="mA">'+mo+'</select> vs B <select data-f="mB">'+mo+'</select></span>'
+  +'<span class="rep-ctl-g">Semana A <select data-f="wA">'+(wo||'<option value="">(sin semanas)</option>')+'</select> vs B <select data-f="wB">'+(wo||'<option value="">(sin semanas)</option>')+'</select></span>'
+  +'<span class="rep-ctl-g">Zona <select data-f="zona"><option value="all">Todas</option><option value="Santiago">Santiago</option><option value="Regiones">Regiones</option></select></span></div>';
+ box.innerHTML=h;
+ box.querySelectorAll('select').forEach(function(s){
+   var f=s.getAttribute('data-f');var v=OPS_REP_SEL[f];if(v!=null&&v!=='')s.value=String(v);
+   s.addEventListener('change',function(){var vv=s.value;OPS_REP_SEL[f]=(f==='zona'||f==='mA'||f==='mB')?vv:(vv===''?null:+vv);onChange();});
+ });
 }
 function opsReportPrint(isPdf){
  if(!OPS_REPORT)return;
@@ -2841,6 +2862,95 @@ function opsReportPrint(isPdf){
  w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Operaciones \u2014 QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{page-break-after:always;box-shadow:none;border:0;margin:0 auto}.rep-grid2{grid-template-columns:1fr !important;gap:20px !important;padding:16px 24px !important}.rep-cell .rep-img2{display:block !important;width:150mm !important;max-width:100% !important;margin:4px auto 0}.rep-cell .rep-ct{font-size:13.5px !important}.rep-cell .rep-an,.rep-an{font-size:12.5px !important;line-height:1.65 !important}@page{size:A4 portrait;margin:9mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},500);}<\/scr'+'ipt></body></html>');
  w.document.close();
 }
+
+function opsRepVentas(){
+ var col=OPS_COL;var ZCOL=OBR_ZCOL;
+ var rows=DATA.rows||[];var ms=opsMonthsSorted();
+ var sByZ=function(z,mk){return rows.reduce(function(a,r){return a+((r.mk===mk&&r.zona===z)?(r.v||0):0);},0);};
+ var mSant=ms.map(function(m){return sByZ('Santiago',m.mk);});
+ var mRegi=ms.map(function(m){return sByZ('Regiones',m.mk);});
+ var mTot=ms.map(function(m,i){return mSant[i]+mRegi[i];});
+ var santi=rows.reduce(function(a,r){return a+(r.zona==='Santiago'?(r.v||0):0);},0);
+ var regio=rows.reduce(function(a,r){return a+(r.zona==='Regiones'?(r.v||0):0);},0);
+ var total=santi+regio;var totalPed=rows.length;
+ var uMap={};rows.forEach(function(r){var kk=r.un||'Sin unidad';if(!uMap[kk])uMap[kk]={v:0,z:{}};uMap[kk].v+=r.v||0;var z=r.zona||'';uMap[kk].z[z]=(uMap[kk].z[z]||0)+(r.v||0);});
+ var tie=Object.keys(uMap).map(function(kk){var zz=uMap[kk].z;var z=(zz['Santiago']||0)>=(zz['Regiones']||0)?'Santiago':'Regiones';return {k:kk,v:uMap[kk].v,z:z};}).filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;});
+ var nAct=tie.length;var prom=nAct?total/nAct:0;
+ var top5=tie.slice(0,5).reduce(function(a,x){return a+x.v;},0);
+ var acc=0,c80=0;for(var i=0;i<tie.length;i++){acc+=tie[i].v;c80++;if(total&&acc>=0.8*total)break;}
+ var bestIdx=0;mTot.forEach(function(v,i){if(v>mTot[bestIdx])bestIdx=i;});
+ var bestLbl=ms.length?ms[bestIdx].label:'';var bestV=ms.length?mTot[bestIdx]:0;
+ var mLabels=ms.map(function(m){return m.label;});
+ var xLab=ms.map(function(m){return (m.label||'').slice(0,3)+" '"+String(m.mk).slice(2,4);});
+ var imgMes=obChartImg(840,360,{grid:{left:8,right:16,top:34,bottom:30,containLabel:true},legend:{top:4,data:['Santiago','Regiones'],textStyle:{color:'#6b7684',fontSize:11}},xAxis:{type:'category',data:xLab,axisLabel:{color:'#6b7684',interval:0,rotate:xLab.length>8?28:0}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{name:'Santiago',type:'bar',stack:'z',data:mSant,itemStyle:{color:ZCOL.Santiago},barWidth:'55%',label:{show:true,color:'#fff',fontSize:9,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:'Regiones',type:'bar',stack:'z',data:mRegi,itemStyle:{color:ZCOL.Regiones,borderRadius:[4,4,0,0]},label:{show:true,color:'#fff',fontSize:9,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:'Total',type:'bar',stack:'z',data:mTot.map(function(){return 0;}),label:{show:true,position:'top',color:'#1f3a59',fontWeight:600,fontSize:10,formatter:function(x){return mTot[x.dataIndex]?fmShort(mTot[x.dataIndex]):'';}},silent:true}]});
+ var tt=tie.slice(0,10).slice().reverse();
+ var imgTie=obChartImg(440,360,{grid:{left:8,right:84,top:10,bottom:10,containLabel:true},xAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},yAxis:{type:'category',data:tt.map(function(x){return x.k;}),axisLabel:{width:150,overflow:'truncate',fontSize:10,color:'#6b7684'}},series:[{type:'bar',data:tt.map(function(x){return {value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[0,4,4,0]}};}),barWidth:'62%',label:{show:true,position:'right',fontSize:9,color:'#1f3a59',formatter:function(x){return fmShort(x.value);}}}]});
+ var imgZona=obChartImg(440,360,{legend:{bottom:0,textStyle:{color:'#6b7684',fontSize:12}},series:[{type:'pie',radius:['45%','72%'],center:['50%','45%'],itemStyle:{borderColor:'#fff',borderWidth:2},data:[{name:'Santiago',value:santi,itemStyle:{color:ZCOL.Santiago}},{name:'Regiones',value:regio,itemStyle:{color:ZCOL.Regiones}}],label:{formatter:'{b}\n{d}%',fontSize:12,color:'#111',fontWeight:600}}]});
+ var par=tie.slice(0,12);var cum=[];var _c=0;par.forEach(function(x){_c+=x.v;cum.push(total?+(100*_c/total).toFixed(1):0);});
+ var imgPareto=obChartImg(840,390,{grid:{left:8,right:50,top:34,bottom:78,containLabel:true},legend:{top:4,textStyle:{color:'#6b7684',fontSize:11}},xAxis:{type:'category',data:par.map(function(x){return x.k;}),axisLabel:{interval:0,rotate:34,fontSize:9,width:84,overflow:'truncate',color:'#6b7684'}},yAxis:[{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},{type:'value',max:100,position:'right',axisLabel:{formatter:'{value}%',color:'#c0392b'},splitLine:{show:false}}],series:[{name:'Valor',type:'bar',data:par.map(function(x){return {value:x.v,itemStyle:{color:ZCOL[x.z]||col,borderRadius:[4,4,0,0]}};}),barWidth:'55%'},{name:'% Acumulado',type:'line',yAxisIndex:1,data:cum,smooth:true,symbol:'circle',symbolSize:5,lineStyle:{color:'#c0392b',width:2},itemStyle:{color:'#c0392b'},markLine:{silent:true,symbol:'none',data:[{yAxis:80}],lineStyle:{color:'#c0392b',type:'dashed'},label:{formatter:'80%',color:'#c0392b'}}}]});
+ var grow=mTot.map(function(v,i){return i===0?null:(mTot[i-1]?+(100*(v-mTot[i-1])/mTot[i-1]).toFixed(1):null);});
+ var growBest=null;grow.forEach(function(g,i){if(g!=null&&(growBest==null||g>growBest.g))growBest={g:g,lbl:mLabels[i]};});
+ var imgCrec=obChartImg(840,340,{grid:{left:8,right:16,top:16,bottom:30,containLabel:true},xAxis:{type:'category',data:xLab,axisLabel:{color:'#6b7684',interval:0,rotate:xLab.length>8?28:0}},yAxis:{type:'value',axisLabel:{formatter:'{value}%',color:'#6b7684'}},series:[{type:'line',data:grow,smooth:true,symbol:'circle',symbolSize:7,connectNulls:true,lineStyle:{color:col,width:2.5},itemStyle:{color:col},areaStyle:{color:col,opacity:.08},label:{show:true,color:col,fontSize:9,formatter:function(x){return x.value==null?'':((x.value>0?'+':'')+x.value+'%');}},markLine:{silent:true,symbol:'none',data:[{yAxis:0}],lineStyle:{color:'#9aa7b4',type:'dashed'}}}]});
+ return {months:ms,total:total,totalPed:totalPed,santi:santi,regio:regio,nAct:nAct,prom:prom,top5:top5,c80:c80,tie:tie,bestLbl:bestLbl,bestV:bestV,growBest:growBest,imgMes:imgMes,imgTie:imgTie,imgZona:imgZona,imgPareto:imgPareto,imgCrec:imgCrec};
+}
+function opsRepCmp(mode){
+ var col=OPS_COL;var ZCOL=OBR_ZCOL;var Bcol='#c88a6a';
+ var sel=OPS_REP_SEL||{};var zona=sel.zona||'all';
+ var rows=DATA.rows||[];
+ var periods,aId,bId,labOf,shortOf;
+ if(mode==='mes'){var ms=opsMonthsSorted();periods=ms.map(function(m){return m.mk;});var lmap={};ms.forEach(function(m){lmap[m.mk]=m.label;});aId=sel.mA;bId=sel.mB;labOf=function(id){return lmap[id]||id;};shortOf=function(id){return (lmap[id]||id).slice(0,3);};}
+ else{periods=opsWeeksSorted();aId=sel.wA;bId=sel.wB;labOf=function(id){return 'Semana '+id;};shortOf=function(id){return 'S'+id;};}
+ if(!periods.length||aId==null||bId==null)return null;
+ var keyOf=function(r){return mode==='mes'?r.mk:r.sem;};
+ var fRows=rows.filter(function(r){return zona==='all'||r.zona===zona;});
+ var sumFor=function(list,id){return list.reduce(function(a,r){return a+(String(keyOf(r))===String(id)?(r.v||0):0);},0);};
+ var labA=labOf(aId),labB=labOf(bId);
+ var totA=sumFor(fRows,aId),totB=sumFor(fRows,bId);
+ var santiRows=rows.filter(function(r){return r.zona==='Santiago';});
+ var regioRows=rows.filter(function(r){return r.zona==='Regiones';});
+ var santiA=sumFor(santiRows,aId),regioA=sumFor(regioRows,aId),santiB=sumFor(santiRows,bId),regioB=sumFor(regioRows,bId);
+ var varPct=totA?(100*(totB-totA)/totA):0;
+ var uM={};fRows.forEach(function(r){var kk=r.un||'Sin unidad';if(!uM[kk])uM[kk]={a:0,b:0,z:r.zona};var id=keyOf(r);if(String(id)===String(aId))uM[kk].a+=r.v||0;else if(String(id)===String(bId))uM[kk].b+=r.v||0;});
+ var perTie=Object.keys(uM).map(function(kk){return {k:kk,a:uM[kk].a,b:uM[kk].b,z:uM[kk].z};}).filter(function(x){return x.a>0||x.b>0;});
+ var best=null;perTie.forEach(function(x){var d=x.b-x.a;if(best==null||d>best.d)best={k:x.k,d:d};});
+ var vals=periods.map(function(id){return sumFor(fRows,id);});
+ var lab=periods.map(shortOf);
+ var cols=periods.map(function(id){return String(id)===String(aId)?col:(String(id)===String(bId)?Bcol:'#cbd3db');});
+ var imgEvo=obChartImg(840,340,{grid:{left:8,right:16,top:16,bottom:34,containLabel:true},xAxis:{type:'category',data:lab,axisLabel:{color:'#45505c',interval:0,rotate:lab.length>8?32:0,fontWeight:600}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{type:'bar',data:periods.map(function(id,i){return {value:vals[i],itemStyle:{color:cols[i],borderRadius:[4,4,0,0]}};}),barWidth:periods.length<=2?'30%':'55%',label:{show:true,position:'top',fontSize:9,color:'#45505c',formatter:function(x){return x.value?fmShort(x.value):'';}}}]});
+ var imgTot=obChartImg(440,360,{legend:{top:4,textStyle:{color:'#6b7684',fontSize:11}},grid:{left:8,right:16,top:34,bottom:8,containLabel:true},xAxis:{type:'category',data:[shortOf(aId),shortOf(bId)],axisLabel:{color:'#45505c',fontWeight:600}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{name:'Santiago',type:'bar',stack:'z',barWidth:'46%',data:[santiA,santiB],itemStyle:{color:ZCOL.Santiago},label:{show:true,color:'#fff',fontSize:10,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:'Regiones',type:'bar',stack:'z',data:[regioA,regioB],itemStyle:{color:ZCOL.Regiones,borderRadius:[4,4,0,0]},label:{show:true,color:'#fff',fontSize:10,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:'Total',type:'bar',stack:'z',data:[0,0],label:{show:true,position:'top',color:'#1f3a59',fontWeight:600,fontSize:11,formatter:function(x){var t=x.dataIndex===0?(santiA+regioA):(santiB+regioB);return t?fmShort(t):'';}},silent:true}]});
+ var imgZonaC=obChartImg(440,360,{legend:{top:4,textStyle:{color:'#6b7684',fontSize:11}},grid:{left:8,right:16,top:34,bottom:8,containLabel:true},xAxis:{type:'category',data:['Santiago','Regiones'],axisLabel:{color:'#45505c'}},yAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},series:[{name:shortOf(aId),type:'bar',data:[santiA,regioA],itemStyle:{color:col,borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:col,fontSize:9,formatter:function(x){return fmShort(x.value);}}},{name:shortOf(bId),type:'bar',data:[santiB,regioB],itemStyle:{color:Bcol,borderRadius:[4,4,0,0]},label:{show:true,position:'top',color:'#9a6a4e',fontSize:9,formatter:function(x){return fmShort(x.value);}}}]});
+ var topT=perTie.slice().sort(function(x,y){return (y.a+y.b)-(x.a+x.b);}).slice(0,10).reverse();
+ var imgTieC=obChartImg(840,400,{legend:{top:4,textStyle:{color:'#6b7684',fontSize:11}},grid:{left:8,right:84,top:34,bottom:8,containLabel:true},xAxis:{type:'value',axisLabel:{formatter:function(v){return fmShort(v);},color:'#6b7684'}},yAxis:{type:'category',data:topT.map(function(x){return x.k;}),axisLabel:{color:'#45505c',fontSize:10,width:160,overflow:'truncate'}},series:[{name:shortOf(aId),type:'bar',data:topT.map(function(x){return x.a;}),itemStyle:{color:col,borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:col,fontSize:9,formatter:function(x){return x.value?fmShort(x.value):'';}}},{name:shortOf(bId),type:'bar',data:topT.map(function(x){return x.b;}),itemStyle:{color:Bcol,borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#9a6a4e',fontSize:9,formatter:function(x){return x.value?fmShort(x.value):'';}}}]});
+ return {labA:labA,labB:labB,totA:totA,totB:totB,varPct:varPct,best:best,imgEvo:imgEvo,imgTot:imgTot,imgZona:imgZonaC,imgTie:imgTieC};
+}
+function opsRepBuildPages(){
+ if(!(DATA.rows&&DATA.rows.length))return [];
+ var lbl='Operaciones';var col=OPS_COL;var pages=[];
+ var V=opsRepVentas();
+ pages.push({unit:lbl,color:col,section:'OPERACIONES \u00b7 VALOR MOVILIZADO',title:'Resumen y evoluci\u00f3n mensual',kpis:[{t:'Valor total',v:fm(V.total),s:fi(V.months.length)+' meses'},{t:'Santiago',v:fm(V.santi),s:(V.total?(100*V.santi/V.total).toFixed(0):0)+'% del total'},{t:'Regiones',v:fm(V.regio),s:(V.total?(100*V.regio/V.total).toFixed(0):0)+'% del total'},{t:'Pedidos',v:fi(V.totalPed),s:fi(V.nAct)+' unidades'}],charts:[{title:'Valor por Mes',img:V.imgMes,an:(V.bestLbl?('El mes de mayor valor movilizado es <b>'+V.bestLbl+'</b>, que alcanz\u00f3 <b>'+fm(V.bestV)+'</b>. '):'')+'En el periodo se movilizaron en total <b>'+fm(V.total)+'</b> a lo largo de <b>'+fi(V.months.length)+'</b> meses, con <b>'+fi(V.totalPed)+'</b> pedidos. De ese total, Santiago aporta <b>'+fm(V.santi)+'</b> y Regiones <b>'+fm(V.regio)+'</b>, lo que muestra el peso real de cada zona en la operaci\u00f3n mensual. Conviene revisar los meses m\u00e1s bajos para entender si responden a estacionalidad o a una ca\u00edda efectiva de la actividad.'}]});
+ pages.push({unit:lbl,color:col,section:'OPERACIONES \u00b7 VALOR MOVILIZADO',title:'Participaci\u00f3n por zona y ranking de unidades',kpis:[{t:'Valor promedio x unidad',v:fm(V.prom),s:'por unidad activa'},{t:'Mejor mes',v:V.bestLbl||'\u2014',s:fmShort(V.bestV)},{t:'Participaci\u00f3n Top 5',v:(V.total?(100*V.top5/V.total).toFixed(0):0)+'%',s:'del valor'},{t:'Concentraci\u00f3n 80%',v:fi(V.c80),s:'unidades = 80%'}],charts:[{title:'Santiago vs Regiones',img:V.imgZona,an:'Del valor total movilizado, Santiago concentra el <b>'+(V.total?(100*V.santi/V.total).toFixed(0):0)+'%</b> y Regiones el <b>'+(V.total?(100*V.regio/V.total).toFixed(0):0)+'%</b>. Esta diferencia marca d\u00f3nde est\u00e1 hoy el volumen de la operaci\u00f3n; si Regiones sube su participaci\u00f3n en los pr\u00f3ximos meses, indicar\u00eda una expansi\u00f3n fuera de la capital. Mantener Santiago y Regiones por separado permite decisiones de despacho y ruta m\u00e1s precisas.'},{title:'Top 10 Unidades de Negocio',img:V.imgTie,an:(V.tie[0]?('La unidad de negocio l\u00edder es <b>'+V.tie[0].k+'</b> con <b>'+fm(V.tie[0].v)+'</b>, seguida por el resto del Top 10. Estas unidades explican la mayor parte del valor movilizado, por lo que cualquier variaci\u00f3n en ellas impacta directamente el total. Es clave asegurar su operaci\u00f3n y vigilar a las que caen respecto de meses anteriores.'):'Sin datos de unidades para el periodo.')}]});
+ pages.push({unit:lbl,color:col,section:'OPERACIONES \u00b7 VALOR MOVILIZADO',title:'Concentraci\u00f3n (Pareto) y crecimiento',charts:[{title:'Pareto de Unidades (80/20)',img:V.imgPareto,an:'<b>'+fi(V.c80)+'</b> de <b>'+fi(V.nAct)+'</b> unidades de negocio concentran el <b>80%</b> del valor. Esto confirma una fuerte concentraci\u00f3n: unas pocas unidades sostienen el resultado y la cola larga aporta poco. La recomendaci\u00f3n es proteger el grupo que genera el 80% y, en paralelo, evaluar planes puntuales para activar a las unidades de menor movimiento.'},{title:'Crecimiento Mensual',img:V.imgCrec,an:(V.growBest?('El mayor crecimiento se dio en <b>'+V.growBest.lbl+'</b> con <b>'+(V.growBest.g>0?'+':'')+V.growBest.g+'%</b> respecto del mes anterior. La l\u00ednea muestra la velocidad de la operaci\u00f3n mes a mes; los tramos negativos marcan meses de contracci\u00f3n que conviene analizar. Un crecimiento sostenido por sobre 0% indica una tendencia sana de la actividad.'):'A\u00fan no hay meses suficientes para calcular el crecimiento mensual.')}]});
+ var Cm=opsRepCmp('mes');
+ if(Cm){
+   pages.push({unit:lbl,color:col,section:'COMPARATIVO POR MES',title:Cm.labA+' vs '+Cm.labB,kpis:[{t:'Total A',v:fm(Cm.totA),s:Cm.labA},{t:'Total B',v:fm(Cm.totB),s:Cm.labB},{t:'Variaci\u00f3n B vs A',v:(Cm.varPct>0?'+':'')+Cm.varPct.toFixed(1)+'%',s:Cm.totB>=Cm.totA?'B supera a A':'B baja'},{t:'Unidad que m\u00e1s crece',v:(Cm.best?Cm.best.k:'\u2014'),s:(Cm.best?((Cm.best.d>=0?'+':'')+fmShort(Cm.best.d)):'')}],charts:[{title:'Valor por Mes (todos)',img:Cm.imgEvo,an:'En <b>'+Cm.labB+'</b> el valor '+(Cm.varPct>=0?'subi\u00f3':'baj\u00f3')+' <b>'+(Cm.varPct>=0?'+':'')+Cm.varPct.toFixed(1)+'%</b> respecto de <b>'+Cm.labA+'</b>. El gr\u00e1fico ubica ambos meses dentro de la serie completa, de modo que se ve si el cambio sigue la tendencia general o es un punto fuera de lo normal. '+(Cm.varPct>=0?'La mejora debe sostenerse en los meses siguientes para confirmarse como tendencia.':'Conviene identificar qu\u00e9 zonas o unidades explican la baja para corregir a tiempo.')},{title:'Comparaci\u00f3n A vs B',img:Cm.imgTot,an:'El total pas\u00f3 de <b>'+fm(Cm.totA)+'</b> en '+Cm.labA+' a <b>'+fm(Cm.totB)+'</b> en '+Cm.labB+', separado por zona. Comparar Santiago y Regiones en cada mes permite ver si el cambio es parejo o se concentra en una sola zona, lo que orienta d\u00f3nde reforzar o ajustar la operaci\u00f3n.'}]});
+   pages.push({unit:lbl,color:col,section:'COMPARATIVO POR MES',title:'Zonas y unidades \u00b7 '+Cm.labA+' vs '+Cm.labB,charts:[{title:'Zona en A vs B',img:Cm.imgZona,an:'Permite ver en qu\u00e9 zona se concentra el cambio entre <b>'+Cm.labA+'</b> y <b>'+Cm.labB+'</b>. Si una zona crece mientras la otra cae, el total puede esconder realidades distintas; por eso se analiza Santiago y Regiones por separado antes de concluir sobre el desempe\u00f1o global.'},{title:'Unidades A vs B',img:Cm.imgTie,an:(Cm.best?('La unidad con mayor crecimiento es <b>'+Cm.best.k+'</b> ('+(Cm.best.d>=0?'+':'')+fmShort(Cm.best.d)+' entre ambos meses). El gr\u00e1fico compara las 10 unidades m\u00e1s grandes y muestra cu\u00e1les ganan y cu\u00e1les pierden terreno. Replicar lo que hizo bien la unidad l\u00edder y atender a las que retroceden ayuda a estabilizar el total.'):'Sin datos de unidades para comparar entre los dos meses.')}]});
+ }
+ var Cw=opsRepCmp('sem');
+ if(Cw){
+   pages.push({unit:lbl,color:col,section:'COMPARATIVO POR SEMANA',title:Cw.labA+' vs '+Cw.labB,kpis:[{t:'Total A',v:fm(Cw.totA),s:Cw.labA},{t:'Total B',v:fm(Cw.totB),s:Cw.labB},{t:'Variaci\u00f3n B vs A',v:(Cw.varPct>0?'+':'')+Cw.varPct.toFixed(1)+'%',s:Cw.totB>=Cw.totA?'B supera a A':'B baja'},{t:'Unidad que m\u00e1s crece',v:(Cw.best?Cw.best.k:'\u2014'),s:(Cw.best?((Cw.best.d>=0?'+':'')+fmShort(Cw.best.d)):'')}],charts:[{title:'Valor por Semana (todas)',img:Cw.imgEvo,an:'En <b>'+Cw.labB+'</b> el valor '+(Cw.varPct>=0?'subi\u00f3':'baj\u00f3')+' <b>'+(Cw.varPct>=0?'+':'')+Cw.varPct.toFixed(1)+'%</b> respecto de <b>'+Cw.labA+'</b>. Al ver ambas semanas dentro de la serie se distingue si el movimiento acompa\u00f1a la tendencia o es un pico aislado. '+(Cw.varPct>=0?'Si la mejora se repite en semanas siguientes, confirma una recuperaci\u00f3n.':'Revisar la semana a la baja ayuda a reaccionar antes de que afecte el mes.')},{title:'Comparaci\u00f3n A vs B',img:Cw.imgTot,an:'El total pas\u00f3 de <b>'+fm(Cw.totA)+'</b> en '+Cw.labA+' a <b>'+fm(Cw.totB)+'</b> en '+Cw.labB+', abierto por zona. Ver Santiago y Regiones en cada semana muestra si el cambio semanal es general o puntual de una zona, \u00fatil para ajustar despacho y reposici\u00f3n con rapidez.'}]});
+ }else{
+   pages.push({unit:lbl,color:col,section:'COMPARATIVO POR SEMANA',title:'Comparaci\u00f3n semanal',note:'Este conjunto de datos de Operaciones no incluye detalle por semana. Para comparar por semana, importa un Excel de Operaciones que incluya la columna de SEMANA; luego vuelve a abrir el reporte y elige las semanas A y B arriba.'});
+ }
+ return pages;
+}
+function opsPptGenerate(btn){
+ var pages=OPS_REP_PAGES||[];
+ if(!pages.length){alert('No hay contenido para generar el PPT.');return;}
+ var old=btn.textContent;btn.disabled=true;btn.textContent='Generando\u2026';
+ var load=(typeof PptxGenJS!=='undefined')?Promise.resolve():obLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
+ load.then(function(){obRepPPT(pages,'Reporte_Operaciones_QUINTEC.pptx',{title:'Reporte Ejecutivo de Operaciones',sub:'QUINTEC \u00b7 KPI Log\u00edstica'});btn.disabled=false;btn.textContent=old;}).catch(function(){btn.disabled=false;btn.textContent=old;alert('No se pudo cargar el generador de PPT. Revisa tu conexi\u00f3n a internet e int\u00e9ntalo de nuevo.');});
+}
+/*OPSNEW4*/
 
 function opsBuildPptPreviewHtml(cap){
  var pages=opsRepPages(cap);
@@ -2856,14 +2966,12 @@ function opsBuildPptPreviewHtml(cap){
 }
 function opsPPT(){
  if(!DATA.rows.length){alert('No hay informaci\u00f3n para generar la presentaci\u00f3n. Importa primero un Excel de Operaciones.');return;}
- var cap=opsCapture();OPS_REPORT=cap;
- var html=opsBuildPptPreviewHtml(cap);
+ opsRepSelInit();
  var ov=document.getElementById('opsPptOvr');
- if(!ov){ov=document.createElement('div');ov.id='opsPptOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Presentaci\u00f3n \u00b7 Operaciones</div><button class="ob-rep-b ops-ppt-save">\u2913 Guardar PPT</button><button class="ob-rep-b ops-ppt-print">\ud83d\udda8 Imprimir</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-body ppt-body" id="opsPptBody"></div></div>';document.body.appendChild(ov);
+ if(!ov){ov=document.createElement('div');ov.id='opsPptOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Vista previa PPT \u00b7 Operaciones</div><button class="ob-rep-b ops-ppt-gen">\u2913 GENERAR PPT</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-ctl" id="opsPptCtl"></div><div class="ob-rep-body" id="opsPptBody"></div></div>';document.body.appendChild(ov);
   ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
-  ov.querySelector('.ops-ppt-save').onclick=function(){opsBuildPptx(OPS_REPORT);};
-  ov.querySelector('.ops-ppt-print').onclick=function(){opsPptPrint();};}
- document.getElementById('opsPptBody').innerHTML='<div class="ppt-wrap">'+html+'</div>';
+  ov.querySelector('.ops-ppt-gen').onclick=function(){opsPptGenerate(this);};}
+ opsPptRefresh();
  ov.style.display='block';
 }
 function opsPptPrint(){
@@ -3098,10 +3206,11 @@ function obRepPagesHTML(pages){
    return '<div class="rep-page">'+band+kp+body+'</div>';
  }).join('');
 }
-function obPrintReport(isPdf){
- if(!OB_REP_PAGES)return;
- var html='<div class="rep-wrap">'+obRepPagesHTML(OB_REP_PAGES)+'</div>';
- var V=OB_PDF_VAR||'eq';
+function obPrintReport(isPdf){obPrintPages(isPdf,OB_REP_PAGES,OB_PDF_VAR,'Reporte Tiendas');}
+function obPrintPages(isPdf,pages,variant,ttl){
+ if(!pages||!pages.length)return;
+ var html='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';
+ var V=variant||'eq';
  var c=({cp:{pm:'8mm',ch:66,im:84,gap:6,bandp:11,kp:10,an:1.5},eq:{pm:'9mm',ch:76,im:90,gap:8,bandp:13,kp:12,an:1.55},am:{pm:'11mm',ch:94,im:108,gap:10,bandp:15,kp:14,an:1.62}})[V]||{pm:'9mm',ch:76,im:90,gap:8,bandp:13,kp:12,an:1.55};
  var pcss=' body{margin:0;background:#fff}.rep-wrap{max-width:none}'
   +'.rep-page{box-shadow:none;border:0;margin:0 auto 5mm;padding:0 0 3mm;page-break-inside:avoid;break-inside:avoid}'
@@ -3118,7 +3227,7 @@ function obPrintReport(isPdf){
   +'@page{size:A4;margin:'+c.pm+'}';
  var w=window.open('','_blank');
  if(!w){alert('El navegador bloqueó la ventana. Permite las ventanas emergentes para '+(isPdf?'guardar el PDF':'imprimir')+'.');return;}
- w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+pcss+'</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
+ w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>'+(ttl||'Reporte')+' — QUINTEC</title><style>'+OB_REP_CSS+pcss+'</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
  w.document.close();
 }
 function obLoadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
@@ -3139,16 +3248,17 @@ function obPptGenerate(btn){
  var load=(typeof PptxGenJS!=='undefined')?Promise.resolve():obLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
  load.then(function(){obRepPPT(pages);btn.disabled=false;btn.textContent=old;}).catch(function(){btn.disabled=false;btn.textContent=old;alert('No se pudo cargar el generador de PPT. Revisa tu conexión a internet e inténtalo de nuevo.');});
 }
-function obRepPPT(pages){
+function obRepPPT(pages,fileName,cover){
  try{
   var pptx=new PptxGenJS();pptx.defineLayout({name:'QA',width:13.33,height:7.5});pptx.layout='QA';
   var strip=function(h){return (h==null?'':String(h)).replace(/<[^>]*>/g,'');};
   var totalP=pages.length;
+  cover=cover||{};
   // ===== Portada =====
   var s0=pptx.addSlide();s0.background={color:'1F3A59'};
   s0.addShape('rect',{x:0,y:3.28,w:13.33,h:0.07,fill:{color:'C3A24A'}});
-  s0.addText('Reporte Ejecutivo de Tiendas',{x:0.9,y:2.3,w:11.5,h:1,fontSize:40,bold:true,color:'FFFFFF',fontFace:'Arial'});
-  s0.addText('MacOnline Distribución y Vertical Tiendas',{x:0.9,y:3.5,w:11.5,h:0.5,fontSize:20,color:'C3D0DD'});
+  s0.addText(cover.title||'Reporte Ejecutivo de Tiendas',{x:0.9,y:2.3,w:11.5,h:1,fontSize:40,bold:true,color:'FFFFFF',fontFace:'Arial'});
+  s0.addText(cover.sub||'MacOnline Distribución y Vertical Tiendas',{x:0.9,y:3.5,w:11.5,h:0.5,fontSize:20,color:'C3D0DD'});
   s0.addText('QUINTEC · KPI Logística',{x:0.9,y:4.05,w:11.5,h:0.4,fontSize:14,color:'8DA3BD'});
   pages.forEach(function(pg,idx){
     var s=pptx.addSlide();s.background={color:'FFFFFF'};
@@ -3197,7 +3307,7 @@ function obRepPPT(pages){
     s.addText('QUINTEC · KPI Logística',{x:0.55,y:footY,w:6,h:0.3,fontSize:9,color:'9AA7B4'});
     s.addText('Diapositiva '+(idx+1)+' de '+totalP,{x:6.78,y:footY,w:6,h:0.3,fontSize:9,color:'9AA7B4',align:'right'});
   });
-  pptx.writeFile({fileName:'Reporte_Tiendas_QUINTEC.pptx'});
+  pptx.writeFile({fileName:fileName||'Reporte_Tiendas_QUINTEC.pptx'});
  }catch(e){alert('No se pudo generar el PPT: '+e.message);}
 }
 var OBR_ZCOL={Santiago:'#8e44ad',Regiones:'#c88a6a'};
