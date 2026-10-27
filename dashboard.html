@@ -2850,7 +2850,7 @@ function opsReportPrint(isPdf){
  var html='<div class="rep-wrap">'+opsBuildReportHtml(OPS_REPORT)+'</div>';
  var w=window.open('','_blank');
  if(!w){alert('El navegador bloque\u00f3 la ventana. Permite las ventanas emergentes para '+(isPdf?'guardar el PDF':'imprimir')+'.');return;}
- w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Operaciones \u2014 QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{page-break-after:always;box-shadow:none;border:0;margin:0 auto}@page{size:A4 landscape;margin:8mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},500);}<\/scr'+'ipt></body></html>');
+ w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Operaciones \u2014 QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{page-break-after:always;box-shadow:none;border:0;margin:0 auto}.rep-grid2{grid-template-columns:1fr !important;gap:22px !important;padding:18px 20px !important}.rep-cell .rep-img2{width:100% !important;max-height:none}.rep-cell .rep-ct{font-size:15px !important}.rep-an{font-size:13.5px !important;line-height:1.7 !important}@page{size:A4 portrait;margin:9mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},500);}<\/scr'+'ipt></body></html>');
  w.document.close();
 }
 
@@ -2905,12 +2905,12 @@ function opsBuildPptx(cap){
  };
  pages.forEach(function(pg){
    var sl=pptx.addSlide();
-   sl.addText(pg.t.title,{x:0.4,y:0.22,w:12.5,h:0.5,fontSize:22,bold:true,color:'1F3A59'});
-   var pos=[0.4,6.86];
+   sl.addText(pg.t.title,{x:0.3,y:0.2,w:12.73,h:0.5,fontSize:22,bold:true,color:'1F3A59'});
+   var pos=[0.3,6.68];
    pg.chunk.forEach(function(c,j){var x=pos[j];
-     sl.addText(c[1],{x:x,y:0.82,w:6.1,h:0.32,fontSize:12,bold:true,color:'1F3A59'});
-     sl.addImage({data:cap.imgs[c[0]],x:x,y:1.15,w:6.1,h:2.5});
-     sl.addText(pxText(c[0]),{x:x,y:3.78,w:6.1,h:3.45,fontSize:8.5,align:'left',valign:'top',fit:'shrink',lineSpacingMultiple:1.0});
+     sl.addText(c[1],{x:x,y:0.78,w:6.35,h:0.34,fontSize:13,bold:true,color:'1F3A59'});
+     sl.addImage({data:cap.imgs[c[0]],x:x,y:1.14,w:6.35,h:3.55});
+     sl.addText(pxText(c[0]),{x:x,y:4.82,w:6.35,h:2.5,fontSize:12.5,align:'left',valign:'top',fit:'shrink',lineSpacingMultiple:1.08});
    });
  });
  pptx.writeFile({fileName:'Operaciones_QUINTEC.pptx'});
