@@ -2711,8 +2711,9 @@ function opsNubeRender(){
 var OPS_REPORT=null;
 var OPS_REP_TABS=[
  {id:'op',title:'Operaciones & Flota',kpis:[['k_ped','Total Pedidos'],['k_prom','Prom. Pedidos/D\u00eda'],['k_peak','Peak Pedidos D\u00eda'],['k_com','Comunas Cubiertas'],['k_veh','Veh\u00edculos Activos'],['k_dias','D\u00edas Operados'],['k_prop','% Flota Propia'],['k_med','Mediana Pedidos/D\u00eda']],charts:[['c_flota','Eficiencia de Flota'],['c_unidad','Participaci\u00f3n por Unidad de Negocio'],['c_prop','Flota Propia vs Tercerizada'],['c_heat','Ritmo Operativo (D\u00eda \u00d7 Semana)'],['c_matriz','Matriz de Control Semanal'],['c_ampmdisp','Dispersi\u00f3n AM / PM por D\u00eda']]},
- {id:'fin',title:'Finanzas',kpis:[['k_val','Valor Total Operado'],['k_tkt','Ticket Promedio/Pedido'],['k_vdia','Valor Promedio/D\u00eda']],charts:[['c_valun','Valor por Unidad de Negocio'],['c_valtp','Valor Movilizado por Veh\u00edculo'],['c_evo','Evoluci\u00f3n Diaria del Capital'],['c_comval','Top Comunas por Valorizaci\u00f3n'],['c_bubble','Volumen vs Valor por Veh\u00edculo']]},
- {id:'log',title:'Log\u00edstica & Rutas',kpis:[['k_am','% Despachos AM'],['k_pm','% Despachos PM'],['k_top5','Concentraci\u00f3n Top 5 Comunas'],['k_pcom','Pedidos Prom./Comuna']],charts:[['c_rango','Distribuci\u00f3n por Rango Horario'],['c_comvol','Cobertura \u2014 Top 10 Comunas'],['c_pareto','Pareto de Comunas (80/20)']]}
+ {id:'fin',title:'Finanzas & P&L',kpis:[['k_val','Valor Total Operado'],['k_tkt','Ticket Promedio/Pedido'],['k_vdia','Valor Promedio/D\u00eda']],charts:[['c_valun','Valor por Unidad de Negocio'],['c_valtp','Valor Movilizado por Veh\u00edculo'],['c_evo','Evoluci\u00f3n Diaria del Capital'],['c_comval','Top Comunas por Valorizaci\u00f3n'],['c_bubble','Volumen vs Valor por Veh\u00edculo']]},
+ {id:'log',title:'Log\u00edstica & Rutas',kpis:[['k_am','% Despachos AM'],['k_pm','% Despachos PM'],['k_top5','Concentraci\u00f3n Top 5 Comunas'],['k_pcom','Pedidos Prom./Comuna']],charts:[['c_rango','Distribuci\u00f3n por Rango Horario'],['c_comvol','Cobertura \u2014 Top 10 Comunas'],['c_pareto','Pareto de Comunas (80/20)']]},
+ {id:'cmp',title:'Tendencias & Comparativo',kpis:[['k_cmpbestvol','Mes de Mayor Volumen'],['k_cmpbestval','Mes de Mayor Valor'],['k_cmpgrow','Crecimiento (1\u00ba vs \u00faltimo)']],charts:[['c_mesvol','Pedidos por Mes'],['c_mesval','Valor Movilizado por Mes'],['c_mesheat','Campo de Calor Mes \u00d7 Semana'],['c_mesun','Mezcla de Unidades por Mes'],['cmp_c_sem','Pedidos y Valor por Semana'],['cmp_c_ampm','Pedidos AM vs PM por Mes']]}
 ];
 function opsScopeLabel(){try{if(F.mes==='all')return 'Todos los meses';var m=(DATA.meta.meses||[]).find(function(x){return x.key===F.mes;});return m?m.label:'Todos los meses';}catch(_){return '';}}
 function opsCapture(){
@@ -2840,19 +2841,8 @@ function opsRepBuildAll(){var pages=opsRepBuildPages();OPS_REP_PAGES=pages;retur
 function opsRepRefresh(){var pages=opsRepBuildAll();var body=document.getElementById('opsRepBody');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';opsRepFillControls('opsRepCtl',opsRepRefresh);}
 function opsPptRefresh(){var pages=opsRepBuildAll();var body=document.getElementById('opsPptBody');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';opsRepFillControls('opsPptCtl',opsPptRefresh);}
 function opsRepFillControls(boxId,onChange){
- var box=document.getElementById(boxId);if(!box||!OPS_REP_SEL)return;
- var ms=opsMonthsSorted();var ws=opsWeeksSorted();
- var mo=ms.map(function(m){return '<option value="'+m.mk+'">'+m.label+'</option>';}).join('');
- var wo=ws.map(function(w){return '<option value="'+w+'">S'+w+'</option>';}).join('');
- var h='<div class="rep-ctl-row"><span class="rep-ctl-lbl" style="color:'+OPS_COL+'">Operaciones</span>'
-  +'<span class="rep-ctl-g">Mes A <select data-f="mA">'+mo+'</select> vs B <select data-f="mB">'+mo+'</select></span>'
-  +'<span class="rep-ctl-g">Semana A <select data-f="wA">'+(wo||'<option value="">(sin semanas)</option>')+'</select> vs B <select data-f="wB">'+(wo||'<option value="">(sin semanas)</option>')+'</select></span>'
-  +'<span class="rep-ctl-g">Zona <select data-f="zona"><option value="all">Todas</option><option value="Santiago">Santiago</option><option value="Regiones">Regiones</option></select></span></div>';
- box.innerHTML=h;
- box.querySelectorAll('select').forEach(function(s){
-   var f=s.getAttribute('data-f');var v=OPS_REP_SEL[f];if(v!=null&&v!=='')s.value=String(v);
-   s.addEventListener('change',function(){var vv=s.value;OPS_REP_SEL[f]=(f==='zona'||f==='mA'||f==='mB')?vv:(vv===''?null:+vv);onChange();});
- });
+ var box=document.getElementById(boxId);if(!box)return;
+ box.innerHTML='<div class="rep-ctl-row"><span class="rep-ctl-lbl" style="color:'+OPS_COL+'">Operaciones</span><span class="rep-ctl-g" style="color:#5a6672">Este reporte incluye <b>todos los gr\u00e1ficos</b> de las pesta\u00f1as Operaciones &amp; Flota, Finanzas &amp; P&amp;L, Log\u00edstica &amp; Rutas y Tendencias &amp; Comparativo, cada uno con su an\u00e1lisis. Refleja los filtros activos del tablero \u00b7 '+opsScopeLabel()+'.</span></div>';
 }
 function opsReportPrint(isPdf){
  if(!OPS_REPORT)return;
@@ -2925,6 +2915,9 @@ function opsRepCmp(mode){
 }
 function opsRepBuildPages(){
  if(!(DATA.rows&&DATA.rows.length))return [];
+ return opsRepBuildPagesReal();
+}
+function opsRepBuildPagesDead(){
  var lbl='Operaciones';var col=OPS_COL;var pages=[];
  var V=opsRepVentas();
  pages.push({unit:lbl,color:col,section:'OPERACIONES \u00b7 VALOR MOVILIZADO',title:'Resumen y evoluci\u00f3n mensual',kpis:[{t:'Valor total',v:fm(V.total),s:fi(V.months.length)+' meses'},{t:'Santiago',v:fm(V.santi),s:(V.total?(100*V.santi/V.total).toFixed(0):0)+'% del total'},{t:'Regiones',v:fm(V.regio),s:(V.total?(100*V.regio/V.total).toFixed(0):0)+'% del total'},{t:'Pedidos',v:fi(V.totalPed),s:fi(V.nAct)+' unidades'}],charts:[{title:'Valor por Mes',img:V.imgMes,an:(V.bestLbl?('El mes de mayor valor movilizado es <b>'+V.bestLbl+'</b>, que alcanz\u00f3 <b>'+fm(V.bestV)+'</b>. '):'')+'En el periodo se movilizaron en total <b>'+fm(V.total)+'</b> a lo largo de <b>'+fi(V.months.length)+'</b> meses, con <b>'+fi(V.totalPed)+'</b> pedidos. De ese total, Santiago aporta <b>'+fm(V.santi)+'</b> y Regiones <b>'+fm(V.regio)+'</b>, lo que muestra el peso real de cada zona en la operaci\u00f3n mensual. Conviene revisar los meses m\u00e1s bajos para entender si responden a estacionalidad o a una ca\u00edda efectiva de la actividad.'}]});
@@ -2941,6 +2934,23 @@ function opsRepBuildPages(){
  }else{
    pages.push({unit:lbl,color:col,section:'COMPARATIVO POR SEMANA',title:'Comparaci\u00f3n semanal',note:'Este conjunto de datos de Operaciones no incluye detalle por semana. Para comparar por semana, importa un Excel de Operaciones que incluya la columna de SEMANA; luego vuelve a abrir el reporte y elige las semanas A y B arriba.'});
  }
+ return pages;
+}
+function opsRepBuildPagesReal(){
+ var cap=opsCapture();OPS_REPORT=cap;
+ var col=OPS_COL;var unit='Operaciones';var pages=[];
+ OPS_REP_TABS.forEach(function(t){
+   var cs=t.charts.filter(function(c){return cap.imgs[c[0]];});
+   if(!cs.length)return;
+   var kpis=(t.kpis||[]).map(function(k){return {t:k[1],v:(cap.kpis[k[0]]||''),s:''};}).filter(function(x){return x.v&&x.v!=='\u2013'&&x.v!=='-';});
+   for(var i=0;i<cs.length;i+=2){
+     var chunk=cs.slice(i,i+2);
+     var charts=chunk.map(function(c){return {title:c[1],img:cap.imgs[c[0]],an:opsRepAnalysis(c[0])};});
+     var part=cs.length>2?(' \u00b7 parte '+(Math.floor(i/2)+1)):'';
+     pages.push({unit:unit,color:col,section:t.title,title:'Gr\u00e1ficos y an\u00e1lisis'+part,kpis:(i===0?kpis:null),charts:charts});
+   }
+ });
+ if(!pages.length){pages.push({unit:unit,color:col,section:'OPERACIONES',title:'Sin gr\u00e1ficos disponibles',note:'A\u00fan no hay gr\u00e1ficos generados. Abre las pesta\u00f1as de Operaciones (Operaciones & Flota, Finanzas & P&L, Log\u00edstica & Rutas, Tendencias & Comparativo) para que se dibujen los gr\u00e1ficos y vuelve a abrir el reporte.'});}
  return pages;
 }
 function opsPptGenerate(btn){
