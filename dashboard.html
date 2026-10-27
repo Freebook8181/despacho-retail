@@ -503,7 +503,7 @@ function buildMarkup(){
  document.getElementById('tabs').innerHTML=TABS.map(t=>`<div class="tab grp-ops ${t[0]=='op'?'on':''} ${t[0]==='diag'?'adminonly':''}" data-t="${t[0]}">${t[2]}<span>${t[1]}</span></div>`).join('');
  document.getElementById('tabs').classList.add('g-ops');
  const _pt=document.getElementById('ptabs');if(_pt)_pt.innerHTML=`<div class="ptab on" data-g="ops"><span class="pdot"></span><span>Operaciones</span></div><div class="ptab" data-g="mod"><span class="pdot"></span><span>MacOnline y Vertical</span></div><div class="ptab" data-g="devo"><span class="pdot"></span><span>Devoluciones</span></div>`;
- const _ob=document.getElementById('opsbar');if(_ob){const _cloud='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 7 17.5"/></svg>';_ob.innerHTML=[['imp','Importar'],['exp','Exportar'],['gua','Guardar'],['del','Eliminar'],['rep','Reporte'],['ppt','PPT'],['nube','NUBE']].map(b=>`<button class="opsbtn ob-${b[0]}" data-ob="${b[0]}">${b[0]==='nube'?_cloud:''}<span>${b[1]}</span></button>`).join('');_ob.style.display='flex';}
+ const _ob=document.getElementById('opsbar');if(_ob){const _cloud='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9.5 4 4 0 0 0 7 17.5"/></svg>';_ob.innerHTML=[['imp','Importar'],['gua','Guardar'],['del','Eliminar'],['rep','Reporte'],['ppt','PPT'],['nube','NUBE']].map(b=>`<button class="opsbtn ob-${b[0]}" data-ob="${b[0]}">${b[0]==='nube'?_cloud:''}<span>${b[1]}</span></button>`).join('');_ob.style.display='flex';}
  const M=document.getElementById('main');let h='';
  // ===== OPERACIONES =====
  h+=`<section class="section on" id="s-op"><div class="sec-head"><h2>Operaciones & Desempeño de Flota</h2><p>Rendimiento volumétrico y densidad de despachos</p></div>`;
@@ -599,15 +599,22 @@ function monthWeeks(year,m0){
  }
  return res;
 }
+/* ===== Calendario de semanas GLOBAL segun el usuario (Operaciones) =====
+   Semana 1 = 01-ene..02-ene 2026 (dias del anio antes del primer lunes);
+   Semana 2 = primer lunes (05-ene) a viernes (09-ene); y asi sucesivamente.
+   opsWeekOfYear(fecha) -> nro de semana global; opsWeekRange(w,anio) -> {desde,hasta} lun-vie. */
+function opsFirstMonday(year){var j=new Date(year,0,1);var dow=j.getDay();var add=(8-(dow===0?7:dow))%7;return new Date(year,0,1+add);}
+function opsWeekOfYear(d){var year=d.getFullYear();var fm=opsFirstMonday(year);var hasPartial=!(fm.getDate()===1&&fm.getMonth()===0);var base=hasPartial?2:1;var day=new Date(year,d.getMonth(),d.getDate());if(day<fm)return 1;var diff=Math.floor((day-fm)/864e5);return base+Math.floor(diff/7);}
+function opsWeekRange(w,year){var fm=opsFirstMonday(year);var hasPartial=!(fm.getDate()===1&&fm.getMonth()===0);var base=hasPartial?2:1;var monday=new Date(fm.getFullYear(),fm.getMonth(),fm.getDate()+(w-base)*7);var jan1=new Date(year,0,1);var desde=(monday<jan1)?jan1:monday;var friday=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+4);return {desde:desde,hasta:friday};}
 /* Construye los botones de Semana. Si hay un mes concreto (mk='YYYY-MM') cada botón
    muestra S{nº global} con su rango DESDE–HASTA (lunes a viernes) y el detalle completo
    en el tooltip. El valor de filtrado (data-s) sigue siendo la semana-del-mes del dato. */
 function semBtns(mk,sems,curSem){
  let out='<button data-s="all" class="'+(curSem==='all'?'on':'')+'">Mes</button>';
- const hasMonth=mk&&/^\d{4}-\d{2}$/.test(mk);let yy,m0;if(hasMonth){yy=+mk.slice(0,4);m0=+mk.slice(5,7)-1;}
+ const hasMonth=mk&&/^\d{4}-\d{2}$/.test(mk);let yy;if(hasMonth){yy=+mk.slice(0,4);}
  sems.forEach(function(w){
   var lbl='S'+w,title='Semana '+w;
-  if(hasMonth){var r=semRange(yy,m0,w);var gw=isoWeekNum(r.desde);lbl='S'+gw+'<small style="display:block;font-size:9px;opacity:.82;font-weight:500;line-height:1.15;margin-top:1px">'+fmtDM(r.desde)+'–'+fmtDM(r.hasta)+'</small>';title='Semana '+gw+'  ·  DESDE '+fmtFull(r.desde)+'   →   HASTA '+fmtFull(r.hasta);}
+  if(hasMonth){var r=opsWeekRange(w,yy);lbl='S'+w+'<small style="display:block;font-size:9px;opacity:.82;font-weight:500;line-height:1.15;margin-top:1px">'+fmtDM(r.desde)+'–'+fmtDM(r.hasta)+'</small>';title='Semana '+w+'  ·  DESDE '+fmtFull(r.desde)+'   →   HASTA '+fmtFull(r.hasta);}
   out+='<button data-s="'+w+'" class="'+(curSem==w?'on':'')+'" title="'+title+'" style="text-align:center">'+lbl+'</button>';
  });
  return out;
@@ -2445,8 +2452,7 @@ function opsCleanResumenSheet(aoa){
   var vRaw=cV>=0?row[cV]:null;
   var v=(typeof vRaw==='number')?vRaw:parseFloat(String(vRaw==null?'':vRaw).replace(/[^0-9.\-]/g,'')); // VALOR exacto, sin redondear
   if(!isFinite(v))v=0;
-  var sem=0,sRaw=cS>=0?row[cS]:null;if(sRaw!=null){var mm=String(sRaw).match(/\d+/);if(mm)sem=+mm[0];}
-  if(!sem||sem<1){var _off=(new Date(dt.getFullYear(),dt.getMonth(),1).getDay()+6)%7;sem=Math.floor((dt.getDate()-1+_off)/7)+1;}
+  var sem=opsWeekOfYear(dt); // Semana GLOBAL calculada SIEMPRE desde la FECHA (tabla del usuario), ignora texto erroneo
   var zu=stripAcc(String(cZ>=0&&row[cZ]!=null?row[cZ]:'')).toUpperCase();var zona=zu.indexOf('SANT')>=0?'Santiago':(zu.indexOf('REG')>=0?'Regiones':'Sin dato');
   var tp=(cM>=0&&row[cM]!=null&&String(row[cM]).trim()!=='')?String(row[cM]).trim():'Sin dato';
   var rg=(cR>=0&&row[cR]!=null&&String(row[cR]).trim()!=='')?String(row[cR]).trim().toUpperCase():'EN BLANCO';
@@ -2542,11 +2548,48 @@ function opsBuildWorkbook(){
  XLSX.utils.book_append_sheet(wb,aggSheet(function(r){return r.tp;},'Transporte'),'Por Transporte');
  return wb;
 }
-function opsExport(){
- if(!DATA.rows.length){alert('No hay informaci\u00f3n para exportar. Importa primero un Excel de Operaciones.');return;}
- try{XLSX.writeFile(opsBuildWorkbook(),'Operaciones_QUINTEC_'+(new Date().toISOString().slice(0,10))+'.xlsx');}catch(e){alert('No se pudo exportar: '+e.message);}
+function opsEsc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function opsMonthRows(mk){return DATA.rows.filter(function(r){return r.mk===mk;}).sort(function(a,b){return ((a.sem||0)-(b.sem||0))||(a.f||'').localeCompare(b.f||'')||((a.id||0)-(b.id||0));});}
+function opsMonthStats(rows){var s={n:rows.length,v:0,st:0,rg:0};rows.forEach(function(r){s.v+=r.v||0;if(r.zona==='Santiago')s.st+=r.v||0;else if(r.zona==='Regiones')s.rg+=r.v||0;});return s;}
+function opsMonthLabel(mk){var l=mk;DATA.rows.forEach(function(r){if(r.mk===mk)l=r.mes;});return l;}
+function opsBuildMonthWorkbook(mk,label){
+ var rows=opsMonthRows(mk);var s=opsMonthStats(rows);
+ var aoa=[];
+ aoa.push(['OPERACIONES QUINTEC \u2014 '+label]);
+ aoa.push([]);
+ aoa.push(['Pedidos',s.n,'','Valor total',s.v]);
+ aoa.push(['Valor Santiago',s.st,'','Valor Regiones',s.rg]);
+ aoa.push([]);
+ aoa.push(['N\u00b0','Semana','Fecha','Pedido','Unidad Negocio','Cliente','Direcci\u00f3n','Comuna','Zona','Transporte','Rango','Valor']);
+ rows.forEach(function(r,i){aoa.push([i+1,'Semana '+r.sem,r.f,(r.pedido!=null?r.pedido:r.id),r.un,r.cl,r.dir||'',r.co,r.zona||'',r.tp,r.rg,r.v]);});
+ aoa.push([]);
+ aoa.push(['','','','','','','','','','','TOTAL',s.v]);
+ var ws=XLSX.utils.aoa_to_sheet(aoa);
+ ws['!cols']=[{wch:5},{wch:11},{wch:12},{wch:13},{wch:22},{wch:24},{wch:30},{wch:16},{wch:11},{wch:14},{wch:12},{wch:17}];
+ var wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,ws,String(label).slice(0,28)||'Detalle');
+ return wb;
 }
-
+function opsExportMonth(mk){
+ var rows=opsMonthRows(mk);
+ if(!rows.length){alert('No hay informaci\u00f3n de ese mes para exportar.');return;}
+ var label=opsMonthLabel(mk);
+ try{XLSX.writeFile(opsBuildMonthWorkbook(mk,label),'Operaciones_'+String(label).replace(/\s+/g,'_')+'.xlsx');}catch(e){alert('No se pudo exportar: '+e.message);}
+}
+function opsNubeMonth(mk){
+ var body=document.getElementById('opsNubeBody');if(!body)return;
+ var label=opsMonthLabel(mk);
+ var rows=opsMonthRows(mk);var s=opsMonthStats(rows);
+ var h='<div class="nube-mback"><button class="nube-back" id="opsNbBack">\u2190 Volver a los meses</button><button class="nube-expone" id="opsNbExp">\u2b07 Exportar '+opsEsc(label)+' (Excel)</button></div>';
+ h+='<div class="nube-mtitle">'+opsEsc(label)+'</div>';
+ h+='<div class="nube-chips"><span class="nube-chip">Pedidos: <b>'+fi(s.n)+'</b></span><span class="nube-chip">Valor: <b>'+fm(s.v)+'</b></span><span class="nube-chip st">Santiago: <b>'+fm(s.st)+'</b></span><span class="nube-chip rg">Regiones: <b>'+fm(s.rg)+'</b></span></div>';
+ h+='<div class="nube-tblwrap"><table class="nube-tbl"><thead><tr><th>N\u00b0</th><th>Semana</th><th>Fecha</th><th>Pedido</th><th>Unidad Negocio</th><th>Cliente</th><th>Direcci\u00f3n</th><th>Comuna</th><th>Zona</th><th>Transporte</th><th>Rango</th><th class="num">Valor</th></tr></thead><tbody>';
+ rows.forEach(function(r,i){h+='<tr><td>'+(i+1)+'</td><td>Semana '+r.sem+'</td><td>'+opsEsc(r.f||'')+'</td><td>'+opsEsc(r.pedido!=null?r.pedido:r.id)+'</td><td>'+opsEsc(r.un)+'</td><td>'+opsEsc(r.cl)+'</td><td>'+opsEsc(r.dir||'')+'</td><td>'+opsEsc(r.co)+'</td><td class="z-'+(r.zona==='Santiago'?'st':(r.zona==='Regiones'?'rg':'sd'))+'">'+opsEsc(r.zona||'')+'</td><td>'+opsEsc(r.tp)+'</td><td>'+opsEsc(r.rg)+'</td><td class="num">'+fm(r.v)+'</td></tr>';});
+ h+='</tbody><tfoot><tr><td colspan="11"><b>TOTAL</b></td><td class="num"><b>'+fm(s.v)+'</b></td></tr></tfoot></table></div>';
+ body.innerHTML=h;
+ var bk=document.getElementById('opsNbBack');if(bk)bk.onclick=function(){opsNubeRender();};
+ var ex=document.getElementById('opsNbExp');if(ex)ex.onclick=function(){opsExportMonth(mk);};
+}
 function opsEliminar(){
  if(!obIsAdmin()){alert('Solo el administrador puede eliminar informaci\u00f3n.');return;}
  if(!DATA.rows.length){alert('No hay informaci\u00f3n guardada para eliminar.');return;}
@@ -2671,8 +2714,10 @@ function opsNubeRender(){
  var byMk={};DATA.rows.forEach(function(r){byMk[r.mk]=byMk[r.mk]||{label:r.mes,n:0,v:0};byMk[r.mk].n++;byMk[r.mk].v+=r.v||0;});
  var mks=Object.keys(byMk).sort();
  var tv=DATA.rows.reduce(function(a,r){return a+(r.v||0);},0);
- var items=mks.length?mks.map(function(mk){var o=byMk[mk];return '<div class="nube-row"><div class="nube-mes">'+o.label+'</div><div class="nube-stat">'+fi(o.n)+' pedidos \u00b7 '+fm(o.v)+'</div>'+(OPS_NUBE_EDIT?'<button class="nube-del" data-mk="'+mk+'">Eliminar mes</button>':'')+'</div>';}).join(''):'<div class="nube-empty">Sin Excel de Operaciones en la nube.</div>';
- body.innerHTML=head+'<div class="nube-cols"><div class="nube-col"><div class="nube-h" style="background:#1f3a59">Operaciones</div><div class="nube-tot">'+fi(DATA.rows.length)+' pedidos \u00b7 '+fm(tv)+' \u00b7 '+fi(mks.length)+' mes(es)</div>'+items+'</div></div>';
+ var items=mks.length?mks.map(function(mk){var o=byMk[mk];return '<div class="nube-row nube-row-click" data-open="'+mk+'" title="Haz clic para ver el detalle de '+opsEsc(o.label)+'"><div class="nube-mes">'+o.label+'</div><div class="nube-stat">'+fi(o.n)+' pedidos \u00b7 '+fm(o.v)+'</div><button class="nube-exp" data-exp="'+mk+'">\u2b07 Exportar</button>'+(OPS_NUBE_EDIT?'<button class="nube-del" data-mk="'+mk+'">Eliminar mes</button>':'')+'</div>';}).join(''):'<div class="nube-empty">Sin Excel de Operaciones en la nube.</div>';
+ body.innerHTML=head+'<div class="nube-cols"><div class="nube-col"><div class="nube-h" style="background:#1f3a59">Operaciones</div><div class="nube-tot">'+fi(DATA.rows.length)+' pedidos \u00b7 '+fm(tv)+' \u00b7 '+fi(mks.length)+' mes(es) \u00b7 <i>haz clic en un mes para ver el detalle</i></div>'+items+'</div></div>';
+ body.querySelectorAll('.nube-row-click').forEach(function(row){row.onclick=function(e){if(e.target.closest('.nube-exp')||e.target.closest('.nube-del'))return;opsNubeMonth(row.getAttribute('data-open'));};});
+ body.querySelectorAll('.nube-exp').forEach(function(b){b.onclick=function(e){e.stopPropagation();opsExportMonth(b.getAttribute('data-exp'));};});
  body.querySelectorAll('.nube-del').forEach(function(b){b.onclick=function(){var mk=b.getAttribute('data-mk');if(!obIsAdmin()){alert('Solo el administrador puede editar.');return;}var lbl=(byMk[mk]||{}).label||mk;if(!confirm('\u00bfEliminar de la nube el Excel del mes '+lbl+' (Operaciones)?\n\nEsta acci\u00f3n se aplica tambi\u00e9n en Firebase (quintec/meses) y no se puede deshacer.'))return;DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;});try{recomputeMeta();}catch(_){}try{saveMonths();}catch(_){}if(typeof fbReady!=='undefined'&&fbReady&&fbDB){try{if(DATA.rows.length)fbPush();else fbClear();}catch(_){}}try{buildFilters();}catch(_){}try{render();}catch(_){}opsNubeRender();};});
 }
 
@@ -3023,7 +3068,11 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".nube-cols{display:flex;gap:16px;flex-wrap:wrap}.nube-col{flex:1;min-width:300px;background:#fff;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden}"
 +".nube-h{padding:12px 16px;color:#fff;font-weight:700;font-size:15px}.nube-tot{padding:10px 16px;background:#f6f9fc;font-size:12.5px;color:#4a5968;font-weight:600;border-bottom:1px solid #eef2f6}"
 +".nube-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f3f7}.nube-mes{flex:1;font-weight:600;color:#1f3a59;font-size:13px}.nube-stat{font-size:12px;color:#6b7684}"
-+".nube-del{background:#b4442f;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer}.nube-empty{padding:16px;color:#8a95a1;font-size:13px}"+".opsdel-list{max-height:240px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;margin:4px 0 12px;background:#fbfcfe}"+".opsdel-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid #eef2f7;font-size:13px;color:#1f2a37;cursor:pointer}"+".opsdel-row:last-child{border-bottom:0}.opsdel-row input{width:16px;height:16px;cursor:pointer;accent-color:#1f3a59}"+".opsdel-all{border:0;background:transparent;padding:2px 2px 8px}"+".opsdel-mes{flex:1;font-weight:600;color:#1f3a59}.opsdel-stat{font-size:11.5px;color:#6b7684;white-space:nowrap}"+".opsdel-pwlbl{font-size:12.5px;color:#44505e;font-weight:600;margin-bottom:5px}"+".ops-bk-ov{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,rgba(15,30,55,.97),rgba(31,58,89,.97));display:flex;align-items:center;justify-content:center;padding:20px}"+".ops-bk-card{background:#fff;border-radius:18px;max-width:560px;width:100%;padding:34px 40px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center;font-family:inherit}"+".ops-bk-ic{font-size:46px;line-height:1}"+".ops-bk-card h2{margin:12px 0 10px;font-size:23px;color:#1f3a59}"+".ops-bk-card p{font-size:14.5px;color:#3a4654;line-height:1.55;margin:8px 0}"+".ops-bk-sub{font-size:12.5px !important;color:#6b7684 !important}"+".ops-bk-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;list-style:none;padding:6px 0 2px;margin:10px 0}"+".ops-bk-list li{background:#eef3f9;color:#1f3a59;font-weight:600;font-size:13px;padding:7px 14px;border-radius:20px}"+".ops-bk-btns{display:flex;gap:12px;justify-content:center;margin-top:20px}"+".ops-bk-no{background:#eef1f5;color:#44505e;border:0;border-radius:9px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer}"+".ops-bk-yes{background:#1f3a59;color:#fff;border:0;border-radius:9px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(31,58,89,.35)}"+".ops-bk-yes:hover{background:#264a73}"
++".nube-del{background:#b4442f;color:#fff;border:0;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer}.nube-empty{padding:16px;color:#8a95a1;font-size:13px}"
++".nube-row-click{cursor:pointer;transition:background .12s}.nube-row-click:hover{background:#eef4fb}.nube-exp{background:#2f7d6b;color:#fff;border:0;border-radius:6px;padding:5px 11px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}.nube-exp:hover{background:#276a5b}"
++".nube-mback{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}.nube-back{background:#eef1f5;color:#1f3a59;border:0;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer}.nube-back:hover{background:#e0e6ee}.nube-expone{background:#2f7d6b;color:#fff;border:0;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer}.nube-expone:hover{background:#276a5b}"
++".nube-mtitle{font-size:20px;font-weight:800;color:#1f3a59;margin:2px 0 10px}.nube-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.nube-chip{background:#f1f5fa;color:#334a63;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:20px}.nube-chip b{color:#1f3a59}.nube-chip.st{background:#e8f1fb}.nube-chip.rg{background:#eafaf2}"
++".nube-tblwrap{border:1px solid #e3e8ef;border-radius:10px;overflow:auto;max-height:60vh}.nube-tbl{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}.nube-tbl thead th{position:sticky;top:0;background:#1f3a59;color:#fff;font-weight:700;padding:9px 11px;text-align:left;z-index:1}.nube-tbl td{padding:7px 11px;border-bottom:1px solid #eef2f6;color:#2a3a4b}.nube-tbl tbody tr:nth-child(even){background:#fafcfe}.nube-tbl tbody tr:hover{background:#eef4fb}.nube-tbl .num{text-align:right;font-variant-numeric:tabular-nums}.nube-tbl tfoot td{position:sticky;bottom:0;background:#f6f9fc;color:#1f3a59;padding:9px 11px;border-top:2px solid #1f3a59}.nube-tbl td.z-st{color:#1c62b5;font-weight:600}.nube-tbl td.z-rg{color:#1d8a5c;font-weight:600}"+".opsdel-list{max-height:240px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;margin:4px 0 12px;background:#fbfcfe}"+".opsdel-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid #eef2f7;font-size:13px;color:#1f2a37;cursor:pointer}"+".opsdel-row:last-child{border-bottom:0}.opsdel-row input{width:16px;height:16px;cursor:pointer;accent-color:#1f3a59}"+".opsdel-all{border:0;background:transparent;padding:2px 2px 8px}"+".opsdel-mes{flex:1;font-weight:600;color:#1f3a59}.opsdel-stat{font-size:11.5px;color:#6b7684;white-space:nowrap}"+".opsdel-pwlbl{font-size:12.5px;color:#44505e;font-weight:600;margin-bottom:5px}"+".ops-bk-ov{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,rgba(15,30,55,.97),rgba(31,58,89,.97));display:flex;align-items:center;justify-content:center;padding:20px}"+".ops-bk-card{background:#fff;border-radius:18px;max-width:560px;width:100%;padding:34px 40px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center;font-family:inherit}"+".ops-bk-ic{font-size:46px;line-height:1}"+".ops-bk-card h2{margin:12px 0 10px;font-size:23px;color:#1f3a59}"+".ops-bk-card p{font-size:14.5px;color:#3a4654;line-height:1.55;margin:8px 0}"+".ops-bk-sub{font-size:12.5px !important;color:#6b7684 !important}"+".ops-bk-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;list-style:none;padding:6px 0 2px;margin:10px 0}"+".ops-bk-list li{background:#eef3f9;color:#1f3a59;font-weight:600;font-size:13px;padding:7px 14px;border-radius:20px}"+".ops-bk-btns{display:flex;gap:12px;justify-content:center;margin-top:20px}"+".ops-bk-no{background:#eef1f5;color:#44505e;border:0;border-radius:9px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer}"+".ops-bk-yes{background:#1f3a59;color:#fff;border:0;border-radius:9px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(31,58,89,.35)}"+".ops-bk-yes:hover{background:#264a73}"
 +".rep-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 22px}"
 +".rep-cell{display:flex;flex-direction:column;min-width:0}"
 +".rep-cell .rep-ct{font-size:12.5px;font-weight:700;color:#1f3a59;margin-bottom:6px}"
@@ -3031,7 +3080,7 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".rep-cell .rep-exp{margin:8px 0 0}";
 (function(){
  try{var st=document.createElement('style');st.textContent=OB_REP_CSS+OPS_PPT_CSS;document.head.appendChild(st);}catch(e){}
- document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('#opsbar [data-ob]'):null;if(!b)return;var k=b.getAttribute('data-ob');if(k==='imp')obImport();else if(k==='exp')opsExport();else if(k==='gua')opsGuardar();else if(k==='del')opsEliminar();else if(k==='rep')opsReporte();else if(k==='ppt')opsPPT();else if(k==='nube')opsNube();}); try{setInterval(function(){if(typeof opsCheckDailyBackup==='function')opsCheckDailyBackup();},60000);}catch(_){}
+ document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('#opsbar [data-ob]'):null;if(!b)return;var k=b.getAttribute('data-ob');if(k==='imp')obImport();else if(k==='gua')opsGuardar();else if(k==='del')opsEliminar();else if(k==='rep')opsReporte();else if(k==='ppt')opsPPT();else if(k==='nube')opsNube();}); try{setInterval(function(){if(typeof opsCheckDailyBackup==='function')opsCheckDailyBackup();},60000);}catch(_){}
 })();
 /* ===== WIRE ===== */
 function wireMod(){
