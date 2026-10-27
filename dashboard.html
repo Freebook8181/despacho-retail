@@ -2762,14 +2762,49 @@ var OPS_PPT_CSS=".ppt-wrap{max-width:1000px;margin:0 auto}"
 +".ppt-cell .ppt-img{width:100%;height:auto;object-fit:contain;border:1px solid #eef2f6;border-radius:6px}"
 +".ppt-cell .rep-exp,.ppt-cell .rep-an{margin:8px 0 0}";
 
+function opsRepAnalysis(cid){
+ var f=(typeof getFiltered==='function')?getFiltered():[];
+ var fb=(typeof CANALYSIS!=='undefined'&&CANALYSIS[cid])?CANALYSIS[cid]:'';
+ var total=f.length;if(!total)return fb;
+ var totV=f.reduce(function(a,r){return a+(r.v||0);},0);
+ var pc=function(a,b){return b?(100*a/b).toFixed(1):'0.0';};
+ var gC=function(key){var m={};f.forEach(function(r){var k=r[key]||'Sin dato';m[k]=(m[k]||0)+1;});return m;};
+ var gV=function(key){var m={};f.forEach(function(r){var k=r[key]||'Sin dato';m[k]=(m[k]||0)+(r.v||0);});return m;};
+ var topK=function(m){var k=Object.keys(m).filter(function(x){return x!=='Sin dato';});k.sort(function(a,b){return m[b]-m[a];});return k;};
+ var DOWN=['lunes','martes','mi\u00e9rcoles','jueves','viernes','s\u00e1bado','domingo'];
+ var esP=(typeof esProp==='function')?esProp:function(){return false;};
+ var B=function(s){return '<b>'+s+'</b>';};
+ var byMk={};f.forEach(function(r){var k=r.mk;(byMk[k]=byMk[k]||{label:r.mes,n:0,v:0});byMk[k].n++;byMk[k].v+=r.v||0;});
+ var mks=Object.keys(byMk).sort();
+ try{
+  if(cid==='c_flota'){var m=gC('tp'),ks=topK(m),propN=f.filter(function(r){return esP(r.tp);}).length,tercN=total-propN;
+    return 'La flota tiene '+B(fi(ks.length))+' m\u00f3viles con actividad y moviliza '+B(fi(total))+' pedidos. El m\u00f3vil '+B(ks[0])+' es el m\u00e1s cargado con '+B(fi(m[ks[0]]))+' pedidos ('+B(pc(m[ks[0]],total)+'%')+'). La flota propia ejecuta '+B(fi(propN))+' pedidos ('+B(pc(propN,total)+'%')+') y los terceros '+B(fi(tercN))+' ('+B(pc(tercN,total)+'%')+').';}
+  if(cid==='c_unidad'){var m=gC('un'),ks=topK(m);var s='Se despacharon '+B(fi(total))+' pedidos entre '+B(fi(ks.length))+' unidades de negocio. '+B(ks[0])+' concentra '+B(fi(m[ks[0]]))+' pedidos ('+B(pc(m[ks[0]],total)+'%')+')';if(ks[1])s+=', seguida de '+B(ks[1])+' con '+B(fi(m[ks[1]]))+' ('+B(pc(m[ks[1]],total)+'%')+')';return s+'.';}
+  if(cid==='c_prop'){var propN=f.filter(function(r){return esP(r.tp);}).length,tercN=total-propN;return 'De '+B(fi(total))+' pedidos, la flota propia moviliza '+B(fi(propN))+' ('+B(pc(propN,total)+'%')+') y el transporte tercerizado '+B(fi(tercN))+' ('+B(pc(tercN,total)+'%')+'). '+(propN>=tercN?'Predomina la flota propia.':'Predomina la tercerizaci\u00f3n.');}
+  if(cid==='c_heat'){var dw={};f.forEach(function(r){dw[r.dow]=(dw[r.dow]||0)+1;});var bd=Object.keys(dw).sort(function(a,b){return dw[b]-dw[a];})[0];var cell={},cmax=0,ck='';f.forEach(function(r){var k=r.sem+'|'+r.dow;cell[k]=(cell[k]||0)+1;if(cell[k]>cmax){cmax=cell[k];ck=k;}});var p=ck.split('|');return 'El d\u00eda de mayor volumen es el '+B(DOWN[bd]||'-')+' con '+B(fi(dw[bd]))+' pedidos. El pico puntual ocurre en la semana '+B('S'+p[0])+', d\u00eda '+B(DOWN[p[1]]||'-')+', con '+B(fi(cmax))+' pedidos.';}
+  if(cid==='c_matriz'){var cell={},cmax=0,ck='';f.forEach(function(r){if(r.tp==='Sin dato')return;var k=r.tp+'|'+r.sem;cell[k]=(cell[k]||0)+1;if(cell[k]>cmax){cmax=cell[k];ck=k;}});var nVeh=new Set(f.map(function(r){return r.tp;}).filter(function(t){return t!=='Sin dato';})).size;var nSem=new Set(f.map(function(r){return r.sem;}).filter(function(s){return s>0;})).size;var p=ck.split('|');return 'El cruce m\u00e1s intenso es '+B(p[0])+' en la semana '+B('S'+p[1])+' con '+B(fi(cmax))+' pedidos. La matriz cubre '+B(fi(nVeh))+' m\u00f3viles a lo largo de '+B(fi(nSem))+' semanas.';}
+  if(cid==='c_ampmdisp'){var dmap={};f.forEach(function(r){var k=r.f;dmap[k]=dmap[k]||{am:0,pm:0,n:0};dmap[k].n++;if(r.rg==='AM')dmap[k].am++;else if(r.rg==='PM')dmap[k].pm++;});var days=Object.keys(dmap),nd=days.length||1,sumAM=0,sumPM=0,bd='',bn=0;days.forEach(function(d){sumAM+=dmap[d].am;sumPM+=dmap[d].pm;if(dmap[d].n>bn){bn=dmap[d].n;bd=d;}});return 'En promedio cada d\u00eda mueve '+B(fi(Math.round(sumAM/nd)))+' pedidos AM y '+B(fi(Math.round(sumPM/nd)))+' PM, sobre '+B(fi(nd))+' d\u00edas operados. El d\u00eda m\u00e1s cargado fue '+B(bd)+' con '+B(fi(bn))+' pedidos.';}
+  if(cid==='c_valun'){var m=gV('un'),ks=topK(m);return 'El valor total operado es '+B(fm(totV))+' en '+B(fi(ks.length))+' unidades. '+B(ks[0])+' aporta '+B(fm(m[ks[0]]))+' ('+B(pc(m[ks[0]],totV)+'%')+'), la unidad de mayor valorizaci\u00f3n'+(ks[1]?', seguida de '+B(ks[1])+' con '+B(fm(m[ks[1]])):'')+'.';}
+  if(cid==='c_valtp'){var m=gV('tp'),ks=topK(m),ticket=total?totV/total:0;return 'El m\u00f3vil '+B(ks[0])+' moviliza el mayor valor con '+B(fm(m[ks[0]]))+' ('+B(pc(m[ks[0]],totV)+'%')+' del total). El ticket promedio por pedido es '+B(fm(Math.round(ticket)))+'.';}
+  if(cid==='c_evo'){var dmap={};f.forEach(function(r){dmap[r.f]=(dmap[r.f]||0)+(r.v||0);});var days=Object.keys(dmap),nd=days.length||1,bd='',bv=0;days.forEach(function(d){if(dmap[d]>bv){bv=dmap[d];bd=d;}});return 'El capital movilizado suma '+B(fm(totV))+' en '+B(fi(nd))+' d\u00edas (promedio '+B(fm(Math.round(totV/nd)))+' por d\u00eda). El d\u00eda de mayor valor fue '+B(bd)+' con '+B(fm(bv))+'.';}
+  if(cid==='c_comval'){var m=gV('co'),ks=topK(m),t3=0;ks.slice(0,3).forEach(function(k){t3+=m[k];});return 'La comuna '+B(ks[0])+' lidera la valorizaci\u00f3n con '+B(fm(m[ks[0]]))+' ('+B(pc(m[ks[0]],totV)+'%')+'). Las 3 primeras comunas concentran '+B(fm(t3))+' ('+B(pc(t3,totV)+'%')+') del valor despachado.';}
+  if(cid==='c_bubble'){var mc=gC('tp'),mv=gV('tp'),ks=Object.keys(mc).filter(function(x){return x!=='Sin dato';});var volK=ks.slice().sort(function(a,b){return mc[b]-mc[a];})[0];var tkK=ks.slice().sort(function(a,b){return (mv[b]/mc[b])-(mv[a]/mc[a]);})[0];return 'Participan '+B(fi(ks.length))+' m\u00f3viles que mueven '+B(fm(totV))+'. El de mayor volumen es '+B(volK)+' con '+B(fi(mc[volK]))+' pedidos; el de mayor ticket promedio es '+B(tkK)+' con '+B(fm(Math.round(mv[tkK]/mc[tkK])))+' por pedido.';}
+  if(cid==='c_rango'){var am=f.filter(function(r){return r.rg==='AM';}).length,pm=f.filter(function(r){return r.rg==='PM';}).length;return 'La operaci\u00f3n se reparte en '+B(fi(am))+' pedidos en la ma\u00f1ana AM ('+B(pc(am,total)+'%')+') y '+B(fi(pm))+' en la tarde PM ('+B(pc(pm,total)+'%')+'). La ventana '+B(am>=pm?'AM':'PM')+' es la m\u00e1s cargada y define el turno cr\u00edtico.';}
+  if(cid==='c_comvol'){var m=gC('co'),ks=topK(m),t5=0;ks.slice(0,5).forEach(function(k){t5+=m[k];});return 'Se cubren '+B(fi(ks.length))+' comunas. '+B(ks[0])+' encabeza con '+B(fi(m[ks[0]]))+' pedidos ('+B(pc(m[ks[0]],total)+'%')+'); las 5 primeras concentran '+B(fi(t5))+' ('+B(pc(t5,total)+'%')+').';}
+  if(cid==='c_pareto'){var m=gC('co'),ks=topK(m),acc=0,k80=0;for(var i=0;i<ks.length;i++){acc+=m[ks[i]];k80++;if(acc>=0.8*total)break;}return B(fi(k80))+' de '+B(fi(ks.length))+' comunas concentran el 80% de los despachos ('+B(pc(k80,ks.length)+'%')+' de las comunas), lo que confirma una fuerte concentraci\u00f3n territorial.';}
+  if(cid==='c_mesvol'){var best=mks.slice().sort(function(a,b){return byMk[b].n-byMk[a].n;})[0];var fr=byMk[mks[0]].n,la=byMk[mks[mks.length-1]].n,g=fr?(100*(la-fr)/fr):0;return 'Se comparan '+B(fi(mks.length))+' meses con '+B(fi(total))+' pedidos en total. El mes de mayor volumen es '+B(byMk[best].label)+' con '+B(fi(byMk[best].n))+' pedidos. Del primer al \u00faltimo mes la variaci\u00f3n es '+B((g>=0?'+':'')+g.toFixed(1)+'%')+'.';}
+  if(cid==='c_mesval'){var best=mks.slice().sort(function(a,b){return byMk[b].v-byMk[a].v;})[0];var fr=byMk[mks[0]].v,la=byMk[mks[mks.length-1]].v,g=fr?(100*(la-fr)/fr):0;return 'El valor del periodo suma '+B(fm(totV))+'. El mes de mayor valor es '+B(byMk[best].label)+' con '+B(fm(byMk[best].v))+'. La variaci\u00f3n del primer al \u00faltimo mes es '+B((g>=0?'+':'')+g.toFixed(1)+'%')+'.';}
+  if(cid==='c_mesheat'){var cell={},cmax=0,ck='';f.forEach(function(r){var k=r.mk+'|'+r.sem;cell[k]=(cell[k]||0)+1;if(cell[k]>cmax){cmax=cell[k];ck=k;}});var p=ck.split('|');var lab=(byMk[p[0]]||{}).label||p[0];return 'El cruce mes \u00d7 semana m\u00e1s intenso es '+B(lab)+' en la semana '+B('S'+p[1])+' con '+B(fi(cmax))+' pedidos, el punto de mayor presi\u00f3n del periodo.';}
+  if(cid==='c_mesun'){var tu=gC('un'),ks=topK(tu);return 'A lo largo de '+B(fi(mks.length))+' meses y '+B(fi(ks.length))+' unidades, '+B(ks[0])+' es la de mayor peso con '+B(pc(tu[ks[0]],total)+'%')+' de la mezcla total'+(ks[1]?', seguida de '+B(ks[1])+' ('+B(pc(tu[ks[1]],total)+'%')+')':'')+'.';}
+  if(cid==='cmp_c_sem'){var bs={};f.forEach(function(r){if(r.sem>0){bs[r.sem]=bs[r.sem]||{n:0,v:0};bs[r.sem].n++;bs[r.sem].v+=r.v||0;}});var ss=Object.keys(bs);if(!ss.length)return fb;var bn=ss.slice().sort(function(a,b){return bs[b].n-bs[a].n;})[0];var bv=ss.slice().sort(function(a,b){return bs[b].v-bs[a].v;})[0];return 'Hay '+B(fi(ss.length))+' semanas con actividad. La semana de m\u00e1s pedidos es '+B('S'+bn)+' con '+B(fi(bs[bn].n))+'; la de mayor valor es '+B('S'+bv)+' con '+B(fm(bs[bv].v))+'.';}
+  if(cid==='cmp_c_ampm'){var am=f.filter(function(r){return r.rg==='AM';}).length,pm=f.filter(function(r){return r.rg==='PM';}).length;var best=mks.slice().sort(function(a,b){return byMk[b].n-byMk[a].n;})[0];return 'En el periodo se registran '+B(fi(am))+' pedidos AM ('+B(pc(am,total)+'%')+') y '+B(fi(pm))+' PM ('+B(pc(pm,total)+'%')+'). El mes con mayor carga es '+B(byMk[best].label)+' con '+B(fi(byMk[best].n))+' pedidos.';}
+ }catch(e){return fb;}
+ return fb;
+}
 function opsRepCellBox(cid){
- var exp=(typeof CDESC!=='undefined'&&CDESC[cid])?CDESC[cid]:'';
- var ins=(typeof insText==='function')?insText(cid):'';
- var an=(typeof CANALYSIS!=='undefined'&&CANALYSIS[cid])?CANALYSIS[cid]:'';
+ var an=opsRepAnalysis(cid);
  var h='';
- if(exp)h+='<div class="rep-exp"><div class="rep-exp-h">Explicaci\u00f3n</div><div class="rep-exp-t">'+exp+'</div></div>';
- if(ins)h+='<div class="rep-exp"><div class="rep-exp-h">Lectura de esta vista</div><div class="rep-exp-t">'+ins+'</div></div>';
- if(an)h+='<div class="rep-an"><div class="rep-exp-h" style="color:#24415f">An\u00e1lisis del ingeniero en log\u00edstica</div><div class="rep-exp-t" style="color:#24415f">'+an+'</div></div>';
+ if(an)h+='<div class="rep-an"><div class="rep-exp-h" style="color:#24415f">An\u00e1lisis</div><div class="rep-exp-t" style="color:#24415f">'+an+'</div></div>';
  return h;
 }
 function opsRepPages(cap){
@@ -2862,11 +2897,10 @@ function opsBuildPptx(cap){
  cv.addText('QUINTEC KPI Log\u00edstica \u00b7 '+opsScopeLabel(),{x:0.6,y:3.7,w:12.1,h:0.6,fontSize:18,color:'BBD0E6'});
  var pages=opsRepPages(cap);
  var pxText=function(cid){
-   var exp=(typeof CDESC!=='undefined'&&CDESC[cid])?CDESC[cid]:'';
-   var an=(typeof CANALYSIS!=='undefined'&&CANALYSIS[cid])?CANALYSIS[cid]:'';
+   var an=(typeof opsRepAnalysis==='function')?opsRepAnalysis(cid):'';
+   an=(an||'').replace(/<[^>]*>/g,'');
    var r=[];
-   if(exp)r.push({text:'Explicaci\u00f3n. ',options:{bold:true,color:'2E7D5B'}},{text:exp,options:{color:'2A4A40'}});
-   if(an)r.push({text:(exp?'\n\n':'')+'An\u00e1lisis. ',options:{bold:true,color:'24415F'}},{text:an,options:{color:'24415F'}});
+   if(an)r.push({text:'An\u00e1lisis. ',options:{bold:true,color:'24415F'}},{text:an,options:{color:'24415F'}});
    return r.length?r:[{text:''}];
  };
  pages.forEach(function(pg){
