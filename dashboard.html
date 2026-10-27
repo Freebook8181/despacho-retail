@@ -1631,6 +1631,8 @@ function devoPlanillas(){
   +'<button class="devo-btn devo-save" id="devoGuardar"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>GUARDAR</button>'
   +'<button class="devo-btn devo-del" id="devoBorrar"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>BORRAR</button>'
   +'<button class="devo-btn devo-nube" id="devoNube">☁ NUBE</button>'
+  +'<button class="devo-btn devo-repbtn" id="devoReporte">📄 REPORTE</button>'
+  +'<button class="devo-btn devo-pptbtn" id="devoPPT">📊 PPT</button>'
   +'<input type="file" id="devoFile" accept=".xlsx,.xls" style="display:none"/>'
   +'</div>';
  h+='<div class="devo-tabs" id="devoTabs">'+DEVO_ITEMS.map(it=>`<button class="devo-tab" data-tab="${it.id}" style="--tc:${it.c};--tt:${it.tx}">${it.t}</button>`).join('')+'</div>';
@@ -1694,7 +1696,7 @@ function devoWire(){
   const t=e.target;if(!t||!t.classList)return;
   if(t.classList.contains('devo-cell')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].rows[r][c]=t.textContent;devoAutoFecha(i,r);if(c===DEVO_VALCOL){const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';}devoFbPush();}}
   else if(t.classList.contains('devo-ce')){const i=t.dataset.i,f=t.dataset.f;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i][f]=t.textContent;devoFbPush();}}
-  else if(t.classList.contains('devo-inp')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][c]=t.value;devoAutoFecha(i,r);if(t.classList.contains('devo-dest')){const com=DEVO_COMUNA[devoNorm(t.value)];if(com){const cc=root.querySelector('.devo-comuna[data-i="'+i+'"][data-r="'+r+'"]');if(cc)cc.value=com;DEVO_DATA[i].rows[r][DEVO_COMCOL]=com;}}devoFbPush();}}
+  else if(t.classList.contains('devo-inp')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][c]=t.value;devoAutoFecha(i,r);if(t.classList.contains('devo-dest')){const cc=root.querySelector('.devo-comuna[data-i="'+i+'"][data-r="'+r+'"]');if(String(t.value).trim()===''){if(cc)cc.value='';DEVO_DATA[i].rows[r][DEVO_COMCOL]='';}else{const com=DEVO_COMUNA[devoNorm(t.value)];if(com){if(cc)cc.value=com;DEVO_DATA[i].rows[r][DEVO_COMCOL]=com;}}}devoFbPush();}}
  });
  root.addEventListener('blur',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('devo-valcell')){const i=t.dataset.i,r=+t.dataset.r;const f=devoFmtVal(t.textContent);if(f!==''){t.textContent=f;if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][DEVO_VALCOL]=f;}const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';devoFbPush();}}},true);
  root.addEventListener('click',e=>{
@@ -1709,6 +1711,8 @@ function devoWire(){
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
  const bC=document.getElementById('devoGraficar');if(bC)bC.addEventListener('click',devoOpenGraficar);
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
+ const bR2=document.getElementById('devoReporte');if(bR2)bR2.addEventListener('click',devoOpenReporte);
+ const bP2=document.getElementById('devoPPT');if(bP2)bP2.addEventListener('click',devoOpenPPT);
  devoStartClock();
 }
 /* --- normalizar texto para comparar nombres --- */
@@ -2139,6 +2143,179 @@ function devoOpenNube(){
    body.innerHTML=h;
   }).catch(function(e){body.innerHTML='<div class="devo-dayempty">No se pudo leer la nube: '+e.message+'</div>';});
  });
+}
+/* ===== DEVOLUCIONES: NUBE DETALLADA + REPORTE + PPT (estilo Tiendas) ===== */
+var DEVO_REP_PAGES=null;var DEVO_PDF_VAR='eq';var DEVO_NUBE_EDIT=false;var DEVO_REP_COL='#16a085';
+var DEVO_ZCOL={Santiago:'#8e44ad',Regiones:'#c88a6a'};
+var DEVO_RM_SET=(function(){var l=['Las Condes','Providencia','Maip\u00fa','Vitacura','La Reina','Huechuraba','Puente Alto','Lo Barnechea','\u00d1u\u00f1oa','Santiago','La Florida','Estacion Central','Estaci\u00f3n Central','Cerrillos','Macul','San Miguel','Quilicura','Renca','Independencia','Recoleta','Pe\u00f1alolen','Pe\u00f1alol\u00e9n','La Cisterna','Pudahuel','Conchali','Conchal\u00ed','Cerro Navia','Lo Prado','Quinta Normal','San Joaquin','San Joaqu\u00edn','Pedro Aguirre Cerda','Lo Espejo','El Bosque','La Granja','San Ramon','San Ram\u00f3n','La Pintana','San Bernardo','Colina','Lampa','Buin','Melipilla','Talagante','Padre Hurtado','Pe\u00f1aflor','Maria Pinto','El Monte','Isla de Maipo','Curacavi','Til Til','Pirque','San Jose de Maipo','Calera de Tango','Alhue','Paine'];var s={};l.forEach(function(c){s[devoNorm(c)]=1;});return s;})();
+function devoZonaComuna(c){var k=devoNorm(c);if(!k||k==='SINCOMUNA')return '';return DEVO_RM_SET[k]?'Santiago':'Regiones';}
+function devoRepAgg(){
+ devoEnsure();
+ var rows=[];DEVO_ITEMS.forEach(function(it){var d=DEVO_DATA[it.id]||{rows:[]};(d.rows||[]).forEach(function(r){rows.push(r);});});
+ var a=devoG2Agg({rows:rows});
+ var tipos=DEVO_ITEMS.map(function(it){var d=DEVO_DATA[it.id]||{rows:[]};var reg=0,val=0,bul=0;(d.rows||[]).forEach(function(r){if(!r)return;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!has)return;reg++;var v=devoNum(r[DEVO_VALCOL]);if(v!=null)val+=v;bul+=devoBul(r[DEVO_BULCOL]);});return {id:it.id,t:it.t,c:it.c,reg:reg,val:val,bul:bul};});
+ var zReg={Santiago:0,Regiones:0},zVal={Santiago:0,Regiones:0},zBul={Santiago:0,Regiones:0};
+ a.comO.forEach(function(k){var z=devoZonaComuna(k);if(!z)return;zReg[z]+=a.com[k].r;zVal[z]+=a.com[k].v;zBul[z]+=a.com[k].b;});
+ var totVal=tipos.reduce(function(s,x){return s+x.val;},0);
+ var totBul=tipos.reduce(function(s,x){return s+x.bul;},0);
+ return {a:a,tipos:tipos,zReg:zReg,zVal:zVal,zBul:zBul,totReg:a.totReg,totVal:totVal,totBul:totBul};
+}
+function devoRepBuildPages(){
+ var R=devoRepAgg();var a=R.a;var col=DEVO_REP_COL;var ZC=DEVO_ZCOL;var pages=[];
+ var UNIT='Devoluciones';
+ var tAct=R.tipos.filter(function(x){return x.reg>0;});
+ var vfmt=function(v){return fmShort(v);};
+ var axV={type:'value',axisLabel:{formatter:vfmt,color:'#6b7684',fontSize:9}};
+ // --- Pagina 1: Resumen por tipo ---
+ var tipoLab=R.tipos.map(function(x){return x.t;});
+ var imgTipoVal=obChartImg(840,360,{grid:{left:8,right:16,top:16,bottom:50,containLabel:true},xAxis:{type:'category',data:tipoLab,axisLabel:{color:'#6b7684',interval:0,rotate:28,fontSize:10}},yAxis:axV,series:[{type:'bar',barWidth:'55%',data:R.tipos.map(function(x){return {value:x.val,itemStyle:{color:x.c,borderRadius:[4,4,0,0]}};}),label:{show:true,position:'top',fontSize:9,color:'#1f3a59',formatter:function(p){return p.value?fmShort(p.value):'';}}}]});
+ var imgTipoReg=obChartImg(840,360,{grid:{left:8,right:16,top:16,bottom:50,containLabel:true},xAxis:{type:'category',data:tipoLab,axisLabel:{color:'#6b7684',interval:0,rotate:28,fontSize:10}},yAxis:{type:'value',axisLabel:{color:'#6b7684',fontSize:9}},series:[{type:'bar',barWidth:'55%',data:R.tipos.map(function(x){return {value:x.reg,itemStyle:{color:x.c,borderRadius:[4,4,0,0]}};}),label:{show:true,position:'top',fontSize:10,color:'#1f3a59',formatter:function(p){return p.value?fi(p.value):'';}}}]});
+ var topTv=R.tipos.slice().sort(function(x,y){return y.val-x.val;})[0];
+ var anTipoVal=topTv&&topTv.val>0?('El tipo de devoluci\u00f3n con mayor valor es '+topTv.t+' con '+(devoFmtVal(topTv.val)||'$0')+(R.totVal>0?(' ('+(topTv.val/R.totVal*100).toFixed(1)+'% del total)'):'')+'.'):'A\u00fan no hay valores de devoluci\u00f3n registrados.';
+ var topTr=R.tipos.slice().sort(function(x,y){return y.reg-x.reg;})[0];
+ var anTipoReg=topTr&&topTr.reg>0?(topTr.t+' concentra la mayor cantidad de registros ('+fi(topTr.reg)+' de '+fi(R.totReg)+').'):'Sin registros a\u00fan.';
+ pages.push({unit:UNIT,color:col,section:'Resumen por Tipo',title:'Devoluciones por tipo \u00b7 valor y registros',kpis:[{t:'Registros',v:fi(R.totReg)},{t:'Valor Total',v:(devoFmtVal(R.totVal)||'$0')},{t:'Bultos',v:fi(Math.round(R.totBul))},{t:'Tipos con datos',v:fi(tAct.length)+' de '+fi(R.tipos.length)}],charts:[{title:'Valor por Tipo de Devoluci\u00f3n',img:imgTipoVal,an:anTipoVal},{title:'Registros por Tipo de Devoluci\u00f3n',img:imgTipoReg,an:anTipoReg}]});
+ // --- Pagina 2: Por Mes ---
+ var mesLab=a.mesO.map(function(k){var p=k.split('-');return DEVO_MESES[(+p[1])-1]+' '+p[0].slice(2);});
+ if(a.mesO.length){
+  var imgMesVal=obChartImg(840,360,{grid:{left:8,right:16,top:16,bottom:30,containLabel:true},xAxis:{type:'category',data:mesLab,axisLabel:{color:'#6b7684',interval:0,rotate:mesLab.length>8?28:0}},yAxis:axV,series:[{type:'bar',barWidth:'55%',data:a.mesO.map(function(k){return a.mes[k].v;}),itemStyle:{color:'#1e8449',borderRadius:[4,4,0,0]},label:{show:true,position:'top',fontSize:9,color:'#1f3a59',formatter:function(p){return p.value?fmShort(p.value):'';}}}]});
+  var imgMesReg=obChartImg(840,360,{grid:{left:8,right:16,top:16,bottom:30,containLabel:true},xAxis:{type:'category',data:mesLab,axisLabel:{color:'#6b7684',interval:0,rotate:mesLab.length>8?28:0}},yAxis:{type:'value',axisLabel:{color:'#6b7684',fontSize:9}},series:[{type:'bar',barWidth:'55%',data:a.mesO.map(function(k){return a.mes[k].r;}),itemStyle:{color:col,borderRadius:[4,4,0,0]},label:{show:true,position:'top',fontSize:10,color:'#1f3a59',formatter:function(p){return p.value?fi(p.value):'';}}}]});
+  var bi=0;a.mesO.forEach(function(k,i){if(a.mes[k].v>a.mes[a.mesO[bi]].v)bi=i;});
+  var anMes='El mes con mayor valor de devoluciones es '+mesLab[bi]+' con '+(devoFmtVal(a.mes[a.mesO[bi]].v)||'$0')+' en '+fi(a.mes[a.mesO[bi]].r)+' registro(s).';
+  pages.push({unit:UNIT,color:col,section:'Evoluci\u00f3n Mensual',title:'Devoluciones por mes \u00b7 valor y registros',charts:[{title:'Valor por Mes',img:imgMesVal,an:anMes},{title:'Registros por Mes',img:imgMesReg,an:'Distribuci\u00f3n de la cantidad de devoluciones a lo largo de los meses con datos.'}]});
+ }
+ // --- Pagina 3: Por Semana ---
+ var semLab=a.semO.map(function(k){return 'S'+a.sem[k].w;});
+ if(a.semO.length){
+  var imgSemVal=obChartImg(840,340,{grid:{left:8,right:16,top:16,bottom:30,containLabel:true},xAxis:{type:'category',data:semLab,axisLabel:{color:'#6b7684',fontSize:9,rotate:semLab.length>12?40:0}},yAxis:axV,series:[{type:'line',smooth:true,symbol:'circle',symbolSize:6,data:a.semO.map(function(k){return a.sem[k].v;}),lineStyle:{color:'#1e8449',width:2.5},itemStyle:{color:'#1e8449'},areaStyle:{color:'#1e8449',opacity:.1}}]});
+  var imgSemBul=obChartImg(840,340,{grid:{left:8,right:16,top:16,bottom:30,containLabel:true},xAxis:{type:'category',data:semLab,axisLabel:{color:'#6b7684',fontSize:9,rotate:semLab.length>12?40:0}},yAxis:{type:'value',axisLabel:{color:'#6b7684',fontSize:9}},series:[{type:'line',smooth:true,symbol:'circle',symbolSize:6,data:a.semO.map(function(k){return a.sem[k].b;}),lineStyle:{color:'#f39c12',width:2.5},itemStyle:{color:'#f39c12'},areaStyle:{color:'#f39c12',opacity:.1}}]});
+  pages.push({unit:UNIT,color:col,section:'Evoluci\u00f3n Semanal',title:'Devoluciones por semana ISO \u00b7 valor y bultos',charts:[{title:'Valor por Semana del A\u00f1o',img:imgSemVal,an:'Semana seg\u00fan calendario ISO (la semana que cruza el a\u00f1o cuenta como Semana 1)'+(a.sinFecha?('. '+fi(a.sinFecha)+' registro(s) sin fecha no entran en el an\u00e1lisis semanal.'):'.')},{title:'Bultos por Semana del A\u00f1o',img:imgSemBul,an:'Volumen de bultos devueltos semana a semana.'}]});
+ }
+ // --- Pagina 4: Unidad de Negocio (grafico unico) ---
+ if(a.uniO.length){
+  var uT=devoTopN(a.uni,a.uniO,'v',12);
+  var imgUni=obChartImg(1180,560,{grid:{left:8,right:60,top:10,bottom:10,containLabel:true},xAxis:axV,yAxis:{type:'category',data:uT.slice().reverse(),axisLabel:{color:'#6b7684',fontSize:11,width:230,overflow:'truncate'}},series:[{type:'bar',barWidth:'62%',data:uT.map(function(k){return a.uni[k].v;}).reverse(),itemStyle:{color:'#0f3a59',borderRadius:[0,4,4,0]},label:{show:true,position:'right',fontSize:9,color:'#1f3a59',formatter:function(p){return p.value?fmShort(p.value):'';}}}]});
+  var uTop=uT[0];var uTopV=uTop?a.uni[uTop].v:0;
+  var anUni=uTop?('La unidad de negocio con mayor valor de devoluciones es '+uTop+' con '+(devoFmtVal(uTopV)||'$0')+(R.totVal>0?(' ('+(uTopV/R.totVal*100).toFixed(1)+'% del total)'):'')+'. Se muestran las '+fi(uT.length)+' unidades con mayor valor devuelto.'):'Sin unidades de negocio registradas.';
+  pages.push({unit:UNIT,color:col,section:'Unidad de Negocio',title:'Valor de devoluciones por unidad de negocio',charts:[{title:'Top Unidades de Negocio por Valor',img:imgUni,an:anUni}]});
+ }
+ // --- Pagina 5: Zona Santiago vs Regiones ---
+ var zTotV=R.zVal.Santiago+R.zVal.Regiones;var zTotR=R.zReg.Santiago+R.zReg.Regiones;
+ if(zTotV>0||zTotR>0){
+  var imgZonaPie=obChartImg(540,420,{legend:{bottom:0,textStyle:{color:'#6b7684',fontSize:12}},series:[{type:'pie',radius:['45%','72%'],center:['50%','45%'],itemStyle:{borderColor:'#fff',borderWidth:2},data:[{name:'Santiago',value:R.zVal.Santiago,itemStyle:{color:ZC.Santiago}},{name:'Regiones',value:R.zVal.Regiones,itemStyle:{color:ZC.Regiones}}],label:{formatter:'{b}\n{d}%',fontSize:13,color:'#111',fontWeight:600}}]});
+  var imgZonaBar=obChartImg(540,420,{grid:{left:8,right:16,top:30,bottom:8,containLabel:true},xAxis:{type:'category',data:['Santiago','Regiones'],axisLabel:{color:'#45505c'}},yAxis:{type:'value',axisLabel:{color:'#6b7684',fontSize:9}},series:[{type:'bar',barWidth:'46%',data:[{value:R.zReg.Santiago,itemStyle:{color:ZC.Santiago,borderRadius:[4,4,0,0]}},{value:R.zReg.Regiones,itemStyle:{color:ZC.Regiones,borderRadius:[4,4,0,0]}}],label:{show:true,position:'top',fontSize:12,color:'#1f3a59',formatter:function(p){return fi(p.value);}}}]});
+  var pctSt=zTotV>0?(R.zVal.Santiago/zTotV*100):0;
+  var anZona='Las devoluciones se reparten en Santiago '+(devoFmtVal(R.zVal.Santiago)||'$0')+' ('+pctSt.toFixed(1)+'%) y Regiones '+(devoFmtVal(R.zVal.Regiones)||'$0')+' ('+(100-pctSt).toFixed(1)+'%), seg\u00fan la comuna de cada registro.';
+  pages.push({unit:UNIT,color:col,section:'Zona \u00b7 Santiago vs Regiones',title:'Distribuci\u00f3n de devoluciones por zona',charts:[{title:'Valor por Zona',img:imgZonaPie,an:anZona},{title:'Registros por Zona',img:imgZonaBar,an:'Cantidad de devoluciones en Santiago (comunas RM) frente a Regiones.'}]});
+ }
+ // --- Pagina 6: Comunas y Destinatarios ---
+ if(a.comO.length||a.dstO.length){
+  var cT=devoTopN(a.com,a.comO,'r',10);
+  var imgCom=obChartImg(560,440,{grid:{left:8,right:40,top:10,bottom:10,containLabel:true},xAxis:{type:'value',axisLabel:{color:'#6b7684',fontSize:9}},yAxis:{type:'category',data:cT.slice().reverse(),axisLabel:{color:'#6b7684',fontSize:10,width:120,overflow:'truncate'}},series:[{type:'bar',barWidth:'62%',data:cT.map(function(k){return a.com[k].r;}).reverse(),itemStyle:{color:'#7b1e3a',borderRadius:[0,4,4,0]},label:{show:true,position:'right',fontSize:9,color:'#1f3a59',formatter:function(p){return fi(p.value);}}}]});
+  var dT=devoTopN(a.dst,a.dstO,'v',10);
+  var imgDst=obChartImg(560,440,{grid:{left:8,right:60,top:10,bottom:10,containLabel:true},xAxis:axV,yAxis:{type:'category',data:dT.slice().reverse(),axisLabel:{color:'#6b7684',fontSize:10,width:120,overflow:'truncate'}},series:[{type:'bar',barWidth:'62%',data:dT.map(function(k){return a.dst[k].v;}).reverse(),itemStyle:{color:'#0d9488',borderRadius:[0,4,4,0]},label:{show:true,position:'right',fontSize:9,color:'#1f3a59',formatter:function(p){return p.value?fmShort(p.value):'';}}}]});
+  pages.push({unit:UNIT,color:col,section:'Comunas y Destinatarios',title:'Concentraci\u00f3n por comuna y por destinatario',charts:[{title:'Top 10 Comunas (Registros)',img:imgCom,an:'Comunas con mayor n\u00famero de devoluciones.'},{title:'Top 10 Destinatarios (Valor)',img:imgDst,an:'Destinatarios que concentran el mayor valor devuelto.'}]});
+ }
+ /* @@P4@@ */
+ return pages;
+}
+function devoRepBuildAll(){var pages=devoRepBuildPages();DEVO_REP_PAGES=pages;return pages;}
+function devoHasData(){try{devoEnsure();}catch(e){}return DEVO_ITEMS.some(function(it){var d=DEVO_DATA[it.id]||{rows:[]};return (d.rows||[]).some(function(r){return r&&r.some(function(x){return x!=null&&String(x).trim()!=='';});});});}
+function devoOpenReporte(){
+ if(!devoHasData()){alert('A\u00fan no hay devoluciones registradas para generar el reporte. Ingresa datos en las planillas y vuelve a intentarlo.');return;}
+ var ov=document.getElementById('devoRepOvr');
+ if(!ov){ov=document.createElement('div');ov.id='devoRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo \u00b7 Devoluciones</div><select class="ob-rep-selvar" id="devoPdfVar" title="Tama\u00f1o del PDF"><option value="eq">PDF: Equilibrado</option><option value="cp">PDF: Compacto</option><option value="am">PDF: Amplio</option></select><button class="ob-rep-b devo-rep-pdf">\u2913 PDF</button><button class="ob-rep-b devo-rep-imp">\ud83d\udda8 IMPRIMIR</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-body" id="devoRepBody2"></div></div>';document.body.appendChild(ov);
+  ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
+  var sv=ov.querySelector('#devoPdfVar');if(sv){sv.value=DEVO_PDF_VAR;sv.onchange=function(){DEVO_PDF_VAR=sv.value;};}
+  ov.querySelector('.devo-rep-pdf').onclick=function(){obPrintPages(true,DEVO_REP_PAGES,DEVO_PDF_VAR,'Reporte Devoluciones');};
+  ov.querySelector('.devo-rep-imp').onclick=function(){obPrintPages(false,DEVO_REP_PAGES,DEVO_PDF_VAR,'Reporte Devoluciones');};}
+ var pages=devoRepBuildAll();var body=document.getElementById('devoRepBody2');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';
+ ov.style.display='block';
+}
+function devoOpenPPT(){
+ if(!devoHasData()){alert('A\u00fan no hay devoluciones registradas para generar el PPT. Ingresa datos en las planillas y vuelve a intentarlo.');return;}
+ var ov=document.getElementById('devoPptOvr2');
+ if(!ov){ov=document.createElement('div');ov.id='devoPptOvr2';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Vista previa PPT \u00b7 Devoluciones</div><button class="ob-rep-b devo-ppt-gen">\u2913 GENERAR PPT</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-body" id="devoPptBody2"></div></div>';document.body.appendChild(ov);
+  ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
+  ov.querySelector('.devo-ppt-gen').onclick=function(){devoPptGenerate(this);};}
+ var pages=devoRepBuildAll();var body=document.getElementById('devoPptBody2');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';
+ ov.style.display='block';
+}
+function devoPptGenerate(btn){
+ var pages=DEVO_REP_PAGES||[];if(!pages.length){alert('No hay contenido para generar el PPT.');return;}
+ var old=btn.textContent;btn.disabled=true;btn.textContent='Generando\u2026';
+ var load=(typeof PptxGenJS!=='undefined')?Promise.resolve():obLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
+ load.then(function(){obRepPPT(pages,'Reporte_Devoluciones_QUINTEC.pptx',{title:'Reporte Ejecutivo de Devoluciones',sub:'QUINTEC \u00b7 Control de Devoluciones'});btn.disabled=false;btn.textContent=old;}).catch(function(){btn.disabled=false;btn.textContent=old;alert('No se pudo cargar el generador de PPT. Revisa tu conexi\u00f3n a internet e int\u00e9ntalo de nuevo.');});
+}
+function devoNubeAskPass(titulo,msg,cb){
+ var ov=document.createElement('div');ov.className='ob-modal';
+ ov.innerHTML='<div class="ob-box"><div class="ob-h">'+titulo+'</div><div class="ob-m">'+msg+'</div><input type="text" class="ob-inp" maxlength="12" placeholder="####" autocomplete="off" inputmode="numeric"><div class="ob-err" style="display:none">Contrase\u00f1a incorrecta</div><div class="ob-btns"><button class="ob-c">Cancelar</button><button class="ob-ok">Aceptar</button></div></div>';
+ document.body.appendChild(ov);
+ var inp=ov.querySelector('.ob-inp');var real='';setTimeout(function(){inp.focus();},30);
+ inp.addEventListener('input',function(){var v=inp.value;if(v.length<real.length){real=real.slice(0,v.length);}else{for(var i=real.length;i<v.length;i++){real+=v.charAt(i);}}inp.value=new Array(real.length+1).join('#');});
+ function close(){if(ov.parentNode)document.body.removeChild(ov);}
+ function ok(){if(real==='1234'){close();if(cb)cb();}else{ov.querySelector('.ob-err').style.display='';real='';inp.value='';inp.focus();}}
+ ov.querySelector('.ob-c').onclick=close;
+ ov.querySelector('.ob-ok').onclick=ok;
+ inp.onkeydown=function(e){if(e.key==='Enter')ok();if(e.key==='Escape')close();};
+}
+function devoOpenNube(){
+ var ov=document.getElementById('devoNubeOvr');
+ if(!ov){ov=document.createElement('div');ov.id='devoNubeOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">\u2601 Tablas de Devoluciones guardadas en la nube (Firebase)</div><button class="ob-rep-b devo-nedit">\u270e EDITAR</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-body" id="devoNubeBody2"></div></div>';document.body.appendChild(ov);
+  ov.querySelector('.ob-rep-x').onclick=function(){DEVO_NUBE_EDIT=false;ov.style.display='none';};
+  ov.querySelector('.devo-nedit').onclick=function(){if(!obIsAdmin()){alert('Solo el administrador puede eliminar tablas.');return;}devoNubeAskPass('Editar en la nube','Ingresa la contrase\u00f1a para habilitar la edici\u00f3n. La contrase\u00f1a se ocultar\u00e1 con el s\u00edmbolo #.',function(){DEVO_NUBE_EDIT=true;devoNubeRender();});};}
+ DEVO_NUBE_EDIT=false;devoEnsureCloud(function(){devoNubeRender();});ov.style.display='block';
+}
+function devoNubeRender(){
+ var body=document.getElementById('devoNubeBody2');if(!body)return;devoEnsure();
+ var conn=(typeof fbReady!=='undefined'&&fbReady);
+ var head='<div class="nube-conn '+(conn?'ok':'off')+'">'+(conn?'\u25cf Conectado a la nube \u00b7 quintec/devoluciones':'\u25cb Sin conexi\u00f3n con la nube')+(DEVO_NUBE_EDIT?' \u00b7 <b>Modo edici\u00f3n activo</b>':'')+'</div>';
+ var totReg=0,totVal=0;
+ var items=DEVO_ITEMS.map(function(it){var d=DEVO_DATA[it.id]||{rows:[]};var reg=0,val=0;(d.rows||[]).forEach(function(r){if(!r)return;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!has)return;reg++;var v=devoNum(r[DEVO_VALCOL]);if(v!=null)val+=v;});totReg+=reg;totVal+=val;
+  return '<div class="nube-row nube-row-click" data-open="'+it.id+'" title="Haz clic para ver el detalle de '+devoAttr(it.t)+'"><div class="nube-mes"><span class="devo-dot" style="background:'+it.c+'"></span>'+devoEsc(it.t)+'</div><div class="nube-stat">'+fi(reg)+' registros \u00b7 '+(devoFmtVal(val)||'$0')+'</div><button class="nube-exp" data-exp="'+it.id+'">\u2b07 Exportar</button>'+(DEVO_NUBE_EDIT?'<button class="nube-del" data-del="'+it.id+'">Eliminar tabla</button>':'')+'</div>';
+ }).join('');
+ var delAll=DEVO_NUBE_EDIT?'<div class="nube-mback" style="margin-top:12px"><button class="nube-del" id="devoNbDelAll">\ud83d\uddd1 Eliminar TODAS las tablas</button></div>':'';
+ body.innerHTML=head+'<div class="nube-cols"><div class="nube-col"><div class="nube-h" style="background:#16a085">Devoluciones</div><div class="nube-tot">'+fi(totReg)+' registros \u00b7 '+(devoFmtVal(totVal)||'$0')+' \u00b7 '+DEVO_ITEMS.length+' tablas \u00b7 <i>haz clic en una tabla para ver el detalle</i></div>'+items+'</div></div>'+delAll;
+ body.querySelectorAll('.nube-row-click').forEach(function(row){row.onclick=function(e){if(e.target.closest('.nube-exp')||e.target.closest('.nube-del'))return;devoNubeTabla(row.getAttribute('data-open'));};});
+ body.querySelectorAll('.nube-exp').forEach(function(b){b.onclick=function(e){e.stopPropagation();try{devoExport([b.getAttribute('data-exp')]);}catch(err){alert('No se pudo exportar: '+err.message);}};});
+ body.querySelectorAll('.nube-del[data-del]').forEach(function(b){b.onclick=function(e){e.stopPropagation();devoNubeDel(b.getAttribute('data-del'));};});
+ var da=document.getElementById('devoNbDelAll');if(da)da.onclick=function(){devoNubeDelAll();};
+}
+function devoNubeTabla(id){
+ var body=document.getElementById('devoNubeBody2');if(!body)return;devoEnsure();
+ var it=DEVO_ITEMS.find(function(x){return x.id===id;})||{t:id,c:'#16a085'};
+ var d=DEVO_DATA[id]||{rows:[]};var rows=[];(d.rows||[]).forEach(function(r){if(!r)return;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(has)rows.push(r);});
+ var val=0,bul=0;rows.forEach(function(r){var v=devoNum(r[DEVO_VALCOL]);if(v!=null)val+=v;bul+=devoBul(r[DEVO_BULCOL]);});
+ var h='<div class="nube-mback"><button class="nube-back" id="devoNbBack">\u2190 Volver a las tablas</button><button class="nube-expone" id="devoNbExp2">\u2b07 Exportar '+devoEsc(it.t)+' (Excel)</button></div>';
+ h+='<div class="nube-mtitle"><span class="devo-dot" style="background:'+it.c+'"></span>'+devoEsc(it.t)+'</div>';
+ h+='<div class="nube-chips"><span class="nube-chip">Registros: <b>'+fi(rows.length)+'</b></span><span class="nube-chip">Valor: <b>'+(devoFmtVal(val)||'$0')+'</b></span><span class="nube-chip">Bultos: <b>'+fi(Math.round(bul))+'</b></span></div>';
+ if(!rows.length){h+='<div class="nube-empty">Esta tabla no tiene registros guardados.</div>';body.innerHTML=h;}
+ else{
+  h+='<div class="nube-tblwrap"><table class="nube-tbl"><thead><tr><th>N\u00b0</th>'+DEVO_COLS.map(function(c,ci){return '<th'+(ci===DEVO_VALCOL?' class="num"':'')+'>'+devoEsc(c)+'</th>';}).join('')+'<th>Zona</th></tr></thead><tbody>';
+  rows.forEach(function(r,i){var z=devoZonaComuna(r[DEVO_COMCOL]);h+='<tr><td>'+(i+1)+'</td>'+DEVO_COLS.map(function(c,ci){var cell=(ci===DEVO_VALCOL)?(devoFmtVal(devoNum(r[ci]))||devoEsc(r[ci])):devoEsc(r[ci]);return '<td'+(ci===DEVO_VALCOL?' class="num"':'')+'>'+cell+'</td>';}).join('')+'<td class="z-'+(z==='Santiago'?'st':(z==='Regiones'?'rg':'sd'))+'">'+devoEsc(z)+'</td></tr>';});
+  h+='</tbody><tfoot><tr><td colspan="'+(DEVO_COLS.length+2)+'"><b>TOTAL \u00b7 '+fi(rows.length)+' registros \u00b7 Valor '+(devoFmtVal(val)||'$0')+' \u00b7 '+fi(Math.round(bul))+' bultos</b></td></tr></tfoot></table></div>';
+  body.innerHTML=h;
+ }
+ var bk=document.getElementById('devoNbBack');if(bk)bk.onclick=function(){devoNubeRender();};
+ var ex=document.getElementById('devoNbExp2');if(ex)ex.onclick=function(){try{devoExport([id]);}catch(err){alert('No se pudo exportar: '+err.message);}};
+}
+function devoNubeDel(id){
+ if(!obIsAdmin()){alert('Solo el administrador puede eliminar tablas.');return;}
+ var it=DEVO_ITEMS.find(function(x){return x.id===id;})||{t:id};
+ if(!confirm('\u26a0 \u00bfEliminar la tabla "'+it.t+'" de Devoluciones?\n\nSe borrar\u00e1 de este programa y de la nube (Firebase \u00b7 quintec/devoluciones). No se puede deshacer.'))return;
+ devoEnsure();DEVO_DATA[id]=devoEmptyItem();
+ try{devoRender();}catch(e){}try{devoG2Refresh();}catch(e){}devoFbSave();
+ devoNubeRender();
+ alert('\u2713 Tabla "'+it.t+'" eliminada de Devoluciones y de la nube.');
+}
+function devoNubeDelAll(){
+ if(!obIsAdmin()){alert('Solo el administrador puede eliminar tablas.');return;}
+ if(!confirm('\u26a0 ELIMINACI\u00d3N DEFINITIVA\n\nSe borrar\u00e1n TODAS las tablas de Devoluciones (las '+DEVO_ITEMS.length+' planillas) de este programa y de la nube (Firebase). No se puede deshacer.\n\n\u00bfDeseas continuar?'))return;
+ if(!confirm('\u00bfEst\u00e1s seguro? Esta es la \u00faltima confirmaci\u00f3n antes de borrar todas las tablas.'))return;
+ devoEnsure();DEVO_ITEMS.forEach(function(it){DEVO_DATA[it.id]=devoEmptyItem();});
+ try{devoRender();}catch(e){}try{devoG2Refresh();}catch(e){}devoFbSave();
+ devoNubeRender();
+ alert('\u2713 Todas las tablas de Devoluciones fueron eliminadas de este programa y de la nube.');
 }
 /* ===== CALENDARIO EN ESPA\u00d1OL ===== */
 var DEVO_CALY,DEVO_CALM;
