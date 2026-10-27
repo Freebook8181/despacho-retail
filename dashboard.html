@@ -3080,10 +3080,9 @@ function obRepPagesHTML(pages){
    if(pg.note){body='<div class="rep-an" style="margin:16px 22px;background:#fbecec;border-color:#f0c9c2;color:#8a3324">'+pg.note+'</div>';}
    else{
      var imgs=pg.charts||[];
-     if(imgs.length===1){var c=imgs[0];body='<img class="rep-img" src="'+c.img+'"/>'+obRepExpBox(c.exp)+obRepAnBox(c.an);}
+     if(imgs.length===1){var c=imgs[0];body='<img class="rep-img" src="'+c.img+'"/>'+obRepAnBox(c.an);}
      else{
-       body='<div class="rep-duo">'+imgs.map(function(c){return '<div><div class="rep-ct">'+c.title+'</div><img class="rep-img2" src="'+c.img+'"/></div>';}).join('')+'</div>';
-       body+=imgs.map(function(c){return obRepExpBox('<b>'+c.title+'.</b> '+c.exp)+obRepAnBox(c.an);}).join('');
+       body='<div class="rep-duo">'+imgs.map(function(c){return '<div class="rep-col"><div class="rep-ct">'+c.title+'</div><img class="rep-img2" src="'+c.img+'"/>'+obRepAnBox(c.an)+'</div>';}).join('')+'</div>';
      }
    }
    return '<div class="rep-page">'+band+kp+body+'</div>';
@@ -3094,7 +3093,7 @@ function obPrintReport(isPdf){
  var html='<div class="rep-wrap">'+obRepPagesHTML(OB_REP_PAGES)+'</div>';
  var w=window.open('','_blank');
  if(!w){alert('El navegador bloqueó la ventana. Permite las ventanas emergentes para '+(isPdf?'guardar el PDF':'imprimir')+'.');return;}
- w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{page-break-after:always;box-shadow:none;border:0;margin:0 auto}@page{size:A4;margin:9mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
+ w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{box-shadow:none;border:0;margin:0 auto 4mm;padding-bottom:2px}.rep-band{page-break-after:avoid;break-after:avoid}.rep-kpis,.rep-img,.rep-an,.rep-duo,.rep-duo>div,.rep-col{page-break-inside:avoid;break-inside:avoid}@page{size:A4;margin:10mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
  w.document.close();
 }
 function obLoadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
@@ -3109,26 +3108,60 @@ function obPPT(){
 function obRepPPT(pages){
  try{
   var pptx=new PptxGenJS();pptx.defineLayout({name:'QA',width:13.33,height:7.5});pptx.layout='QA';
-  var s0=pptx.addSlide();s0.background={color:'1F3A59'};
-  s0.addText('Reporte Ejecutivo de Tiendas',{x:0.8,y:2.6,w:11.7,h:1,fontSize:36,bold:true,color:'FFFFFF',fontFace:'Arial'});
-  s0.addText('MacOnline Distribución y Vertical Tiendas  ·  QUINTEC KPI Logística',{x:0.8,y:3.7,w:11.7,h:0.6,fontSize:18,color:'C3D0DD'});
   var strip=function(h){return (h==null?'':String(h)).replace(/<[^>]*>/g,'');};
-  pages.forEach(function(pg){
-    var s=pptx.addSlide();var col=(pg.color||'#1f3a59').replace('#','');
-    s.addText(pg.unit+'  ·  '+pg.section,{x:0.5,y:0.28,w:12.3,h:0.5,fontSize:20,bold:true,color:col});
-    s.addText(strip(pg.title),{x:0.5,y:0.78,w:12.3,h:0.4,fontSize:14,color:'5a6672'});
-    var y0=1.35;
-    if(pg.kpis&&pg.kpis.length){s.addText(pg.kpis.map(function(k){return strip(k.t)+': '+strip(k.v);}).join('     '),{x:0.5,y:1.22,w:12.3,h:0.4,fontSize:12,color:'1f3a59',bold:true});y0=1.72;}
-    if(pg.note){s.addText(strip(pg.note),{x:0.6,y:y0+0.4,w:12.1,h:1.5,fontSize:15,color:'C0392B',valign:'top'});return;}
-    var imgs=(pg.charts||[]).filter(function(c){return c.img;});
-    if(imgs.length===1){
-      s.addImage({data:imgs[0].img,x:0.6,y:y0,w:7.6,h:4.0});
-      s.addText([{text:'Explicación. ',options:{bold:true}},{text:strip(imgs[0].exp)},{text:'\n\nAnálisis. ',options:{bold:true}},{text:strip(imgs[0].an)}],{x:8.5,y:y0,w:4.3,h:4.0,fontSize:12,color:'333333',valign:'top'});
-    }else if(imgs.length>=2){
-      s.addImage({data:imgs[0].img,x:0.45,y:y0,w:6.05,h:3.45});
-      s.addImage({data:imgs[1].img,x:6.85,y:y0,w:6.05,h:3.45});
-      s.addText([{text:strip(imgs[0].title)+'. ',options:{bold:true}},{text:strip(imgs[0].an||imgs[0].exp)},{text:'      '+strip(imgs[1].title)+'. ',options:{bold:true}},{text:strip(imgs[1].an||imgs[1].exp)}],{x:0.5,y:y0+3.55,w:12.3,h:1.6,fontSize:12,color:'333333',valign:'top'});
+  var totalP=pages.length;
+  // ===== Portada =====
+  var s0=pptx.addSlide();s0.background={color:'1F3A59'};
+  s0.addShape('rect',{x:0,y:3.28,w:13.33,h:0.07,fill:{color:'C3A24A'}});
+  s0.addText('Reporte Ejecutivo de Tiendas',{x:0.9,y:2.3,w:11.5,h:1,fontSize:40,bold:true,color:'FFFFFF',fontFace:'Arial'});
+  s0.addText('MacOnline Distribución y Vertical Tiendas',{x:0.9,y:3.5,w:11.5,h:0.5,fontSize:20,color:'C3D0DD'});
+  s0.addText('QUINTEC · KPI Logística',{x:0.9,y:4.05,w:11.5,h:0.4,fontSize:14,color:'8DA3BD'});
+  pages.forEach(function(pg,idx){
+    var s=pptx.addSlide();s.background={color:'FFFFFF'};
+    var col=(pg.color||'#1f3a59').replace('#','');
+    // Banda de encabezado
+    s.addShape('rect',{x:0,y:0,w:13.33,h:1.0,fill:{color:col}});
+    s.addText(pg.unit+'   ·   '+pg.section,{x:0.55,y:0.1,w:12.2,h:0.42,fontSize:19,bold:true,color:'FFFFFF',fontFace:'Arial'});
+    s.addText(strip(pg.title),{x:0.55,y:0.54,w:12.2,h:0.36,fontSize:13,color:'DCE6F1'});
+    var y0=1.22;
+    // KPIs
+    if(pg.kpis&&pg.kpis.length){
+      var n=pg.kpis.length,gap=0.18,totW=12.23,bw=(totW-gap*(n-1))/n;
+      pg.kpis.forEach(function(k,i){
+        var bx=0.55+i*(bw+gap);
+        s.addShape('roundRect',{x:bx,y:y0,w:bw,h:0.82,fill:{color:'F2F5F9'},line:{color:'D9E2EC',width:1},rectRadius:0.06});
+        s.addText([{text:strip(k.t)+'\n',options:{fontSize:9.5,color:'6B7684'}},{text:strip(k.v),options:{fontSize:15,color:'1F3A59',bold:true}},{text:(k.s?('\n'+strip(k.s)):''),options:{fontSize:8.5,color:'8A95A1'}}],{x:bx+0.1,y:y0+0.05,w:bw-0.2,h:0.72,valign:'top',align:'left'});
+      });
+      y0+=1.04;
     }
+    var footY=7.06;
+    // Nota (sin datos)
+    if(pg.note){s.addText(strip(pg.note),{x:0.6,y:y0+0.25,w:12.1,h:footY-y0-0.4,fontSize:15,color:'C0392B',valign:'top'});
+      s.addShape('rect',{x:0,y:7.0,w:13.33,h:0.014,fill:{color:'D9E2EC'}});
+      s.addText('QUINTEC · KPI Logística',{x:0.55,y:footY,w:6,h:0.3,fontSize:9,color:'9AA7B4'});
+      s.addText('Diapositiva '+(idx+1)+' de '+totalP,{x:6.78,y:footY,w:6,h:0.3,fontSize:9,color:'9AA7B4',align:'right'});return;}
+    var imgs=(pg.charts||[]).filter(function(c){return c.img;});
+    var availH=footY-y0-0.1;
+    if(imgs.length===1){
+      var ih=availH; if(ih>3.75)ih=3.75;
+      s.addImage({data:imgs[0].img,x:0.7,y:y0,w:7.5,h:ih});
+      s.addText(imgs[0].title,{x:8.45,y:y0,w:4.35,h:0.4,fontSize:14,bold:true,color:col});
+      s.addText(strip(imgs[0].an),{x:8.45,y:y0+0.46,w:4.35,h:ih-0.4,fontSize:12.5,color:'333333',valign:'top',lineSpacingMultiple:1.12});
+    }else if(imgs.length>=2){
+      var cw=6.0,cgap=0.33,x1=0.55,x2=x1+cw+cgap;
+      var titleH=0.34,gapIA=0.12,anH=1.3;
+      var imgH=availH-titleH-gapIA-anH; if(imgH>3.1)imgH=3.1; if(imgH<2.2)imgH=2.2;
+      var iy=y0+titleH, ay=iy+imgH+gapIA;
+      s.addText(imgs[0].title,{x:x1,y:y0,w:cw,h:titleH,fontSize:12.5,bold:true,color:col});
+      s.addText(imgs[1].title,{x:x2,y:y0,w:cw,h:titleH,fontSize:12.5,bold:true,color:col});
+      s.addImage({data:imgs[0].img,x:x1,y:iy,w:cw,h:imgH});
+      s.addImage({data:imgs[1].img,x:x2,y:iy,w:cw,h:imgH});
+      s.addText(strip(imgs[0].an),{x:x1,y:ay,w:cw,h:footY-ay-0.1,fontSize:11,color:'333333',valign:'top',lineSpacingMultiple:1.06});
+      s.addText(strip(imgs[1].an),{x:x2,y:ay,w:cw,h:footY-ay-0.1,fontSize:11,color:'333333',valign:'top',lineSpacingMultiple:1.06});
+    }
+    s.addShape('rect',{x:0,y:7.0,w:13.33,h:0.014,fill:{color:'D9E2EC'}});
+    s.addText('QUINTEC · KPI Logística',{x:0.55,y:footY,w:6,h:0.3,fontSize:9,color:'9AA7B4'});
+    s.addText('Diapositiva '+(idx+1)+' de '+totalP,{x:6.78,y:footY,w:6,h:0.3,fontSize:9,color:'9AA7B4',align:'right'});
   });
   pptx.writeFile({fileName:'Reporte_Tiendas_QUINTEC.pptx'});
  }catch(e){alert('No se pudo generar el PPT: '+e.message);}
@@ -3240,7 +3273,7 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".rep-band{padding:16px 22px;color:#fff}.rep-bt{font-size:19px;font-weight:700;font-family:'Sora',Arial}.rep-bt span{font-weight:400;opacity:.9}.rep-bs{font-size:11px;opacity:.85;margin-top:3px}"
 +".rep-kpis{display:flex;gap:12px;padding:16px 22px 4px;flex-wrap:wrap}.rep-k{flex:1;min-width:130px;background:#f6f9fc;border:1px solid #e6edf4;border-radius:8px;padding:10px 12px}.rep-kt{font-size:11px;color:#6b7684;font-weight:600}.rep-kv{font-size:19px;font-weight:700;color:#1f3a59;font-family:'Sora',Arial;margin:2px 0}.rep-ks{font-size:10.5px;color:#8a95a1}"
 +".rep-img{display:block;width:calc(100% - 44px);margin:14px 22px;border:1px solid #eef2f6;border-radius:8px}"
-+".rep-duo{display:flex;gap:14px;padding:14px 22px}.rep-duo>div{flex:1;min-width:0}.rep-ct{font-size:12.5px;font-weight:700;color:#1f3a59;margin-bottom:6px}.rep-img2{width:100%;border:1px solid #eef2f6;border-radius:8px}"
++".rep-duo{display:flex;gap:14px;padding:14px 22px}.rep-duo>div{flex:1;min-width:0;display:flex;flex-direction:column}.rep-ct{font-size:12.5px;font-weight:700;color:#1f3a59;margin-bottom:6px}.rep-img2{width:100%;border:1px solid #eef2f6;border-radius:8px}.rep-duo .rep-an{margin:8px 0 0}"
 +".rep-an{margin:6px 22px;padding:11px 14px;border-radius:8px;font-size:12.5px;line-height:1.6;background:#eef3fa;border:1px solid #d6e1f0;color:#24415f}"
 +".rep-exp{margin:8px 22px 0;padding:10px 14px 11px;border-radius:8px;background:#f4f9f6;border:1px solid #d9e8e2;border-left:4px solid #2e7d5b;color:#2a4a40}"
 +".rep-exp-h{display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#2e7d5b;margin-bottom:5px}"
