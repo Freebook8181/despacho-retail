@@ -158,6 +158,9 @@ select:focus{border-color:var(--navy)}
 .devo-foot{display:flex;flex-wrap:wrap;gap:30px;padding:12px 16px;border-top:1px solid #e3e8ef;font-size:13px;color:#1f2a37}
 .devo-ce{display:inline-block;min-width:160px;border-bottom:1px solid #9aa6b2;padding:1px 4px}
 .devo-ce:focus{outline:none;background:#eef5ff}
+.devo-hora{min-width:3.6em;text-align:center}
+.devo-ampm{display:inline-flex;align-items:center;gap:4px;margin-left:8px;cursor:pointer;user-select:none}
+.devo-ampm input{cursor:pointer;margin:0}
 /* toolbar devoluciones */
 .devo-toolbar{display:flex;flex-wrap:wrap;gap:10px;margin:0 2px 20px}
 .devo-btn{border:none;border-radius:9px;padding:9px 15px;font-size:12.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;color:#fff;background:#16a085;transition:filter .15s}
@@ -1593,7 +1596,7 @@ function devoAttr(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace
 const DEVO_ROWS=28;
 const FB_PATH_DEVO='quintec/devoluciones';
 var DEVO_ACTIVE='cd';
-function devoEmptyItem(){return{rows:Array.from({length:DEVO_ROWS},()=>Array(DEVO_COLS.length).fill('')),am:'',rec:''};}
+function devoEmptyItem(){return{rows:Array.from({length:DEVO_ROWS},()=>Array(DEVO_COLS.length).fill('')),am:'',rec:'',ampm:''};}
 function devoEnsure(){
  if(!DEVO_DATA||typeof DEVO_DATA!=='object')DEVO_DATA={};
  DEVO_ITEMS.forEach(it=>{
@@ -1608,6 +1611,7 @@ function devoEnsure(){
   while(d.rows.length<DEVO_ROWS)d.rows.push(Array(DEVO_COLS.length).fill(''));
   if(typeof d.am!=='string')d.am='';
   if(typeof d.rec!=='string')d.rec='';
+  if(d.ampm!=='AM'&&d.ampm!=='PM')d.ampm='';
  });
 }
 function devoEsc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1617,7 +1621,7 @@ function devoFmtVal(v){var n=(typeof v==='number')?v:devoNum(v);if(n==null)retur
 function devoItemTotal(id){var d=DEVO_DATA[id];if(!d)return 0;var t=0;d.rows.forEach(r=>{var n=devoNum(r[DEVO_VALCOL]);if(n!=null)t+=n;});return t;}
 /* --- reloj digital (funciona con o sin internet; usa la hora del equipo) --- */
 var DEVO_CLKTMR=null;
-function devoNowTime(){var d=new Date();function p(n){return String(n).padStart(2,'0');}return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+function devoNowTime(){var d=new Date();function p(n){return String(n).padStart(2,'0');}return p(d.getHours())+':'+p(d.getMinutes());}
 function devoNowFecha(){var d=new Date();function p(n){return String(n).padStart(2,'0');}return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear();}
 function devoAutoFecha(i,r){devoEnsure();if(!DEVO_DATA[i]||!DEVO_DATA[i].rows[r])return;var cur=DEVO_DATA[i].rows[r][0];if(cur!=null&&String(cur).trim()!=='')return;var f=devoNowFecha();DEVO_DATA[i].rows[r][0]=f;var cell=document.querySelector('.devo-fechacell[data-i="'+i+'"][data-r="'+r+'"]');if(cell)cell.textContent=f;}
 function devoStartClock(){if(DEVO_CLKTMR)clearInterval(DEVO_CLKTMR);function tick(){var el=document.getElementById('devoClock');if(el)el.textContent=devoNowTime();}tick();DEVO_CLKTMR=setInterval(tick,1000);}
@@ -1650,7 +1654,7 @@ function devoWrapHtml(it){
  h+=`</tr></thead><tbody id="devob_${it.id}"></tbody></table></div>`;
  h+=`<div class="devo-total">Suma total <b>Valor</b>: <span id="devoTot_${it.id}" class="devo-totval">$0</span></div>`;
  h+=`<div class="devo-foot">`
-  +`<div class="devo-horrow"><b>Horario</b> <span class="devo-clock" id="devoClock">--:--:--</span> <span class="devo-ce" data-i="${it.id}" data-f="am" contenteditable="true"></span> <button class="devo-btn devo-ins" id="devoIns" data-i="${it.id}">⏱ Insertar</button></div>`
+  +`<div class="devo-horrow"><b>Horario</b> <span class="devo-clock" id="devoClock">--:--</span> <span class="devo-ce devo-hora" data-i="${it.id}" data-f="am" contenteditable="true"></span> <button class="devo-btn devo-ins" data-i="${it.id}">⏱ Insertar</button> <label class="devo-ampm"><input type="checkbox" class="devo-ampmchk" data-i="${it.id}" data-v="AM"> AM</label> <label class="devo-ampm"><input type="checkbox" class="devo-ampmchk" data-i="${it.id}" data-v="PM"> PM</label></div>`
   +`<div><b>Recepciona</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="rec" contenteditable="true"></span> &nbsp; Firma: ______________</div>`
   +`</div>`;
  h+=`</div>`;
@@ -1682,6 +1686,7 @@ function devoRenderItem(it){
  tb.innerHTML=h;
  const am=pane.querySelector(`.devo-ce[data-i="${it.id}"][data-f="am"]`);if(am&&document.activeElement!==am)am.textContent=d.am||'';
  const rc=pane.querySelector(`.devo-ce[data-i="${it.id}"][data-f="rec"]`);if(rc&&document.activeElement!==rc)rc.textContent=d.rec||'';
+ const amChks=pane.querySelectorAll(`.devo-ampmchk[data-i="${it.id}"]`);amChks.forEach(ch=>{ch.checked=(ch.getAttribute('data-v')===d.ampm);});
  const tot=document.getElementById('devoTot_'+it.id);if(tot)tot.textContent=devoFmtVal(devoItemTotal(it.id))||'$0';
 }
 function devoActivateTabStyle(){document.querySelectorAll('#devoTabs .devo-tab').forEach(b=>{b.classList.toggle('on',b.getAttribute('data-tab')===DEVO_ACTIVE);});}
@@ -1702,6 +1707,7 @@ function devoWire(){
  root.addEventListener('click',e=>{
   const tab=e.target.closest?e.target.closest('.devo-tab'):null;if(tab){devoSetActive(tab.getAttribute('data-tab'));return;}
   const ins=e.target.closest?e.target.closest('.devo-ins'):null;if(ins){const i=ins.dataset.i;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].am=devoNowTime();const el=document.querySelector(`.devo-ce[data-i="${i}"][data-f="am"]`);if(el)el.textContent=DEVO_DATA[i].am;devoFbPush();}return;}
+  const chk=e.target.closest?e.target.closest('.devo-ampmchk'):null;if(chk){const i=chk.dataset.i,v=chk.getAttribute('data-v');devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].ampm=chk.checked?v:'';document.querySelectorAll(`.devo-ampmchk[data-i="${i}"]`).forEach(o=>{o.checked=(o.getAttribute('data-v')===DEVO_DATA[i].ampm);});devoFbPush();}return;}
   const fc=e.target.closest?e.target.closest('.devo-fechacell'):null;if(fc){devoOpenEditCal(fc.dataset.i,+fc.dataset.r);return;}
  });
  const bI=document.getElementById('devoImport'),fI=document.getElementById('devoFile');
@@ -1776,7 +1782,7 @@ function devoExport(ids){
   const N=Math.max(DEVO_ROWS,d.rows.length);
   for(let r=0;r<N;r++){const row=d.rows[r]||[];aoa.push([r+1].concat(DEVO_COLS.map((_,c)=>row[c]==null?'':row[c])));}
   const totRow=new Array(ncol).fill('');totRow[DEVO_VALCOL]='TOTAL';totRow[DEVO_VALCOL+1]=devoFmtVal(devoItemTotal(id))||'$0';aoa.push(totRow);
-  aoa.push([]);aoa.push(['Horario:',d.am||'','','','Recepciona Nombre:',d.rec||'','Firma:']);
+  aoa.push([]);aoa.push(['Horario:',(d.am||'')+(d.ampm?(' '+d.ampm):''),'','','Recepciona Nombre:',d.rec||'','Firma:']);
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
   ws['!cols']=[{wch:5},{wch:12},{wch:14},{wch:14},{wch:16},{wch:16},{wch:8},{wch:18},{wch:22}];
