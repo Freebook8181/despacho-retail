@@ -3040,15 +3040,23 @@ function obReporte(){
  obRepRefresh();
  ov.style.display='block';
 }
-function obRepRefresh(){
+function obRepBuildAll(){
  var units=[];if(VSTORE.mac.rows.length)units.push('mac');if(VSTORE.ver.rows.length)units.push('ver');
  var pages=[];units.forEach(function(k){pages=pages.concat(obRepBuildPages(k));});
- OB_REP_PAGES=pages;
- var body=document.getElementById('obRepBody');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';
- obRepFillControls();
+ OB_REP_PAGES=pages;return pages;
 }
-function obRepFillControls(){
- var box=document.getElementById('obRepCtl');if(!box)return;
+function obRepRefresh(){
+ var pages=obRepBuildAll();
+ var body=document.getElementById('obRepBody');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';
+ obRepFillControls('obRepCtl',obRepRefresh);
+}
+function obPptRefresh(){
+ var pages=obRepBuildAll();
+ var body=document.getElementById('obPptBody');if(body)body.innerHTML='<div class="rep-wrap">'+obRepPagesHTML(pages)+'</div>';
+ obRepFillControls('obPptCtl',obPptRefresh);
+}
+function obRepFillControls(boxId,onChange){
+ var box=document.getElementById(boxId);if(!box)return;
  var units=[];if(VSTORE.mac.rows.length)units.push('mac');if(VSTORE.ver.rows.length)units.push('ver');
  var optMonths=function(k){var D=VSTORE[k];return (D.months||[]).map(function(mi){return '<option value="'+mi+'">'+MESES_FULL[mi]+' '+vMesYear(D,mi)+'</option>';}).join('');};
  var optWeeks=function(k){var D=VSTORE[k];var ws=(D.weeks||[]).slice().sort(function(a,b){return a-b;});if(!ws.length)return '';return ws.map(function(w){return '<option value="'+w+'">S'+w+'</option>';}).join('');};
@@ -3064,7 +3072,7 @@ function obRepFillControls(){
  box.innerHTML=h;
  box.querySelectorAll('select').forEach(function(s){
    var k=s.getAttribute('data-k'),f=s.getAttribute('data-f');var v=OB_REP_SEL[k][f];if(v!=null&&v!=='')s.value=String(v);
-   s.addEventListener('change',function(){var vv=s.value;OB_REP_SEL[k][f]=(f==='zona')?vv:(vv===''?null:+vv);obRepRefresh();});
+   s.addEventListener('change',function(){var vv=s.value;OB_REP_SEL[k][f]=(f==='zona')?vv:(vv===''?null:+vv);onChange();});
  });
 }
 function obRepExpBox(t){return t?('<div class="rep-exp"><div class="rep-exp-h">Explicación</div><div class="rep-exp-t">'+t+'</div></div>'):'';}
@@ -3093,17 +3101,26 @@ function obPrintReport(isPdf){
  var html='<div class="rep-wrap">'+obRepPagesHTML(OB_REP_PAGES)+'</div>';
  var w=window.open('','_blank');
  if(!w){alert('El navegador bloqueó la ventana. Permite las ventanas emergentes para '+(isPdf?'guardar el PDF':'imprimir')+'.');return;}
- w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{box-shadow:none;border:0;margin:0 auto 4mm;padding-bottom:2px;page-break-inside:avoid;break-inside:avoid}.rep-band{page-break-after:avoid;break-after:avoid}.rep-kpis,.rep-img,.rep-img2,.rep-an,.rep-duo,.rep-duo>div,.rep-col{page-break-inside:avoid;break-inside:avoid}@page{size:A4;margin:10mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
+ w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{box-shadow:none;border:0;margin:0 auto 4mm;padding-bottom:2px;page-break-inside:avoid;break-inside:avoid}.rep-band{page-break-after:avoid;break-after:avoid}.rep-duo{display:block;padding:12px 22px 0}.rep-duo>div,.rep-col{width:100%!important;max-width:100%!important;margin:0 0 7mm;page-break-inside:avoid;break-inside:avoid}.rep-col:last-child{margin-bottom:0}.rep-ct{font-size:14px;margin-bottom:7px}.rep-img2{display:block;width:auto!important;max-width:100%;max-height:78mm;height:auto;margin:5px auto 0}.rep-img{display:block;width:auto;max-width:100%;max-height:92mm;height:auto;margin:10px auto 0}.rep-duo .rep-an{margin:9px 0 0}.rep-kpis,.rep-img,.rep-img2,.rep-an{page-break-inside:avoid;break-inside:avoid}@page{size:A4;margin:10mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
  w.document.close();
 }
 function obLoadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 function obPPT(){
  if(!(VSTORE.mac.rows.length||VSTORE.ver.rows.length)){alert('No hay información de "Ventas por tienda y mes" para generar el PPT. Carga primero el Excel de ventas.');return;}
  obRepSelInit('mac');obRepSelInit('ver');
- var units=[];if(VSTORE.mac.rows.length)units.push('mac');if(VSTORE.ver.rows.length)units.push('ver');
- var pages=[];units.forEach(function(k){pages=pages.concat(obRepBuildPages(k));});
+ var ov=document.getElementById('obPptOvr');
+ if(!ov){ov=document.createElement('div');ov.id='obPptOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Vista previa PPT · MacOnline Distribución y Vertical Tiendas</div><button class="ob-rep-b ob-ppt-gen">⤓ GENERAR PPT</button><button class="ob-rep-x">✕</button></div><div class="ob-rep-ctl" id="obPptCtl"></div><div class="ob-rep-body" id="obPptBody"></div></div>';document.body.appendChild(ov);
+  ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
+  ov.querySelector('.ob-ppt-gen').onclick=function(){obPptGenerate(this);};}
+ obPptRefresh();
+ ov.style.display='block';
+}
+function obPptGenerate(btn){
+ var pages=OB_REP_PAGES||[];
+ if(!pages.length){alert('No hay contenido para generar el PPT.');return;}
+ var old=btn.textContent;btn.disabled=true;btn.textContent='Generando…';
  var load=(typeof PptxGenJS!=='undefined')?Promise.resolve():obLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
- load.then(function(){obRepPPT(pages);}).catch(function(){alert('No se pudo cargar el generador de PPT. Revisa tu conexión a internet e inténtalo de nuevo.');});
+ load.then(function(){obRepPPT(pages);btn.disabled=false;btn.textContent=old;}).catch(function(){btn.disabled=false;btn.textContent=old;alert('No se pudo cargar el generador de PPT. Revisa tu conexión a internet e inténtalo de nuevo.');});
 }
 function obRepPPT(pages){
  try{
