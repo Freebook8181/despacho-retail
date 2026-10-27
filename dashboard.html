@@ -408,7 +408,7 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
 <div class="wrap"><div id="emptyMonth" style="display:none;margin:26px 0;padding:30px 28px;background:#fff;border:1px solid #e3e7ec;border-left:5px solid #c89a4e;border-radius:12px;box-shadow:0 6px 22px rgba(23,42,67,.07)"></div></div>
 <main class="wrap" id="main"></main>
 <footer class="foot"><div class="wrap" id="footc"></div></footer>
-<script>const DATA={"meta":{"meses":[]},"rows":[]};</script>
+<script>const DATA={"meta":{"meses":[]},"rows":[],"dups":[]};</script>
 <script>
 /* ===== app.js ===== */
 /* ====== GLOBALS COMPARTIDOS ====== */
@@ -496,7 +496,7 @@ function recomputeMeta(){
 function rowsForMonth(){return F.mes==='all'?DATA.rows:DATA.rows.filter(r=>r.mk===F.mes);}
 /* ===== app2.js ===== */
 /* ====== MARKUP ====== */
-const TABS=[['op','Operaciones & Flota',IC.truck],['fin','Finanzas & P&L',IC.money],['log','Logística & Rutas',IC.map],['aud','Auditoría & Excepciones',IC.search],['cmp','Tendencias & Comparativo',IC.cal],['diag','Diagnóstico & Causas',IC.alert]];
+const TABS=[['op','Operaciones & Flota',IC.truck],['fin','Finanzas & P&L',IC.money],['log','Logística & Rutas',IC.map],['aud','Auditoría & Excepciones',IC.search],['cmp','Tendencias & Comparativo',IC.cal]];
 function kpi(id,icon,title,tl){return `<div class="kpi ${tl?'tl':''}"><button class="kinfo adminonly" data-k="${id}" title="¿Qué significa este indicador?">?</button><div class="kt">${icon}<span>${title}</span></div><div class="kv" id="${id}">–</div><div class="kf" id="${id}_f"></div></div>`;}
 function card(id,icon,title,sub,cls,detail){return `<div class="card"><h3>${icon} ${title}${detail?`<button class="vdet" data-detail="${id}" title="Ver todo el detalle">Ver detalle</button>`:''}<button class="cinfo adminonly" data-c="${id}" title="¿Para qué sirve este gráfico?">?</button></h3><div class="cs">${sub}</div><div class="chart ${cls||''}" id="${id}"></div><div class="insight" id="${id}_i"></div></div>`;}
 function buildMarkup(){
@@ -529,10 +529,10 @@ function buildMarkup(){
  h+=`<div class="grid g-1"><div class="card"><h3>${IC.list} Detalle Operativo de Rutas</h3><div class="cs">Listado interactivo a nivel de registro</div><div class="tbl-meta" id="rt_meta"></div><div class="tblwrap"><table id="rt_tbl"><thead><tr><th>ID</th><th>Fecha</th><th>Unidad Negocio</th><th>Comuna</th><th>Vehículo</th><th>Rango</th><th style="text-align:right">Valor</th></tr></thead><tbody></tbody></table></div><div class="rt-pager" id="rt_pager"></div></div></div>`;
  h+=`</section>`;
  // ===== AUDITORIA =====
- h+=`<section class="section" id="s-aud"><div class="sec-head"><h2>Auditoría & Excepciones</h2><p>Trazabilidad de calidad y monitoreo de anomalías</p></div>`;
- h+=`<div class="kgrid">${kpi('k_cal',IC.gauge,'% Calidad (sin observación)')}${kpi('k_vobsavg',IC.ticket,'Valor Promedio Observado')}${kpi('k_vmax',IC.money,'Pedido de Mayor Valor')}</div>`;
- h+=`<div class="grid g-2e">${card('c_obstipo',IC.chart,'Distribución de Observaciones','Top motivos / alertas registradas','tall')}${card('c_obstp',IC.truck,'Observaciones por Vehículo','Flota con mayor incidencia','tall')}</div>`;
- h+=`<div class="grid g-1">${card('c_obssem',IC.chart,'Observaciones por Semana','Evolución de incidencias en el periodo','sm')}</div>`;
+ h+=`<section class="section" id="s-aud"><div class="sec-head"><h2>Auditoría & Excepciones</h2><p>Pedidos duplicados (NO SUMA) detectados en el dedup y excluidos del total</p></div>`;
+ h+=`<div class="kgrid">${kpi('k_cal',IC.gauge,'% Sin Duplicados')}${kpi('k_vobsavg',IC.ticket,'Valor Prom. Duplicado')}${kpi('k_vmax',IC.money,'Pedido de Mayor Valor')}</div>`;
+ h+=`<div class="grid g-2e">${card('c_obstipo',IC.chart,'Duplicados por Unidad de Negocio','Pedidos NO SUMA por unidad','tall')}${card('c_obstp',IC.truck,'Duplicados por Vehículo','Móviles con más repeticiones','tall')}</div>`;
+ h+=`<div class="grid g-1">${card('c_obssem',IC.chart,'Duplicados por Semana','Evolución y % de duplicados en el periodo','sm')}</div>`;
  h+=`</section>`;
  // ===== TENDENCIAS & COMPARATIVO (multi-mes) =====
  h+=`<section class="section" id="s-cmp"><div class="sec-head"><h2>Tendencias & Comparativo Mensual</h2><p>Evolución mes a mes del volumen, el valor y la calidad</p></div>`;
@@ -545,13 +545,6 @@ function buildMarkup(){
  h+=`<div class="grid g-1">${card('c_mesheat',IC.grid,'Campo de Calor Mes × Semana','Concentración de pedidos por semana en cada mes')}</div>`;
  h+=`<div class="grid g-1">${card('c_mesun',IC.layers,'Mezcla de Unidades por Mes','Participación (%) de cada unidad de negocio')}</div>`;
  h+=`<div class="grid g-2e">${card('cmp_c_sem',IC.chart,'Pedidos y Valor por Semana','Totales por semana del mes (todos los meses)','tall')}${card('cmp_c_ampm',IC.clock,'Pedidos AM vs PM por Mes','Reparto de turno mañana / tarde en cada mes','tall')}</div>`;
- h+=`</section>`;
- // ===== DIAGNOSTICO & CAUSAS (Ishikawa) =====
- h+=`<section class="section" id="s-diag"><div class="sec-head"><h2>Diagnóstico & Análisis de Causas</h2><p>Causa-raíz de las incidencias y focos de concentración</p></div>`;
- h+=`<div class="kgrid">${kpi('k_dgobs',IC.pct,'% Pedidos con Observación')}${kpi('k_dgtop',IC.alert,'Causa Más Frecuente')}${kpi('k_dgcom',IC.map,'Comuna Foco de Calidad')}${kpi('k_dgsem',IC.cal,'Semana Más Crítica')}</div>`;
- h+=`<div class="grid g-1"><div class="card"><h3>${IC.alert} Diagrama de Ishikawa (Espina de Pescado)<button class="cinfo adminonly" data-c="c_ish" title="¿Para qué sirve?">?</button></h3><div class="cs">Causa-raíz de los “Pedidos con observación” organizada en las 6M — generado desde los datos</div><div class="fishwrap"><div id="c_ish"></div></div><div class="insight" id="c_ish_i"></div></div></div>`;
- h+=`<div class="grid g-2e">${card('c_treemap',IC.grid,'Mapa de Árbol de Comunas','Tamaño = volumen de despachos por comuna','tall')}${card('c_dispcom',IC.scatter,'Riesgo por Comuna','Pedidos vs tasa de observación (%)','tall')}</div>`;
- h+=`<div class="grid g-1">${card('c_causebar',IC.chart,'Pareto de Causas de Observación','Motivos acumulados que explican el 80% de las incidencias')}</div>`;
  h+=`</section>`;
  M.innerHTML=h;
 }
@@ -796,8 +789,9 @@ function cleanSheet(json,fname){
 const FB_CFG={apiKey:"AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOjOVzk",authDomain:"despacho-retail.firebaseapp.com",databaseURL:"https://despacho-retail-default-rtdb.firebaseio.com",projectId:"despacho-retail",storageBucket:"despacho-retail.firebasestorage.app",messagingSenderId:"1011000908999",appId:"1:1011000908999:web:08c8630fab0c9537e0b2e2"};
 const FB_PATH='quintec/meses';
 let fbDB=null,fbReady=false,fbWriting=false,fbSubsDone=false;
-function buildStore(){const store={};DATA.rows.forEach(r=>{(store[r.mk]=store[r.mk]||{label:r.mes,rows:[]}).rows.push(r);});return store;}
+function buildStore(){const store={};DATA.rows.forEach(r=>{(store[r.mk]=store[r.mk]||{label:r.mes,rows:[],dups:[]}).rows.push(r);});(DATA.dups||[]).forEach(r=>{const o=(store[r.mk]=store[r.mk]||{label:r.mes,rows:[],dups:[]});if(!o.dups)o.dups=[];o.dups.push(r);});return store;}
 function flattenStore(store){let rows=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length)rows=rows.concat(o.rows);});return rows;}
+function flattenDups(store){let d=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.dups&&o.dups.length)d=d.concat(o.dups);});return d;}
 function fbSubsAll(){if(fbSubsDone)return;fbSubsDone=true;try{fbSubscribe();}catch(e){console.error('fbSubscribe',e);}try{if(typeof modFbSubscribe==='function')modFbSubscribe();}catch(e){console.error('modFbSubscribe',e);}try{if(typeof devoFbSubscribe==='function')devoFbSubscribe();}catch(e){console.error('devoFbSubscribe',e);}}
 function fbInit(){try{if(typeof firebase==='undefined'||!firebase.initializeApp)return false;if(!firebase.apps||!firebase.apps.length)firebase.initializeApp(FB_CFG);fbDB=firebase.database();
  /* Autenticacion anonima: necesaria para poder leer y GUARDAR en la nube (reglas auth != null). Sin esto, Devoluciones y los demas modulos no guardan. */
@@ -812,10 +806,12 @@ function fbSubscribe(){
     const store=snap.val();
     if(store&&Object.keys(store).length){
      DATA.rows=flattenStore(store);
+     DATA.dups=flattenDups(store);
      try{localStorage.setItem(LS_KEY,JSON.stringify(store));}catch(_){}
     }else{
      // Nube vacía: la plataforma arranca sin datos. Solo se mostrará lo que se suba.
      DATA.rows=[];
+     DATA.dups=[];
      try{localStorage.removeItem(LS_KEY);}catch(_){}
     }
     recomputeMeta();
@@ -829,19 +825,19 @@ function fbSubscribe(){
 function fbPush(){if(!fbReady||!fbDB)return;try{fbWriting=true;fbDB.ref(FB_PATH).set(buildStore()).then(()=>{fbWriting=false;}).catch(e=>{fbWriting=false;console.error('fbPush',e);});}catch(e){fbWriting=false;console.error('fbPush',e);}}
 function fbClear(){if(!fbReady||!fbDB)return Promise.resolve();try{return fbDB.ref(FB_PATH).remove();}catch(e){return Promise.resolve();}}
 function saveMonths(){
- const store={};
- DATA.rows.forEach(r=>{(store[r.mk]=store[r.mk]||{label:r.mes,rows:[]}).rows.push(r);});
- try{localStorage.setItem(LS_KEY,JSON.stringify(store));return true;}catch(err){return false;}
+ try{localStorage.setItem(LS_KEY,JSON.stringify(buildStore()));return true;}catch(err){return false;}
 }
 function loadSaved(){
  try{
   const raw=localStorage.getItem(LS_KEY);if(!raw)return;
   const store=JSON.parse(raw);
-  Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length){DATA.rows=DATA.rows.filter(r=>r.mk!==mk).concat(o.rows);}});
+  if(!DATA.dups)DATA.dups=[];
+  Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length){DATA.rows=DATA.rows.filter(r=>r.mk!==mk).concat(o.rows);}if(o&&o.dups&&o.dups.length){DATA.dups=DATA.dups.filter(r=>r.mk!==mk).concat(o.dups);}});
  }catch(err){}
 }
 /* ====== DATA ENGINE ====== */
 function getFiltered(){return DATA.rows.filter(r=>(F.mes==='all'||r.mk===F.mes)&&(F.sem==='all'||r.sem==+F.sem)&&(F.dia==='all'||r.f===F.dia)&&(F.tp==='all'||r.tp===F.tp)&&(F.rg==='all'||r.rg===F.rg)&&(F.un==='all'||r.un===F.un)&&(F.cl==='all'||r.cl===F.cl)&&(F.co==='all'||r.co===F.co));}
+function getFilteredDups(){return (DATA.dups||[]).filter(r=>(F.mes==='all'||r.mk===F.mes)&&(F.sem==='all'||r.sem==+F.sem)&&(F.dia==='all'||r.f===F.dia)&&(F.tp==='all'||r.tp===F.tp)&&(F.rg==='all'||r.rg===F.rg)&&(F.un==='all'||r.un===F.un)&&(F.cl==='all'||r.cl===F.cl)&&(F.co==='all'||r.co===F.co));}
 function groupSum(rows,key){const m={};rows.forEach(r=>{const k=r[key];if(!m[k])m[k]={n:0,v:0};m[k].n++;m[k].v+=r.v;});return m;}
 function toArr(m){return Object.entries(m).map(([k,o])=>({k,n:o.n,v:o.v}));}
 function activeScope(){
@@ -882,7 +878,7 @@ function render(){
  LAST={f,days,nDays,totV};
  renderKPIs(f,days,nDays,totV);
  renderOp(f);renderFin(f,days,nDays,totV);renderLog(f,days);renderAud(f);
- renderCmp();renderDiag(f);
+ renderCmp();
  resizeCur();
 }
 function renderKPIs(f,days,nDays,totV){
@@ -917,21 +913,20 @@ function renderKPIs(f,days,nDays,totV){
  const ca=toArr(groupSum(f,'co')).sort((a,b)=>b.n-a.n);const top5=ca.slice(0,5).reduce((a,x)=>a+x.n,0);
  setKV('k_top5',(100*top5/tot).toFixed(0)+'%',`En 5 comunas líderes`);
  setKV('k_pcom',fi(f.length/(comunas||1)),`Densidad media por comuna`);
- // AUD
- const obs=f.filter(r=>r.ob&&r.ob!=='');
- const up=s=>stripAcc(s).toUpperCase();
- const reenv=obs.filter(r=>/REENV|REINT|SEGUNDO INTENTO|2DO/.test(up(r.ob))).length;
- const camb=obs.filter(r=>/CAMBIO.*DIREC|CAMBIO DE DIR|CAMBIO POR MANO/.test(up(r.ob))).length;
- const prior=obs.filter(r=>/PRIORI/.test(up(r.ob))).length;
- const vobs=obs.reduce((a,r)=>a+r.v,0);
- const tipos=new Set(obs.map(r=>up(r.ob).trim())).size;
- setKV('k_obs',fi(obs.length),`de ${fi(f.length)} registros`);
- setKV('k_obsp',(100*obs.length/tot).toFixed(1)+'%',`Tasa de registros con nota`);
- setKV('k_obst',fi(tipos),`Categorías distintas`);
- setKV('k_reenv',fi(reenv),`Entregas con reintento`);
- setKV('k_camb',fi(camb),`Direcciones corregidas`);
- setKV('k_prior',fi(prior),`Marcados como prioridad`);
- setKV('k_vobs',fmShort(vobs),`Capital en pedidos observados`);
+ // AUD (Excepciones = pedidos DUPLICADOS marcados NO SUMA en el dedup)
+ const dups=getFilteredDups();
+ const obs=dups; // "excepciones" = duplicados
+ const totAll=f.length+dups.length; // universo = válidos (SE SUMA) + duplicados (NO SUMA)
+ const reenv=0,camb=0,prior=0;
+ const vobs=dups.reduce((a,r)=>a+(r.v||0),0);
+ const tipos=new Set(dups.map(r=>r.un)).size;
+ setKV('k_obs',fi(dups.length),`de ${fi(totAll)} registros`);
+ setKV('k_obsp',(totAll?100*dups.length/totAll:0).toFixed(1)+'%',`Tasa de pedidos duplicados`);
+ setKV('k_obst',fi(tipos),`Unidades con duplicados`);
+ setKV('k_reenv',fi(reenv),`No aplica a este origen`);
+ setKV('k_camb',fi(camb),`No aplica a este origen`);
+ setKV('k_prior',fi(prior),`No aplica a este origen`);
+ setKV('k_vobs',fmShort(vobs),`Capital en pedidos duplicados`);
  setKV('k_vmax',fmShort(vmax),vmr?`${vmr.tp} · ${vmr.co}`:'');
  // ===== MÉTRICAS AVANZADAS (ingeniería logística) =====
  const vehAct=new Set(f.map(r=>r.tp).filter(t=>t!=='Sin dato')).size||1;
@@ -950,7 +945,7 @@ function renderKPIs(f,days,nDays,totV){
  const obsByCo={};obs.forEach(r=>{obsByCo[r.co]=(obsByCo[r.co]||0)+1;});
  let comObs='–',comObsN=0;Object.entries(obsByCo).forEach(([k,n])=>{if(n>comObsN){comObsN=n;comObs=k;}});
  const semList=[...new Set(f.map(r=>r.sem))].filter(s=>s>0);
- let semCrit='–',semCritR=0;semList.forEach(s=>{const tt=f.filter(r=>r.sem===s).length;const oo=obs.filter(r=>r.sem===s).length;const rr=tt?oo/tt:0;if(rr>semCritR){semCritR=rr;semCrit='S'+s;}});
+ let semCrit='–',semCritR=0;semList.forEach(s=>{const tt=f.filter(r=>r.sem===s).length+dups.filter(r=>r.sem===s).length;const oo=dups.filter(r=>r.sem===s).length;const rr=tt?oo/tt:0;if(rr>semCritR){semCritR=rr;semCrit='S'+s;}});
  setKV('k_pxv',fi(pxv),`<b>${fi(vehAct)}</b> móviles activos`);
  setKV('k_hhi',fi(hhi),`Concentración <b>${hhiTxt}</b> (HHI)`);
  setKV('k_cv',cv.toFixed(0)+'%',`Variabilidad día a día`);
@@ -962,9 +957,9 @@ function renderKPIs(f,days,nDays,totV){
  setKV('k_pico',pv?pv.toFixed(1)+'×':'–',`día más alto vs más bajo`);
  setKV('k_coml',comLead?(100*comLead.n/tot).toFixed(0)+'%':'0%',comLead?`<b>${comLead.k}</b>`:'');
  setKV('k_ampm',(pm?(am/pm).toFixed(2):(am?'∞':'0'))+' : 1',`relación mañana / tarde`);
- setKV('k_cal',(100-100*obs.length/tot).toFixed(1)+'%',`registros sin incidencia`);
- setKV('k_vobsavg',fmShort(obs.length?vobs/obs.length:0),`ticket medio observado`);
- setKV('k_comobs',comObs,comObsN?`<b>${fi(comObsN)}</b> observaciones`:'sin datos');
+ setKV('k_cal',(totAll?100*f.length/totAll:100).toFixed(1)+'%',`pedidos sin duplicado`);
+ setKV('k_vobsavg',fmShort(dups.length?vobs/dups.length:0),`valor medio por duplicado`);
+ setKV('k_comobs',comObs,comObsN?`<b>${fi(comObsN)}</b> duplicados`:'sin datos');
  setKV('k_semcrit',semCrit,semCritR?`tasa <b>${(100*semCritR).toFixed(1)}%</b>`:'sin datos');
  LAST.kpis={peakN,peakD,comunas,prop,tot,am,pm,obs:obs.length,reenv,camb,prior,vobs,vmax,vmr,vtop,top5,tipos,med:median(dayCounts),vmed:median(vals),pxv,vehAct,vehProp,hhi,hhiTxt,cv,vProp,vTer,pTkt,nP,pv,comLead,comObs,comObsN,semCrit,semCritR};
 }
@@ -1077,23 +1072,23 @@ function renderRouteTable(){
 /* ===== app7.js ===== */
 /* ====== AUDITORIA ====== */
 function renderAud(f){
- const obs=f.filter(r=>r.ob&&r.ob!=='');
- const tm={};obs.forEach(r=>{const k=stripAcc(r.ob).toUpperCase().trim();tm[k]=(tm[k]||0)+1;});
+ const dups=getFilteredDups();
+ const tm={};dups.forEach(r=>{const k=r.un||'Sin dato';tm[k]=(tm[k]||0)+1;});
  const ta=Object.entries(tm).map(([k,n])=>({k,n})).sort((a,b)=>b.n-a.n).slice(0,12).reverse();
- setC('c_obstipo',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>Registros: <b>${fi(p[0].value)}</b>`},TT),grid:{left:4,right:46,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value'},axCfg()),yAxis:Object.assign({type:'category',data:ta.map(x=>x.k),axisLabel:{color:'#6b7684',fontSize:10,width:150,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:ta.map(x=>x.n),barWidth:'62%',itemStyle:{color:'#c06a5a',borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#9a4a3a',fontFamily:'IBM Plex Mono',fontSize:10,formatter:p=>fi(p.value)}}]});
- const t0=ta[ta.length-1];setI('c_obstipo',t0?`La observación más frecuente es <b>${t0.k}</b> (${fi(t0.n)} casos). Estandarizar estos motivos reduce reprocesos.`:'Sin observaciones en la vista.');
- const bt={};obs.forEach(r=>{if(r.tp==='Sin dato')return;bt[r.tp]=(bt[r.tp]||0)+1;});
- const bta=Object.entries(bt).map(([k,n])=>({k,n})).sort((a,b)=>a.n-b.n);
- setC('c_obstp',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>Observaciones: <b>${fi(p[0].value)}</b>`},TT),grid:{left:4,right:46,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value'},axCfg()),yAxis:Object.assign({type:'category',data:bta.map(x=>x.k)},axCfg()),series:[{type:'bar',data:bta.map(x=>x.n),barWidth:'60%',itemStyle:{color:'#c89a4e',borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#8a6a2a',fontFamily:'IBM Plex Mono',fontSize:10,formatter:p=>fi(p.value)}}]});
- const b0=bta[bta.length-1];setI('c_obstp',b0?`<b>${b0.k}</b> acumula más observaciones (${fi(b0.n)}). Foco del equipo de control de calidad.`:'Sin observaciones por vehículo.');
- const sems=[...new Set(f.map(r=>r.sem))].filter(s=>s>0).sort((a,b)=>a-b);
- const os=sems.map(s=>obs.filter(r=>r.sem===s).length);
- const ts=sems.map(s=>f.filter(r=>r.sem===s).length);
- setC('c_obssem',{tooltip:Object.assign({trigger:'axis',formatter:p=>{let s=`<b>Semana ${p[0].axisValue}</b>`;p.forEach(x=>s+=`<br/>${x.marker}${x.seriesName}: <b>${x.seriesName.indexOf('%')>=0?x.value+'%':fi(x.value)}</b>`);return s;}},TT),legend:{top:0,right:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:12,itemHeight:8},grid:{left:4,right:40,top:34,bottom:24,containLabel:true},xAxis:Object.assign({type:'category',data:sems.map(s=>'S'+s)},axCfg()),yAxis:[Object.assign({type:'value',name:'Obs.',nameTextStyle:{color:'#8a95a1',fontSize:10}},axCfg()),Object.assign({type:'value',max:100,axisLabel:{formatter:'{value}%',color:'#6b7684',fontSize:10},splitLine:{show:false}},axCfg())],series:[{name:'Observaciones',type:'bar',data:os,barWidth:'48%',itemStyle:{color:'#c06a5a',borderRadius:[3,3,0,0]},label:{show:true,position:'top',color:'#9a4a3a',fontFamily:'IBM Plex Mono',fontSize:10,formatter:p=>p.value||''}},{name:'% de la semana',type:'line',yAxisIndex:1,data:sems.map((s,i)=>ts[i]?+(100*os[i]/ts[i]).toFixed(1):0),smooth:true,symbol:'circle',symbolSize:5,lineStyle:{color:'#2b4a6f',width:2.5},itemStyle:{color:'#2b4a6f'}}]});
- setI('c_obssem',`Evolución de incidencias por semana: un alza en la tasa (%) indica deterioro de calidad que conviene investigar antes de que escale.`);
- const show=obs.slice().sort((a,b)=>b.v-a.v).slice(0,400);
- const _am=document.getElementById('au_meta');if(_am)_am.innerHTML=`<b>${fi(obs.length)}</b> registros con observación · ordenados por valor`;
- const _at=document.querySelector('#au_tbl tbody');if(_at)_at.innerHTML=show.map(r=>`<tr><td>${dLabel(r.f)}</td><td class="num">${r.id}</td><td><span class="tag">${r.tp}</span></td><td>${r.co}</td><td><span class="tag obs">${r.ob}</span></td><td class="num">${fm(r.v)}</td></tr>`).join('')||'<tr><td colspan=6 style="text-align:center;color:#6b7684;padding:30px">Sin observaciones — operación limpia ✔</td></tr>';
+ setC('c_obstipo',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>Duplicados: <b>${fi(p[0].value)}</b>`},TT),grid:{left:4,right:46,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value'},axCfg()),yAxis:Object.assign({type:'category',data:ta.map(x=>x.k),axisLabel:{color:'#6b7684',fontSize:10,width:150,overflow:'truncate'}},axCfg()),series:[{type:'bar',data:ta.map(x=>x.n),barWidth:'62%',itemStyle:{color:'#c06a5a',borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#9a4a3a',fontFamily:'IBM Plex Mono',fontSize:10,formatter:p=>fi(p.value)}}]});
+ const t0=ta[ta.length-1];setI('c_obstipo',t0?`La unidad con más pedidos duplicados es <b>${t0.k}</b> (${fi(t0.n)}). Son pedidos NO SUMA excluidos del total.`:'Sin duplicados en la vista.');
+ const bt={};dups.forEach(r=>{if(r.tp==='Sin dato')return;bt[r.tp]=(bt[r.tp]||0)+1;});
+ const bta=Object.entries(bt).map(([k,n])=>({k,n})).sort((a,b)=>a.n-b.n).slice(-12);
+ setC('c_obstp',{tooltip:Object.assign({trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>`<b>${p[0].name}</b><br/>Duplicados: <b>${fi(p[0].value)}</b>`},TT),grid:{left:4,right:46,top:8,bottom:4,containLabel:true},xAxis:Object.assign({type:'value'},axCfg()),yAxis:Object.assign({type:'category',data:bta.map(x=>x.k)},axCfg()),series:[{type:'bar',data:bta.map(x=>x.n),barWidth:'60%',itemStyle:{color:'#c89a4e',borderRadius:[0,4,4,0]},label:{show:true,position:'right',color:'#8a6a2a',fontFamily:'IBM Plex Mono',fontSize:10,formatter:p=>fi(p.value)}}]});
+ const b0=bta[bta.length-1];setI('c_obstp',b0?`<b>${b0.k}</b> concentra más pedidos duplicados (${fi(b0.n)}). Revisar carga de ese móvil.`:'Sin duplicados por vehículo.');
+ const sems=[...new Set(f.map(r=>r.sem).concat(dups.map(r=>r.sem)))].filter(s=>s>0).sort((a,b)=>a-b);
+ const os=sems.map(s=>dups.filter(r=>r.sem===s).length);
+ const ts=sems.map(s=>f.filter(r=>r.sem===s).length+dups.filter(r=>r.sem===s).length);
+ setC('c_obssem',{tooltip:Object.assign({trigger:'axis',formatter:p=>{let s=`<b>Semana ${p[0].axisValue}</b>`;p.forEach(x=>s+=`<br/>${x.marker}${x.seriesName}: <b>${x.seriesName.indexOf('%')>=0?x.value+'%':fi(x.value)}</b>`);return s;}},TT),legend:{top:0,right:0,textStyle:{color:'#6b7684',fontSize:11},itemWidth:12,itemHeight:8},grid:{left:4,right:40,top:34,bottom:24,containLabel:true},xAxis:Object.assign({type:'category',data:sems.map(s=>'S'+s)},axCfg()),yAxis:[Object.assign({type:'value',name:'Dup.',nameTextStyle:{color:'#8a95a1',fontSize:10}},axCfg()),Object.assign({type:'value',max:100,axisLabel:{formatter:'{value}%',color:'#6b7684',fontSize:10},splitLine:{show:false}},axCfg())],series:[{name:'Duplicados',type:'bar',data:os,barWidth:'48%',itemStyle:{color:'#c06a5a',borderRadius:[3,3,0,0]},label:{show:true,position:'top',color:'#9a4a3a',fontFamily:'IBM Plex Mono',fontSize:10,formatter:p=>p.value||''}},{name:'% de la semana',type:'line',yAxisIndex:1,data:sems.map((s,i)=>ts[i]?+(100*os[i]/ts[i]).toFixed(1):0),smooth:true,symbol:'circle',symbolSize:5,lineStyle:{color:'#2b4a6f',width:2.5},itemStyle:{color:'#2b4a6f'}}]});
+ setI('c_obssem',`Pedidos duplicados por semana: la línea es el % del total semanal marcado NO SUMA. Un alza indica más repetición de pedidos que conviene revisar.`);
+ const show=dups.slice().sort((a,b)=>b.v-a.v).slice(0,400);
+ const _am=document.getElementById('au_meta');if(_am)_am.innerHTML=`<b>${fi(dups.length)}</b> pedidos duplicados (NO SUMA) · ordenados por valor`;
+ const _at=document.querySelector('#au_tbl tbody');if(_at)_at.innerHTML=show.map(r=>`<tr><td>${dLabel(r.f)}</td><td class="num">${r.pedido!=null?r.pedido:r.id}</td><td><span class="tag">${r.tp}</span></td><td>${r.co}</td><td><span class="tag obs">${r.rep||'—'}</span></td><td class="num">${fm(r.v)}</td></tr>`).join('')||'<tr><td colspan=6 style="text-align:center;color:#6b7684;padding:30px">Sin pedidos duplicados — operación limpia ✔</td></tr>';
 }
 /* ====== FOOTER ====== */
 function buildFooter(){
@@ -1136,9 +1131,9 @@ function kf(id){const e=document.getElementById(id+'_f');return e?e.textContent.
 function scopeLabel(){const m=F.mes==='all'?'Todos los meses':(DATA.meta.meses.find(x=>x.key===F.mes)||{}).label||F.mes;let s=m;if(F.sem!=='all')s+=' \u00b7 Semana '+F.sem;if(F.dia!=='all')s+=' \u00b7 '+dFull(F.dia);if(F.tp!=='all')s+=' \u00b7 '+F.tp;if(F.rg!=='all')s+=' \u00b7 '+F.rg;if(F.un!=='all')s+=' \u00b7 '+F.un;return s;}
 /* ====== LABELS KPI ====== */
 const KLBL={k_ped:'Total Pedidos',k_prom:'Prom. Pedidos/D\u00eda',k_peak:'Peak Pedidos D\u00eda',k_com:'Comunas Cubiertas',k_veh:'Veh\u00edculos Activos',k_dias:'D\u00edas Operados',k_prop:'% Flota Propia',k_med:'Mediana Pedidos/D\u00eda',k_pxv:'Productividad (Ped./Veh.)',k_hhi:'\u00cdndice Concentraci\u00f3n HHI',k_cv:'Estabilidad Diaria (CV)',k_vprop:'Veh\u00edculos Flota Propia',k_val:'Valor Total',k_tkt:'Ticket Promedio',k_vdia:'Valor Prom./D\u00eda',k_vmed:'Valor Mediano',k_vmax2:'Pedido Mayor Valor',k_vtopun:'% Valor Unidad L\u00edder',k_vter:'% Valor Tercerizado',k_vcom:'Valor Prom./Comuna',k_tprop:'Ticket Flota Propia',k_am:'% Despachos AM',k_pm:'% Despachos PM',k_top5:'Concentraci\u00f3n Top5',k_pcom:'Pedidos/Comuna',k_pareto:'Comunas=80% Volumen',k_pico:'Ratio Pico/Valle',k_coml:'Comuna L\u00edder (cuota)',k_ampm:'Balance AM:PM',k_obs:'Con Observaci\u00f3n',k_obsp:'% con Observaci\u00f3n',k_obst:'Tipos de Observaci\u00f3n',k_reenv:'Reenv\u00edos/Reintentos',k_camb:'Cambios Direcci\u00f3n',k_prior:'Prioritarios',k_vobs:'Valor en Riesgo',k_vmax:'Pedido Mayor Valor',k_cal:'% Calidad (sin obs)',k_vobsavg:'Valor Prom. Observado',k_comobs:'Comuna + Observada',k_semcrit:'Semana + Cr\u00edtica'};
-const CTITLE={c_flota:'Eficiencia de Flota',c_unidad:'Participaci\u00f3n por Unidad de Negocio',c_prop:'Flota Propia vs Tercerizada',c_heat:'Ritmo Operativo (D\u00eda \u00d7 Semana)',c_matriz:'Matriz de Control Semanal (Veh\u00edculo \u00d7 Semana)',c_valun:'Valor por Unidad de Negocio',c_valtp:'Valor Movilizado por Veh\u00edculo',c_evo:'Evoluci\u00f3n Diaria del Capital',c_comval:'Top Comunas por Valorizaci\u00f3n',c_bubble:'Volumen vs Valor por Veh\u00edculo',c_rango:'Distribuci\u00f3n por Rango Horario',c_comvol:'Cobertura \u2014 Top 10 Comunas',c_pareto:'Pareto de Comunas (regla 80/20)',c_obstipo:'Distribuci\u00f3n de Observaciones',c_obstp:'Observaciones por Veh\u00edculo',c_obssem:'Observaciones por Semana'};
+const CTITLE={c_flota:'Eficiencia de Flota',c_unidad:'Participaci\u00f3n por Unidad de Negocio',c_prop:'Flota Propia vs Tercerizada',c_heat:'Ritmo Operativo (D\u00eda \u00d7 Semana)',c_matriz:'Matriz de Control Semanal (Veh\u00edculo \u00d7 Semana)',c_valun:'Valor por Unidad de Negocio',c_valtp:'Valor Movilizado por Veh\u00edculo',c_evo:'Evoluci\u00f3n Diaria del Capital',c_comval:'Top Comunas por Valorizaci\u00f3n',c_bubble:'Volumen vs Valor por Veh\u00edculo',c_rango:'Distribuci\u00f3n por Rango Horario',c_comvol:'Cobertura \u2014 Top 10 Comunas',c_pareto:'Pareto de Comunas (regla 80/20)',c_obstipo:'Duplicados por Unidad de Negocio',c_obstp:'Duplicados por Veh\u00edculo',c_obssem:'Duplicados por Semana'};
 const CDESC={"c_flota": "Este grafico ordena a cada vehiculo de mayor a menor segun la cantidad de pedidos que ejecuto en el periodo. Las barras azules son la flota propia (MOVIL/DON) y las grises el transporte tercerizado, de modo que de un solo vistazo se ve quienes son los moviles que realmente sostienen la operacion. Sirve para detectar sobrecarga en pocos vehiculos, moviles subutilizados y, sobre todo, cuanto depende la operacion de terceros. Si las primeras barras son muy largas y pocas, la operacion se apoya en un grupo reducido de moviles: un riesgo si uno de ellos falla. Es la base para redistribuir carga, negociar con proveedores y dimensionar la flota.", "c_unidad": "Muestra como se reparten todos los despachos entre las distintas unidades de negocio o clientes. Cada porcion representa el peso que tiene esa linea dentro del total de pedidos. Cuando una sola porcion domina el grafico, la operacion depende comercialmente de ese cliente y queda expuesta si reduce su volumen. Un reparto mas equilibrado indica una cartera diversificada y mas estable. Es util para decisiones comerciales, de capacidad y de prioridades de servicio.", "c_prop": "Compara directamente el peso de la flota propia frente al transporte tercerizado, en cantidad de pedidos. Es uno de los indicadores mas importantes para el costo, porque cada pedido que se externaliza suele implicar una tarifa variable y menor control sobre el nivel de servicio. Una participacion alta de terceros puede abaratar los picos, pero reduce la trazabilidad y la capacidad de reaccion ante incidencias. Observar como cambia esta mezcla a lo largo del tiempo ayuda a decidir si conviene incorporar moviles propios o renegociar contratos de tercerizacion.", "c_heat": "Es un campo de calor que cruza el dia de la semana (lunes a domingo) con el numero de semana del periodo. Cada celda se pinta mas intensa mientras mas pedidos concentra ese cruce, de modo que los bloques oscuros marcan los momentos de mayor presion operativa. Permite ver patrones repetidos -por ejemplo, que los jueves y viernes siempre se saturan- y planificar turnos, personal y refuerzos justo donde se necesitan. Las zonas claras, en cambio, revelan ventanas de baja actividad que podrian aprovecharse para mantenimiento o reprogramacion. Es una herramienta clave para equilibrar la carga a lo largo de la semana.", "c_matriz": "Mapa de calor que cruza cada vehiculo con la semana del periodo, mostrando cuantos pedidos movio ese movil en cada semana. Las celdas intensas senalan picos de actividad y las vacias o claras, semanas sin uso o con baja carga. Sirve para auditar el comportamiento de la flota a lo largo del tiempo: detectar moviles con actividad irregular, vehiculos que desaparecen por periodos o concentraciones peligrosas en pocos recursos. Es especialmente util para planificar capacidad, programar mantenimientos y justificar altas o bajas de vehiculos con datos concretos.", "c_valun": "Muestra el valor economico (en pesos) de la carga movilizada por cada unidad de negocio, no solo la cantidad de pedidos. Esto permite distinguir entre lineas que mueven muchos envios de bajo valor y lineas que mueven pocos envios pero muy valiosos. Identifica de donde proviene realmente el capital que viaja en la operacion y, por lo tanto, donde conviene reforzar seguros, trazabilidad y controles. Es una vista financiera que complementa a los graficos de volumen y ayuda a priorizar los clientes de mayor impacto economico.", "c_valtp": "Presenta el valor total transportado por cada vehiculo. Cuando se cruza con la cantidad de pedidos de cada movil, permite distinguir dos perfiles muy distintos: vehiculos de alto ticket, que mueven mucho valor en pocos envios, y vehiculos de reparto masivo, que mueven muchos envios de menor valor. Esta diferencia es clave para asignar seguros, definir rutas de alto valor y decidir que moviles requieren mayor control o escolta. Tambien ayuda a entender el riesgo economico concentrado en cada unidad de la flota.", "c_evo": "Combina en un mismo grafico la evolucion diaria del numero de pedidos (barras) y del valor movilizado (linea). Al verlos juntos se puede separar los dias de muchos envios baratos de los dias de pocos envios pero muy caros, algo que un solo indicador no revela. Ayuda a detectar picos de capital en transito -dias de mayor exposicion economica- y a entender si el valor sigue o no al volumen. Es muy util para planificar seguros, flujo de caja logistico y refuerzos en las fechas de mayor movimiento.", "c_comval": "Ordena las comunas segun el valor de la carga despachada hacia cada una, no segun la cantidad de pedidos. Esto revela donde se concentra el dinero que viaja en la operacion, que no siempre coincide con donde hay mas envios. Marca los destinos donde conviene reforzar seguros, trazabilidad y rutas especiales de alto valor. Es una vista pensada para gestionar riesgo economico y seguridad, priorizando las comunas que concentran la carga mas valiosa.", "c_bubble": "Cada burbuja representa un vehiculo y resume tres variables a la vez: el eje horizontal es la cantidad de pedidos, el eje vertical es el valor movilizado y el tamano de la burbuja es el ticket promedio. Asi se identifican de inmediato distintos perfiles: moviles de alto volumen y bajo valor, moviles de carga premium (altos y a la izquierda, con pocos envios muy valiosos) y moviles equilibrados. Es una herramienta de diagnostico rapido para asignar recursos, definir controles de seguridad y entender el aporte real de cada vehiculo a la operacion.", "c_rango": "Reparte el volumen de despachos entre la ventana de la manana (AM) y la de la tarde (PM). Permite ver que franja concentra la mayor carga y, por lo tanto, cuales son los turnos criticos que requieren mas personal y vehiculos. Un desbalance fuerte -por ejemplo, casi todo en la manana- indica una franja saturada y otra ociosa, lo que abre oportunidades para redistribuir rutas y mejorar la eficiencia. Es la base para dimensionar turnos y equilibrar la jornada operativa.", "c_comvol": "Muestra las diez comunas con mayor cantidad de despachos, es decir, los verdaderos centros de gravedad de la operacion. Estos destinos son los candidatos naturales para estrategias de micro-ruteo, consolidacion de envios y optimizacion de rutas, porque es ahi donde cada mejora rinde mas. Concentrar esfuerzos en estas comunas suele dar el mayor retorno en eficiencia y costo. Tambien ayuda a planificar la ubicacion de bases, puntos de apoyo o acuerdos logisticos.", "c_pareto": "Es una curva de Pareto que combina barras de pedidos por comuna con una linea de porcentaje acumulado. Sirve para responder una pregunta concreta: cuantas comunas concentran el 80% del volumen total. Normalmente, un grupo pequeno de comunas explica la mayor parte de los despachos (la regla 80/20), lo que permite enfocar la gestion donde realmente importa. Entender esta concentracion ayuda a priorizar rutas, recursos y acuerdos, y a no dispersar esfuerzos en destinos de bajo impacto.", "c_obstipo": "Ordena los motivos de observacion de mayor a menor frecuencia, mostrando cuales son los problemas de calidad mas repetidos. Atacar y estandarizar la solucion de los primeros motivos es la via mas rapida para reducir reprocesos, reclamos y costos ocultos. Al concentrarse en las causas mas frecuentes se obtiene el mayor impacto con el menor esfuerzo. Es el punto de partida de cualquier plan de mejora de calidad en la operacion.", "c_obstp": "Ordena los vehiculos segun la cantidad de observaciones acumuladas, mostrando que moviles concentran mas incidencias de calidad. Esto permite enfocar el trabajo del equipo de control de calidad justo donde esta el problema, en lugar de revisar toda la flota por igual. Un movil con muchas observaciones puede indicar fallas de conductor, de ruta o de proceso que conviene investigar. Es una herramienta directa para priorizar auditorias, capacitacion y acciones correctivas.", "c_obssem": "Muestra como evolucionan las incidencias semana a semana, junto con su tasa relativa respecto del total de pedidos. Observar la tendencia es mas valioso que mirar un solo numero: un alza sostenida de la tasa anticipa un deterioro de la calidad que conviene investigar antes de que se vuelva critico. Tambien ayuda a verificar si las acciones de mejora estan dando resultado, al ver si la curva baja despues de intervenir. Es un termometro continuo de la salud operativa."};
-function chartNarr(cid){const d=CDESC[cid]||'';const i=insText(cid);return d+(i?' '+i:'');}
+function chartNarr(cid){const i=insText(cid);if(i)return i;const a=CANALYSIS[cid]||CDESC[cid]||'';const p=a.indexOf('. ');return p>0?a.slice(0,p+1):a;}
 const CANALYSIS={"c_flota": "Como ingeniero en logistica, lo primero que reviso es la pendiente de las barras: si unos pocos moviles acumulan la mayor parte de los pedidos, la operacion tiene un riesgo de concentracion que hay que mitigar nivelando carga y teniendo moviles de respaldo. La proporcion azul vs gris me dice cuanto dependemos de terceros; cuando el gris domina, recomiendo evaluar incorporar flota propia para las rutas estables y dejar a los terceros solo para absorber los peaks. El objetivo es una curva mas pareja, sin moviles ociosos ni sobrecargados.", "c_unidad": "Mi lectura apunta al riesgo comercial: si una sola unidad supera cerca de la mitad del total, la operacion queda atada a ese cliente y cualquier caida suya golpea de inmediato la ocupacion de la flota. Recomiendo gestionar esa dependencia con acuerdos de volumen y, en paralelo, impulsar la diversificacion de la cartera. Una mezcla mas equilibrada vuelve la planificacion de capacidad mucho mas estable y predecible.", "c_prop": "Esta mezcla es, en el fondo, una decision de costo y control. Mi recomendacion es cubrir con flota propia la demanda base y predecible -donde el costo fijo se amortiza- y reservar la tercerizacion para los peaks y las rutas marginales. Si veo que los terceros mueven una porcion alta y creciente, levanto una alerta: estamos perdiendo trazabilidad y margen, y conviene renegociar tarifas o internalizar las rutas mas rentables.", "c_heat": "Leo este campo buscando patrones repetidos: cuando ciertos dias o semanas se oscurecen de forma sistematica, ahi debo reforzar turnos, conductores y moviles con anticipacion, no reaccionar el mismo dia. Las zonas claras son oportunidades: ventanas para mantenimiento preventivo, capacitacion o reprogramacion de entregas no urgentes. El norte es aplanar los peaks moviendo carga flexible hacia los valles para usar mejor la misma flota.", "c_matriz": "Audito aqui la regularidad de cada movil en el tiempo. Celdas intensas aisladas o filas que se apagan por semanas me indican vehiculos con uso erratico, posibles fallas o moviles que entran y salen sin control. Con esta evidencia justifico altas y bajas de flota, programo mantenimientos en las semanas flojas de cada movil y detecto concentraciones peligrosas antes de que generen atrasos.", "c_valun": "Aqui separo volumen de valor, que es donde se juega el riesgo real. Si una unidad mueve poco pedido pero mucho dinero, exijo para ella mayor seguro, trazabilidad y protocolo de entrega, aunque pese poco en el conteo. Mi recomendacion es alinear el nivel de control con el valor transportado, no con la cantidad de bultos.", "c_valtp": "Clasifico los moviles en perfiles: los de alto ticket (mucho valor, pocos envios) deben ir con rutas aseguradas y controles reforzados; los de reparto masivo se optimizan por densidad y productividad. Confundir ambos perfiles lleva a sobre-asegurar lo barato y a dejar expuesto lo valioso. Esta vista me permite asignar seguros y escolta de forma racional.", "c_evo": "Cruzo barras y linea para encontrar los dias en que el capital en transito se dispara aunque el volumen no lo haga: son los dias de maxima exposicion economica. Para ellos recomiendo reforzar seguro, trazabilidad y, si corresponde, escalonar las entregas de alto valor. Cuando el valor no sigue al volumen, es senal de carga premium concentrada que merece un tratamiento aparte.", "c_comval": "Priorizo por dinero, no por cantidad: las comunas que lideran en valor son las que concentran el riesgo economico de la operacion, aunque no sean las de mas envios. Para ellas propongo rutas de alto valor con mayor control, confirmacion de entrega y, si el ticket lo amerita, seguro reforzado. Es una vista de seguridad y gestion de riesgo mas que de eficiencia.", "c_bubble": "Uso esta vista como diagnostico rapido de la flota: las burbujas arriba y a la izquierda (poco volumen, mucho valor, ticket alto) son mis moviles premium y exigen control reforzado; las de abajo y a la derecha son reparto masivo y se gestionan por productividad. Las burbujas pequenas pero muy a la derecha pueden estar sobrecargadas de envios de bajo valor, candidatas a redistribuir carga.", "c_rango": "Reviso el balance AM/PM para dimensionar turnos: si casi todo cae en la manana, tengo una franja saturada y otra ociosa, con riesgo de horas extra y entregas fuera de ventana en el peak. Mi recomendacion es mover entregas flexibles hacia la franja descargada y ajustar la dotacion por turno, de modo que la misma flota rinda mas a lo largo del dia.", "c_comvol": "Estas diez comunas son el centro de gravedad de la operacion y donde cada mejora rinde mas. Recomiendo concentrar ahi el micro-ruteo, la consolidacion de envios y, si el volumen lo justifica, puntos de apoyo o bases avanzadas. Optimizar primero estos destinos entrega el mayor retorno en costo y tiempo antes de tocar los destinos marginales.", "c_pareto": "Aplico aqui la logica 80/20 para enfocar la gestion: si un grupo chico de comunas explica el 80% del volumen, ahi deben ir las rutas troncales, los recursos fijos y los acuerdos logisticos. El resto, la cola larga de comunas de bajo volumen, se atiende con rutas flexibles o consolidadas para no quemar recursos. Mientras menos comunas se necesiten para llegar al 80%, mas facil es disenar una red eficiente.", "c_obstipo": "Mi plan de calidad parte siempre por los primeros motivos de esta lista: son los que mas reprocesos y costo oculto generan, y estandarizar su solucion da el mayor impacto con el menor esfuerzo. Recomiendo tomar las dos o tres causas top, encontrar su raiz (datos, direcciones, acceso, coordinacion) y atacarlas con un procedimiento concreto antes de dispersarse en motivos menores.", "c_obstp": "Focalizo el control de calidad en los moviles que encabezan esta lista, en lugar de auditar toda la flota por igual. Una concentracion alta de observaciones en pocos vehiculos suele apuntar a un conductor, una ruta o un proceso especifico que se puede corregir con capacitacion o reasignacion. Es la forma mas rentable de bajar la tasa de incidencias.", "c_obssem": "Me interesa la tendencia, no el dato aislado: si la tasa semanal sube de forma sostenida, hay un deterioro de calidad que debo investigar antes de que escale a reclamos y reenvios. Tambien uso esta curva para medir si mis acciones correctivas funcionan, verificando que la linea baje despues de intervenir. Es mi termometro continuo de la salud operativa.", "c_mesvol": "Leo la pendiente mes a mes como senal de planificacion: una tendencia al alza me obliga a asegurar flota, personal y acuerdos con terceros con anticipacion, mientras que una caida exige revisar costos y evitar capacidad ociosa. Lo importante es anticipar, no reaccionar; estos meses de historia son la base para proyectar la demanda del proximo periodo.", "c_mesval": "Comparo esta curva con la de volumen: cuando el valor sube mas rapido que los pedidos, estamos moviendo carga mas premium y debo reforzar seguros y controles aunque el conteo no crezca. Si el mes top de valor no coincide con el de mayor volumen, ahi hay una estacionalidad de carga valiosa que conviene planificar con protocolos especiales.", "c_mesheat": "Este campo mensual me permite ver si los peaks caen siempre en las mismas semanas del mes, lo que delata una estacionalidad interna (cierres, campanas, pagos). Con ese patron planifico refuerzos recurrentes y nivelo la carga, en vez de improvisar cada mes. Las semanas frias, en cambio, son ventana para mantenimiento y ajustes.", "c_mesun": "Observo como cambia la mezcla de clientes mes a mes: si una unidad gana peso de forma sostenida, aumenta la dependencia y el riesgo comercial; si lo pierde, conviene entender por que antes de que afecte la ocupacion de flota. Esta vista anticipa cambios de carga por cliente y me ayuda a renegociar o diversificar a tiempo.", "c_radar": "Uso el radar para comparar el perfil global de los ultimos meses de un vistazo -volumen, valor, cobertura, calidad- y detectar en que dimension estamos mejorando o retrocediendo. Un area que se contrae en calidad o se dispara en concentracion es una alerta temprana. Sirve para alinear al equipo en torno a pocas prioridades claras.", "c_ish": "El Ishikawa ordena las causas raiz de las incidencias por familia (metodo, mano de obra, datos, transporte, entorno), lo que evita atacar sintomas sueltos. Mi recomendacion es bajar de las ramas a acciones concretas y medibles, y verificar su efecto en la tasa de observaciones semana a semana. Es la herramienta para pasar del diagnostico a un plan de mejora estructurado.", "c_treemap": "El mapa de arbol muestra de un vistazo el peso relativo de cada comuna por area: los bloques grandes son donde se juega la operacion y donde conviene consolidar. Lo uso junto al Pareto para decidir rutas troncales y detectar si la carga esta sana (varios bloques medianos) o peligrosamente concentrada en uno solo.", "c_dispcom": "Esta vista de riesgo por comuna cruza volumen y tasa de incidencias: las comunas con mucho envio y alta tasa de observacion son mi prioridad numero uno, porque ahi el problema se multiplica. Para ellas propongo auditar direcciones, accesos y transportista asignado. Las de alto volumen y baja incidencia son el modelo a replicar.", "c_causebar": "Este Pareto de causas me dice donde concentrar el plan de accion: las primeras barras acumulan la mayor parte de las incidencias, asi que resolverlas baja la tasa global mucho mas rapido que repartir esfuerzo. Recomiendo asignar un responsable y una meta por cada causa top y seguir su evolucion en el grafico semanal."};
 function narrHTML(cid){var h="<div class=\"an\"><b>Qué muestra y cómo se lee:</b> "+(CDESC[cid]||"")+"</div>";var i=insText(cid);if(i)h+="<div class=\"an2\"><b>Lectura de esta vista:</b> "+i+"</div>";if(CANALYSIS[cid])h+="<div class=\"an3\"><b>Análisis del ingeniero en logística:</b> "+CANALYSIS[cid]+"</div>";return h;}
 function firstSent(t){t=t||"";var i=t.indexOf(". ");return i>0?t.slice(0,i+1):t;}
@@ -1205,8 +1200,7 @@ function expGroups(){return [
  ['Finanzas & P&L \u2014 Valorizaci\u00f3n de Carga',['c_valun','c_valtp','c_evo','c_comval','c_bubble'],['k_val','k_tkt','k_vdia','k_vmed','k_vmax2','k_vtopun','k_vter','k_vcom','k_tprop']],
  ['Eficiencia Log\u00edstica & Rutas',['c_rango','c_comvol','c_pareto'],['k_am','k_pm','k_top5','k_pcom','k_pareto','k_pico','k_coml','k_ampm']],
  ['Auditor\u00eda & Excepciones',['c_obstipo','c_obstp','c_obssem'],['k_obs','k_obsp','k_obst','k_reenv','k_camb','k_prior','k_vobs','k_vmax','k_cal','k_vobsavg','k_comobs','k_semcrit']],
- ['Tendencias & Comparativo Mensual',['c_mesvol','c_mesval','c_mesheat','c_mesun','c_radar'],['k_cmpmeses','k_cmpbestvol','k_cmpbestval','k_cmpgrow']],
- ['Diagn\u00f3stico & An\u00e1lisis de Causas',['c_treemap','c_dispcom','c_causebar'],['k_dgobs','k_dgtop','k_dgcom','k_dgsem']]];}
+ ['Tendencias & Comparativo Mensual',['c_mesvol','c_mesval','c_mesheat','c_mesun','c_radar'],['k_cmpmeses','k_cmpbestvol','k_cmpbestval','k_cmpgrow']]];}
 function kpiTable(ids){let r='';ids.forEach(id=>{const extra=kf(id);r+=`<tr><td>${KLBL[id]||id}</td><td class="v">${kv(id)}</td><td class="x">${extra}</td></tr>`;});return `<table class="kpit"><tr><th>Indicador</th><th style="text-align:right">Valor</th><th>Detalle</th></tr>${r}</table>`;}
 /* ====== MOTOR DE SUGERENCIAS (IA experta en log\u00edstica) ====== */
 function sugList(){
@@ -2442,12 +2436,14 @@ function opsCleanResumenSheet(aoa){
  }
  if(hdr<0)return null;
  function col(name){var k=Object.keys(idx).find(function(k){return k===name;});if(k==null)k=Object.keys(idx).find(function(k){return k.indexOf(name)>=0;});return k!=null?idx[k]:-1;}
- var cP=col('PEDIDO'),cS=col('SEMANA'),cF=col('FECHA'),cU=col('UNIDAD NEGOCIO'),cC=col('CLIENTE'),cD=col('DIRECCION'),cCo=col('COMUNA'),cZ=col('ZONA'),cV=col('VALOR'),cM=col('MOVIL'),cR=col('RANGO'),cRa=col('RAZON');
+ var cP=col('PEDIDO'),cS=col('SEMANA'),cF=col('FECHA'),cU=col('UNIDAD NEGOCIO'),cC=col('CLIENTE'),cD=col('DIRECCION'),cCo=col('COMUNA'),cZ=col('ZONA'),cV=col('VALOR'),cM=col('MOVIL'),cR=col('RANGO'),cRa=col('RAZON'),cRC=col('REPITE');
  var map={},byMk={};
  for(var r=hdr+1;r<aoa.length;r++){
   var row=aoa[r];if(!row)continue;
   var raz=cRa>=0?row[cRa]:null;if(raz==null)continue;
-  if(stripAcc(String(raz)).trim().toUpperCase()!=='SE SUMA')continue; // dedup: solo SE SUMA (los NO SUMA se omiten)
+  var razU=stripAcc(String(raz)).trim().toUpperCase();
+  var isSuma=(razU==='SE SUMA');
+  if(!isSuma&&razU!=='NO SUMA')continue; // ignora filas sin RAZON v\u00e1lida
   var dt=opsFecha(cF>=0?row[cF]:null);if(!dt)continue;
   var vRaw=cV>=0?row[cV]:null;
   var v=(typeof vRaw==='number')?vRaw:parseFloat(String(vRaw==null?'':vRaw).replace(/[^0-9.\-]/g,'')); // VALOR exacto, sin redondear
@@ -2461,11 +2457,14 @@ function opsCleanResumenSheet(aoa){
   var co=canonComuna(cCo>=0?row[cCo]:null,map);
   var dir=(cD>=0&&row[cD]!=null)?String(row[cD]).trim():'';
   var ped=cP>=0?row[cP]:null;
+  var rep=(cRC>=0&&row[cRC]!=null)?String(row[cRC]).trim():'';
   var yy=dt.getFullYear(),mi=dt.getMonth();
   var mk=yy+'-'+String(mi+1).padStart(2,'0'),label=MESES_FULL[mi]+' '+yy;
-  (byMk[mk]=byMk[mk]||{label:label,mk:mk,rows:[]}).rows.push({
+  var rec={
    id:(+(ped||0))||0,pedido:ped,f:yy+'-'+String(mi+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),
-   sem:sem,dow:(dt.getDay()+6)%7,un:un,cl:cl,co:co,dir:dir,zona:zona,v:v,ob:'',tp:tp,rg:rg,mes:label,mk:mk});
+   sem:sem,dow:(dt.getDay()+6)%7,un:un,cl:cl,co:co,dir:dir,zona:zona,v:v,ob:'',tp:tp,rg:rg,rep:rep,mes:label,mk:mk};
+  var ent=(byMk[mk]=byMk[mk]||{label:label,mk:mk,rows:[],dups:[]});if(!ent.dups)ent.dups=[];
+  if(isSuma)ent.rows.push(rec);else ent.dups.push(rec); // NO SUMA = duplicado detectado en el dedup (Auditor\u00eda)
  }
  return Object.keys(byMk).length?byMk:null;
 }
@@ -2483,7 +2482,7 @@ function handleOpsUpload(e){
      if(n.indexOf('TOTALES')>=0||n.indexOf('ATIPIC')>=0||n.indexOf('LEYENDA')>=0||n.indexOf('RESUMEN')>=0)return;
      var aoa=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:null,raw:true});
      var byMk=opsCleanResumenSheet(aoa);
-     if(byMk){Object.keys(byMk).forEach(function(mk){if(!all[mk])all[mk]=byMk[mk];else all[mk].rows=all[mk].rows.concat(byMk[mk].rows);found=true;});}
+     if(byMk){Object.keys(byMk).forEach(function(mk){if(!all[mk])all[mk]=byMk[mk];else{all[mk].rows=all[mk].rows.concat(byMk[mk].rows);all[mk].dups=(all[mk].dups||[]).concat(byMk[mk].dups||[]);}found=true;});}
     });
     if(!found)errs.push(file.name+': sin hojas de meses v\u00e1lidas');
    }catch(err){errs.push(file.name+': error ('+err.message+')');}
@@ -2498,8 +2497,10 @@ function opsFinishUpload(all,msgs,errs){
  mks.forEach(function(mk){
   var o=all[mk];
   DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;}).concat(o.rows); // REEMPLAZA el mes, no duplica
+  if(!DATA.dups)DATA.dups=[];
+  DATA.dups=DATA.dups.filter(function(r){return r.mk!==mk;}).concat(o.dups||[]); // duplicados (NO SUMA) para Auditor\u00eda
   var tot=o.rows.reduce(function(a,r){return a+(r.v||0);},0);
-  msgs.push(o.label+': '+fi(o.rows.length)+' pedidos \u00b7 '+fm(tot));
+  msgs.push(o.label+': '+fi(o.rows.length)+' pedidos \u00b7 '+fm(tot)+((o.dups&&o.dups.length)?(' \u00b7 '+fi(o.dups.length)+' duplicados'):''));
  });
  recomputeMeta();
  try{if(DATA.meta.meses.length){F.mes=DATA.meta.meses[DATA.meta.meses.length-1].key;}}catch(_){}
@@ -2718,7 +2719,7 @@ function opsNubeRender(){
  body.innerHTML=head+'<div class="nube-cols"><div class="nube-col"><div class="nube-h" style="background:#1f3a59">Operaciones</div><div class="nube-tot">'+fi(DATA.rows.length)+' pedidos \u00b7 '+fm(tv)+' \u00b7 '+fi(mks.length)+' mes(es) \u00b7 <i>haz clic en un mes para ver el detalle</i></div>'+items+'</div></div>';
  body.querySelectorAll('.nube-row-click').forEach(function(row){row.onclick=function(e){if(e.target.closest('.nube-exp')||e.target.closest('.nube-del'))return;opsNubeMonth(row.getAttribute('data-open'));};});
  body.querySelectorAll('.nube-exp').forEach(function(b){b.onclick=function(e){e.stopPropagation();opsExportMonth(b.getAttribute('data-exp'));};});
- body.querySelectorAll('.nube-del').forEach(function(b){b.onclick=function(){var mk=b.getAttribute('data-mk');if(!obIsAdmin()){alert('Solo el administrador puede editar.');return;}var lbl=(byMk[mk]||{}).label||mk;if(!confirm('\u00bfEliminar de la nube el Excel del mes '+lbl+' (Operaciones)?\n\nEsta acci\u00f3n se aplica tambi\u00e9n en Firebase (quintec/meses) y no se puede deshacer.'))return;DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;});try{recomputeMeta();}catch(_){}try{saveMonths();}catch(_){}if(typeof fbReady!=='undefined'&&fbReady&&fbDB){try{if(DATA.rows.length)fbPush();else fbClear();}catch(_){}}try{buildFilters();}catch(_){}try{render();}catch(_){}opsNubeRender();};});
+ body.querySelectorAll('.nube-del').forEach(function(b){b.onclick=function(){var mk=b.getAttribute('data-mk');if(!obIsAdmin()){alert('Solo el administrador puede editar.');return;}var lbl=(byMk[mk]||{}).label||mk;if(!confirm('\u00bfEliminar de la nube el Excel del mes '+lbl+' (Operaciones)?\n\nEsta acci\u00f3n se aplica tambi\u00e9n en Firebase (quintec/meses) y no se puede deshacer.'))return;DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;});DATA.dups=(DATA.dups||[]).filter(function(r){return r.mk!==mk;});try{recomputeMeta();}catch(_){}try{saveMonths();}catch(_){}if(typeof fbReady!=='undefined'&&fbReady&&fbDB){try{if(DATA.rows.length)fbPush();else fbClear();}catch(_){}}try{buildFilters();}catch(_){}try{render();}catch(_){}opsNubeRender();};});
 }
 
 var OPS_REPORT=null;
@@ -2726,9 +2727,8 @@ var OPS_REP_TABS=[
  {id:'op',title:'Operaciones & Flota',kpis:[['k_ped','Total Pedidos'],['k_prom','Prom. Pedidos/D\u00eda'],['k_peak','Peak Pedidos D\u00eda'],['k_com','Comunas Cubiertas'],['k_veh','Veh\u00edculos Activos'],['k_dias','D\u00edas Operados'],['k_prop','% Flota Propia'],['k_med','Mediana Pedidos/D\u00eda']],charts:[['c_flota','Eficiencia de Flota'],['c_unidad','Participaci\u00f3n por Unidad de Negocio'],['c_prop','Flota Propia vs Tercerizada'],['c_heat','Ritmo Operativo (D\u00eda \u00d7 Semana)'],['c_matriz','Matriz de Control Semanal'],['c_ampmdisp','Dispersi\u00f3n AM / PM por D\u00eda']]},
  {id:'fin',title:'Finanzas & P&L',kpis:[['k_val','Valor Total Operado'],['k_tkt','Ticket Promedio/Pedido'],['k_vdia','Valor Promedio/D\u00eda']],charts:[['c_valun','Valor por Unidad de Negocio'],['c_valtp','Valor Movilizado por Veh\u00edculo'],['c_evo','Evoluci\u00f3n Diaria del Capital'],['c_comval','Top Comunas por Valorizaci\u00f3n'],['c_bubble','Volumen vs Valor por Veh\u00edculo']]},
  {id:'log',title:'Log\u00edstica & Rutas',kpis:[['k_am','% Despachos AM'],['k_pm','% Despachos PM'],['k_top5','Concentraci\u00f3n Top 5 Comunas'],['k_pcom','Pedidos Prom./Comuna']],charts:[['c_rango','Distribuci\u00f3n por Rango Horario'],['c_comvol','Cobertura \u2014 Top 10 Comunas'],['c_pareto','Pareto de Comunas (80/20)']]},
- {id:'aud',title:'Auditor\u00eda & Excepciones',kpis:[['k_cal','% Calidad (sin obs.)'],['k_vobsavg','Valor Prom. Observado'],['k_vmax','Pedido de Mayor Valor']],charts:[['c_obstipo','Distribuci\u00f3n de Observaciones'],['c_obstp','Observaciones por Veh\u00edculo'],['c_obssem','Observaciones por Semana']]},
- {id:'cmp',title:'Tendencias & Comparativo',kpis:[['k_cmpbestvol','Mes de Mayor Volumen'],['k_cmpbestval','Mes de Mayor Valor'],['k_cmpgrow','Crecimiento (1\u00ba vs \u00faltimo)']],charts:[['c_mesvol','Pedidos por Mes'],['c_mesval','Valor Movilizado por Mes'],['c_mesheat','Campo de Calor Mes \u00d7 Semana'],['c_mesun','Mezcla de Unidades por Mes'],['cmp_c_sem','Pedidos y Valor por Semana'],['cmp_c_ampm','Pedidos AM vs PM por Mes']]},
- {id:'diag',title:'Diagn\u00f3stico & Causas',kpis:[['k_dgobs','% Pedidos con Observaci\u00f3n'],['k_dgtop','Causa M\u00e1s Frecuente'],['k_dgcom','Comuna Foco'],['k_dgsem','Semana M\u00e1s Cr\u00edtica']],charts:[['c_ish','Diagrama de Ishikawa'],['c_treemap','Mapa de \u00c1rbol de Comunas'],['c_dispcom','Riesgo por Comuna'],['c_causebar','Pareto de Causas']]}
+ {id:'aud',title:'Auditor\u00eda & Excepciones',kpis:[['k_cal','% Sin Duplicados'],['k_vobsavg','Valor Prom. Duplicado'],['k_vmax','Pedido de Mayor Valor']],charts:[['c_obstipo','Duplicados por Unidad de Negocio'],['c_obstp','Duplicados por Veh\u00edculo'],['c_obssem','Duplicados por Semana']]},
+ {id:'cmp',title:'Tendencias & Comparativo',kpis:[['k_cmpbestvol','Mes de Mayor Volumen'],['k_cmpbestval','Mes de Mayor Valor'],['k_cmpgrow','Crecimiento (1\u00ba vs \u00faltimo)']],charts:[['c_mesvol','Pedidos por Mes'],['c_mesval','Valor Movilizado por Mes'],['c_mesheat','Campo de Calor Mes \u00d7 Semana'],['c_mesun','Mezcla de Unidades por Mes'],['cmp_c_sem','Pedidos y Valor por Semana'],['cmp_c_ampm','Pedidos AM vs PM por Mes']]}
 ];
 function opsScopeLabel(){try{if(F.mes==='all')return 'Todos los meses';var m=(DATA.meta.meses||[]).find(function(x){return x.key===F.mes;});return m?m.label:'Todos los meses';}catch(_){return '';}}
 function opsCapture(){
@@ -2765,7 +2765,7 @@ function opsBuildReportHtml(cap){
    var kpis=kp?'<div class="rep-kpis">'+kp+'</div>':'';
    var cells=t.charts.filter(function(c){return cap.imgs[c[0]];}).map(function(c){
      var narr=(typeof chartNarr==='function')?chartNarr(c[0]):'';
-     return '<div class="rep-cell"><div class="rep-ct">'+c[1]+'</div><img class="rep-img2" src="'+cap.imgs[c[0]]+'"/>'+(narr?'<div class="rep-exp">'+narr+'</div>':'')+'</div>';
+     return '<div class="rep-cell"><div class="rep-ct">'+c[1]+'</div><img class="rep-img2" src="'+cap.imgs[c[0]]+'"/>'+(narr?'<div class="rep-exp"><div class="rep-exp-h">An\u00e1lisis ejecutivo</div><div class="rep-exp-t">'+narr+'</div></div>':'')+'</div>';
    }).join('');
    return '<div class="rep-page">'+band+kpis+'<div class="rep-grid2">'+cells+'</div></div>';
  }).join('');
@@ -3051,7 +3051,11 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".rep-kpis{display:flex;gap:12px;padding:16px 22px 4px;flex-wrap:wrap}.rep-k{flex:1;min-width:130px;background:#f6f9fc;border:1px solid #e6edf4;border-radius:8px;padding:10px 12px}.rep-kt{font-size:11px;color:#6b7684;font-weight:600}.rep-kv{font-size:19px;font-weight:700;color:#1f3a59;font-family:'Sora',Arial;margin:2px 0}.rep-ks{font-size:10.5px;color:#8a95a1}"
 +".rep-img{display:block;width:calc(100% - 44px);margin:14px 22px;border:1px solid #eef2f6;border-radius:8px}"
 +".rep-duo{display:flex;gap:14px;padding:14px 22px}.rep-duo>div{flex:1;min-width:0}.rep-ct{font-size:12.5px;font-weight:700;color:#1f3a59;margin-bottom:6px}.rep-img2{width:100%;border:1px solid #eef2f6;border-radius:8px}"
-+".rep-exp,.rep-an{margin:6px 22px;padding:11px 14px;border-radius:8px;font-size:12.5px;line-height:1.6}.rep-exp{background:#eef5f2;border:1px solid #d6e8e1;color:#2a4a40}.rep-an{background:#eef3fa;border:1px solid #d6e1f0;color:#24415f}"
++".rep-an{margin:6px 22px;padding:11px 14px;border-radius:8px;font-size:12.5px;line-height:1.6;background:#eef3fa;border:1px solid #d6e1f0;color:#24415f}"
++".rep-exp{margin:8px 22px 0;padding:10px 14px 11px;border-radius:8px;background:#f4f9f6;border:1px solid #d9e8e2;border-left:4px solid #2e7d5b;color:#2a4a40}"
++".rep-exp-h{display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#2e7d5b;margin-bottom:5px}"
++".rep-exp-h:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#2e7d5b;flex:none}"
++".rep-exp-t{font-size:12px;line-height:1.55;color:#2b4a40}"
 +".ob-rep-ovr{position:fixed;inset:0;z-index:950;background:rgba(16,28,42,.6);display:none;padding:22px}"
 +".ob-rep-card{max-width:1000px;height:100%;margin:0 auto;background:#eef2f6;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(10,25,45,.45)}"
 +".ob-rep-head{display:flex;align-items:center;gap:10px;padding:14px 20px;background:#1f3a59;color:#fff}.ob-rep-h{flex:1;font-family:'Sora',Arial;font-weight:600;font-size:15px}"
@@ -3389,7 +3393,7 @@ function openExportPicker(kind,cb){
  var groups=expGroups();
  var admin=SESSION&&SESSION.role==='admin';
  var cm=SESSION&&SESSION.role==='cretamac';
- var hide=cm?[3,5]:[]; // cretamac no exporta Auditoría ni Diagnóstico
+ var hide=cm?[3]:[]; // cretamac no exporta Auditoría
  var title=(kind==='ppt')?'Armar PowerPoint':'Armar Reporte PDF';
  var old=document.getElementById('expPickerOv');if(old)old.remove();
  var ov=document.createElement('div');ov.id='expPickerOv';
