@@ -3021,6 +3021,7 @@ function obDelete(){
 }
 var OB_REP_SEL={mac:null,ver:null};
 var OB_REP_PAGES=null;
+var OB_PDF_VAR='eq';
 function obRepSelInit(k){
  var D=VSTORE[k]||{};var ms=(D.months||[]).slice();var ws=(D.weeks||[]).slice().sort(function(a,b){return a-b;});
  OB_REP_SEL[k]={zona:'all',
@@ -3033,8 +3034,9 @@ function obReporte(){
  if(!(VSTORE.mac.rows.length||VSTORE.ver.rows.length)){alert('No hay información de "Ventas por tienda y mes" para generar el reporte. Carga primero el Excel de ventas en la pestaña "Ventas por tienda y mes".');return;}
  obRepSelInit('mac');obRepSelInit('ver');
  var ov=document.getElementById('obRepOvr');
- if(!ov){ov=document.createElement('div');ov.id='obRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo · MacOnline Distribución y Vertical Tiendas</div><button class="ob-rep-b ob-pdf">⤓ PDF</button><button class="ob-rep-b ob-imp">🖨 IMPRIMIR</button><button class="ob-rep-x">✕</button></div><div class="ob-rep-ctl" id="obRepCtl"></div><div class="ob-rep-body" id="obRepBody"></div></div>';document.body.appendChild(ov);
+ if(!ov){ov=document.createElement('div');ov.id='obRepOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">Reporte Ejecutivo · MacOnline Distribución y Vertical Tiendas</div><select class="ob-rep-selvar" id="obPdfVar" title="Tamaño del PDF"><option value="eq">PDF: Equilibrado</option><option value="cp">PDF: Compacto</option><option value="am">PDF: Amplio</option></select><button class="ob-rep-b ob-pdf">⤓ PDF</button><button class="ob-rep-b ob-imp">🖨 IMPRIMIR</button><button class="ob-rep-x">✕</button></div><div class="ob-rep-ctl" id="obRepCtl"></div><div class="ob-rep-body" id="obRepBody"></div></div>';document.body.appendChild(ov);
   ov.querySelector('.ob-rep-x').onclick=function(){ov.style.display='none';};
+  var sv=ov.querySelector('#obPdfVar');if(sv){sv.value=OB_PDF_VAR;sv.onchange=function(){OB_PDF_VAR=sv.value;};}
   ov.querySelector('.ob-pdf').onclick=function(){obPrintReport(true);};
   ov.querySelector('.ob-imp').onclick=function(){obPrintReport(false);};}
  obRepRefresh();
@@ -3099,9 +3101,24 @@ function obRepPagesHTML(pages){
 function obPrintReport(isPdf){
  if(!OB_REP_PAGES)return;
  var html='<div class="rep-wrap">'+obRepPagesHTML(OB_REP_PAGES)+'</div>';
+ var V=OB_PDF_VAR||'eq';
+ var c=({cp:{pm:'8mm',ch:66,im:84,gap:6,bandp:11,kp:10,an:1.5},eq:{pm:'9mm',ch:76,im:90,gap:8,bandp:13,kp:12,an:1.55},am:{pm:'11mm',ch:94,im:108,gap:10,bandp:15,kp:14,an:1.62}})[V]||{pm:'9mm',ch:76,im:90,gap:8,bandp:13,kp:12,an:1.55};
+ var pcss=' body{margin:0;background:#fff}.rep-wrap{max-width:none}'
+  +'.rep-page{box-shadow:none;border:0;margin:0 auto 5mm;padding:0 0 3mm;page-break-inside:avoid;break-inside:avoid}'
+  +'.rep-band{padding:'+c.bandp+'px 20px;page-break-after:avoid;break-after:avoid}'
+  +'.rep-kpis{padding:'+c.kp+'px 20px 2px;gap:10px}'
+  +'.rep-duo{display:block;padding:12px 20px 0}'
+  +'.rep-duo>div,.rep-col{width:100%!important;max-width:100%!important;margin:0 0 '+c.gap+'mm;page-break-inside:avoid;break-inside:avoid}'
+  +'.rep-col:last-child{margin-bottom:2mm}'
+  +'.rep-ct{font-size:14px;margin:0 0 6px}'
+  +'.rep-img2{display:block;width:auto!important;max-width:100%;max-height:'+c.ch+'mm;height:auto;margin:4px auto 0}'
+  +'.rep-img{display:block;width:auto;max-width:100%;max-height:'+c.im+'mm;height:auto;margin:10px auto 0}'
+  +'.rep-an{margin:8px 20px 0;padding:10px 14px;line-height:'+c.an+'}.rep-duo .rep-an{margin:8px 0 0}'
+  +'.rep-kpis,.rep-img,.rep-img2,.rep-an{page-break-inside:avoid;break-inside:avoid}'
+  +'@page{size:A4;margin:'+c.pm+'}';
  var w=window.open('','_blank');
  if(!w){alert('El navegador bloqueó la ventana. Permite las ventanas emergentes para '+(isPdf?'guardar el PDF':'imprimir')+'.');return;}
- w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+' body{margin:0;background:#fff}.rep-wrap{max-width:none}.rep-page{box-shadow:none;border:0;margin:0 auto 5mm;padding:0 0 3mm;page-break-inside:avoid;break-inside:avoid}.rep-band{padding:13px 20px;page-break-after:avoid;break-after:avoid}.rep-kpis{padding:12px 20px 2px;gap:10px}.rep-duo{display:block;padding:12px 20px 0}.rep-duo>div,.rep-col{width:100%!important;max-width:100%!important;margin:0 0 8mm;page-break-inside:avoid;break-inside:avoid}.rep-col:last-child{margin-bottom:2mm}.rep-ct{font-size:14px;margin:0 0 6px}.rep-img2{display:block;width:auto!important;max-width:100%;max-height:76mm;height:auto;margin:4px auto 0}.rep-img{display:block;width:auto;max-width:100%;max-height:90mm;height:auto;margin:10px auto 0}.rep-an{margin:8px 20px 0;padding:10px 14px;line-height:1.55}.rep-duo .rep-an{margin:8px 0 0}.rep-kpis,.rep-img,.rep-img2,.rep-an{page-break-inside:avoid;break-inside:avoid}@page{size:A4;margin:9mm}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
+ w.document.write('<!DOCTYPE html><html lang=es><head><meta charset=utf-8><title>Reporte Tiendas — QUINTEC</title><style>'+OB_REP_CSS+pcss+'</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);}<\/scr'+'ipt></body></html>');
  w.document.close();
 }
 function obLoadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
@@ -3327,7 +3344,8 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".rep-ctl-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}"
 +".rep-ctl-lbl{font-weight:800;min-width:150px}"
 +".rep-ctl-g{display:inline-flex;align-items:center;gap:5px}"
-+".ob-rep-ctl select{font-size:12px;padding:3px 5px;border:1px solid #cfd8e3;border-radius:6px;background:#fff;color:#2b3a4a}";
++".ob-rep-ctl select{font-size:12px;padding:3px 5px;border:1px solid #cfd8e3;border-radius:6px;background:#fff;color:#2b3a4a}"
++".ob-rep-selvar{font-size:12px;font-weight:600;padding:6px 9px;border-radius:7px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.14);color:#fff;cursor:pointer}.ob-rep-selvar option{color:#1f2a37}";
 (function(){
  try{var st=document.createElement('style');st.textContent=OB_REP_CSS+OPS_PPT_CSS;document.head.appendChild(st);}catch(e){}
  document.addEventListener('click',function(e){var b=e.target.closest?e.target.closest('#opsbar [data-ob]'):null;if(!b)return;var k=b.getAttribute('data-ob');if(k==='imp')obImport();else if(k==='gua')opsGuardar();else if(k==='del')opsEliminar();else if(k==='rep')opsReporte();else if(k==='ppt')opsPPT();else if(k==='nube')opsNube();}); try{setInterval(function(){if(typeof opsCheckDailyBackup==='function')opsCheckDailyBackup();},60000);}catch(_){}
