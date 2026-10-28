@@ -3977,19 +3977,67 @@ function modNubeStats(grp){
 }
 function modNubeSection(grp){
  var col=MOD_COLOR[grp]||'#0369a1';
- var meses=modNubeStats(grp);
- var tn=0,tv=0,tst=0,trg=0;meses.forEach(function(m){tn+=m.n;tv+=m.v;tst+=m.st;trg+=m.rg;});
  var h='<div style="border:1.5px solid '+col+';border-radius:14px;overflow:hidden;margin-bottom:16px">'+
-  '<div style="background:'+col+';color:#fff;padding:11px 15px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">'+
-   '<span style="font-family:Sora;font-size:15px;font-weight:700">☁ '+modNubeLabel(grp)+'</span>'+
-   '<span style="font-size:12.5px;font-weight:600;opacity:.95">'+meses.length+' mes(es) · '+tn+' registros · '+modFmtMoney(tv)+'</span>'+
+  '<div style="background:'+col+';color:#fff;padding:11px 15px;font-family:Sora;font-size:15px;font-weight:700">☁ '+modNubeLabel(grp)+'</div>'+
+  '<div style="padding:12px 14px">'+
+   '<div style="font-size:13px;font-weight:700;color:#1f3a59;margin:2px 0 6px">📊 Ventas por tienda y mes</div>'+
+   modNubeVentas(grp,col)+
+   '<div style="height:1px;background:#eef0f3;margin:14px 0"></div>'+
+   '<div style="font-size:13px;font-weight:700;color:#1f3a59;margin:2px 0 6px">🚚 Despachos de tiendas</div>'+
+   modNubeDespachos(grp,col)+
+  '</div></div>';
+ return h;
+}
+function modNubeVentas(grp,col){
+ var D=(typeof VSTORE!=='undefined'&&VSTORE[grp])?VSTORE[grp]:{};
+ var rows=D.rows||[];var months=(D.months||[]).slice();
+ if(!rows.length||!months.length){return '<div style="padding:4px 2px;color:#9aa7b4;font-size:12px">— Sin Excel de ventas guardado —</div>';}
+ var tv=0,tst=0,trg=0;rows.forEach(function(r){tv+=r.total||0;if(r.zona==='Regiones')trg+=r.total||0;else tst+=r.total||0;});
+ var h='<div style="font-size:12px;color:#28364a;margin-bottom:6px"><b>'+rows.length+'</b> tienda(s) · <b>'+months.length+'</b> mes(es) · '+modFmtMoney(tv)+' &nbsp;|&nbsp; Santiago '+modFmtMoney(tst)+' · Regiones '+modFmtMoney(trg)+'</div>';
+ months.forEach(function(mi){
+  var mv=0;rows.forEach(function(r){mv+=r.m[mi]||0;});
+  var lbl=(typeof vMesLbl==='function')?vMesLbl(D,mi):('Mes '+(mi+1));
+  var did='modNubeV_'+grp+'_'+mi;
+  h+='<div style="border:1px solid #e3e7ec;border-radius:10px;margin:6px 0;overflow:hidden">'+
+   '<div class="modNubeHd" data-det="'+did+'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;background:#f7f9fb">'+
+    '<span style="flex:1;font-size:13.5px;color:#1f3a59"><b>'+lbl+'</b></span>'+
+    '<span style="font-size:13px;font-weight:700;color:'+col+'">'+modFmtMoney(mv)+'</span>'+
+    '<span style="font-size:11px;color:#6b7684">▼</span>'+
+   '</div>'+
+   '<div id="'+did+'" style="display:none;padding:6px 12px 10px">'+modNubeVentasDet(grp,mi)+'</div>'+
   '</div>';
- if(!meses.length){
-  h+='<div style="padding:16px 15px;color:#6b7684;font-size:13px">Todavía no hay ningún Excel de '+modNubeLabel(grp)+' guardado en la nube.</div></div>';
-  return h;
- }
- h+='<div style="padding:4px 10px 10px">';
- h+='<div style="display:flex;gap:10px;padding:8px 6px;color:#28364a;font-size:12px;font-weight:600;flex-wrap:wrap">Totales: Santiago '+modFmtMoney(tst)+' &nbsp;|&nbsp; Regiones '+modFmtMoney(trg)+'</div>';
+ });
+ return h;
+}
+function modNubeVentasDet(grp,mi){
+ var D=(typeof VSTORE!=='undefined'&&VSTORE[grp])?VSTORE[grp]:{};
+ var rows=(D.rows||[]).map(function(r){return {tienda:r.tienda,comuna:r.comuna,zona:r.zona,v:r.m[mi]||0};}).filter(function(r){return r.v;});
+ rows.sort(function(a,b){return b.v-a.v;});
+ if(!rows.length){return '<div style="color:#9aa7b4;font-size:12px">Sin ventas en este mes.</div>';}
+ var t='<div style="max-height:280px;overflow:auto;border:1px solid #eef0f3;border-radius:8px">'+
+  '<table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center">'+
+  '<thead><tr style="background:#eef2f6;color:#28364a">'+
+   '<th style="padding:6px 8px;text-align:center">Tienda</th>'+
+   '<th style="padding:6px 8px;text-align:center">Comuna</th>'+
+   '<th style="padding:6px 8px;text-align:center">Zona</th>'+
+   '<th style="padding:6px 8px;text-align:center">Valor</th>'+
+  '</tr></thead><tbody>';
+ rows.forEach(function(r){
+  t+='<tr style="border-top:1px solid #eef0f3">'+
+   '<td style="padding:5px 8px;text-align:center">'+(r.tienda||'—')+'</td>'+
+   '<td style="padding:5px 8px;text-align:center">'+(r.comuna||'—')+'</td>'+
+   '<td style="padding:5px 8px;text-align:center">'+(r.zona||'—')+'</td>'+
+   '<td style="padding:5px 8px;text-align:center;white-space:nowrap">'+modFmtMoney(r.v)+'</td>'+
+  '</tr>';
+ });
+ t+='</tbody></table></div>';
+ return t;
+}
+function modNubeDespachos(grp,col){
+ var meses=modNubeStats(grp);
+ if(!meses.length){return '<div style="padding:4px 2px;color:#9aa7b4;font-size:12px">— Sin Excel de despachos de tiendas guardado —</div>';}
+ var tn=0,tv=0,tst=0,trg=0;meses.forEach(function(m){tn+=m.n;tv+=m.v;tst+=m.st;trg+=m.rg;});
+ var h='<div style="font-size:12px;color:#28364a;margin-bottom:6px"><b>'+meses.length+'</b> mes(es) · <b>'+tn+'</b> registros · '+modFmtMoney(tv)+' &nbsp;|&nbsp; Santiago '+modFmtMoney(tst)+' · Regiones '+modFmtMoney(trg)+'</div>';
  meses.forEach(function(m){
   var did='modNubeDet_'+grp+'_'+m.mk.replace(/[^0-9a-z]/gi,'');
   h+='<div style="border:1px solid #e3e7ec;border-radius:10px;margin:6px 0;overflow:hidden">'+
@@ -4004,7 +4052,6 @@ function modNubeSection(grp){
    '</div>'+
   '</div>';
  });
- h+='</div></div>';
  return h;
 }
 function modNubeDetTable(grp,mk){
