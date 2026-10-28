@@ -2,8 +2,20 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>COMEX QD – Plataforma de Control de Importaciones</title>
+<!-- ===== PWA: instalable en Android / iPhone (agregar a pantalla de inicio) ===== -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f2744">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="COMEX QD">
+<!-- iOS (Safari): abrir a pantalla completa como app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="COMEX QD">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -2584,6 +2596,50 @@ function toggleDet(id){const el=$(id);if(!el)return;const open=el.style.display=
 renderUsers();
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDel();closeDet();closeNube();closePw();closeMst();}});
 
+</script>
+<script>
+/* ===== PWA: registro del service worker + botón "Instalar app" ===== */
+(function(){
+  // Registrar el service worker (habilita instalación y uso sin conexión del armazón).
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){/* sin bloquear la app */});
+    });
+  }
+  var deferred=null;
+  function esIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent||'');}
+  function yaInstalada(){return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;}
+  function crearBoton(txt,onClick){
+    if(document.getElementById('pwaInstallBtn'))return document.getElementById('pwaInstallBtn');
+    var b=document.createElement('button');
+    b.id='pwaInstallBtn';
+    b.textContent=txt;
+    b.style.cssText='position:fixed;right:16px;bottom:16px;z-index:400;background:#13a3a3;color:#fff;border:none;border-radius:999px;padding:12px 18px;font-size:14px;font-weight:700;box-shadow:0 10px 28px rgba(0,0,0,.28);cursor:pointer;font-family:inherit';
+    b.onclick=onClick;
+    document.body.appendChild(b);
+    return b;
+  }
+  function quitarBoton(){var b=document.getElementById('pwaInstallBtn');if(b)b.remove();}
+  // Android / escritorio (Chrome, Edge): prompt nativo de instalación.
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();deferred=e;
+    if(yaInstalada())return;
+    crearBoton('⬇️ Instalar app',function(){
+      if(!deferred)return;
+      deferred.prompt();
+      deferred.userChoice.finally(function(){deferred=null;quitarBoton();});
+    });
+  });
+  window.addEventListener('appinstalled',function(){deferred=null;quitarBoton();});
+  // iPhone / iPad (Safari): no hay prompt; mostrar instrucción para agregar a inicio.
+  window.addEventListener('load',function(){
+    if(esIOS() && !yaInstalada()){
+      crearBoton('⬇️ Instalar app',function(){
+        alert('Para instalar en el iPhone/iPad:\n\n1) Toca el botón Compartir (el cuadro con la flecha hacia arriba) en Safari.\n2) Elige "Agregar a inicio".\n3) Confirma con "Agregar".\n\nQuedará un ícono COMEX QD en tu pantalla y se abrirá como app.');
+      });
+    }
+  });
+})();
 </script>
 </body>
 </html>
