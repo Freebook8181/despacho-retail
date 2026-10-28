@@ -1666,50 +1666,77 @@ function buildDetCfg(dd){
       scales:isCirc?{}:{y:{beginAtZero:true,ticks:{callback:v=>f(v)}}}}};
 }
 function detalle(id){
+  // Siempre refresca los gráficos (y DET) antes de abrir el análisis.
+  try{drawCharts();}catch(e){}
   let d=DET[id];
-  // Nunca mostrar un alert: si aún no se han generado los gráficos, generarlos ahora y reintentar.
-  if(!d){try{drawCharts();}catch(e){}d=DET[id];}
-  if(!d){
-    // Si de verdad no hay datos en la planilla, abrir igual la ventana con una explicación (no un alert).
-    $('detTitle').textContent='Análisis del gráfico';
-    const da0=$('detAnalysis');if(da0)da0.innerHTML='<h4>🔎 Análisis del gráfico</h4><div class="verdict info"><span class="dot"></span><span class="vtx">Todavía no hay PO cargadas en la planilla, por eso este gráfico no tiene datos. Ingrese o pegue órdenes de compra en la pestaña <b>Planilla</b> y vuelva a abrir el análisis: la ventana mostrará el gráfico en grande y su explicación.</span></div>';
+  // RESPALDO: si por cualquier motivo DET[id] no está, reconstruye los datos
+  // a partir del gráfico que YA se está viendo en la página, para que el análisis
+  // muestre exactamente ese mismo gráfico.
+  if(!d)d=detFromLive(id);
+  const bk=id.slice(1); // cValProv -> ValProv
+  // ¿Hay datos reales para graficar?
+  const hay=!!(d&&((d.vals&&d.vals.some(v=>(+v)||0))||(d.series&&d.series.some(s=>(s.vals||[]).some(v=>(+v)||0)))));
+  $('detTitle').textContent=(d&&d.title)||'Análisis del gráfico';
+  // Texto del análisis (conclusión + explicación detallada del panel)
+  try{fillExplains();}catch(e){}
+  const vEl=$('v'+bk), exEl=$('ex'+bk);
+  let vtx='';if(vEl){const tx=vEl.querySelector('.vtx');vtx=tx?tx.innerHTML:vEl.innerHTML;}
+  let vlv='info';if(vEl){const cl=vEl.className.replace('verdict','').trim();if(cl)vlv=cl.split(/\s+/)[0];}
+  const da=$('detAnalysis');
+  const cc=$('detCC');
+  if(!hay){
+    // Planilla vacía de verdad: ocultar el área del gráfico y explicar.
+    if(cc)cc.style.display='none';
+    if(da)da.innerHTML='<h4>🔎 Análisis del gráfico</h4><div class="verdict info"><span class="dot"></span><span class="vtx">Todavía no hay PO cargadas en la planilla, por eso este gráfico no tiene datos. Ingrese o pegue órdenes de compra en la pestaña <b>Planilla</b> y vuelva a abrir el análisis: la ventana mostrará el gráfico en grande y su explicación.</span></div>';
     $('detTable').innerHTML='';
     if(detChart){detChart.destroy();detChart=null;}
     $('detModal').classList.add('on');
     return;
   }
-  $('detTitle').textContent=d.title;
-  // Análisis del gráfico (conclusión + explicación detallada)
-  try{fillExplains();}catch(e){}
-  const bk=id.slice(1); // cValProv -> ValProv
-  const vEl=$('v'+bk), exEl=$('ex'+bk);
-  let vtx='';if(vEl){const tx=vEl.querySelector('.vtx');vtx=tx?tx.innerHTML:vEl.innerHTML;}
-  let vlv='info';if(vEl){const cl=vEl.className.replace('verdict','').trim();if(cl)vlv=cl.split(/\s+/)[0];}
-  const da=$('detAnalysis');
+  if(cc)cc.style.display='';
   if(da)da.innerHTML='<h4>🔎 Análisis del gráfico</h4>'+((vtx&&vtx!=='—')?'<div class="verdict '+vlv+'">'+vtx+'</div>':'')+(exEl?exEl.innerHTML:'');
   if(d.series){
-    const rows=d.labels.map((l,i)=>`<tr><td>${esc(l)}</td>${d.series.map(s=>`<td style="text-align:right">${s.fmt(s.vals[i])}</td>`).join('')}</tr>`).join('');
+    const rows=d.labels.map((l,i)=>`<tr><td>${esc(l)}</td>${d.series.map(s=>`<td style="text-align:right">${(s.fmt?s.fmt:(v=>v))(s.vals[i])}</td>`).join('')}</tr>`).join('');
     $('detTable').innerHTML=`<table class="dett"><thead><tr><th>${esc(d.catLabel||'Categoría')}</th>${d.series.map(s=>`<th style="text-align:right">${esc(s.name)}</th>`).join('')}</tr></thead><tbody>${rows||'<tr><td colspan="3">Sin datos</td></tr>'}</tbody></table>`;
   } else {
+    const f=d.fmt||(v=>v);
     const tot=d.vals.reduce((a,b)=>a+(+b||0),0);
-    const rows=d.labels.map((l,i)=>`<tr><td>${esc(l)}</td><td style="text-align:right">${d.fmt(d.vals[i])}</td><td style="text-align:right">${tot?Math.round((+d.vals[i]||0)/tot*100):0}%</td></tr>`).join('');
-    $('detTable').innerHTML=`<table class="dett"><thead><tr><th>${esc(d.catLabel||'Categoría')}</th><th style="text-align:right">${esc(d.valLabel||'Valor')}</th><th style="text-align:right">%</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Sin datos</td></tr>'}</tbody><tfoot><tr><td>Total</td><td style="text-align:right">${d.fmt(tot)}</td><td style="text-align:right">100%</td></tr></tfoot></table>`;
+    const rows=d.labels.map((l,i)=>`<tr><td>${esc(l)}</td><td style="text-align:right">${f(d.vals[i])}</td><td style="text-align:right">${tot?Math.round((+d.vals[i]||0)/tot*100):0}%</td></tr>`).join('');
+    $('detTable').innerHTML=`<table class="dett"><thead><tr><th>${esc(d.catLabel||'Categoría')}</th><th style="text-align:right">${esc(d.valLabel||'Valor')}</th><th style="text-align:right">%</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Sin datos</td></tr>'}</tbody><tfoot><tr><td>Total</td><td style="text-align:right">${f(tot)}</td><td style="text-align:right">100%</td></tr></tfoot></table>`;
   }
   $('detModal').classList.add('on');
   if(detChart){detChart.destroy();detChart=null;}
-  // Dibuja el gráfico en grande. Se usa doble requestAnimationFrame para que el
-  // modal ya tenga tamaño calculado (evita que el canvas mida 0 y quede en blanco).
+  // Dibuja el gráfico en grande. Doble requestAnimationFrame para que el modal
+  // ya tenga tamaño calculado (evita que el canvas mida 0 y quede en blanco).
+  const dd=d;
   const drawDet=()=>{
     const cv=$('detCanvas'); if(!cv) return;
     if(detChart){detChart.destroy();detChart=null;}
-    // Config NUEVA y limpia desde los datos del detalle: garantiza que el gráfico SIEMPRE se vea.
-    const cfg=buildDetCfg(DET[id]||d);
+    const cfg=buildDetCfg(dd);
     if(!cfg) return;
     try{ detChart=new Chart(cv,cfg); }catch(e){ try{console.error('detalle chart',e);}catch(_){ } }
     setTimeout(()=>{if(detChart){try{detChart.resize();detChart.update('none');}catch(e){}}},90);
   };
   requestAnimationFrame(()=>requestAnimationFrame(drawDet));
-  logAct('detalle','Vio el detalle del gráfico: '+d.title);
+  logAct('detalle','Vio el detalle del gráfico: '+(dd.title||id));
+}
+/* Reconstruye un objeto DET (labels/vals/series/type) desde el gráfico YA dibujado
+   en la página (CH[id]); así el análisis muestra el mismo gráfico aunque DET[id]
+   no se haya registrado por algún motivo. */
+function detFromLive(id){
+  const ch=CH[id]; if(!ch||!ch.data) return null;
+  const bk=id.slice(1);
+  const th=$('t'+bk);
+  const title=th?(''+th.textContent).replace(/^\s*\d+\.\s*/,'').trim():'Análisis del gráfico';
+  const labels=(ch.data.labels||[]).map(l=>Array.isArray(l)?l.join(' '):l);
+  const dss=ch.data.datasets||[];
+  const type=(ch.config&&(ch.config.type||(ch.config._config&&ch.config._config.type)))||'bar';
+  if(dss.length>1){
+    return {title:title,labels:labels,catLabel:'Categoría',
+      series:dss.map(s=>({name:s.label||'',vals:(s.data||[]).slice(),fmt:v=>v}))};
+  }
+  return {title:title,labels:labels,vals:((dss[0]&&dss[0].data)||[]).slice(),
+    fmt:v=>v,type:type,catLabel:'Categoría',valLabel:(dss[0]&&dss[0].label)||'Valor'};
 }
 function closeDet(){$('detModal').classList.remove('on');if(detChart){detChart.destroy();detChart=null;}}
 window.addEventListener('resize',()=>{if(detChart&&$('detModal').classList.contains('on'))detChart.resize();});
