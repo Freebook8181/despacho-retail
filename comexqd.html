@@ -2564,7 +2564,7 @@ function exportarPDF(host){
         let w=cw*(h/it.hFull);       // mantener proporción
         if(cardsOnPage>=2 || y+h>ph-M){ pdf.addPage(); y=M; cardsOnPage=0; }
         const x=M+(cw-w)/2;
-        pdf.addImage(it.canvas.toDataURL('image/jpeg',0.95),'JPEG',x,y,w,h);
+        pdf.addImage(it.canvas.toDataURL('image/png'),'PNG',x,y,w,h);
         y+=h+GAP; cardsOnPage++;
       } else {
         let w=cw, h=it.hFull;
@@ -2572,7 +2572,7 @@ function exportarPDF(host){
         if(y+h>ph-M){ pdf.addPage(); y=M; }
         cardsOnPage=0;              // un bloque ancho corta la fila de tarjetas
         const x=M+(cw-w)/2;
-        pdf.addImage(it.canvas.toDataURL('image/jpeg',0.95),'JPEG',x,y,w,h);
+        pdf.addImage(it.canvas.toDataURL('image/png'),'PNG',x,y,w,h);
         y+=h+GAP;
       }
     }
