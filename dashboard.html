@@ -1638,10 +1638,13 @@ function devoFmtFecha(v){
   if(yr<100)yr+=2000;
   if(mon>=1&&mon<=12&&day>=1&&day<=31)return devoPad2(day)+'/'+devoPad2(mon)+'/'+yr;
  }
+ var iso=devoParseFecha(s);
+ if(iso){var pp=iso.split('-');return devoPad2(+pp[2])+'/'+devoPad2(+pp[1])+'/'+pp[0];}
  return s;
 }
-/* Muestra una fecha ya guardada SIEMPRE como dia/mes/anio (no cambia el orden, solo normaliza el separador). */
-function devoDispFecha(v){var iso=devoParseFecha(v);if(iso){var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}return (v==null?'':String(v));}
+/* Muestra una fecha ya guardada como "24 Abril 2026" (día + mes en palabra + año). Se usa en TODAS las planillas. */
+var DEVO_MESES_NOM=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function devoDispFecha(v){var iso=devoParseFecha(v);if(iso){var p=iso.split('-');var mi=parseInt(p[1],10)-1;return parseInt(p[2],10)+' '+(DEVO_MESES_NOM[mi]||p[1])+' '+p[0];}return (v==null?'':String(v));}
 function devoAutoFecha(i,r){devoEnsure();if(!DEVO_DATA[i]||!DEVO_DATA[i].rows[r])return;var cur=DEVO_DATA[i].rows[r][0];if(cur!=null&&String(cur).trim()!=='')return;var f=devoNowFecha();DEVO_DATA[i].rows[r][0]=f;var cell=document.querySelector('.devo-fechacell[data-i="'+i+'"][data-r="'+r+'"]');if(cell)cell.textContent=f;}
 function devoStartClock(){if(DEVO_CLKTMR)clearInterval(DEVO_CLKTMR);function tick(){var el=document.getElementById('devoClock');if(el)el.textContent=devoNowTime();}tick();DEVO_CLKTMR=setInterval(tick,1000);}
 /* --- maquetado: toolbar + pestañas + panel activo --- */
@@ -1833,7 +1836,7 @@ function devoExport(ids){
   const ncol=DEVO_VIEW_COLS.length+1;
   const aoa=[[it.t],['N\u00b0'].concat(DEVO_VIEW_COLS.map(v=>v.t))];
   const N=Math.max(DEVO_ROWS,d.rows.length);
-  for(let r=0;r<N;r++){const row=d.rows[r]||[];aoa.push([r+1].concat(DEVO_VIEW_COLS.map(v=>row[v.i]==null?'':row[v.i])));}
+  for(let r=0;r<N;r++){const row=d.rows[r]||[];aoa.push([r+1].concat(DEVO_VIEW_COLS.map(v=>v.i===0?(row[0]?devoDispFecha(row[0]):''):(row[v.i]==null?'':row[v.i]))));}
   aoa.push([]);aoa.push(['Horario:',(d.am||'')+(d.ampm?(' '+d.ampm):''),'','','Recepciona Nombre:',d.rec||'','Firma:']);
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
@@ -1917,7 +1920,7 @@ function devoReportHTML(){
   h+='<div class="devo-rep-sec"><h2 style="border-left:6px solid '+it.c+';color:'+it.c+'">'+devoEsc(it.t)+'</h2>';
   if(!rows.length){h+='<p class="devo-rep-empty">Sin registros.</p>';}
   else{h+='<table class="devo-rep-tab"><thead><tr><th>N\u00b0</th>';DEVO_VIEW_COLS.forEach(function(v){h+='<th>'+devoEsc(v.t)+'</th>';});h+='</tr></thead><tbody>';
-   rows.forEach(function(o){var dd=devoIsDupDoc(dupC,o.r);h+='<tr'+(dd?' class="devo-rep-dup"':'')+'><td>'+o.n+'</td>';for(var vi=0;vi<DEVO_VIEW_COLS.length;vi++){h+='<td>'+devoEsc(o.r[DEVO_VIEW_COLS[vi].i])+'</td>';}h+='</tr>';});
+   rows.forEach(function(o){var dd=devoIsDupDoc(dupC,o.r);h+='<tr'+(dd?' class="devo-rep-dup"':'')+'><td>'+o.n+'</td>';for(var vi=0;vi<DEVO_VIEW_COLS.length;vi++){var ci=DEVO_VIEW_COLS[vi].i;h+='<td>'+devoEsc(ci===0?devoDispFecha(o.r[0]):o.r[ci])+'</td>';}h+='</tr>';});
    h+='</tbody></table>';}
   h+='</div>';});
  return h+'</div>';
@@ -1947,7 +1950,7 @@ function devoPptSlidesHTML(){
   h+='<div class="devo-slide"><div class="devo-sl-head" style="background:'+it.c+';color:'+(it.tx||'#fff')+'">'+devoEsc(it.t)+'</div><div class="devo-sl-body">';
   h+='<div class="devo-sl-stats"><span>Registros: <b>'+fi(s.reg)+'</b></span><span>Bultos: <b>'+fi(Math.round(s.bul))+'</b></span><span>Valor: <b>'+(devoFmtVal(devoItemTotal(it.id))||'$0')+'</b></span></div>';
   if(rows.length){h+='<table class="devo-sl-tab"><thead><tr><th>N\u00b0</th><th>Fecha</th><th>Documentos</th><th>Valor</th><th>Bultos</th><th>Destinatarios</th></tr></thead><tbody>';
-   rows.slice(0,10).forEach(function(o){var dd=devoIsDupDoc(dupC,o.r);h+='<tr'+(dd?' class="devo-sl-dup"':'')+'><td>'+o.n+'</td><td>'+devoEsc(o.r[0])+'</td><td>'+devoEsc(o.r[1])+'</td><td>'+devoEsc(o.r[2])+'</td><td>'+devoEsc(o.r[DEVO_BULCOL])+'</td><td>'+devoEsc(o.r[4])+'</td></tr>';});
+   rows.slice(0,10).forEach(function(o){var dd=devoIsDupDoc(dupC,o.r);h+='<tr'+(dd?' class="devo-sl-dup"':'')+'><td>'+o.n+'</td><td>'+devoEsc(devoDispFecha(o.r[0]))+'</td><td>'+devoEsc(o.r[1])+'</td><td>'+devoEsc(o.r[2])+'</td><td>'+devoEsc(o.r[DEVO_BULCOL])+'</td><td>'+devoEsc(o.r[4])+'</td></tr>';});
    h+='</tbody></table>';if(rows.length>10)h+='<p class="devo-sl-more">+ '+(rows.length-10)+' registros m\u00e1s (ver reporte completo)</p>';}
   else{h+='<p class="devo-sl-empty">Sin registros.</p>';}
   h+='</div></div>';});
@@ -1980,7 +1983,7 @@ function devoPptSave(){var gen=function(){try{
    sl.addText('Registros: '+fi(sm.reg)+'     Bultos: '+fi(Math.round(sm.bul))+'     Valor: '+(devoFmtVal(devoItemTotal(it.id))||'$0'),{x:0.4,y:1.05,w:12.5,h:0.4,fontSize:13,color:'333333'});
    if(rows.length){var head=['N\u00b0','Fecha','Documentos','Valor','Bultos','Destinatarios'];
     var dataRows=rows.slice(0,12);
-    var tbl=[head.map(function(hh){return {text:hh,options:{bold:true,color:'FFFFFF',fill:{color:hex}}};})].concat(dataRows.map(function(o){var dd=devoIsDupDoc(dupC,o.r);var cells=[String(o.n),String(o.r[0]||''),String(o.r[1]||''),String(o.r[2]||''),String(o.r[DEVO_BULCOL]||''),String(o.r[4]||'')];return cells.map(function(cc){var opt={};if(dd){opt.fill={color:'FFC7CE'};opt.color='9C0006';}return {text:cc,options:opt};});}));
+    var tbl=[head.map(function(hh){return {text:hh,options:{bold:true,color:'FFFFFF',fill:{color:hex}}};})].concat(dataRows.map(function(o){var dd=devoIsDupDoc(dupC,o.r);var cells=[String(o.n),String(devoDispFecha(o.r[0])||''),String(o.r[1]||''),String(o.r[2]||''),String(o.r[DEVO_BULCOL]||''),String(o.r[4]||'')];return cells.map(function(cc){var opt={};if(dd){opt.fill={color:'FFC7CE'};opt.color='9C0006';}return {text:cc,options:opt};});}));
     sl.addTable(tbl,{x:0.4,y:1.6,w:12.5,fontSize:10,border:{type:'solid',color:'D9DEE5',pt:0.5},valign:'middle'});
     if(rows.length>12)sl.addText('+ '+(rows.length-12)+' registros m\u00e1s',{x:0.4,y:7.0,w:12,h:0.3,fontSize:10,italic:true,color:'888888'});}
    else{sl.addText('Sin registros.',{x:0.4,y:2.0,w:12,h:0.5,fontSize:16,color:'888888'});}});
@@ -2433,7 +2436,8 @@ function devoNubeDelAll(){
 var DEVO_CALY,DEVO_CALM;
 const DEVO_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DEVO_DIA=['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
-function devoParseFecha(s){s=(s==null?'':String(s)).trim();if(!s)return null;let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;if(mo<1||mo>12||d<1||d>31)return null;return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);if(m){let mo=+m[2],d=+m[3];if(mo<1||mo>12||d<1||d>31)return null;return m[1]+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}return null;}
+function devoMesNum(w){w=String(w||'').toLowerCase().replace(/[.\s]/g,'');w=w.normalize?w.normalize('NFD').replace(/[\u0300-\u036f]/g,''):w;w=w.slice(0,3);var m={ene:1,jan:1,feb:2,mar:3,abr:4,apr:4,may:5,jun:6,jul:7,ago:8,aug:8,sep:9,set:9,oct:10,nov:11,dic:12,dec:12};return m[w]||0;}
+function devoParseFecha(s){s=(s==null?'':String(s)).trim();if(!s)return null;let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);if(m){let d=+m[1],mo=+m[2],y=+m[3];if(y<100)y+=2000;if(mo<1||mo>12||d<1||d>31)return null;return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);if(m){let mo=+m[2],d=+m[3];if(mo<1||mo>12||d<1||d>31)return null;return m[1]+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}m=s.match(/^(\d{1,2})[\s\-\/.]+([A-Za-z\u00c0-\u017f]{3,})[\s\-\/.]*(\d{2,4})?$/);if(m){let d=+m[1],mo=devoMesNum(m[2]),y=m[3]?+m[3]:(new Date().getFullYear());if(y<100)y+=2000;if(mo>=1&&mo<=12&&d>=1&&d<=31)return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}m=s.match(/^([A-Za-z\u00c0-\u017f]{3,})[\s\-\/.]+(\d{1,2})[\s\-\/.]*(\d{2,4})?$/);if(m){let mo=devoMesNum(m[1]),d=+m[2],y=m[3]?+m[3]:(new Date().getFullYear());if(y<100)y+=2000;if(mo>=1&&mo<=12&&d>=1&&d<=31)return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');}return null;}
 /* --- calendario para EDITAR la celda Fecha --- */
 var DEVO_ECAL_I=null,DEVO_ECAL_R=null,DEVO_ECY,DEVO_ECM;
 function devoOpenEditCal(i,r){devoBuildModals();DEVO_ECAL_I=i;DEVO_ECAL_R=r;var cur=devoParseFecha((DEVO_DATA[i]&&DEVO_DATA[i].rows[r])?DEVO_DATA[i].rows[r][0]:'');var d=cur?new Date(cur+'T00:00:00'):new Date();DEVO_ECY=d.getFullYear();DEVO_ECM=d.getMonth();devoDrawEditCal();document.getElementById('devoEditCalOv').style.display='flex';}
