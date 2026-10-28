@@ -234,6 +234,24 @@ select:focus{border-color:var(--navy)}
 .devo-totrow td{background:#eef6f3;border-top:2px solid #0d6e5a;font-weight:700;padding:7px 8px}
 .devo-totlbl{text-align:right;color:#0f3a59}
 .devo-totval{text-align:center;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;font-size:13px}
+.devo-selth{text-align:center;white-space:nowrap;min-width:120px}
+.devo-selctl{display:flex;flex-direction:column;gap:3px;align-items:center;margin-bottom:3px}
+.devo-selctl .devo-delsel{background:#c0392b;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer}
+.devo-selctl .devo-delsel:hover{background:#a93226}
+.devo-selall{background:transparent;border:none;color:#2a6df4;font-size:10px;text-decoration:underline;cursor:pointer;padding:0}
+.devo-selhdr{font-size:13px;color:#0d6e5a}
+.devo-selcell{text-align:center}
+.devo-selchk{width:16px;height:16px;cursor:pointer;accent-color:#0d6e5a}
+.devo-passov{position:fixed;inset:0;background:rgba(15,30,45,.55);display:flex;align-items:center;justify-content:center;z-index:9999}
+.devo-passbox{background:#fff;border-radius:12px;padding:22px 24px;width:320px;max-width:92vw;box-shadow:0 18px 50px rgba(0,0,0,.35);font-family:inherit}
+.devo-passbox h3{margin:0 0 6px;color:#0f3a59;font-size:17px}
+.devo-passbox p{margin:0 0 12px;font-size:13px;color:#53606c}
+.devo-passinp{width:100%;box-sizing:border-box;padding:10px 12px;font-size:20px;letter-spacing:6px;text-align:center;border:1.5px solid #c7d0da;border-radius:8px;font-family:'IBM Plex Mono',monospace}
+.devo-passinp:focus{outline:none;border-color:#0d6e5a}
+.devo-passerr{display:none;color:#c0392b;font-size:12px;margin-top:8px}
+.devo-passbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.devo-passbtns .devo-passcancel{background:#eef1f4;color:#44515d;border:none;padding:8px 16px;border-radius:7px;cursor:pointer;font-weight:600}
+.devo-passbtns .devo-passok{background:#c0392b;color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-weight:600}
 .devo-valhead{background:rgba(0,0,0,.10)}
 .devo-fechacell{cursor:pointer;background:#fcfbf6}
 .devo-fechacell:hover{background:#fff7e6;outline:1px dashed #c89a4e}
@@ -1624,7 +1642,10 @@ function devoEsc(s){return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(
 function devoNum(s){s=String(s==null?'':s).replace(/\$/g,'').trim();if(s==='')return null;s=s.replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.\-]/g,'');var n=parseFloat(s);return isNaN(n)?null:n;}
 function devoFmtVal(v){var n=(typeof v==='number')?v:devoNum(v);if(n==null)return '';return '$'+n.toLocaleString('es-CL',{maximumFractionDigits:2});}
 function devoItemTotal(id){var d=DEVO_DATA[id];if(!d)return 0;var t=0;d.rows.forEach(r=>{var n=devoNum(r[DEVO_VALCOL]);if(n!=null)t+=n;});return t;}
-function devoUpdFoot(it){var ft=document.getElementById('devof_'+it.id);if(!ft)return;var fh='<tr class="devo-totrow"><td class="devo-num"></td>';for(var vi=0;vi<DEVO_VIEW_COLS.length;vi++){var c=DEVO_VIEW_COLS[vi].i;if(c===DEVO_VALCOL){fh+='<td class="devo-totval" id="devoTot_'+it.id+'">'+devoEsc(devoFmtVal(devoItemTotal(it.id))||'$0')+'</td>';}else if(vi===0){fh+='<td class="devo-totlbl"><b>TOTAL VALOR</b></td>';}else{fh+='<td></td>';}}fh+='</tr>';ft.innerHTML=fh;}
+function devoUpdFoot(it){var ft=document.getElementById('devof_'+it.id);if(!ft)return;var fh='<tr class="devo-totrow"><td class="devo-num"></td>';for(var vi=0;vi<DEVO_VIEW_COLS.length;vi++){var c=DEVO_VIEW_COLS[vi].i;if(c===DEVO_VALCOL){fh+='<td class="devo-totval" id="devoTot_'+it.id+'">'+devoEsc(devoFmtVal(devoItemTotal(it.id))||'$0')+'</td>';}else if(vi===0){fh+='<td class="devo-totlbl"><b>TOTAL VALOR</b></td>';}else{fh+='<td></td>';}}fh+='<td></td></tr>';ft.innerHTML=fh;}
+function devoAskPass(onok){var ov=document.createElement('div');ov.className='devo-passov';ov.innerHTML='<div class="devo-passbox"><h3>Clave para borrar</h3><p>Ingresa la clave para borrar los registros seleccionados.</p><input type="password" class="devo-passinp" placeholder="####" autocomplete="off" inputmode="numeric"><div class="devo-passerr">Clave incorrecta.</div><div class="devo-passbtns"><button class="devo-btn devo-passcancel">Cancelar</button><button class="devo-btn devo-del devo-passok">Borrar</button></div></div>';document.body.appendChild(ov);var inp=ov.querySelector('.devo-passinp'),err=ov.querySelector('.devo-passerr');setTimeout(function(){try{inp.focus();}catch(e){}},50);function close(){try{document.body.removeChild(ov);}catch(e){}}function tryok(){if(inp.value==='1234'){close();onok();}else{err.style.display='block';inp.value='';inp.focus();}}ov.querySelector('.devo-passcancel').onclick=close;ov.querySelector('.devo-passok').onclick=tryok;inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tryok();}else if(e.key==='Escape'){close();}});ov.addEventListener('click',function(e){if(e.target===ov)close();});}
+function devoSelAll(id){var chks=document.querySelectorAll('.devo-selchk[data-i="'+id+'"]');var allOn=chks.length>0;chks.forEach(function(c){if(!c.checked)allOn=false;});chks.forEach(function(c){c.checked=!allOn;});}
+function devoDelSelected(id){devoEnsure();var d=DEVO_DATA[id];if(!d)return;var chks=document.querySelectorAll('.devo-selchk[data-i="'+id+'"]:checked');if(!chks.length){alert('No hay filas seleccionadas. Marca las casillas de la derecha o usa "Seleccionar Todo".');return;}var idx=[];chks.forEach(function(c){idx.push(+c.dataset.r);});devoAskPass(function(){idx.sort(function(a,b){return b-a;});idx.forEach(function(r){if(d.rows[r])d.rows.splice(r,1);});while(d.rows.length<DEVO_ROWS)d.rows.push(Array(DEVO_COLS.length).fill(''));devoFbPush();var it=DEVO_ITEMS.find(function(x){return x.id===id;});if(it)devoRenderItem(it);});}
 /* --- reloj digital (funciona con o sin internet; usa la hora del equipo) --- */
 var DEVO_CLKTMR=null;
 function devoNowTime(){var d=new Date();function p(n){return String(n).padStart(2,'0');}return p(d.getHours())+':'+p(d.getMinutes());}
@@ -1677,6 +1698,7 @@ function devoWrapHtml(it){
  h+=`<div class="devo-title" style="background:${it.c};color:${it.tx}">${it.t}</div>`;
  h+=`<div class="devo-scroll"><table class="devo-tbl"><thead><tr style="background:${it.c};color:${it.tx}"><th style="width:38px">N\u00b0</th>`;
  DEVO_VIEW_COLS.forEach(v=>{h+=`<th>${v.t}</th>`;});
+ h+=`<th class="devo-selth"><div class="devo-selctl"><button class="devo-btn devo-delsel" data-i="${it.id}" title="Borrar las filas seleccionadas (requiere clave)">Borrar</button><button class="devo-selall" data-i="${it.id}">Seleccionar Todo</button></div><div class="devo-selhdr">\u2713</div></th>`;
  h+=`</tr></thead><tbody id="devob_${it.id}"></tbody><tfoot id="devof_${it.id}"></tfoot></table></div>`;
  h+=`<div class="devo-foot">`
   +`<div class="devo-horrow"><b>Horario</b> <span class="devo-clock" id="devoClock">--:--</span> <span class="devo-ce devo-hora" data-i="${it.id}" data-f="am" contenteditable="true"></span> <button class="devo-btn devo-ins" data-i="${it.id}">⏱ Insertar</button> <label class="devo-ampm"><input type="checkbox" class="devo-ampmchk" data-i="${it.id}" data-v="AM"> AM</label> <label class="devo-ampm"><input type="checkbox" class="devo-ampmchk" data-i="${it.id}" data-v="PM"> PM</label></div>`
@@ -1700,12 +1722,13 @@ function devoRenderItem(it){
   for(let vi=0;vi<DEVO_VIEW_COLS.length;vi++){
    const c=DEVO_VIEW_COLS[vi].i;
    let val=devoEsc(d.rows[r][c]);
-   if(c===0){h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${devoEsc(devoDispFecha(d.rows[r][0]))}</td>`;}
+   if(c===0){var _ho=[1,DEVO_VALCOL,DEVO_UNCOL,DEVO_DESTCOL,DEVO_BULCOL,7,8].some(function(k){return String(d.rows[r][k]==null?'':d.rows[r][k]).trim()!=='';});h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${_ho?devoEsc(devoDispFecha(d.rows[r][0])):''}</td>`;}
    else if(c===DEVO_UNCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp" list="devoUNList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
    else if(c===DEVO_DESTCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-dest" list="devoTiendaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
    else if(c===DEVO_VALCOL){h+=`<td class="devo-cell devo-valcell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
    else{h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
   }
+  h+=`<td class="devo-selcell"><input type="checkbox" class="devo-selchk" data-i="${it.id}" data-r="${r}" aria-label="Seleccionar fila"></td>`;
   h+='</tr>';
  }
  tb.innerHTML=h;
@@ -1735,12 +1758,14 @@ function devoWire(){
   const ins=e.target.closest?e.target.closest('.devo-ins'):null;if(ins){const i=ins.dataset.i;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].am=devoNowTime();const el=document.querySelector(`.devo-ce[data-i="${i}"][data-f="am"]`);if(el)el.textContent=DEVO_DATA[i].am;devoFbPush();}return;}
   const chk=e.target.closest?e.target.closest('.devo-ampmchk'):null;if(chk){const i=chk.dataset.i,v=chk.getAttribute('data-v');devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].ampm=chk.checked?v:'';document.querySelectorAll(`.devo-ampmchk[data-i="${i}"]`).forEach(o=>{o.checked=(o.getAttribute('data-v')===DEVO_DATA[i].ampm);});devoFbPush();}return;}
   const fc=e.target.closest?e.target.closest('.devo-fechacell'):null;if(fc){devoOpenEditCal(fc.dataset.i,+fc.dataset.r);return;}
+  const dsel=e.target.closest?e.target.closest('.devo-delsel'):null;if(dsel){devoDelSelected(dsel.dataset.i);return;}
+  const sall=e.target.closest?e.target.closest('.devo-selall'):null;if(sall){devoSelAll(sall.dataset.i);return;}
  });
  const bI=document.getElementById('devoImport'),fI=document.getElementById('devoFile');
- if(bI&&fI){bI.addEventListener('click',()=>fI.click());fI.addEventListener('change',devoImportExcel);}
- const bE=document.getElementById('devoExport');if(bE)bE.addEventListener('click',()=>devoOpenPick('exp'));
+ if(bI&&fI){bI.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}fI.click();});fI.addEventListener('change',devoImportExcel);}
+ const bE=document.getElementById('devoExport');if(bE)bE.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoOpenPick('exp');});
  const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
- const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>devoOpenPick('del'));
+ const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoOpenPick('del');});
  const bC=document.getElementById('devoGraficar');if(bC)bC.addEventListener('click',devoOpenGraficar);
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
  const bR2=document.getElementById('devoReporte');if(bR2)bR2.addEventListener('click',devoOpenReporte);
@@ -4428,9 +4453,9 @@ function ventasHTML(k){
    <div class="fg"><label>Zona</label><div class="wkbtns" id="${p}fZona"><button data-z="all" class="on">Todas</button><button data-z="Santiago">Santiago</button><button data-z="Regiones">Regiones</button></div></div>
    <div class="fg"><label>Mes</label><select id="${p}fMes"><option value="all">Todos (acumulado año)</option></select></div>
    <input type="file" id="${p}fileInp" accept=".xlsx,.xls" style="display:none"/>
-   <button class="htool adminonly" id="${p}upBtn" style="background:${col};border-color:${col};color:#fff">⬆ Subir Excel de Ventas</button>
-   <button class="htool adminonly" id="${p}saveBtn" style="background:#1f7a4d;border-color:#1f7a4d;color:#fff">💾 Guardar</button>
-   <button class="htool adminonly" id="${p}delBtn" style="background:#b4442f;border-color:#b4442f;color:#fff">🗑 Borrar Excel</button>
+   <button class="htool" id="${p}upBtn" style="background:${col};border-color:${col};color:#fff">⬆ Subir Excel de Ventas</button>
+   <button class="htool" id="${p}saveBtn" style="background:#1f7a4d;border-color:#1f7a4d;color:#fff">💾 Guardar</button>
+   <button class="htool" id="${p}delBtn" style="background:#b4442f;border-color:#b4442f;color:#fff">🗑 Borrar Excel</button>
   </div>
   <div class="active-scope" id="${p}scope" style="margin-top:8px"></div>
   <div id="${p}sem"></div>
@@ -4550,7 +4575,6 @@ function renderVentas(k){
 /* ---- Subir / borrar (un solo archivo carga mac y ver si existen) ---- */
 /* Guardar en la nube SOLO la unidad indicada (MacOnline o Vertical por separado) */
 function vSaveCloud(k){
- if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede guardar en la nube.');return;}
  var D=VSTORE[k];
  if(!D||!D.rows.length||!D.months.length){alert('No hay Excel de ventas de '+VLABEL[k]+' cargado.\n\nPrimero sube el Excel con el botón “Subir Excel de Ventas” y luego presiona Guardar.');return;}
  var _do=function(){
@@ -4586,7 +4610,6 @@ function handleVentasUpload(e,fromK){
  };rd.readAsArrayBuffer(f);e.target.value='';
 }
 function vClear(k){
- if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede borrar el Excel.');return;}
  const D=VSTORE[k];
  if(!D.rows.length||!D.months.length){alert('No hay Excel de ventas de '+VLABEL[k]+' cargado para borrar.');return;}
  var old=document.getElementById('vDelOv');if(old)old.remove();
