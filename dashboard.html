@@ -1587,6 +1587,8 @@ const DEVO_ITEMS=[
 const DEVO_COLS=['Fecha','Documentos','Valor','Unidad Negocio','Destinatarios','Comuna','Bultos','Contenido','Observaciones'];
 const DEVO_VALCOL=2;
 const DEVO_UNCOL=3,DEVO_DESTCOL=4,DEVO_COMCOL=5,DEVO_BULCOL=6;
+/* Columnas que se MUESTRAN en pantalla (iguales a las del Excel): N°, Fecha, Documentos, Origen, Destinatarios, Bultos, Contenido, Observaciones. Valor y Comuna quedan solo internos. */
+const DEVO_VIEW_COLS=[{i:0,t:'Fecha'},{i:1,t:'Documentos'},{i:DEVO_UNCOL,t:'Origen'},{i:DEVO_DESTCOL,t:'Destinatarios'},{i:DEVO_BULCOL,t:'Bultos'},{i:7,t:'Contenido'},{i:8,t:'Observaciones'}];
 const DEVO_UNIDADES=['MacOnline Distribucion','MacOnline Empresas','MacOnline Tienda WEB','QD-Mayorista','QD-Web','SSTT Quintec','MacOnline Administracion','Vertical Tiendas','Vertical Web','MacOnline Tiendas','CD Quintec','Vertical Retail S.A.','QD-Retail'];
 const DEVO_COMUNA_PAIRS=[['MacOnline Parque Arauco','Las Condes'],['MacOnline Costanera Center','Providencia'],['MacOnline Alto Las Condes','Las Condes'],['MacOnline Arauco Maipú','Maipú'],['MacOnline Casa Costanera','Vitacura'],['MacOnline Plaza Egaña','La Reina'],['MacOnline Plaza Los Dominicos','Las Condes'],['MacOnline Plaza Norte','Huechuraba'],['MacOnline Plaza Tobalaba','Puente Alto'],['MacOnline Portal La Dehesa','Lo Barnechea'],['MacOnline Mercado Urbano','Las Condes'],['MacOnline Pie Andino','Lo Barnechea'],['MacOnline Portal Ñuñoa','Ñuñoa'],['MacOnline Huérfanos','Santiago'],['MacOnline Florida Center','La Florida'],['MacOnline Vespucio','La Florida'],['MacOnline Los Trapenses','Lo Barnechea'],['MacOnline Mall Plaza Alameda','Estacion Central'],['MacOnline Plaza Oeste','Cerrillos'],['MacOnline Administración','Las Condes'],['CASA CENTRAL','Las Condes'],['Vertical BackOnline Apumanque','Las Condes'],['Vertical BackOnline Mercado Urbano','Las Condes'],['Vertical BackOnline La Reina','Las Condes'],['Vertical BackOnline Costanera','Providencia'],['Vertical BackOnline Marina','Viña del Mar'],['MacOnline Marina','Viña del Mar'],['MacOnline Curicó','Curicó'],['MacOnline Concepción','Concepcion'],['MacOnline Plaza Trébol','Talcahuano'],['MacOnline Coquimbo','Coquimbo'],['MacOnline Plaza Calama','Antofagasta'],['MacOnline Portal Antofagasta','Antofagasta'],['MacOnline Plaza Iquique','Iquique'],['MacOnline Plaza Arica','Arica'],['MacOnline Valdivia','Valdivia'],['MacOnline La Serena','La Serena'],['MacOnline Temuco','Temuco'],['MacOnline Osorno','Osorno'],['MacOnline Rancagua','Rancagua'],['MacOnline Copiapó','Copiapó'],['MacOnline Chillán','Chillán'],['MacOnline Puerto Montt','Puerto Montt'],['MacOnline Talca','Talca'],['MacOnline Los Ángeles','Los Ángeles'],['MacOnline Plaza Antofagasta','Antofagasta'],['MacOnline Punta Arenas','Punta Arenas']];
 const DEVO_TIENDAS=DEVO_COMUNA_PAIRS.map(function(p){return p[0];});
@@ -1667,9 +1669,8 @@ function devoWrapHtml(it){
  h+='<datalist id="devoComunaList">'+DEVO_COMUNAS_UNICAS.map(c=>'<option value="'+devoAttr(c)+'">').join('')+'</datalist>';
  h+=`<div class="devo-title" style="background:${it.c};color:${it.tx}">${it.t}</div>`;
  h+=`<div class="devo-scroll"><table class="devo-tbl"><thead><tr style="background:${it.c};color:${it.tx}"><th style="width:38px">N\u00b0</th>`;
- DEVO_COLS.forEach((c,ci)=>{h+=`<th${ci===DEVO_VALCOL?' class="devo-valhead"':''}>${c}</th>`;});
+ DEVO_VIEW_COLS.forEach(v=>{h+=`<th>${v.t}</th>`;});
  h+=`</tr></thead><tbody id="devob_${it.id}"></tbody></table></div>`;
- h+=`<div class="devo-total">Suma total <b>Valor</b>: <span id="devoTot_${it.id}" class="devo-totval">$0</span></div>`;
  h+=`<div class="devo-foot">`
   +`<div class="devo-horrow"><b>Horario</b> <span class="devo-clock" id="devoClock">--:--</span> <span class="devo-ce devo-hora" data-i="${it.id}" data-f="am" contenteditable="true"></span> <button class="devo-btn devo-ins" data-i="${it.id}">⏱ Insertar</button> <label class="devo-ampm"><input type="checkbox" class="devo-ampmchk" data-i="${it.id}" data-v="AM"> AM</label> <label class="devo-ampm"><input type="checkbox" class="devo-ampmchk" data-i="${it.id}" data-v="PM"> PM</label></div>`
   +`<div><b>Recepciona</b> &nbsp; Nombre: <span class="devo-ce" data-i="${it.id}" data-f="rec" contenteditable="true"></span> &nbsp; Firma: ______________</div>`
@@ -1689,13 +1690,12 @@ function devoRenderItem(it){
  for(let r=0;r<N;r++){
   const isdup=devoIsDupDoc(dupC,d.rows[r]);
   h+=`<tr${isdup?' class="devo-row-dup"':''}><td class="devo-num">${r+1}</td>`;
-  for(let c=0;c<DEVO_COLS.length;c++){
+  for(let vi=0;vi<DEVO_VIEW_COLS.length;vi++){
+   const c=DEVO_VIEW_COLS[vi].i;
    let val=devoEsc(d.rows[r][c]);
    if(c===0){h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${devoEsc(devoDispFecha(d.rows[r][0]))}</td>`;}
-   else if(c===DEVO_VALCOL){h+=`<td class="devo-cell devo-valcell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
    else if(c===DEVO_UNCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp" list="devoUNList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
    else if(c===DEVO_DESTCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-dest" list="devoTiendaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
-   else if(c===DEVO_COMCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-comuna" list="devoComunaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
    else{h+=`<td class="devo-cell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
   }
   h+='</tr>';
@@ -1802,7 +1802,7 @@ function devoImportExcel(ev){
    Object.keys(ampmByItem).forEach(function(id){if(DEVO_DATA[id])DEVO_DATA[id].ampm=ampmByItem[id];});
    devoEnsure();devoRender();devoFbSave();
    if(added===0){
-    alert('No se agreg\u00f3 ninguna fila.\n\nHojas encontradas en el Excel:\n\u00b7 '+(foundSheets.join('\n\u00b7 ')||'(ninguna)')+'\n\nPlanillas reconocidas:\n\u00b7 '+(matchedSheets.join('\n\u00b7 ')||'(ninguna)')+'\n\nRevisa que el nombre de la hoja sea una de: CD, GARANTIA MAC, ECOMMERCE, BACKONLINE, SERVICIO TECNICO, VARIOS, y que la tabla tenga el encabezado Fecha / Documentos / Valor.');
+    alert('No se agreg\u00f3 ninguna fila.\n\nHojas encontradas en el Excel:\n\u00b7 '+(foundSheets.join('\n\u00b7 ')||'(ninguna)')+'\n\nPlanillas reconocidas:\n\u00b7 '+(matchedSheets.join('\n\u00b7 ')||'(ninguna)')+'\n\nRevisa que el nombre de la hoja sea una de: CD, GARANTIA MAC, ECOMMERCE, BACKONLINE, SERVICIO TECNICO, VARIOS, y que la tabla tenga el encabezado Fecha / Documentos / Destinatarios.');
     ev.target.value='';return;
    }
    var turnos=Object.keys(ampmByItem).map(function(id){var it=DEVO_ITEMS.find(function(x){return x.id===id;});return (it?it.t:id)+': '+ampmByItem[id];});
@@ -1830,20 +1830,18 @@ function devoExport(ids){
  const bd={top:{style:'thin',color:{rgb:'B0B8C1'}},bottom:{style:'thin',color:{rgb:'B0B8C1'}},left:{style:'thin',color:{rgb:'B0B8C1'}},right:{style:'thin',color:{rgb:'B0B8C1'}}};
  ids.forEach(id=>{
   const it=DEVO_ITEMS.find(x=>x.id===id);if(!it)return;const d=DEVO_DATA[id];
-  const ncol=DEVO_COLS.length+1;
-  const aoa=[[it.t],['N\u00b0'].concat(DEVO_COLS)];
+  const ncol=DEVO_VIEW_COLS.length+1;
+  const aoa=[[it.t],['N\u00b0'].concat(DEVO_VIEW_COLS.map(v=>v.t))];
   const N=Math.max(DEVO_ROWS,d.rows.length);
-  for(let r=0;r<N;r++){const row=d.rows[r]||[];aoa.push([r+1].concat(DEVO_COLS.map((_,c)=>row[c]==null?'':row[c])));}
-  const totRow=new Array(ncol).fill('');totRow[DEVO_VALCOL]='TOTAL';totRow[DEVO_VALCOL+1]=devoFmtVal(devoItemTotal(id))||'$0';aoa.push(totRow);
+  for(let r=0;r<N;r++){const row=d.rows[r]||[];aoa.push([r+1].concat(DEVO_VIEW_COLS.map(v=>row[v.i]==null?'':row[v.i])));}
   aoa.push([]);aoa.push(['Horario:',(d.am||'')+(d.ampm?(' '+d.ampm):''),'','','Recepciona Nombre:',d.rec||'','Firma:']);
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
-  ws['!cols']=[{wch:5},{wch:12},{wch:14},{wch:14},{wch:16},{wch:16},{wch:8},{wch:18},{wch:22}];
+  ws['!cols']=[{wch:5},{wch:12},{wch:14},{wch:16},{wch:16},{wch:8},{wch:18},{wch:22}];
   const hex=it.c.replace('#','').toUpperCase();const txt=(['gmac','ecom','back'].indexOf(it.id)>=0)?'FFFFFF':'000000';
   const A1=ws['A1'];if(A1)A1.s={font:{bold:true,sz:14,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'left',vertical:'center'}};
   for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:1,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'center',vertical:'center'},border:bd};}
-  for(let r=2;r<2+N;r++){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r,c});const cell=ws[ref];if(cell)cell.s={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:(c===0||c===DEVO_VALCOL+1)?(c===0?'center':'right'):'left'}};}}
-  const totR=2+N;for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:totR,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,color:{rgb:'1F3A59'}},fill:{patternType:'solid',fgColor:{rgb:'EEF1F5'}},alignment:{horizontal:c===DEVO_VALCOL+1?'right':'left',vertical:'center'},border:bd};}
+  for(let r=2;r<2+N;r++){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r,c});const cell=ws[ref];if(cell)cell.s={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:(c===0)?'center':'left'}};}}
   if(!ws['!rows'])ws['!rows']=[];ws['!rows'][0]={hpt:22};ws['!rows'][1]={hpt:18};
   XLSX.utils.book_append_sheet(wb,ws,devoSheetName(it.t));
  });
@@ -1918,9 +1916,9 @@ function devoReportHTML(){
  DEVO_ITEMS.forEach(function(it){var rows=devoReportRows(it.id);var dupC=dupG;
   h+='<div class="devo-rep-sec"><h2 style="border-left:6px solid '+it.c+';color:'+it.c+'">'+devoEsc(it.t)+'</h2>';
   if(!rows.length){h+='<p class="devo-rep-empty">Sin registros.</p>';}
-  else{h+='<table class="devo-rep-tab"><thead><tr><th>N\u00b0</th>';DEVO_COLS.forEach(function(c){h+='<th>'+devoEsc(c)+'</th>';});h+='</tr></thead><tbody>';
-   rows.forEach(function(o){var dd=devoIsDupDoc(dupC,o.r);h+='<tr'+(dd?' class="devo-rep-dup"':'')+'><td>'+o.n+'</td>';for(var c=0;c<DEVO_COLS.length;c++){h+='<td'+(c===DEVO_VALCOL?' class="num"':'')+'>'+devoEsc(o.r[c])+'</td>';}h+='</tr>';});
-   h+='<tr class="devo-rep-tot"><td colspan="'+(DEVO_VALCOL+1)+'">TOTAL</td><td class="num">'+(devoFmtVal(devoItemTotal(it.id))||'$0')+'</td><td colspan="'+(DEVO_COLS.length-DEVO_VALCOL-1)+'"></td></tr></tbody></table>';}
+  else{h+='<table class="devo-rep-tab"><thead><tr><th>N\u00b0</th>';DEVO_VIEW_COLS.forEach(function(v){h+='<th>'+devoEsc(v.t)+'</th>';});h+='</tr></thead><tbody>';
+   rows.forEach(function(o){var dd=devoIsDupDoc(dupC,o.r);h+='<tr'+(dd?' class="devo-rep-dup"':'')+'><td>'+o.n+'</td>';for(var vi=0;vi<DEVO_VIEW_COLS.length;vi++){h+='<td>'+devoEsc(o.r[DEVO_VIEW_COLS[vi].i])+'</td>';}h+='</tr>';});
+   h+='</tbody></table>';}
   h+='</div>';});
  return h+'</div>';
 }
@@ -2381,8 +2379,8 @@ function devoNubeTabla(id){
    var gVal=0,gBul=0;g.rows.forEach(function(r){var v=devoNum(r[DEVO_VALCOL]);if(v!=null)gVal+=v;gBul+=devoBul(r[DEVO_BULCOL]);});
    h+='<div class="nube-fgrp">';
    h+='<div class="nube-fhead" style="border-left:6px solid '+it.c+'"><span class="nube-fdate">\ud83d\udcc5 '+devoEsc(lbl)+'</span><span class="nube-fstat">'+fi(g.rows.length)+' registros \u00b7 '+(devoFmtVal(gVal)||'$0')+' \u00b7 '+fi(Math.round(gBul))+' bultos</span><button class="nube-del nube-delf" data-i="'+id+'" data-iso="'+(gi||'')+'">\ud83d\uddd1 Eliminar esta fecha</button></div>';
-   h+='<div class="nube-tblwrap"><table class="nube-tbl"><thead><tr><th>N\u00b0</th>'+DEVO_COLS.map(function(c,ci){return '<th'+(ci===DEVO_VALCOL?' class="num"':'')+'>'+devoEsc(c)+'</th>';}).join('')+'<th>Zona</th></tr></thead><tbody>';
-   g.rows.forEach(function(r,i){var z=devoZonaComuna(r[DEVO_COMCOL]);h+='<tr><td>'+(i+1)+'</td>'+DEVO_COLS.map(function(c,ci){var cell=(ci===0)?devoEsc(devoDispFecha(r[0])):((ci===DEVO_VALCOL)?(devoFmtVal(devoNum(r[ci]))||devoEsc(r[ci])):devoEsc(r[ci]));return '<td'+(ci===DEVO_VALCOL?' class="num"':'')+'>'+cell+'</td>';}).join('')+'<td class="z-'+(z==='Santiago'?'st':(z==='Regiones'?'rg':'sd'))+'">'+devoEsc(z)+'</td></tr>';});
+   h+='<div class="nube-tblwrap"><table class="nube-tbl"><thead><tr><th>N\u00b0</th>'+DEVO_VIEW_COLS.map(function(v){return '<th>'+devoEsc(v.t)+'</th>';}).join('')+'<th>Zona</th></tr></thead><tbody>';
+   g.rows.forEach(function(r,i){var z=devoZonaComuna(r[DEVO_COMCOL]);h+='<tr><td>'+(i+1)+'</td>'+DEVO_VIEW_COLS.map(function(v){var ci=v.i;var cell=(ci===0)?devoEsc(devoDispFecha(r[0])):devoEsc(r[ci]);return '<td>'+cell+'</td>';}).join('')+'<td class="z-'+(z==='Santiago'?'st':(z==='Regiones'?'rg':'sd'))+'">'+devoEsc(z)+'</td></tr>';});
    h+='</tbody></table></div></div>';
   });
   body.innerHTML=h;
@@ -2481,8 +2479,8 @@ function devoShowDay(iso){
  const body=document.getElementById('devoDayBody');
  if(!list.length){body.innerHTML='<div class="devo-dayempty">No hay registros ingresados en esta fecha.</div>';}
  else{
-  let h='<table class="devo-daytbl"><thead><tr><th>Planilla</th><th>N\u00b0</th>'+DEVO_COLS.map(c=>'<th>'+c+'</th>').join('')+'<th>Acci\u00f3n</th></tr></thead><tbody>';
-  list.forEach(x=>{h+='<tr data-i="'+x.it.id+'" data-r="'+x.ri+'"><td><span class="devo-dot" style="background:'+x.it.c+'"></span>'+x.it.t+'</td><td class="devo-num">'+(x.ri+1)+'</td>';for(let c=0;c<DEVO_COLS.length;c++){h+='<td class="devo-daycell" contenteditable="true" data-i="'+x.it.id+'" data-r="'+x.ri+'" data-c="'+c+'">'+devoEsc(c===0?devoDispFecha(x.r[0]):x.r[c])+'</td>';}h+='<td><button class="devo-btn devo-del devo-daydel" data-i="'+x.it.id+'" data-r="'+x.ri+'">Borrar</button></td></tr>';});
+  let h='<table class="devo-daytbl"><thead><tr><th>Planilla</th><th>N\u00b0</th>'+DEVO_VIEW_COLS.map(v=>'<th>'+v.t+'</th>').join('')+'<th>Acci\u00f3n</th></tr></thead><tbody>';
+  list.forEach(x=>{h+='<tr data-i="'+x.it.id+'" data-r="'+x.ri+'"><td><span class="devo-dot" style="background:'+x.it.c+'"></span>'+x.it.t+'</td><td class="devo-num">'+(x.ri+1)+'</td>';for(let vi=0;vi<DEVO_VIEW_COLS.length;vi++){const c=DEVO_VIEW_COLS[vi].i;h+='<td class="devo-daycell" contenteditable="true" data-i="'+x.it.id+'" data-r="'+x.ri+'" data-c="'+c+'">'+devoEsc(c===0?devoDispFecha(x.r[0]):x.r[c])+'</td>';}h+='<td><button class="devo-btn devo-del devo-daydel" data-i="'+x.it.id+'" data-r="'+x.ri+'">Borrar</button></td></tr>';});
   h+='</tbody></table><div class="devo-daynote">Edita directamente las celdas (se guarda solo). Para borrar una fila se pedir\u00e1 la contrase\u00f1a.</div>';
   body.innerHTML=h;
   body.querySelectorAll('.devo-daycell').forEach(td=>td.addEventListener('input',()=>{const i=td.dataset.i,r=+td.dataset.r,c=+td.dataset.c;if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][c]=td.textContent;devoFbPush();devoRenderItem(DEVO_ITEMS.find(z=>z.id===i));}}));
