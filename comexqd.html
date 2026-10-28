@@ -1333,8 +1333,8 @@ function exportPowerBI(){
     {h:'PO',t:'t'},{h:'Proveedor',t:'t'},{h:'Tipo Transporte',t:'t'},{h:'Zona Origen',t:'t'},
     {h:'Unidades',t:'n'},{h:'USD',t:'n'},{h:'Ticket Unitario USD',t:'n'},
     {h:'Estado',t:'t'},{h:'Capital',t:'t'},{h:'Dias Transito Total',t:'n'},{h:'Año-Mes',t:'t'},
-    {h:'Fecha Confirmacion',t:'t'},{h:'Disponibilidad Origen',t:'t'},{h:'Retiro en Origen',t:'t'},{h:'Dias T Origen',t:'t'},
-    {h:'ETA',t:'t'},{h:'Fecha Disp Puerto-Aeropuerto',t:'t'},{h:'Retiro P-A',t:'t'},{h:'Llegada a CD',t:'t'},{h:'Costeo',t:'t'},{h:'Disponibilidad Inventario',t:'t'}
+    {h:'Fecha Confirmacion',t:'d'},{h:'Disponibilidad Origen',t:'d'},{h:'Retiro en Origen',t:'d'},{h:'Dias T Origen',t:'t'},
+    {h:'ETA',t:'d'},{h:'Fecha Disp Puerto-Aeropuerto',t:'d'},{h:'Retiro P-A',t:'d'},{h:'Llegada a CD',t:'d'},{h:'Costeo',t:'d'},{h:'Disponibilidad Inventario',t:'d'}
   ];
   var wb=new ExcelJS.Workbook();
   var ws=wb.addWorksheet('COMEX_QD',{views:[{state:'frozen',ySplit:1}]});
@@ -1365,6 +1365,11 @@ function exportPowerBI(){
       if(c.t==='n'){
         if(v===''||v===null||isNaN(v)){cell.value=null;}
         else{cell.value=Number(v);cell.numFmt='0.############';cell.alignment={horizontal:'right'};}
+      }else if(c.t==='d'){
+        // Fecha real (no texto) para que Power BI la reconozca como fecha automáticamente.
+        var ds=(''+v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if(ds){cell.value=new Date(+ds[1],+ds[2]-1,+ds[3]);cell.numFmt='yyyy-mm-dd';cell.alignment={horizontal:'center'};}
+        else{cell.value=(v===''||v==null?null:(''+v));}
       }else{cell.value=(v===''?null:(''+v));}
       cell.font={size:10,color:{argb:'FF334155'}};
       if(ri%2===1)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF6F9FD'}};
@@ -1378,7 +1383,7 @@ function exportPowerBI(){
     var blob=new Blob([buf],{type:mime});
     saveBlob(blob,fname,mime,'.xlsx','Libro de Excel');
     try{logAct('exportar','Exportó dataset para Power BI (.xlsx, '+filas.length+' PO)');}catch(e){}
-    alert('✅ Dataset para Power BI descargado (.xlsx): '+filas.length+' PO.\n\nEn Power BI web: Mi área de trabajo → Importar → Desde este equipo → elige este archivo .xlsx.\nLuego crea un informe sobre el modelo y arrastra los campos a los gráficos.');
+    alert('✅ Dataset para Power BI descargado (.xlsx): '+filas.length+' PO.\n\nEn Power BI Desktop:\n1) Inicio → Obtener datos → Excel.\n2) Elige este archivo y marca la hoja COMEX_QD → Cargar.\n3) Arrastra los campos a los gráficos (USD, Unidades, Proveedor, Año-Mes, etc.).');
   }).catch(function(e){alert('Error al exportar a Excel: '+((e&&e.message)||e));});
 }
 /* Guarda un Blob: si el navegador soporta el selector de carpeta (File System Access API)
