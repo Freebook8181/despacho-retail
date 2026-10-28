@@ -4374,6 +4374,7 @@ function ventasHTML(k){
    <div class="fg"><label>Mes</label><select id="${p}fMes"><option value="all">Todos (acumulado año)</option></select></div>
    <input type="file" id="${p}fileInp" accept=".xlsx,.xls" style="display:none"/>
    <button class="htool adminonly" id="${p}upBtn" style="background:${col};border-color:${col};color:#fff">⬆ Subir Excel de Ventas</button>
+   <button class="htool adminonly" id="${p}saveBtn" style="background:#1f7a4d;border-color:#1f7a4d;color:#fff">💾 Guardar</button>
    <button class="htool adminonly" id="${p}delBtn" style="background:#b4442f;border-color:#b4442f;color:#fff">🗑 Borrar Excel</button>
   </div>
   <div class="active-scope" id="${p}scope" style="margin-top:8px"></div>
@@ -4492,6 +4493,25 @@ function renderVentas(k){
  setTimeout(()=>{[p+'c_mes',p+'c_tie',p+'c_zona',p+'c_pareto',p+'c_crec'].forEach(id=>{if(CH[id])CH[id].resize();});},60);
 }
 /* ---- Subir / borrar (un solo archivo carga mac y ver si existen) ---- */
+/* Guardar en la nube SOLO la unidad indicada (MacOnline o Vertical por separado) */
+function vSaveCloud(k){
+ if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede guardar en la nube.');return;}
+ var D=VSTORE[k];
+ if(!D||!D.rows.length||!D.months.length){alert('No hay Excel de ventas de '+VLABEL[k]+' cargado.\n\nPrimero sube el Excel con el botón “Subir Excel de Ventas” y luego presiona Guardar.');return;}
+ var _do=function(){
+  try{vSaveLocal();}catch(_){}
+  if(fbReady&&fbDB){
+   try{
+    fbDB.ref(FB_PATH_VENTAS+'/'+k).set(D).then(function(){
+     alert('☁ Guardado en la nube (Firebase) el Excel de ventas de '+VLABEL[k]+'.\n\n'+D.rows.length+' tiendas · '+D.months.length+' meses.\nSe guardó solo '+VLABEL[k]+' (no afecta a la otra pestaña).');
+    }).catch(function(e){alert('⚠ No se pudo guardar en la nube: '+((e&&e.message)||e));});
+   }catch(e){alert('⚠ No se pudo guardar en la nube: '+((e&&e.message)||e));}
+  }else{alert('⚠ No hay conexión a la nube. El Excel quedó guardado en este navegador.');}
+ };
+ if(fbReady&&fbDB){_do();return;}
+ if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}_do();}).catch(function(e){var code=(e&&e.code)||'';alert('⚠ No se pudo conectar a la nube.\n\nSolución: entra a Firebase → Authentication → Sign-in method y activa el proveedor “Anónimo”. Luego recarga con Ctrl+F5.'+(code?('\n\n[detalle: '+code+']'):''));});return;}
+ alert('⚠ No hay conexión a la nube disponible en este momento.');
+}
 function handleVentasUpload(e,fromK){
  const f=(e.target.files||[])[0];if(!f)return;
  const rd=new FileReader();
@@ -4740,6 +4760,7 @@ function initVentasFor(k){
  const ms=document.getElementById(p+'fMes');if(ms)ms.addEventListener('change',e=>{VF[k].mes=(e.target.value==='all')?'all':+e.target.value;VF[k].sem='all';renderVentas(k);});
  const semEl=document.getElementById(p+'sem');if(semEl)semEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;VF[k].sem=(b.dataset.w==='all')?'all':+b.dataset.w;renderVentas(k);});
  const up=document.getElementById(p+'upBtn'),fin=document.getElementById(p+'fileInp');if(up&&fin){up.addEventListener('click',()=>fin.click());fin.addEventListener('change',ev=>handleVentasUpload(ev,k));}
+ const sv=document.getElementById(p+'saveBtn');if(sv)sv.addEventListener('click',()=>vSaveCloud(k));
  const del=document.getElementById(p+'delBtn');if(del)del.addEventListener('click',()=>vClear(k));
  try{wireComp(k);}catch(_){}
  try{renderVentas(k);}catch(_){}
