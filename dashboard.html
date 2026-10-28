@@ -147,11 +147,11 @@ select:focus{border-color:var(--navy)}
 .devo-scroll{overflow-x:auto}
 .devo-tbl{border-collapse:collapse;width:100%;min-width:780px;font-size:12.5px}
 .devo-tbl th{padding:8px 6px;text-align:center;font-weight:700;border:1px solid rgba(255,255,255,.4);white-space:nowrap}
-.devo-tbl td{border:1px solid #d9e0e8;padding:5px 7px;min-width:72px;height:26px;vertical-align:top}
+.devo-tbl td{border:1px solid #d9e0e8;padding:5px 7px;min-width:72px;height:26px;vertical-align:middle;text-align:center}
 .devo-tbl td.devo-num{text-align:center;background:#f4f6f9;color:#5a6672;font-weight:600;min-width:34px}
 .devo-cell:focus{outline:2px solid #2563eb;background:#eef5ff}
 .devo-tbl td.devo-inpcell{padding:0}
-.devo-inp{width:100%;min-width:120px;border:0;background:transparent;font:inherit;color:inherit;padding:5px 7px;outline:none;box-sizing:border-box}
+.devo-inp{width:100%;min-width:120px;border:0;background:transparent;font:inherit;color:inherit;padding:5px 7px;outline:none;box-sizing:border-box;text-align:center}
 .devo-inp:focus{background:#eef5ff;outline:2px solid #2563eb}
 .devo-tbl tr.devo-row-dup td{background:#FFC7CE}
 .devo-tbl tr.devo-row-dup .devo-inp{color:#9C0006}
@@ -230,7 +230,7 @@ select:focus{border-color:var(--navy)}
 .devo-graf{background:#0e7490}
 .devo-total{padding:10px 16px;border-top:1px solid #e3e8ef;font-size:13.5px;color:#1f2a37;text-align:right;background:#fbfcfe}
 .devo-totval{font-weight:800;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;margin-left:6px}
-.devo-valcell{text-align:right;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;font-weight:600}
+.devo-valcell{text-align:center;font-family:'IBM Plex Mono',monospace;color:#0d6e5a;font-weight:600}
 .devo-valhead{background:rgba(0,0,0,.10)}
 .devo-fechacell{cursor:pointer;background:#fcfbf6}
 .devo-fechacell:hover{background:#fff7e6;outline:1px dashed #c89a4e}
@@ -1622,7 +1622,24 @@ function devoItemTotal(id){var d=DEVO_DATA[id];if(!d)return 0;var t=0;d.rows.for
 /* --- reloj digital (funciona con o sin internet; usa la hora del equipo) --- */
 var DEVO_CLKTMR=null;
 function devoNowTime(){var d=new Date();function p(n){return String(n).padStart(2,'0');}return p(d.getHours())+':'+p(d.getMinutes());}
-function devoNowFecha(){var d=new Date();function p(n){return String(n).padStart(2,'0');}return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear();}
+function devoNowFecha(){var d=new Date();function p(n){return String(n).padStart(2,'0');}return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();}
+function devoPad2(n){return String(n).padStart(2,'0');}
+/* Convierte una fecha de Excel (formato US mes/dia/anio, p.ej 9/30/26) a dia/mes/anio (30/09/2026). Solo se usa al IMPORTAR. */
+function devoFmtFecha(v){
+ if(v==null)return '';
+ if(v instanceof Date){if(isNaN(v))return '';return devoPad2(v.getDate())+'/'+devoPad2(v.getMonth()+1)+'/'+v.getFullYear();}
+ var s=String(v).trim();if(s==='')return '';
+ var m=s.match(/^(\d{1,4})[\/\-.](\d{1,2})[\/\-.](\d{1,4})(?:[ T].*)?$/);
+ if(m){var a=+m[1],b=+m[2],c=+m[3],day,mon,yr;
+  if(m[1].length===4||a>31){yr=a;mon=b;day=c;}
+  else{if(a>12){day=a;mon=b;}else{mon=a;day=b;}yr=c;}
+  if(yr<100)yr+=2000;
+  if(mon>=1&&mon<=12&&day>=1&&day<=31)return devoPad2(day)+'/'+devoPad2(mon)+'/'+yr;
+ }
+ return s;
+}
+/* Muestra una fecha ya guardada SIEMPRE como dia/mes/anio (no cambia el orden, solo normaliza el separador). */
+function devoDispFecha(v){var iso=devoParseFecha(v);if(iso){var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}return (v==null?'':String(v));}
 function devoAutoFecha(i,r){devoEnsure();if(!DEVO_DATA[i]||!DEVO_DATA[i].rows[r])return;var cur=DEVO_DATA[i].rows[r][0];if(cur!=null&&String(cur).trim()!=='')return;var f=devoNowFecha();DEVO_DATA[i].rows[r][0]=f;var cell=document.querySelector('.devo-fechacell[data-i="'+i+'"][data-r="'+r+'"]');if(cell)cell.textContent=f;}
 function devoStartClock(){if(DEVO_CLKTMR)clearInterval(DEVO_CLKTMR);function tick(){var el=document.getElementById('devoClock');if(el)el.textContent=devoNowTime();}tick();DEVO_CLKTMR=setInterval(tick,1000);}
 /* --- maquetado: toolbar + pestañas + panel activo --- */
@@ -1674,7 +1691,7 @@ function devoRenderItem(it){
   h+=`<tr${isdup?' class="devo-row-dup"':''}><td class="devo-num">${r+1}</td>`;
   for(let c=0;c<DEVO_COLS.length;c++){
    let val=devoEsc(d.rows[r][c]);
-   if(c===0){h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${val}</td>`;}
+   if(c===0){h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${devoEsc(devoDispFecha(d.rows[r][0]))}</td>`;}
    else if(c===DEVO_VALCOL){h+=`<td class="devo-cell devo-valcell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
    else if(c===DEVO_UNCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp" list="devoUNList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
    else if(c===DEVO_DESTCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-dest" list="devoTiendaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
@@ -1750,6 +1767,7 @@ function devoImportExcel(ev){
      if(row.every(v=>v==null||String(v).trim()===''))continue;
      const cells=DEVO_COLS.map((_,c)=>{const src=cmap[c];let v=(src!=null)?row[src]:'';if(v==null)v='';return String(v).trim();});
      if(!devoRowHasContent(cells)||devoIsFooterRow(cells))continue;
+     if(cells[0])cells[0]=devoFmtFecha(cells[0]);
      if(cells[DEVO_VALCOL]){const fv=devoFmtVal(cells[DEVO_VALCOL]);if(fv)cells[DEVO_VALCOL]=fv;}
      if(!cells[DEVO_COMCOL]&&cells[DEVO_DESTCOL]){const cm=DEVO_COMUNA[devoNorm(cells[DEVO_DESTCOL])];if(cm)cells[DEVO_COMCOL]=cm;}
      if(!byItem[item.id])byItem[item.id]=[];byItem[item.id].push(cells);added++;
@@ -1998,6 +2016,27 @@ function devoGraphRenderDetalle(data){try{DEVO_GR_CH.forEach(function(c){try{c.d
 function devoGraphShow(mode){DEVO_GR_MODE=mode;var bt=document.getElementById('devoGrTipo'),bd=document.getElementById('devoGrDetalle');if(bt)bt.classList.toggle('on',mode==='tipo');if(bd)bd.classList.toggle('on',mode==='detalle');var data=DEVO_GR_DATA||DEVO_DATA;if(mode==='detalle')devoGraphRenderDetalle(data);else devoGraphRender(data);}
 function devoGraphLoaded(data){DEVO_GR_DATA=data;devoGraphShow(DEVO_GR_MODE);}
 function devoOpenGraficar(){
+ devoEnsure();
+ var ov=document.getElementById('devoGrPickOv');
+ if(!ov){ov=document.createElement('div');ov.id='devoGrPickOv';ov.className='ob-modal';
+  ov.innerHTML='<div class="ob-box devo-grpick"><div class="ob-h">\ud83d\udcca Graficar una planilla</div><div class="ob-m">Elige qu\u00e9 planilla quieres ver. El resultado se mostrar\u00e1 en la pesta\u00f1a <b>Gr\u00e1ficos</b>.</div><div class="grpick-list" id="devoGrPickList"></div><div class="ob-btns"><button class="ob-c" id="devoGrPickX">Cerrar</button></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov)ov.style.display='none';});
+  ov.querySelector('#devoGrPickX').onclick=function(){ov.style.display='none';};
+ }
+ var list=document.getElementById('devoGrPickList');
+ list.innerHTML=DEVO_ITEMS.map(function(it){var d=DEVO_DATA[it.id]||{rows:[]};var reg=0,val=0;(d.rows||[]).forEach(function(r){if(!r)return;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!has)return;reg++;var v=devoNum(r[DEVO_VALCOL]);if(v!=null)val+=v;});return '<button class="grpick-row" data-id="'+it.id+'"><span class="devo-dot" style="background:'+it.c+'"></span><span class="grpick-t">'+devoEsc(it.t)+'</span><span class="grpick-s">'+fi(reg)+' reg \u00b7 '+(devoFmtVal(val)||'$0')+'</span></button>';}).join('');
+ list.querySelectorAll('.grpick-row').forEach(function(b){b.onclick=function(){ov.style.display='none';devoGoGrafico(b.getAttribute('data-id'));};});
+ ov.style.display='flex';
+}
+function devoGoGrafico(id){
+ DEVO_GRAFSEL=id;
+ var tab=document.querySelector('.tab[data-t="devograf"]');
+ if(tab){tab.click();}
+ try{var sel=document.getElementById('devoG2Sel');if(sel){sel.value=id;}}catch(e){}
+ try{devoGrafSectionRender();}catch(e){}
+}
+function devoOpenGraficarOld(){
  devoEnsureRepCSS();var ov=document.getElementById('devoGrOv');
  if(!ov){ov=document.createElement('div');ov.id='devoGrOv';ov.className='devo-ov2';
   ov.innerHTML='<div class="devo-ov2-card"><div class="devo-ov2-head"><div class="devo-ov2-h">Gr\u00e1ficos de Devoluciones</div><div class="devo-ov2-btns"><button class="devo-btn devo-grtog on" id="devoGrTipo">\ud83d\udcc8 Por Tipo</button><button class="devo-btn devo-grtog" id="devoGrDetalle">\ud83c\udfe2 Ver Detalle</button><button class="devo-ov2-x" id="devoGrX">\u2715</button></div></div><div class="devo-ov2-body" id="devoGrBody"></div></div>';
@@ -2298,20 +2337,54 @@ function devoNubeRender(){
 function devoNubeTabla(id){
  var body=document.getElementById('devoNubeBody2');if(!body)return;devoEnsure();
  var it=DEVO_ITEMS.find(function(x){return x.id===id;})||{t:id,c:'#16a085'};
- var d=DEVO_DATA[id]||{rows:[]};var rows=[];(d.rows||[]).forEach(function(r){if(!r)return;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(has)rows.push(r);});
- var val=0,bul=0;rows.forEach(function(r){var v=devoNum(r[DEVO_VALCOL]);if(v!=null)val+=v;bul+=devoBul(r[DEVO_BULCOL]);});
- var h='<div class="nube-mback"><button class="nube-back" id="devoNbBack">\u2190 Volver a las tablas</button><button class="nube-expone" id="devoNbExp2">\u2b07 Exportar '+devoEsc(it.t)+' (Excel)</button></div>';
+ var d=DEVO_DATA[id]||{rows:[]};
+ var groups={},order=[];
+ (d.rows||[]).forEach(function(r){if(!r)return;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!has)return;var iso=devoParseFecha(r[0]);var key=iso||'__sin__';if(!groups[key]){groups[key]={iso:iso,rows:[]};order.push(key);}groups[key].rows.push(r);});
+ order.sort(function(a,b){if(a==='__sin__')return 1;if(b==='__sin__')return -1;return a<b?1:(a>b?-1:0);});
+ var totReg=0,totVal=0,totBul=0;order.forEach(function(k){groups[k].rows.forEach(function(r){totReg++;var v=devoNum(r[DEVO_VALCOL]);if(v!=null)totVal+=v;totBul+=devoBul(r[DEVO_BULCOL]);});});
+ function isoLbl(iso){var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+ var h='<div class="nube-mback"><button class="nube-back" id="devoNbBack">\u2190 Volver a las tablas</button><button class="nube-expone" id="devoNbExp2">\u2b07 Exportar '+devoEsc(it.t)+' (Excel)</button><button class="nube-del" id="devoNbDelTabla">\ud83d\uddd1 Eliminar TODAS las de '+devoEsc(it.t)+'</button></div>';
  h+='<div class="nube-mtitle"><span class="devo-dot" style="background:'+it.c+'"></span>'+devoEsc(it.t)+'</div>';
- h+='<div class="nube-chips"><span class="nube-chip">Registros: <b>'+fi(rows.length)+'</b></span><span class="nube-chip">Valor: <b>'+(devoFmtVal(val)||'$0')+'</b></span><span class="nube-chip">Bultos: <b>'+fi(Math.round(bul))+'</b></span></div>';
- if(!rows.length){h+='<div class="nube-empty">Esta tabla no tiene registros guardados.</div>';body.innerHTML=h;}
+ if(!order.length){h+='<div class="nube-empty">Esta tabla no tiene planillas guardadas.</div>';body.innerHTML=h;}
  else{
-  h+='<div class="nube-tblwrap"><table class="nube-tbl"><thead><tr><th>N\u00b0</th>'+DEVO_COLS.map(function(c,ci){return '<th'+(ci===DEVO_VALCOL?' class="num"':'')+'>'+devoEsc(c)+'</th>';}).join('')+'<th>Zona</th></tr></thead><tbody>';
-  rows.forEach(function(r,i){var z=devoZonaComuna(r[DEVO_COMCOL]);h+='<tr><td>'+(i+1)+'</td>'+DEVO_COLS.map(function(c,ci){var cell=(ci===DEVO_VALCOL)?(devoFmtVal(devoNum(r[ci]))||devoEsc(r[ci])):devoEsc(r[ci]);return '<td'+(ci===DEVO_VALCOL?' class="num"':'')+'>'+cell+'</td>';}).join('')+'<td class="z-'+(z==='Santiago'?'st':(z==='Regiones'?'rg':'sd'))+'">'+devoEsc(z)+'</td></tr>';});
-  h+='</tbody><tfoot><tr><td colspan="'+(DEVO_COLS.length+2)+'"><b>TOTAL \u00b7 '+fi(rows.length)+' registros \u00b7 Valor '+(devoFmtVal(val)||'$0')+' \u00b7 '+fi(Math.round(bul))+' bultos</b></td></tr></tfoot></table></div>';
+  h+='<div class="nube-chips"><span class="nube-chip">Fechas guardadas: <b>'+fi(order.length)+'</b></span><span class="nube-chip">Registros: <b>'+fi(totReg)+'</b></span><span class="nube-chip">Valor: <b>'+(devoFmtVal(totVal)||'$0')+'</b></span><span class="nube-chip">Bultos: <b>'+fi(Math.round(totBul))+'</b></span></div>';
+  h+='<div class="nube-grphint">Las planillas est\u00e1n agrupadas por fecha. Puedes eliminar una fecha o todas las de esta CD (se pide la contrase\u00f1a).</div>';
+  order.forEach(function(k){
+   var g=groups[k];var gi=g.iso;var lbl=gi?isoLbl(gi):'Sin fecha';
+   var gVal=0,gBul=0;g.rows.forEach(function(r){var v=devoNum(r[DEVO_VALCOL]);if(v!=null)gVal+=v;gBul+=devoBul(r[DEVO_BULCOL]);});
+   h+='<div class="nube-fgrp">';
+   h+='<div class="nube-fhead" style="border-left:6px solid '+it.c+'"><span class="nube-fdate">\ud83d\udcc5 '+devoEsc(lbl)+'</span><span class="nube-fstat">'+fi(g.rows.length)+' registros \u00b7 '+(devoFmtVal(gVal)||'$0')+' \u00b7 '+fi(Math.round(gBul))+' bultos</span><button class="nube-del nube-delf" data-i="'+id+'" data-iso="'+(gi||'')+'">\ud83d\uddd1 Eliminar esta fecha</button></div>';
+   h+='<div class="nube-tblwrap"><table class="nube-tbl"><thead><tr><th>N\u00b0</th>'+DEVO_COLS.map(function(c,ci){return '<th'+(ci===DEVO_VALCOL?' class="num"':'')+'>'+devoEsc(c)+'</th>';}).join('')+'<th>Zona</th></tr></thead><tbody>';
+   g.rows.forEach(function(r,i){var z=devoZonaComuna(r[DEVO_COMCOL]);h+='<tr><td>'+(i+1)+'</td>'+DEVO_COLS.map(function(c,ci){var cell=(ci===0)?devoEsc(devoDispFecha(r[0])):((ci===DEVO_VALCOL)?(devoFmtVal(devoNum(r[ci]))||devoEsc(r[ci])):devoEsc(r[ci]));return '<td'+(ci===DEVO_VALCOL?' class="num"':'')+'>'+cell+'</td>';}).join('')+'<td class="z-'+(z==='Santiago'?'st':(z==='Regiones'?'rg':'sd'))+'">'+devoEsc(z)+'</td></tr>';});
+   h+='</tbody></table></div></div>';
+  });
   body.innerHTML=h;
  }
  var bk=document.getElementById('devoNbBack');if(bk)bk.onclick=function(){devoNubeRender();};
  var ex=document.getElementById('devoNbExp2');if(ex)ex.onclick=function(){try{devoExport([id]);}catch(err){alert('No se pudo exportar: '+err.message);}};
+ var dt=document.getElementById('devoNbDelTabla');if(dt)dt.onclick=function(){devoNubeDelTabla(id);};
+ body.querySelectorAll('.nube-delf').forEach(function(b){b.onclick=function(){devoNubeDelFecha(b.getAttribute('data-i'),b.getAttribute('data-iso'));};});
+}
+function devoNubeDelFecha(id,iso){
+ var it=DEVO_ITEMS.find(function(x){return x.id===id;})||{t:id};
+ var lbl=iso?(function(p){return p[2]+'/'+p[1]+'/'+p[0];})(iso.split('-')):'sin fecha';
+ devoNubeAskPass('Eliminar planilla por fecha','Vas a eliminar los registros del '+lbl+' de la tabla "'+it.t+'". Ingresa la contrase\u00f1a (se oculta con #).',function(){
+  devoEnsure();
+  DEVO_DATA[id].rows=(DEVO_DATA[id].rows||[]).filter(function(r){if(!r)return false;var has=r.some(function(x){return x!=null&&String(x).trim()!=='';});if(!has)return false;var ri=devoParseFecha(r[0]);if(iso)return ri!==iso;return !!ri;});
+  while(DEVO_DATA[id].rows.length<DEVO_ROWS)DEVO_DATA[id].rows.push(Array(DEVO_COLS.length).fill(''));
+  try{devoRender();}catch(e){}try{devoG2Refresh();}catch(e){}devoFbSave();
+  devoNubeTabla(id);
+  alert('\u2713 Se elimin\u00f3 la planilla del '+lbl+' de "'+it.t+'".');
+ });
+}
+function devoNubeDelTabla(id){
+ var it=DEVO_ITEMS.find(function(x){return x.id===id;})||{t:id};
+ devoNubeAskPass('Eliminar todas las planillas de '+it.t,'Vas a eliminar TODAS las planillas guardadas de "'+it.t+'". Ingresa la contrase\u00f1a (se oculta con #).',function(){
+  devoEnsure();DEVO_DATA[id]=devoEmptyItem();
+  try{devoRender();}catch(e){}try{devoG2Refresh();}catch(e){}devoFbSave();
+  devoNubeTabla(id);
+  alert('\u2713 Se eliminaron todas las planillas de "'+it.t+'".');
+ });
 }
 function devoNubeDel(id){
  if(!obIsAdmin()){alert('Solo el administrador puede eliminar tablas.');return;}
@@ -2355,7 +2428,7 @@ function devoDrawEditCal(){
  document.getElementById('devoECalToday').onclick=function(){var t=new Date();devoSetFecha(t.getFullYear(),t.getMonth()+1,t.getDate());};
  b.querySelectorAll('.devo-calday').forEach(function(btn){btn.onclick=function(){var p=btn.dataset.iso.split('-');devoSetFecha(+p[0],+p[1],+p[2]);};});
 }
-function devoSetFecha(y,mo,d){var txt=String(d).padStart(2,'0')+'-'+String(mo).padStart(2,'0')+'-'+y;devoEnsure();if(DEVO_DATA[DEVO_ECAL_I]&&DEVO_DATA[DEVO_ECAL_I].rows[DEVO_ECAL_R]){DEVO_DATA[DEVO_ECAL_I].rows[DEVO_ECAL_R][0]=txt;devoFbPush();devoRenderItem(DEVO_ITEMS.find(z=>z.id===DEVO_ECAL_I));}document.getElementById('devoEditCalOv').style.display='none';}
+function devoSetFecha(y,mo,d){var txt=String(d).padStart(2,'0')+'/'+String(mo).padStart(2,'0')+'/'+y;devoEnsure();if(DEVO_DATA[DEVO_ECAL_I]&&DEVO_DATA[DEVO_ECAL_I].rows[DEVO_ECAL_R]){DEVO_DATA[DEVO_ECAL_I].rows[DEVO_ECAL_R][0]=txt;devoFbPush();devoRenderItem(DEVO_ITEMS.find(z=>z.id===DEVO_ECAL_I));}document.getElementById('devoEditCalOv').style.display='none';}
 /* --- VER POR FECHA (todas las planillas) --- */
 function devoCountDay(iso){let n=0;devoEnsure();DEVO_ITEMS.forEach(it=>{DEVO_DATA[it.id].rows.forEach(r=>{if(devoParseFecha(r[0])===iso)n++;});});return n;}
 function devoOpenCal(){devoBuildModals();const now=new Date();if(DEVO_CALY==null){DEVO_CALY=now.getFullYear();DEVO_CALM=now.getMonth();}devoDrawCal();document.getElementById('devoCalOv').style.display='flex';}
@@ -2382,7 +2455,7 @@ function devoShowDay(iso){
  if(!list.length){body.innerHTML='<div class="devo-dayempty">No hay registros ingresados en esta fecha.</div>';}
  else{
   let h='<table class="devo-daytbl"><thead><tr><th>Planilla</th><th>N\u00b0</th>'+DEVO_COLS.map(c=>'<th>'+c+'</th>').join('')+'<th>Acci\u00f3n</th></tr></thead><tbody>';
-  list.forEach(x=>{h+='<tr data-i="'+x.it.id+'" data-r="'+x.ri+'"><td><span class="devo-dot" style="background:'+x.it.c+'"></span>'+x.it.t+'</td><td class="devo-num">'+(x.ri+1)+'</td>';for(let c=0;c<DEVO_COLS.length;c++){h+='<td class="devo-daycell" contenteditable="true" data-i="'+x.it.id+'" data-r="'+x.ri+'" data-c="'+c+'">'+devoEsc(x.r[c])+'</td>';}h+='<td><button class="devo-btn devo-del devo-daydel" data-i="'+x.it.id+'" data-r="'+x.ri+'">Borrar</button></td></tr>';});
+  list.forEach(x=>{h+='<tr data-i="'+x.it.id+'" data-r="'+x.ri+'"><td><span class="devo-dot" style="background:'+x.it.c+'"></span>'+x.it.t+'</td><td class="devo-num">'+(x.ri+1)+'</td>';for(let c=0;c<DEVO_COLS.length;c++){h+='<td class="devo-daycell" contenteditable="true" data-i="'+x.it.id+'" data-r="'+x.ri+'" data-c="'+c+'">'+devoEsc(c===0?devoDispFecha(x.r[0]):x.r[c])+'</td>';}h+='<td><button class="devo-btn devo-del devo-daydel" data-i="'+x.it.id+'" data-r="'+x.ri+'">Borrar</button></td></tr>';});
   h+='</tbody></table><div class="devo-daynote">Edita directamente las celdas (se guarda solo). Para borrar una fila se pedir\u00e1 la contrase\u00f1a.</div>';
   body.innerHTML=h;
   body.querySelectorAll('.devo-daycell').forEach(td=>td.addEventListener('input',()=>{const i=td.dataset.i,r=+td.dataset.r,c=+td.dataset.c;if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][c]=td.textContent;devoFbPush();devoRenderItem(DEVO_ITEMS.find(z=>z.id===i));}}));
@@ -3636,6 +3709,7 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".ob-inp{width:100%;box-sizing:border-box;font-size:20px;letter-spacing:6px;text-align:center;padding:10px;border:1.5px solid #cfd8e3;border-radius:8px;outline:none}.ob-inp:focus{border-color:#2f7d6b}"
 +".ob-err{color:#c0392b;font-size:12px;margin-top:7px;font-weight:600}.ob-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}"
 +".ob-btns button{font-size:13px;font-weight:600;padding:8px 16px;border-radius:7px;cursor:pointer;border:1px solid #cfd8e3;background:#fff;color:#4a5968}.ob-ok{background:#2f7d6b!important;border-color:#2f7d6b!important;color:#fff!important}"
++".devo-grpick{width:420px;max-width:92vw}.grpick-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto;margin:4px 0 6px}.grpick-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#f7fafc;border:1px solid #e3e8ef;border-radius:9px;padding:11px 14px;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s}.grpick-row:hover{background:#eef4fb;border-color:#b9c9dc}.grpick-t{flex:1;font-weight:700;color:#1f3a59;font-size:13.5px}.grpick-s{font-size:11.5px;color:#6b7684;white-space:nowrap}"
 +".nube-conn{font-size:12.5px;padding:8px 12px;border-radius:7px;margin-bottom:14px;font-weight:600}.nube-conn.ok{background:#e6f5ef;color:#1d6b56}.nube-conn.off{background:#fbecec;color:#b4442f}"
 +".nube-cols{display:flex;gap:16px;flex-wrap:wrap}.nube-col{flex:1;min-width:300px;background:#fff;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden}"
 +".nube-h{padding:12px 16px;color:#fff;font-weight:700;font-size:15px}.nube-tot{padding:10px 16px;background:#f6f9fc;font-size:12.5px;color:#4a5968;font-weight:600;border-bottom:1px solid #eef2f6}"
@@ -3644,7 +3718,9 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".nube-row-click{cursor:pointer;transition:background .12s}.nube-row-click:hover{background:#eef4fb}.nube-exp{background:#2f7d6b;color:#fff;border:0;border-radius:6px;padding:5px 11px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}.nube-exp:hover{background:#276a5b}"
 +".nube-mback{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}.nube-back{background:#eef1f5;color:#1f3a59;border:0;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer}.nube-back:hover{background:#e0e6ee}.nube-expone{background:#2f7d6b;color:#fff;border:0;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer}.nube-expone:hover{background:#276a5b}"
 +".nube-mtitle{font-size:20px;font-weight:800;color:#1f3a59;margin:2px 0 10px}.nube-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.nube-chip{background:#f1f5fa;color:#334a63;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:20px}.nube-chip b{color:#1f3a59}.nube-chip.st{background:#e8f1fb}.nube-chip.rg{background:#eafaf2}"
-+".nube-tblwrap{border:1px solid #e3e8ef;border-radius:10px;overflow:auto;max-height:60vh}.nube-tbl{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}.nube-tbl thead th{position:sticky;top:0;background:#1f3a59;color:#fff;font-weight:700;padding:9px 11px;text-align:left;z-index:1}.nube-tbl td{padding:7px 11px;border-bottom:1px solid #eef2f6;color:#2a3a4b}.nube-tbl tbody tr:nth-child(even){background:#fafcfe}.nube-tbl tbody tr:hover{background:#eef4fb}.nube-tbl .num{text-align:right;font-variant-numeric:tabular-nums}.nube-tbl tfoot td{position:sticky;bottom:0;background:#f6f9fc;color:#1f3a59;padding:9px 11px;border-top:2px solid #1f3a59}.nube-tbl td.z-st{color:#1c62b5;font-weight:600}.nube-tbl td.z-rg{color:#1d8a5c;font-weight:600}"+".opsdel-list{max-height:240px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;margin:4px 0 12px;background:#fbfcfe}"+".opsdel-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid #eef2f7;font-size:13px;color:#1f2a37;cursor:pointer}"+".opsdel-row:last-child{border-bottom:0}.opsdel-row input{width:16px;height:16px;cursor:pointer;accent-color:#1f3a59}"+".opsdel-all{border:0;background:transparent;padding:2px 2px 8px}"+".opsdel-mes{flex:1;font-weight:600;color:#1f3a59}.opsdel-stat{font-size:11.5px;color:#6b7684;white-space:nowrap}"+".opsdel-pwlbl{font-size:12.5px;color:#44505e;font-weight:600;margin-bottom:5px}"+".ops-bk-ov{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,rgba(15,30,55,.97),rgba(31,58,89,.97));display:flex;align-items:center;justify-content:center;padding:20px}"+".ops-bk-card{background:#fff;border-radius:18px;max-width:560px;width:100%;padding:34px 40px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center;font-family:inherit}"+".ops-bk-ic{font-size:46px;line-height:1}"+".ops-bk-card h2{margin:12px 0 10px;font-size:23px;color:#1f3a59}"+".ops-bk-card p{font-size:14.5px;color:#3a4654;line-height:1.55;margin:8px 0}"+".ops-bk-sub{font-size:12.5px !important;color:#6b7684 !important}"+".ops-bk-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;list-style:none;padding:6px 0 2px;margin:10px 0}"+".ops-bk-list li{background:#eef3f9;color:#1f3a59;font-weight:600;font-size:13px;padding:7px 14px;border-radius:20px}"+".ops-bk-btns{display:flex;gap:12px;justify-content:center;margin-top:20px}"+".ops-bk-no{background:#eef1f5;color:#44505e;border:0;border-radius:9px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer}"+".ops-bk-yes{background:#1f3a59;color:#fff;border:0;border-radius:9px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(31,58,89,.35)}"+".ops-bk-yes:hover{background:#264a73}"
++".nube-tblwrap{border:1px solid #e3e8ef;border-radius:10px;overflow:auto;max-height:60vh}.nube-tbl{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}.nube-tbl thead th{position:sticky;top:0;background:#1f3a59;color:#fff;font-weight:700;padding:9px 11px;text-align:left;z-index:1}.nube-tbl td{padding:7px 11px;border-bottom:1px solid #eef2f6;color:#2a3a4b}.nube-tbl tbody tr:nth-child(even){background:#fafcfe}.nube-tbl tbody tr:hover{background:#eef4fb}.nube-tbl .num{text-align:right;font-variant-numeric:tabular-nums}.nube-tbl tfoot td{position:sticky;bottom:0;background:#f6f9fc;color:#1f3a59;padding:9px 11px;border-top:2px solid #1f3a59}.nube-tbl td.z-st{color:#1c62b5;font-weight:600}.nube-tbl td.z-rg{color:#1d8a5c;font-weight:600}"
++".nube-tbl thead th{text-align:center}.nube-tbl td{text-align:center}.nube-tbl .num{text-align:center}.devo-rep-tab th,.devo-rep-tab td{text-align:center}.devo-rep-tab td.num{text-align:center}.devo-daytbl th,.devo-daytbl td{text-align:center}"
++".nube-grphint{font-size:12.5px;color:#5a6672;background:#f1f5fa;border-radius:8px;padding:9px 13px;margin-bottom:14px}.nube-fgrp{border:1px solid #e3e8ef;border-radius:10px;overflow:hidden;margin-bottom:16px;background:#fff}.nube-fhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;background:#f6f9fc;border-bottom:1px solid #eef2f6}.nube-fdate{font-weight:800;color:#1f3a59;font-size:14.5px}.nube-fstat{flex:1;font-size:12.5px;color:#5a6672;font-weight:600}.nube-delf{white-space:nowrap}"+".opsdel-list{max-height:240px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;margin:4px 0 12px;background:#fbfcfe}"+".opsdel-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid #eef2f7;font-size:13px;color:#1f2a37;cursor:pointer}"+".opsdel-row:last-child{border-bottom:0}.opsdel-row input{width:16px;height:16px;cursor:pointer;accent-color:#1f3a59}"+".opsdel-all{border:0;background:transparent;padding:2px 2px 8px}"+".opsdel-mes{flex:1;font-weight:600;color:#1f3a59}.opsdel-stat{font-size:11.5px;color:#6b7684;white-space:nowrap}"+".opsdel-pwlbl{font-size:12.5px;color:#44505e;font-weight:600;margin-bottom:5px}"+".ops-bk-ov{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,rgba(15,30,55,.97),rgba(31,58,89,.97));display:flex;align-items:center;justify-content:center;padding:20px}"+".ops-bk-card{background:#fff;border-radius:18px;max-width:560px;width:100%;padding:34px 40px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center;font-family:inherit}"+".ops-bk-ic{font-size:46px;line-height:1}"+".ops-bk-card h2{margin:12px 0 10px;font-size:23px;color:#1f3a59}"+".ops-bk-card p{font-size:14.5px;color:#3a4654;line-height:1.55;margin:8px 0}"+".ops-bk-sub{font-size:12.5px !important;color:#6b7684 !important}"+".ops-bk-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;list-style:none;padding:6px 0 2px;margin:10px 0}"+".ops-bk-list li{background:#eef3f9;color:#1f3a59;font-weight:600;font-size:13px;padding:7px 14px;border-radius:20px}"+".ops-bk-btns{display:flex;gap:12px;justify-content:center;margin-top:20px}"+".ops-bk-no{background:#eef1f5;color:#44505e;border:0;border-radius:9px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer}"+".ops-bk-yes{background:#1f3a59;color:#fff;border:0;border-radius:9px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(31,58,89,.35)}"+".ops-bk-yes:hover{background:#264a73}"
 +".rep-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 22px}"
 +".rep-cell{display:flex;flex-direction:column;min-width:0}"
 +".rep-cell .rep-ct{font-size:12.5px;font-weight:700;color:#1f3a59;margin-bottom:6px}"
