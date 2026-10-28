@@ -2518,10 +2518,12 @@ function buildModMarkup(){
    `<div class="tab modtab grp-mod" data-t="ver" style="background:${MOD_COLOR.ver}1f;border:1.5px solid ${MOD_COLOR.ver};color:${MOD_COLOR.ver};font-weight:700;border-radius:9px"><span>Vertical Tiendas</span></div>`+
    `<button type="button" class="modactbtn grp-mod mab-rep" id="tabRep">📄 Reporte</button>`+
    `<button type="button" class="modactbtn grp-mod mab-ppt" id="tabPpt">📊 PPT</button>`+
+   `<button type="button" class="modactbtn grp-mod mab-nube" id="tabNube" style="background:#0369a1;border:1.5px solid #0369a1;color:#fff">☁ NUBE</button>`+
    `<div class="tab modtab grp-devo" data-t="devo" style="background:${MOD_COLOR.devo};border:1.5px solid ${MOD_COLOR.devo};color:#fff;font-weight:700;border-radius:9px"><span>Devoluciones</span></div>`+
    `<div class="tab modtab grp-devo" data-t="devograf" style="background:#0e7490;border:1.5px solid #0e7490;color:#fff;font-weight:700;border-radius:9px"><span>📊 Gráficos</span></div>`);
   var tR=document.getElementById('tabRep');if(tR)tR.addEventListener('click',function(e){e.stopPropagation();if(typeof obReporte==='function')obReporte();});
   var tP=document.getElementById('tabPpt');if(tP)tP.addEventListener('click',function(e){e.stopPropagation();if(typeof obPPT==='function')obPPT();});
+  var tN=document.getElementById('tabNube');if(tN)tN.addEventListener('click',function(e){e.stopPropagation();if(typeof modOpenNube==='function')modOpenNube();});
  }
 }
 /* ===== FILTRO: POBLAR CONTROLES ===== */
@@ -3961,13 +3963,108 @@ function applyRole(){
   var w=document.getElementById('whoami');if(w)w.textContent=SESSION?('Salir · '+SESSION.name):'';
  }catch(err){console.error('applyRole11',err);}
 }
+/* ====== Ver lo que hay en la nube de Tiendas (MacOnline / Vertical por separado) ====== */
+function modNubeLabel(grp){return grp==='mac'?'MacOnline Distribución':'Vertical Tiendas';}
+function modNubeStats(grp){
+ var byMk={};
+ MDATA.rows.forEach(function(r){
+  if(r.grp!==grp)return;
+  var e=byMk[r.mk]=byMk[r.mk]||{mk:r.mk,label:r.mes||r.mk,n:0,v:0,st:0,rg:0,nst:0,nrg:0};
+  e.n++;e.v+=r.v||0;
+  if(r.zona==='Regiones'){e.rg+=r.v||0;e.nrg++;}else{e.st+=r.v||0;e.nst++;}
+ });
+ return Object.keys(byMk).sort().map(function(mk){return byMk[mk];});
+}
+function modNubeSection(grp){
+ var col=MOD_COLOR[grp]||'#0369a1';
+ var meses=modNubeStats(grp);
+ var tn=0,tv=0,tst=0,trg=0;meses.forEach(function(m){tn+=m.n;tv+=m.v;tst+=m.st;trg+=m.rg;});
+ var h='<div style="border:1.5px solid '+col+';border-radius:14px;overflow:hidden;margin-bottom:16px">'+
+  '<div style="background:'+col+';color:#fff;padding:11px 15px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">'+
+   '<span style="font-family:Sora;font-size:15px;font-weight:700">☁ '+modNubeLabel(grp)+'</span>'+
+   '<span style="font-size:12.5px;font-weight:600;opacity:.95">'+meses.length+' mes(es) · '+tn+' registros · '+modFmtMoney(tv)+'</span>'+
+  '</div>';
+ if(!meses.length){
+  h+='<div style="padding:16px 15px;color:#6b7684;font-size:13px">Todavía no hay ningún Excel de '+modNubeLabel(grp)+' guardado en la nube.</div></div>';
+  return h;
+ }
+ h+='<div style="padding:4px 10px 10px">';
+ h+='<div style="display:flex;gap:10px;padding:8px 6px;color:#28364a;font-size:12px;font-weight:600;flex-wrap:wrap">Totales: Santiago '+modFmtMoney(tst)+' &nbsp;|&nbsp; Regiones '+modFmtMoney(trg)+'</div>';
+ meses.forEach(function(m){
+  var did='modNubeDet_'+grp+'_'+m.mk.replace(/[^0-9a-z]/gi,'');
+  h+='<div style="border:1px solid #e3e7ec;border-radius:10px;margin:6px 0;overflow:hidden">'+
+   '<div class="modNubeHd" data-det="'+did+'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;background:#f7f9fb">'+
+    '<span style="flex:1;font-size:13.5px;color:#1f3a59"><b>'+m.label+'</b> &nbsp;<span style="color:#6b7684">('+m.n+' registros)</span></span>'+
+    '<span style="font-size:13px;font-weight:700;color:'+col+'">'+modFmtMoney(m.v)+'</span>'+
+    '<span style="font-size:11px;color:#6b7684">▼</span>'+
+   '</div>'+
+   '<div id="'+did+'" style="display:none;padding:0 12px 10px">'+
+    '<div style="font-size:11.5px;color:#5a6672;margin:6px 0 8px">Santiago: '+m.nst+' reg · '+modFmtMoney(m.st)+' &nbsp;|&nbsp; Regiones: '+m.nrg+' reg · '+modFmtMoney(m.rg)+'</div>'+
+    modNubeDetTable(grp,m.mk)+
+   '</div>'+
+  '</div>';
+ });
+ h+='</div></div>';
+ return h;
+}
+function modNubeDetTable(grp,mk){
+ var rows=MDATA.rows.filter(function(r){return r.grp===grp&&r.mk===mk;});
+ rows.sort(function(a,b){return (a.f<b.f?-1:(a.f>b.f?1:0));});
+ var t='<div style="max-height:280px;overflow:auto;border:1px solid #eef0f3;border-radius:8px">'+
+  '<table style="width:100%;border-collapse:collapse;font-size:12px;text-align:center">'+
+  '<thead><tr style="background:#eef2f6;color:#28364a">'+
+   '<th style="padding:6px 8px;text-align:center">Fecha</th>'+
+   '<th style="padding:6px 8px;text-align:center">Tienda</th>'+
+   '<th style="padding:6px 8px;text-align:center">Comuna</th>'+
+   '<th style="padding:6px 8px;text-align:center">Zona</th>'+
+   '<th style="padding:6px 8px;text-align:center">Semana</th>'+
+   '<th style="padding:6px 8px;text-align:center">Valor</th>'+
+  '</tr></thead><tbody>';
+ rows.forEach(function(r){
+  t+='<tr style="border-top:1px solid #eef0f3">'+
+   '<td style="padding:5px 8px;text-align:center">'+modNubeFecha(r.f)+'</td>'+
+   '<td style="padding:5px 8px;text-align:center">'+(r.tienda||'—')+'</td>'+
+   '<td style="padding:5px 8px;text-align:center">'+(r.co||'—')+'</td>'+
+   '<td style="padding:5px 8px;text-align:center">'+(r.zona||'—')+'</td>'+
+   '<td style="padding:5px 8px;text-align:center">'+(r.sem!=null?r.sem:'—')+'</td>'+
+   '<td style="padding:5px 8px;text-align:center;white-space:nowrap">'+modFmtMoney(r.v)+'</td>'+
+  '</tr>';
+ });
+ t+='</tbody></table></div>';
+ return t;
+}
+function modNubeFecha(f){if(!f)return '—';var p=String(f).split('-');return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):f;}
+function modOpenNube(){
+ var conn=(typeof fbReady!=='undefined'&&fbReady);
+ var old=document.getElementById('modNubeOv');if(old)old.remove();
+ var ov=document.createElement('div');ov.id='modNubeOv';
+ ov.style.cssText='position:fixed;inset:0;background:rgba(15,25,40,.6);z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px';
+ var estado=conn?'<span style="color:#2f7d6b">● Conectado a la nube (Firebase)</span>':'<span style="color:#b06a2a">● Sin conexión a la nube: se muestra lo guardado en este navegador</span>';
+ ov.innerHTML='<div style="background:#fff;border-radius:16px;width:min(820px,96vw);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(10,20,35,.45)">'+
+  '<div style="padding:16px 20px;border-bottom:1px solid #e3e7ec;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:2"><h3 style="margin:0;font-family:Sora;font-size:17px;color:#1f3a59">☁ Tiendas guardadas en la nube</h3><button id="modNubeX" style="border:0;background:#eef0f3;width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer">✕</button></div>'+
+  '<div style="padding:16px 20px">'+
+   '<div style="font-size:12px;margin-bottom:12px">'+estado+'</div>'+
+   '<div style="font-size:12.5px;color:#5a6672;line-height:1.6;margin-bottom:12px">Esto es solo para <b>ver</b> lo que hay en la nube. Se muestra <b>MacOnline Distribución</b> y <b>Vertical Tiendas</b> por separado. Haz clic en un mes para ver su detalle.</div>'+
+   modNubeSection('mac')+
+   modNubeSection('ver')+
+  '</div></div>';
+ document.body.appendChild(ov);
+ function close(){ov.remove();}
+ ov.addEventListener('click',function(e){if(e.target===ov)close();});
+ document.getElementById('modNubeX').addEventListener('click',close);
+ [].slice.call(ov.querySelectorAll('.modNubeHd')).forEach(function(hd){
+  hd.addEventListener('click',function(){var d=document.getElementById(hd.getAttribute('data-det'));if(d)d.style.display=(d.style.display==='none'?'':'none');});
+ });
+}
 /* ====== Borrar el Excel de tiendas (plataforma + nube) ====== */
 function modDeleteExcel(scope){
  if(!(SESSION&&SESSION.role==='admin')){alert('Solo el administrador puede borrar el Excel.');return;}
  if(scope==='devo'){alert('El módulo de Devoluciones todavía no tiene un Excel cargado. Cuando subas su Excel propio, aquí podrás borrarlo.');return;}
- var store={};try{store=modBuildStore();}catch(e){}
+ var lbl=(scope==='mac')?'MacOnline Distribución':'Vertical Tiendas';
+ var store={};
+ MDATA.rows.forEach(function(r){if(r.grp!==scope)return;var e=store[r.mk]=store[r.mk]||{label:r.mes||r.mk,rows:[]};e.rows.push(r);});
  var mks=Object.keys(store);
- if(!mks.length){alert('No hay ningún Excel de tiendas cargado para borrar.');return;}
+ if(!mks.length){alert('No hay ningún Excel de '+lbl+' cargado en la nube para borrar.');return;}
  mks.sort();
  var old=document.getElementById('delExOv');if(old)old.remove();
  var ov=document.createElement('div');ov.id='delExOv';
@@ -3980,11 +4077,12 @@ function modDeleteExcel(scope){
    '</label>';
  });
  ov.innerHTML='<div style="background:#fff;border-radius:16px;width:min(600px,96vw);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(10,20,35,.45)">'+
-  '<div style="padding:16px 20px;border-bottom:1px solid #e3e7ec;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;font-family:Sora;font-size:17px;color:#1f3a59">Borrar Excel de tiendas</h3><button id="delExX" style="border:0;background:#eef0f3;width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer">✕</button></div>'+
+  '<div style="padding:16px 20px;border-bottom:1px solid #e3e7ec;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;font-family:Sora;font-size:17px;color:#1f3a59">Borrar Excel · '+lbl+'</h3><button id="delExX" style="border:0;background:#eef0f3;width:32px;height:32px;border-radius:9px;font-size:18px;cursor:pointer">✕</button></div>'+
   '<div style="padding:16px 20px">'+
-   '<div style="font-size:13px;color:#5a6672;line-height:1.6;margin-bottom:8px">Marca el o los meses (Excel) que quieres borrar. Se borrarán de esta plataforma y de la nube (Firebase). MacOnline y Vertical comparten el mismo Excel, así que se afectan ambos módulos.</div>'+
+   '<div style="font-size:13px;color:#5a6672;line-height:1.6;margin-bottom:8px">Vas a borrar datos de <b>'+lbl+'</b> únicamente (no afecta a la otra unidad). Marca el o los meses que quieres borrar, o usa <b>Marcar todo</b> para borrar todo. Se borrará de esta plataforma y de la nube (Firebase).</div>'+
+   '<label style="display:flex;gap:10px;align-items:center;padding:8px 11px;border:1px dashed #cfd6de;border-radius:9px;margin:6px 0;cursor:pointer;background:#f7f9fb"><input type="checkbox" id="delExAll" style="width:17px;height:17px"><span style="flex:1;font-size:13px;font-weight:700;color:#28364a">Marcar todo (borrar todos los meses de '+lbl+')</span></label>'+
    rowsHtml+
-   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="delExPass" type="password" placeholder="Escribe 1234" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
+   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="delExPass" type="text" maxlength="12" inputmode="numeric" placeholder="####" autocomplete="off" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
    '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button id="delExCancel" style="padding:9px 16px;border:1px solid #cfd6de;background:#fff;border-radius:9px;cursor:pointer;font-weight:600;color:#28364a">Cancelar</button><button id="delExOk" style="padding:9px 16px;border:0;background:#b4442f;color:#fff;border-radius:9px;cursor:pointer;font-weight:600">Borrar seleccionados</button></div>'+
   '</div></div>';
  document.body.appendChild(ov);
@@ -3992,19 +4090,23 @@ function modDeleteExcel(scope){
  ov.addEventListener('click',function(e){if(e.target===ov)close();});
  document.getElementById('delExX').addEventListener('click',close);
  document.getElementById('delExCancel').addEventListener('click',close);
+ var delExReal='';
+ var passInp=document.getElementById('delExPass');
+ if(passInp){passInp.addEventListener('input',function(){var v=passInp.value;if(v.length<delExReal.length){delExReal=delExReal.slice(0,v.length);}else{for(var i=delExReal.length;i<v.length;i++){delExReal+=v.charAt(i);}}passInp.value=new Array(delExReal.length+1).join('#');});}
+ var allChk=document.getElementById('delExAll');
+ if(allChk){allChk.addEventListener('change',function(){[].slice.call(ov.querySelectorAll('.delExChk')).forEach(function(c){c.checked=allChk.checked;});});}
  document.getElementById('delExOk').addEventListener('click',function(){
-  var pass=(document.getElementById('delExPass')||{}).value||'';
-  if(String(pass).trim()!=='1234'){alert('Contraseña incorrecta. La contraseña es 1234.');return;}
+  if(String(delExReal).trim()!=='1234'){alert('Contraseña incorrecta.');return;}
   var chks=[].slice.call(ov.querySelectorAll('.delExChk:checked'));
   if(!chks.length){alert('No marcaste ningún Excel para borrar.');return;}
   var selMk={};chks.forEach(function(c){selMk[c.getAttribute('data-mk')]=1;});
   var labels=chks.map(function(c){var mk=c.getAttribute('data-mk');return (store[mk]&&store[mk].label)||mk;});
-  if(!confirm('¿Confirmas borrar: '+labels.join(', ')+'?\n\nSe borrará de la plataforma y de la nube (Firebase). Esta acción no se puede deshacer.'))return;
-  try{MDATA.rows=MDATA.rows.filter(function(r){return !selMk[r.mk];});}catch(e){}
+  if(!confirm('¿Confirmas borrar de '+lbl+': '+labels.join(', ')+'?\n\nSe borrará de la plataforma y de la nube (Firebase). Esta acción no se puede deshacer.'))return;
+  try{MDATA.rows=MDATA.rows.filter(function(r){return !(r.grp===scope&&selMk[r.mk]);});}catch(e){}
   var done=function(){try{['mac','ver'].forEach(function(k){try{buildModFilters(k);}catch(_){}});}catch(_){}
     try{if(CUR==='mac'||CUR==='ver')renderMod(CUR);}catch(_){}
     close();
-    alert('Listo. Se borró: '+labels.join(', ')+' de la plataforma y de la nube.');};
+    alert('Listo. Se borró de '+lbl+': '+labels.join(', ')+' de la plataforma y de la nube.');};
   try{modSaveLocal();}catch(e){}
   try{
    if(MDATA.rows.length){modFbPush();done();}
