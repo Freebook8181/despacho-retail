@@ -124,19 +124,25 @@ h2.sec::before{content:'';width:4px;height:15px;background:var(--teal);border-ra
 .explain-btn:hover{background:var(--steel);color:#fff}
 .det-chart{background:#1b4b7a;border:1px solid #1b4b7a;color:#fff;border-radius:7px;padding:5px 11px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin-right:7px}
 .det-chart:hover{background:#0f2744;border-color:#0f2744}
-.detbox{width:min(1000px,96vw)!important;max-height:94vh;overflow:auto;text-align:left}
-.detbox .dethd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.detbox .dethd h3{flex:1;margin:0}
-.detbox .dethd .x{background:#eef2f7;border:1px solid var(--line);border-radius:8px;width:30px;height:30px;font-size:15px;color:var(--navy)}
-table.dett{width:100%;border-collapse:collapse;margin-top:14px;font-size:12.5px}
-table.dett th{background:#0f2744;color:#fff;padding:7px 10px;text-align:left}
-table.dett td{border-bottom:1px solid var(--line);padding:6px 10px}
+.detbox{width:min(1060px,96vw)!important;max-height:94vh;overflow:auto;text-align:left;padding:24px 28px 26px}
+.detbox .dethd{display:flex;align-items:center;gap:12px;margin:0 0 16px;padding-bottom:13px;border-bottom:2px solid #e6edf6}
+.detbox .dethd h3{flex:1;margin:0;font-size:21px;line-height:1.3;font-weight:800;color:var(--navy);letter-spacing:.2px}
+.detbox .dethd .x{background:#eef2f7;border:1px solid var(--line);border-radius:9px;width:36px;height:36px;font-size:17px;color:var(--navy);cursor:pointer;flex:0 0 auto}
+.detbox .dethd .x:hover{background:#dde7f3}
+table.dett{width:100%;border-collapse:collapse;margin-top:16px;font-size:13.5px}
+table.dett th{background:#0f2744;color:#fff;padding:9px 12px;text-align:left;font-weight:700;letter-spacing:.2px}
+table.dett td{border-bottom:1px solid var(--line);padding:8px 12px;color:#24364a}
 table.dett tbody tr:nth-child(even){background:#f6f9fd}
-table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(--navy)}
+table.dett tbody tr:hover{background:#eef4fc}
+table.dett tfoot td{font-weight:800;background:#eef2f7;border-top:2px solid var(--navy);font-size:14px}
 .explain-box{margin-top:12px;background:#f1f5fb;border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:8px;padding:11px 13px;font-size:12.5px;color:#334155;line-height:1.55;display:none}
-.det-analysis{margin-top:16px;background:#f1f5fb;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:10px;padding:14px 16px;font-size:13px;color:#2a3a4d;line-height:1.6}
-.det-analysis h4{margin:0 0 8px;font-size:13.5px;color:var(--navy);display:flex;align-items:center;gap:7px}
-.det-analysis .verdict{margin:0 0 10px;padding:10px 12px;border-radius:8px;background:#fff;border:1px solid var(--line);font-weight:600}
+.det-analysis{margin-top:18px;background:#f1f5fb;border:1px solid var(--line);border-left:5px solid var(--teal);border-radius:11px;padding:16px 18px;font-size:14px;color:#24364a;line-height:1.7}
+.det-analysis h4{margin:0 0 11px;font-size:15.5px;color:var(--navy);display:flex;align-items:center;gap:8px;font-weight:800}
+.det-analysis p{margin:0 0 9px}
+.det-analysis ul,.det-analysis ol{margin:6px 0 10px;padding-left:20px}
+.det-analysis li{margin:0 0 5px}
+.det-analysis b{color:var(--navy)}
+.det-analysis .verdict{margin:0 0 12px;padding:12px 14px;border-radius:9px;background:#fff;border:1px solid var(--line);font-weight:600;font-size:14px;line-height:1.6}
 .det-analysis .verdict.warn{border-left:4px solid #d97706}
 .det-analysis .verdict.bad{border-left:4px solid #c62828}
 .det-analysis .verdict.ok{border-left:4px solid #16a34a}
@@ -446,7 +452,14 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   /* tablas: mantienen su propio desplazamiento horizontal */
   .plan-wrap,.nube-plan{max-height:70vh}
   /* modales a pantalla casi completa */
-  .detbox{width:96vw!important;max-height:92vh;padding:14px}
+  .detbox{width:96vw!important;max-height:92vh;padding:15px 15px 16px}
+  .detbox .dethd{margin:0 0 12px;padding-bottom:10px}
+  .detbox .dethd h3{font-size:17px}
+  #detCC{height:min(46vh,380px)!important}
+  .det-analysis{font-size:13.5px;padding:13px 14px;line-height:1.6}
+  .det-analysis h4{font-size:14.5px}
+  table.dett{font-size:12.8px}
+  table.dett th,table.dett td{padding:7px 9px}
   .nubebox{width:98vw!important;height:94vh;padding:12px 13px}
   .nube-grid{flex-direction:column}
   .nube-cal{width:100%;max-height:none}
@@ -660,7 +673,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 <div class="modal" id="detModal">
   <div class="modal-box detbox">
     <div class="dethd"><h3 id="detTitle">Detalle</h3><button class="x" onclick="closeDet()">✕</button></div>
-    <div class="cc" id="detCC" style="height:min(52vh,460px)"><canvas id="detCanvas"></canvas></div>
+    <div class="cc" id="detCC" style="height:min(56vh,520px);background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px"><canvas id="detCanvas"></canvas></div>
     <div id="detAnalysis" class="det-analysis"></div>
     <div id="detTable"></div>
   </div>
