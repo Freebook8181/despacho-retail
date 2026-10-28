@@ -571,6 +571,7 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <h2 class="sec" style="cursor:pointer;user-select:none" onclick="toggleAlerts()">Alertas operativas<span id="alertsArrow" style="margin-left:auto;font-size:13px;transition:transform .2s;transform:rotate(-90deg)">▼</span></h2>
   <div class="alerts" id="alerts" style="display:none"></div>
   <div id="chartNotice" style="display:none"></div>
+  <div id="nubeChartBanner" style="display:none"></div>
   <p class="narr">Gráficos construidos con <b>TODA</b> la planilla (todas las PO, sin excepciones). Los valores se muestran con el monto <b>real</b> de la planilla en <b>USD</b>, con separador de miles por coma (ej. 19,790).</p>
   <div id="execSummary" class="exec-wrap"></div>
   <div class="grid g2">
@@ -938,6 +939,7 @@ function startApp(u){
 const TITLES={planilla:'Planilla',graficos:'Gráficos & KPIs',reporte:'Reporte',sugerencias:'Sugerencias IA',actividad:'Actividad'};
 function go(tab){
   if((tab==='sugerencias'||tab==='actividad') && CURRENT.email!==IA_USER) return;
+  if(tab!=='graficos' && NUBE_PREVROWS!==null){ROWS=NUBE_PREVROWS;NUBE_PREVROWS=null;const _b=$('nubeChartBanner');if(_b){_b.style.display='none';_b.innerHTML='';}}
   document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('on'));
   $('tab-'+tab).classList.add('on');
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
@@ -1666,6 +1668,16 @@ let detChart=null;
 /* Construye una configuración de Chart.js NUEVA y limpia para la ventana de detalle,
    a partir SOLO de los datos de DET[id] (labels/vals/series/fmt/type). Nunca reutiliza la
    config del gráfico vivo (que Chart.js muta internamente y dejaba el detalle en blanco). */
+/* Clona en profundidad una config de Chart.js CONSERVANDO las funciones
+   (callbacks de ejes y tooltips) por referencia. Así el gráfico del detalle queda
+   IGUAL al de la página: mismos colores, mismo diseño y mismos valores. */
+function cloneCfg(o){
+  if(o===null||typeof o!=='object')return o; // funciones y primitivos: por referencia/valor
+  if(o instanceof Date)return new Date(o);
+  if(Array.isArray(o))return o.map(cloneCfg);
+  const r={};for(const k in o){if(Object.prototype.hasOwnProperty.call(o,k))r[k]=cloneCfg(o[k]);}
+  return r;
+}
 function buildDetCfg(dd){
   if(!dd)return null;
   const NAVY='#1b4b7a', AMBER='#d97706';
@@ -1742,9 +1754,20 @@ function detalle(id){
   const drawDet=()=>{
     const cv=$('detCanvas'); if(!cv) return;
     if(detChart){detChart.destroy();detChart=null;}
-    const cfg=buildDetCfg(dd);
+    // 1) Preferir el MISMO gráfico que está en la página (mismos colores, diseño y
+    //    valores): se clona su configuración viva CFG[id].
+    // 2) Si no existe, se reconstruye desde los datos del detalle (buildDetCfg).
+    let cfg=cloneCfg(CFG[id])||buildDetCfg(dd);
     if(!cfg) return;
-    try{ detChart=new Chart(cv,cfg); }catch(e){ try{console.error('detalle chart',e);}catch(_){ } }
+    // Ajustes solo de TAMAÑO para que llene la ventana grande (no cambian colores ni diseño).
+    cfg.options=cfg.options||{};
+    cfg.options.maintainAspectRatio=false;
+    cfg.options.responsive=true;
+    cfg.options.animation=false;
+    try{ detChart=new Chart(cv,cfg); }catch(e){ try{console.error('detalle chart',e);}catch(_){ }
+      // Respaldo final: si el clon fallara, dibujar con la versión reconstruida.
+      try{ const cfg2=buildDetCfg(dd); if(cfg2){cfg2.options=cfg2.options||{};cfg2.options.maintainAspectRatio=false;cfg2.options.responsive=true;cfg2.options.animation=false;detChart=new Chart(cv,cfg2);} }catch(_2){}
+    }
     setTimeout(()=>{if(detChart){try{detChart.resize();detChart.update('none');}catch(e){}}},90);
   };
   requestAnimationFrame(()=>requestAnimationFrame(drawDet));
@@ -1827,6 +1850,28 @@ function selDay(dk){
   $('nubeView').innerHTML='';
   NUBE_VIEWID=null;
 }
+/* ===== Graficar una planilla guardada de la nube (cada planilla individual) ===== */
+/* Respalda la planilla de trabajo actual, carga las filas de ESA planilla y muestra sus gráficos sin perder el trabajo en curso */
+let NUBE_PREVROWS=null;
+function graficarSnap(dk,id){
+  const sn=findSnap(dk,id);if(!sn){alert('No se encontró la planilla.');return;}
+  if(NUBE_PREVROWS===null)NUBE_PREVROWS=ROWS; // respaldar la planilla de trabajo actual una sola vez
+  ROWS=(Array.isArray(sn.rows)?sn.rows:[]).map(r=>Object.assign(rowObj(),r));
+  const hora=new Date(sn.ts).toLocaleString('es-CL');
+  closeNube();go('graficos');
+  const b=$('nubeChartBanner');
+  if(b){
+    b.style.cssText='display:block;margin:2px 0 12px;padding:9px 13px;border-radius:9px;background:#f3e5f5;border:1px solid #ce93d8;color:#6a1b9a;font-size:13px;font-weight:600;line-height:1.4;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+    b.innerHTML='<span style="flex:1">📈 Viendo los gráficos de la planilla guardada del <b>'+esc(hora)+'</b> ('+ROWS.length+' registro(s)).</span>'+
+      '<button class="btn" style="background:var(--navy);color:#fff;padding:6px 12px" onclick="volverMiPlanilla()">↩ Volver a mi planilla</button>';
+  }
+  logAct('navegar','Graficó una planilla guardada de la nube ('+hora+')');
+}
+function volverMiPlanilla(){
+  if(NUBE_PREVROWS!==null){ROWS=NUBE_PREVROWS;NUBE_PREVROWS=null;}
+  const b=$('nubeChartBanner');if(b){b.style.display='none';b.innerHTML='';}
+  renderPlanilla();renderKpis();renderAlerts();drawCharts();
+}
 function findSnap(dk,id){return (NUBE_HIST[dk]||[]).find(x=>x.id===id);}
 let NUBE_VIEWID=null; // planilla actualmente mostrada en la nube (para alternar mostrar/ocultar)
 function verSnap(dk,id){
@@ -1843,6 +1888,7 @@ function verSnap(dk,id){
   $('nubeView').innerHTML='<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px;flex-wrap:wrap">'+
     '<h3 style="color:var(--navy);font-size:14px;margin:0;flex:1">📄 Planilla del '+hora+' · '+rows.length+' registro(s)</h3>'+
     '<button class="btn" style="background:#1d6f42;color:#fff;padding:8px 14px" onclick="exportarSnap(\''+dk+'\',\''+id+'\')">📊 Exportar Excel</button>'+
+    '<button class="btn" style="background:#6a1b9a;color:#fff;padding:8px 14px" onclick="graficarSnap(\''+dk+'\',\''+id+'\')">📈 Graficar</button>'+
     '<button class="btn" style="background:var(--navy);color:#fff;padding:8px 14px" onclick="pedirEditar(\''+dk+'\',\''+id+'\')">✏ Editar</button></div>'+
     '<div class="nube-plan"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
 }
