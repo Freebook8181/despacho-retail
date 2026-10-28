@@ -2659,6 +2659,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDel();closeDet
   }
   var deferred=null;
   function esIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent||'');}
+  // Solo celulares/tablets: el botón de instalar NO debe salir en computador/escritorio.
+  function esMovil(){
+    var ua=navigator.userAgent||navigator.vendor||'';
+    if(/android|iphone|ipad|ipod|iemobile|blackberry|opera mini|mobile/i.test(ua))return true;
+    if(/Macintosh/.test(ua) && navigator.maxTouchPoints>1)return true; // iPadOS se identifica como Mac
+    return false;
+  }
   function yaInstalada(){return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;}
   function crearBoton(txt,onClick){
     if(document.getElementById('pwaInstallBtn'))return document.getElementById('pwaInstallBtn');
@@ -2674,7 +2681,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDel();closeDet
   // Android / escritorio (Chrome, Edge): prompt nativo de instalación.
   window.addEventListener('beforeinstallprompt',function(e){
     e.preventDefault();deferred=e;
-    if(yaInstalada())return;
+    if(yaInstalada()||!esMovil())return;
     crearBoton('⬇️ Instalar app',function(){
       if(!deferred)return;
       deferred.prompt();
