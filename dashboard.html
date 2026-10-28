@@ -1740,7 +1740,13 @@ function devoWire(){
 }
 /* --- normalizar texto para comparar nombres --- */
 function devoNorm(s){return (s==null?'':String(s)).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');}
-function devoMatchItem(name){const n=devoNorm(name);if(!n)return null;let r=null;DEVO_ITEMS.forEach(it=>{if(devoNorm(it.t)===n)r=it;});return r;}
+function devoMatchItem(name){
+ const n=devoNorm(name);if(!n)return null;
+ for(var i=0;i<DEVO_ITEMS.length;i++){if(devoNorm(DEVO_ITEMS[i].t)===n)return DEVO_ITEMS[i];}
+ var AL={cd:['CD'],gmac:['GARANTIAMAC','GARANTIA','GMAC'],ecom:['ECOMMERCE','ECOM'],back:['BACKONLINE','BACK'],stec:['SERVICIOTECNICO','SERVICIO','STEC','SSTT'],varios:['VARIOS']};
+ for(var k=0;k<DEVO_ITEMS.length;k++){var it=DEVO_ITEMS[k];var keys=AL[it.id]||[devoNorm(it.t)];for(var j=0;j<keys.length;j++){var kk=keys[j];if(kk&&(n.indexOf(kk)>=0||kk.indexOf(n)>=0))return it;}}
+ return null;
+}
 function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,DOC:1,VALOR:2,VALORES:2,MONTO:2,MONTOS:2,ORIGEN:3,UNIDADNEGOCIO:3,UNIDADDENEGOCIO:3,DESTINATARIOS:4,DESTINATARIO:4,TIENDA:4,TIENDAS:4,COMUNA:5,COMUNAS:5,BULTOS:6,BULTO:6,CONTENIDO:7,OBSERVACIONES:8,OBSERVACION:8};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null&&map[al[k]]==null)map[al[k]]=i;});return map;}
 function devoHeaderRowIdx(aoa){const KEYS=['FECHA','DOCUMENTOS','DOCUMENTO','DOC','ORIGEN','DESTINATARIOS','DESTINATARIO','BULTOS','CONTENIDO','OBSERVACIONES','N'];for(let i=0;i<Math.min(aoa.length,12);i++){const row=aoa[i]||[];let hits=0;row.forEach(h=>{if(KEYS.indexOf(devoNorm(h))>=0)hits++;});if(hits>=3)return i;}return 0;}
 function devoRowHasContent(cells){return !!(String(cells[1]||'').trim()||String(cells[0]||'').trim()||String(cells[DEVO_VALCOL]||'').trim()||String(cells[7]||'').trim()||String(cells[DEVO_BULCOL]||'').trim());}
@@ -1764,9 +1770,12 @@ function devoImportExcel(ev){
   try{
    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
    devoEnsure();let added=0;const byItem={};const ampmByItem={};
+   const foundSheets=[];const matchedSheets=[];
    wb.SheetNames.forEach(sn=>{
     const ws=wb.Sheets[sn];if(!ws)return;
+    foundSheets.push(sn);
     const item=devoMatchItem(sn);if(!item)return;
+    matchedSheets.push(sn+' \u2192 '+item.t);
     const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
     if(!aoa||!aoa.length)return;
     const hr=devoHeaderRowIdx(aoa);const header=aoa[hr]||[];const cmap=devoColIndex(header);
@@ -1792,6 +1801,10 @@ function devoImportExcel(ev){
    });
    Object.keys(ampmByItem).forEach(function(id){if(DEVO_DATA[id])DEVO_DATA[id].ampm=ampmByItem[id];});
    devoEnsure();devoRender();devoFbSave();
+   if(added===0){
+    alert('No se agreg\u00f3 ninguna fila.\n\nHojas encontradas en el Excel:\n\u00b7 '+(foundSheets.join('\n\u00b7 ')||'(ninguna)')+'\n\nPlanillas reconocidas:\n\u00b7 '+(matchedSheets.join('\n\u00b7 ')||'(ninguna)')+'\n\nRevisa que el nombre de la hoja sea una de: CD, GARANTIA MAC, ECOMMERCE, BACKONLINE, SERVICIO TECNICO, VARIOS, y que la tabla tenga el encabezado Fecha / Documentos / Valor.');
+    ev.target.value='';return;
+   }
    var turnos=Object.keys(ampmByItem).map(function(id){var it=DEVO_ITEMS.find(function(x){return x.id===id;});return (it?it.t:id)+': '+ampmByItem[id];});
    alert('Importaci\u00f3n lista: se agregaron '+added+' registro(s)'+(turnos.length?('\n\nTurno detectado en la planilla:\n\u00b7 '+turnos.join('\n\u00b7 ')):'')+'.');
   }catch(err){console.error('devoImport',err);alert('No se pudo leer el Excel: '+err.message);}
