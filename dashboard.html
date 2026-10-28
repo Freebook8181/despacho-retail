@@ -1723,37 +1723,45 @@ function devoWire(){
 }
 /* --- normalizar texto para comparar nombres --- */
 function devoNorm(s){return (s==null?'':String(s)).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z0-9]/g,'');}
-function devoMatchItem(name){const n=devoNorm(name);let best=null;DEVO_ITEMS.forEach(it=>{const k=devoNorm(it.t);if(n===k||n.indexOf(k)>=0||k.indexOf(n)>=0&&n.length>=2)best=best||it;});if(best)return best;return null;}
-function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,VALOR:2,VALORES:2,MONTO:2,MONTOS:2,ORIGEN:3,UNIDADNEGOCIO:3,UNIDADDENEGOCIO:3,DESTINATARIOS:4,DESTINATARIO:4,TIENDA:4,TIENDAS:4,COMUNA:5,COMUNAS:5,BULTOS:6,BULTO:6,CONTENIDO:7,OBSERVACIONES:8,OBSERVACION:8};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null)map[al[k]]=i;});return map;}
-/* --- IMPORTAR: lee cualquier Excel y coloca filas en la planilla que corresponda --- */
+function devoMatchItem(name){const n=devoNorm(name);if(!n)return null;let r=null;DEVO_ITEMS.forEach(it=>{if(devoNorm(it.t)===n)r=it;});return r;}
+function devoColIndex(header){const map={};const al={FECHA:0,DOCUMENTOS:1,DOCUMENTO:1,DOC:1,VALOR:2,VALORES:2,MONTO:2,MONTOS:2,ORIGEN:3,UNIDADNEGOCIO:3,UNIDADDENEGOCIO:3,DESTINATARIOS:4,DESTINATARIO:4,TIENDA:4,TIENDAS:4,COMUNA:5,COMUNAS:5,BULTOS:6,BULTO:6,CONTENIDO:7,OBSERVACIONES:8,OBSERVACION:8};(header||[]).forEach((h,i)=>{const k=devoNorm(h);if(al[k]!=null&&map[al[k]]==null)map[al[k]]=i;});return map;}
+function devoHeaderRowIdx(aoa){const KEYS=['FECHA','DOCUMENTOS','DOCUMENTO','DOC','ORIGEN','DESTINATARIOS','DESTINATARIO','BULTOS','CONTENIDO','OBSERVACIONES','N'];for(let i=0;i<Math.min(aoa.length,12);i++){const row=aoa[i]||[];let hits=0;row.forEach(h=>{if(KEYS.indexOf(devoNorm(h))>=0)hits++;});if(hits>=3)return i;}return 0;}
+function devoRowHasContent(cells){return !!(String(cells[1]||'').trim()||String(cells[0]||'').trim()||String(cells[DEVO_VALCOL]||'').trim()||String(cells[7]||'').trim()||String(cells[DEVO_BULCOL]||'').trim());}
+var DEVO_STOPWORDS=['ENTREGA','RECEPCIONA','RECIBE','NOMBRE','FIRMA','HORARIO','AM','PM','TOTAL','BITACORA'];
+function devoIsFooterRow(cells){for(var i=0;i<cells.length;i++){if(DEVO_STOPWORDS.indexOf(devoNorm(cells[i]))>=0)return true;}return false;}
+function devoAmPmFromName(name){const base=String(name||'').replace(/\.[^.]+$/,'').toUpperCase();const mm=base.match(/(AM|PM)(?![A-Z])/g);return mm?mm[mm.length-1]:'';}
+/* --- IMPORTAR: lee el Excel (una hoja por planilla) y lo muestra en la planilla que corresponda --- */
 function devoImportExcel(ev){
  const f=ev.target.files&&ev.target.files[0];if(!f){return;}
+ const ampm=devoAmPmFromName(f.name);
  const rd=new FileReader();
  rd.onload=function(e){
   try{
    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-   devoEnsure();let added=0;
+   devoEnsure();let added=0;const byItem={};
    wb.SheetNames.forEach(sn=>{
     const ws=wb.Sheets[sn];if(!ws)return;
+    const item=devoMatchItem(sn);if(!item)return;
     const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
     if(!aoa||!aoa.length)return;
-    const header=aoa[0]||[];const cmap=devoColIndex(header);
-    const typeCol=(()=>{let idx=-1;header.forEach((h,i)=>{const k=devoNorm(h);if(k==='TIPO'||k==='PLANILLA'||k==='CATEGORIA')idx=i;});return idx;})();
-    let shItem=devoMatchItem(sn);
-    for(let r=1;r<aoa.length;r++){
+    const hr=devoHeaderRowIdx(aoa);const header=aoa[hr]||[];const cmap=devoColIndex(header);
+    for(let r=hr+1;r<aoa.length;r++){
      const row=aoa[r]||[];
      if(row.every(v=>v==null||String(v).trim()===''))continue;
-     let target=shItem;
-     if(typeCol>=0){const tm=devoMatchItem(row[typeCol]);if(tm)target=tm;}
-     if(!target)target=DEVO_ITEMS[DEVO_ITEMS.length-1];
      const cells=DEVO_COLS.map((_,c)=>{const src=cmap[c];let v=(src!=null)?row[src]:'';if(v==null)v='';return String(v).trim();});
+     if(!devoRowHasContent(cells)||devoIsFooterRow(cells))continue;
      if(cells[DEVO_VALCOL]){const fv=devoFmtVal(cells[DEVO_VALCOL]);if(fv)cells[DEVO_VALCOL]=fv;}
      if(!cells[DEVO_COMCOL]&&cells[DEVO_DESTCOL]){const cm=DEVO_COMUNA[devoNorm(cells[DEVO_DESTCOL])];if(cm)cells[DEVO_COMCOL]=cm;}
-     DEVO_DATA[target.id].rows.push(cells);added++;
+     if(!byItem[item.id])byItem[item.id]=[];byItem[item.id].push(cells);added++;
     }
    });
-   devoRender();devoFbSave();
-   alert('Importaci\u00f3n lista: se agregaron '+added+' registro(s) a las planillas.');
+   Object.keys(byItem).forEach(id=>{
+    const keep=(DEVO_DATA[id].rows||[]).filter(r=>r.some(v=>v!=null&&String(v).trim()!==''));
+    DEVO_DATA[id].rows=keep.concat(byItem[id]);
+   });
+   if(ampm){DEVO_ITEMS.forEach(it=>{DEVO_DATA[it.id].ampm=ampm;});}
+   devoEnsure();devoRender();devoFbSave();
+   alert('Importaci\u00f3n lista: se agregaron '+added+' registro(s)'+(ampm?(' \u00b7 turno '+ampm+' seleccionado'):'')+'.');
   }catch(err){console.error('devoImport',err);alert('No se pudo leer el Excel: '+err.message);}
   ev.target.value='';
  };
