@@ -1747,39 +1747,54 @@ function devoRowHasContent(cells){return !!(String(cells[1]||'').trim()||String(
 var DEVO_STOPWORDS=['ENTREGA','RECEPCIONA','RECIBE','NOMBRE','FIRMA','HORARIO','AM','PM','TOTAL','BITACORA'];
 function devoIsFooterRow(cells){for(var i=0;i<cells.length;i++){if(DEVO_STOPWORDS.indexOf(devoNorm(cells[i]))>=0)return true;}return false;}
 function devoAmPmFromName(name){const base=String(name||'').replace(/\.[^.]+$/,'').toUpperCase();const mm=base.match(/(AM|PM)(?![A-Z])/g);return mm?mm[mm.length-1]:'';}
+/* Detecta el turno AM/PM leyendo el CONTENIDO de la planilla (no el nombre del archivo).
+   Viene junto a "Nombre" (VARIOS/CD/ECOMMERCE/SERVICIO TECNICO), al lado de "Entrega" (GARANTIA MAC)
+   o junto a "Gonzalo Reyes" (BACKONLINE). Se busca un AM/PM suelto en cualquier celda. */
+function devoDetectAmPm(aoa){
+ if(!aoa||!aoa.length)return '';
+ for(var r=0;r<aoa.length;r++){var row=aoa[r]||[];for(var c=0;c<row.length;c++){var v=(row[c]==null?'':String(row[c])).trim().toUpperCase();if(v==='AM')return 'AM';if(v==='PM')return 'PM';}}
+ for(var r2=0;r2<aoa.length;r2++){var row2=aoa[r2]||[];for(var c2=0;c2<row2.length;c2++){var s=(row2[c2]==null?'':String(row2[c2])).toUpperCase();if(/\d\s*[:.]\s*\d/.test(s))continue;var m=s.match(/(^|[^A-Z0-9])(AM|PM)([^A-Z0-9]|$)/);if(m)return m[2];}}
+ return '';
+}
 /* --- IMPORTAR: lee el Excel (una hoja por planilla) y lo muestra en la planilla que corresponda --- */
 function devoImportExcel(ev){
  const f=ev.target.files&&ev.target.files[0];if(!f){return;}
- const ampm=devoAmPmFromName(f.name);
  const rd=new FileReader();
  rd.onload=function(e){
   try{
    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-   devoEnsure();let added=0;const byItem={};
+   devoEnsure();let added=0;const byItem={};const ampmByItem={};
    wb.SheetNames.forEach(sn=>{
     const ws=wb.Sheets[sn];if(!ws)return;
     const item=devoMatchItem(sn);if(!item)return;
     const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
     if(!aoa||!aoa.length)return;
     const hr=devoHeaderRowIdx(aoa);const header=aoa[hr]||[];const cmap=devoColIndex(header);
+    const shAmPm=devoDetectAmPm(aoa);if(shAmPm)ampmByItem[item.id]=shAmPm;
+    const sheetRows=[];let sheetDate='';
     for(let r=hr+1;r<aoa.length;r++){
      const row=aoa[r]||[];
      if(row.every(v=>v==null||String(v).trim()===''))continue;
      const cells=DEVO_COLS.map((_,c)=>{const src=cmap[c];let v=(src!=null)?row[src]:'';if(v==null)v='';return String(v).trim();});
      if(!devoRowHasContent(cells)||devoIsFooterRow(cells))continue;
-     if(cells[0])cells[0]=devoFmtFecha(cells[0]);
+     if(cells[0]){cells[0]=devoFmtFecha(cells[0]);if(!sheetDate&&cells[0])sheetDate=cells[0];}
      if(cells[DEVO_VALCOL]){const fv=devoFmtVal(cells[DEVO_VALCOL]);if(fv)cells[DEVO_VALCOL]=fv;}
      if(!cells[DEVO_COMCOL]&&cells[DEVO_DESTCOL]){const cm=DEVO_COMUNA[devoNorm(cells[DEVO_DESTCOL])];if(cm)cells[DEVO_COMCOL]=cm;}
-     if(!byItem[item.id])byItem[item.id]=[];byItem[item.id].push(cells);added++;
+     sheetRows.push(cells);
     }
+    /* La fecha de la planilla (ej. 30/09/2026) se copia a TODAS las filas con datos que la tengan vacia. */
+    if(sheetDate){sheetRows.forEach(c=>{if(!c[0]||!String(c[0]).trim())c[0]=sheetDate;});}
+    if(sheetRows.length){if(!byItem[item.id])byItem[item.id]=[];byItem[item.id]=byItem[item.id].concat(sheetRows);added+=sheetRows.length;}
    });
    Object.keys(byItem).forEach(id=>{
     const keep=(DEVO_DATA[id].rows||[]).filter(r=>r.some(v=>v!=null&&String(v).trim()!==''));
     DEVO_DATA[id].rows=keep.concat(byItem[id]);
    });
    if(ampm){DEVO_ITEMS.forEach(it=>{DEVO_DATA[it.id].ampm=ampm;});}
+   Object.keys(ampmByItem).forEach(function(id){if(DEVO_DATA[id])DEVO_DATA[id].ampm=ampmByItem[id];});
    devoEnsure();devoRender();devoFbSave();
-   alert('Importaci\u00f3n lista: se agregaron '+added+' registro(s)'+(ampm?(' \u00b7 turno '+ampm+' seleccionado'):'')+'.');
+   var turnos=Object.keys(ampmByItem).map(function(id){var it=DEVO_ITEMS.find(function(x){return x.id===id;});return (it?it.t:id)+': '+ampmByItem[id];});
+   alert('Importaci\u00f3n lista: se agregaron '+added+' registro(s)'+(turnos.length?('\n\nTurno detectado en la planilla:\n\u00b7 '+turnos.join('\n\u00b7 ')):'')+'.');
   }catch(err){console.error('devoImport',err);alert('No se pudo leer el Excel: '+err.message);}
   ev.target.value='';
  };
