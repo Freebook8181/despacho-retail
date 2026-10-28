@@ -408,6 +408,55 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
 .empty h3{color:var(--navy);font-size:17px;margin-bottom:8px}
 /* responsive */
 @media(max-width:860px){.side{width:62px}.side .logo .t,.side .logo .d,.nav button span.lbl,.side .foot{display:none}.nav button{justify-content:center}.main{margin-left:62px}}
+/* ===== MODO CELULAR (teléfonos ≤640px): sidebar pasa arriba, todo en una columna ===== */
+@media(max-width:640px){
+  .layout{flex-direction:column}
+  /* barra lateral -> barra superior horizontal con desplazamiento */
+  .side{position:sticky;top:0;left:0;right:0;width:100%;height:auto;flex-direction:row;align-items:center;z-index:40;overflow-x:auto;overflow-y:hidden;border-bottom:1px solid rgba(255,255,255,.12)}
+  .side .logo{padding:9px 12px;border-bottom:none;border-right:1px solid rgba(255,255,255,.1);flex:0 0 auto}
+  .side .logo .t{display:block;font-size:16px}
+  .side .logo .d{display:none}
+  .nav{display:flex;flex-direction:row;flex-wrap:nowrap;gap:4px;padding:6px 8px;overflow-x:auto;overflow-y:hidden;flex:1}
+  .nav button{width:auto;flex:0 0 auto;margin-bottom:0;padding:9px 11px;justify-content:center;white-space:nowrap}
+  .nav button span.lbl{display:none}
+  .nav button .ic{font-size:17px}
+  .side .foot{display:none}
+  /* contenido a ancho completo */
+  .main{margin-left:0}
+  .topbar{padding:10px 13px;gap:10px;flex-wrap:wrap}
+  .topbar .pt{font-size:15px}
+  .topbar .who b{font-size:12px}.topbar .who span{font-size:10.5px}
+  .topbar .wav{width:32px;height:32px;font-size:12px}
+  .content{padding:14px 13px}
+  /* tarjetas y gráficos: una sola columna */
+  .kpis{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi{padding:13px 14px}
+  .kpi .vl{font-size:20px}
+  .grid,.grid.g2{grid-template-columns:1fr!important}
+  .cc{height:240px}
+  .cc.big{height:300px}
+  .panel{padding:13px 14px}
+  .panel .ph h3{font-size:13px}
+  /* barra de botones: compacta y que envuelva */
+  .toolbar{gap:7px;margin-bottom:12px}
+  .toolbar .st{margin-left:0;width:100%}
+  .ib{min-width:0;padding:7px 8px 6px}
+  .ib .ibl{font-size:9.5px}
+  .tbtn{padding:8px 11px;font-size:12px}
+  /* tablas: mantienen su propio desplazamiento horizontal */
+  .plan-wrap,.nube-plan{max-height:70vh}
+  /* modales a pantalla casi completa */
+  .detbox{width:96vw!important;max-height:92vh;padding:14px}
+  .nubebox{width:98vw!important;height:94vh;padding:12px 13px}
+  .nube-grid{flex-direction:column}
+  .nube-cal{width:100%;max-height:none}
+  .nube-main{border-left:none;border-top:1px solid var(--line);padding-left:0;padding-top:12px}
+  .login-box{padding:26px 22px}
+}
+@media(max-width:400px){
+  .kpis{grid-template-columns:1fr}
+  .side .logo .t{font-size:14px}
+}
 /* print */
 @media print{
   .side,.topbar,.toolbar,.nav,.explain-btn,.det-chart{display:none!important}
