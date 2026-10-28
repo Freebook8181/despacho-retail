@@ -1790,7 +1790,6 @@ function devoImportExcel(ev){
     const keep=(DEVO_DATA[id].rows||[]).filter(r=>r.some(v=>v!=null&&String(v).trim()!==''));
     DEVO_DATA[id].rows=keep.concat(byItem[id]);
    });
-   if(ampm){DEVO_ITEMS.forEach(it=>{DEVO_DATA[it.id].ampm=ampm;});}
    Object.keys(ampmByItem).forEach(function(id){if(DEVO_DATA[id])DEVO_DATA[id].ampm=ampmByItem[id];});
    devoEnsure();devoRender();devoFbSave();
    var turnos=Object.keys(ampmByItem).map(function(id){var it=DEVO_ITEMS.find(function(x){return x.id===id;});return (it?it.t:id)+': '+ampmByItem[id];});
