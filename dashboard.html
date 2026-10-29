@@ -1865,7 +1865,6 @@ function devoGuardar(){devoEnsure();
 function devoLimpiar(){
  if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
  devoEnsure();
- if(!confirm('\u00bfLimpiar las tablas de Devoluciones en pantalla para escribir de nuevo?\n\nEsto NO borra nada de la nube: solo vac\u00eda las planillas aqu\u00ed. Lo guardado en la nube sigue intacto (y volver\u00e1 si recargas).'))return;
  DEVO_ITEMS.forEach(function(it){DEVO_DATA[it.id]=devoEmptyItem();});
  devoEnsure();devoRender();
 }
