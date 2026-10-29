@@ -1643,7 +1643,7 @@ function devoNum(s){s=String(s==null?'':s).replace(/\$/g,'').trim();if(s==='')re
 function devoFmtVal(v){var n=(typeof v==='number')?v:devoNum(v);if(n==null)return '';return '$'+n.toLocaleString('es-CL',{maximumFractionDigits:2});}
 function devoItemTotal(id){var d=DEVO_DATA[id];if(!d)return 0;var t=0;d.rows.forEach(r=>{var n=devoNum(r[DEVO_VALCOL]);if(n!=null)t+=n;});return t;}
 function devoUpdFoot(it){var ft=document.getElementById('devof_'+it.id);if(!ft)return;var fh='<tr class="devo-totrow"><td class="devo-num"></td>';for(var vi=0;vi<DEVO_VIEW_COLS.length;vi++){var c=DEVO_VIEW_COLS[vi].i;if(c===DEVO_VALCOL){fh+='<td class="devo-totval" id="devoTot_'+it.id+'">'+devoEsc(devoFmtVal(devoItemTotal(it.id))||'$0')+'</td>';}else if(vi===0){fh+='<td class="devo-totlbl"><b>TOTAL VALOR</b></td>';}else{fh+='<td></td>';}}fh+='<td></td></tr>';ft.innerHTML=fh;}
-function devoAskPass(onok){var ov=document.createElement('div');ov.className='devo-passov';ov.innerHTML='<div class="devo-passbox"><h3>Clave para borrar</h3><p>Ingresa la clave para borrar los registros seleccionados.</p><input type="password" class="devo-passinp" placeholder="####" autocomplete="off" inputmode="numeric"><div class="devo-passerr">Clave incorrecta.</div><div class="devo-passbtns"><button class="devo-btn devo-passcancel">Cancelar</button><button class="devo-btn devo-del devo-passok">Borrar</button></div></div>';document.body.appendChild(ov);var inp=ov.querySelector('.devo-passinp'),err=ov.querySelector('.devo-passerr');setTimeout(function(){try{inp.focus();}catch(e){}},50);function close(){try{document.body.removeChild(ov);}catch(e){}}function tryok(){if(inp.value==='1234'){close();onok();}else{err.style.display='block';inp.value='';inp.focus();}}ov.querySelector('.devo-passcancel').onclick=close;ov.querySelector('.devo-passok').onclick=tryok;inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tryok();}else if(e.key==='Escape'){close();}});ov.addEventListener('click',function(e){if(e.target===ov)close();});}
+function devoAskPass(onok){var ov=document.createElement('div');ov.className='devo-passov';ov.innerHTML='<div class="devo-passbox"><h3>Clave para borrar</h3><p>Ingresa la clave para borrar los registros seleccionados.</p><input type="password" class="devo-passinp" placeholder="••••" autocomplete="off" inputmode="numeric"><div class="devo-passerr">Clave incorrecta.</div><div class="devo-passbtns"><button class="devo-btn devo-passcancel">Cancelar</button><button class="devo-btn devo-del devo-passok">Borrar</button></div></div>';document.body.appendChild(ov);var inp=ov.querySelector('.devo-passinp'),err=ov.querySelector('.devo-passerr');setTimeout(function(){try{inp.focus();}catch(e){}},50);function close(){try{document.body.removeChild(ov);}catch(e){}}function tryok(){if(inp.value==='1234'){close();onok();}else{err.style.display='block';inp.value='';inp.focus();}}ov.querySelector('.devo-passcancel').onclick=close;ov.querySelector('.devo-passok').onclick=tryok;inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tryok();}else if(e.key==='Escape'){close();}});ov.addEventListener('click',function(e){if(e.target===ov)close();});}
 function devoSelAll(id){var chks=document.querySelectorAll('.devo-selchk[data-i="'+id+'"]');var allOn=chks.length>0;chks.forEach(function(c){if(!c.checked)allOn=false;});chks.forEach(function(c){c.checked=!allOn;});}
 function devoDelSelected(id){devoEnsure();var d=DEVO_DATA[id];if(!d)return;var chks=document.querySelectorAll('.devo-selchk[data-i="'+id+'"]:checked');if(!chks.length){alert('No hay filas seleccionadas. Marca las casillas de la derecha o usa "Seleccionar Todo".');return;}var idx=[];chks.forEach(function(c){idx.push(+c.dataset.r);});devoAskPass(function(){idx.sort(function(a,b){return b-a;});idx.forEach(function(r){if(d.rows[r])d.rows.splice(r,1);});while(d.rows.length<DEVO_ROWS)d.rows.push(Array(DEVO_COLS.length).fill(''));devoFbPush();var it=DEVO_ITEMS.find(function(x){return x.id===id;});if(it)devoRenderItem(it);});}
 /* --- reloj digital (funciona con o sin internet; usa la hora del equipo) --- */
@@ -2182,13 +2182,12 @@ function devoBuildModals(){
  if(document.getElementById('devoPickOv'))return;
  const chk=DEVO_ITEMS.map(it=>`<label class="devo-chkrow"><input type="checkbox" class="devo-pickchk" value="${it.id}"> <span class="devo-dot" style="background:${it.c}"></span>${it.t}</label>`).join('');
  const pick=document.createElement('div');pick.className='devo-ov';pick.id='devoPickOv';
- pick.innerHTML=`<div class="devo-dlg"><h3 id="devoPickTit">Exportar a Excel</h3><p id="devoPickSub" class="devo-dlgsub">Selecciona las planillas:</p><label class="devo-chkrow devo-chkall"><input type="checkbox" id="devoPickAll"> <b>Todas</b></label><div class="devo-chkbox">${chk}</div><div id="devoPwWrap" style="display:none;margin-top:12px"><label class="devo-pwlbl">Contrase\u00f1a</label><input type="text" id="devoPw" class="devo-pwin" autocomplete="off" placeholder="****"><div id="devoPwMsg" class="devo-pwmsg"></div></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoPickCancel">Cancelar</button><button class="devo-btn" id="devoPickGo">Aceptar</button></div></div>`;
+ pick.innerHTML=`<div class="devo-dlg"><h3 id="devoPickTit">Exportar a Excel</h3><p id="devoPickSub" class="devo-dlgsub">Selecciona las planillas:</p><label class="devo-chkrow devo-chkall"><input type="checkbox" id="devoPickAll"> <b>Todas</b></label><div class="devo-chkbox">${chk}</div><div id="devoPwWrap" style="display:none;margin-top:12px"><label class="devo-pwlbl">Contrase\u00f1a</label><input type="password" id="devoPw" class="devo-pwin" autocomplete="off" placeholder="••••"><div id="devoPwMsg" class="devo-pwmsg"></div></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoPickCancel">Cancelar</button><button class="devo-btn" id="devoPickGo">Aceptar</button></div></div>`;
  document.body.appendChild(pick);
  document.getElementById('devoPickAll').addEventListener('change',function(){const on=this.checked;document.querySelectorAll('.devo-pickchk').forEach(c=>c.checked=on);});
  document.getElementById('devoPickCancel').addEventListener('click',()=>pick.style.display='none');
  pick.addEventListener('click',e=>{if(e.target===pick)pick.style.display='none';});
  document.getElementById('devoPickGo').addEventListener('click',devoPickConfirm);
- devoMaskWire(document.getElementById('devoPw'));
  const cal=document.createElement('div');cal.className='devo-ov';cal.id='devoCalOv';
  cal.innerHTML='<div class="devo-dlg devo-caldlg"><h3>Ver registros por fecha</h3><div id="devoCalBody"></div><div class="devo-dlg-ft"><button class="devo-btn devo-ghost" id="devoCalCancel">Cerrar</button></div></div>';
  document.body.appendChild(cal);
@@ -2227,7 +2226,7 @@ function devoPickConfirm(){
  const ids=[...document.querySelectorAll('.devo-pickchk:checked')].map(c=>c.value);
  if(!ids.length){alert('Selecciona al menos una planilla.');return;}
  if(DEVO_PICKMODE==='exp'){document.getElementById('devoPickOv').style.display='none';devoExport(ids);return;}
- if(DEVO_PW!=='1234'){const m=document.getElementById('devoPwMsg');m.textContent='Contrase\u00f1a incorrecta.';return;}
+ if(((document.getElementById('devoPw')||{}).value||'')!=='1234'){const m=document.getElementById('devoPwMsg');m.textContent='Contrase\u00f1a incorrecta.';return;}
  const nom=ids.map(id=>(DEVO_ITEMS.find(x=>x.id===id)||{}).t).join(', ');
  if(!confirm('\u00bfBorrar el contenido de: '+nom+'? Esta acci\u00f3n no se puede deshacer.'))return;
  devoEnsure();ids.forEach(id=>{DEVO_DATA[id]=devoEmptyItem();});
@@ -2361,12 +2360,11 @@ function devoPptGenerate(btn){
 }
 function devoNubeAskPass(titulo,msg,cb){
  var ov=document.createElement('div');ov.className='ob-modal';
- ov.innerHTML='<div class="ob-box"><div class="ob-h">'+titulo+'</div><div class="ob-m">'+msg+'</div><input type="text" class="ob-inp" maxlength="12" placeholder="####" autocomplete="off" inputmode="numeric"><div class="ob-err" style="display:none">Contrase\u00f1a incorrecta</div><div class="ob-btns"><button class="ob-c">Cancelar</button><button class="ob-ok">Aceptar</button></div></div>';
+ ov.innerHTML='<div class="ob-box"><div class="ob-h">'+titulo+'</div><div class="ob-m">'+msg+'</div><input type="password" class="ob-inp" maxlength="12" placeholder="••••" autocomplete="off" inputmode="numeric"><div class="ob-err" style="display:none">Contrase\u00f1a incorrecta</div><div class="ob-btns"><button class="ob-c">Cancelar</button><button class="ob-ok">Aceptar</button></div></div>';
  document.body.appendChild(ov);
- var inp=ov.querySelector('.ob-inp');var real='';setTimeout(function(){inp.focus();},30);
- inp.addEventListener('input',function(){var v=inp.value;if(v.length<real.length){real=real.slice(0,v.length);}else{for(var i=real.length;i<v.length;i++){real+=v.charAt(i);}}inp.value=new Array(real.length+1).join('#');});
+ var inp=ov.querySelector('.ob-inp');setTimeout(function(){inp.focus();},30);
  function close(){if(ov.parentNode)document.body.removeChild(ov);}
- function ok(){if(real==='1234'){close();if(cb)cb();}else{ov.querySelector('.ob-err').style.display='';real='';inp.value='';inp.focus();}}
+ function ok(){if(inp.value==='1234'){close();if(cb)cb();}else{ov.querySelector('.ob-err').style.display='';inp.value='';inp.focus();}}
  ov.querySelector('.ob-c').onclick=close;
  ov.querySelector('.ob-ok').onclick=ok;
  inp.onkeydown=function(e){if(e.key==='Enter')ok();if(e.key==='Escape')close();};
@@ -2375,7 +2373,7 @@ function devoOpenNube(){
  var ov=document.getElementById('devoNubeOvr');
  if(!ov){ov=document.createElement('div');ov.id='devoNubeOvr';ov.className='ob-rep-ovr';ov.innerHTML='<div class="ob-rep-card"><div class="ob-rep-head"><div class="ob-rep-h">\u2601 Tablas de Devoluciones guardadas en la nube (Firebase)</div><button class="ob-rep-b devo-nedit">\u270e EDITAR</button><button class="ob-rep-x">\u2715</button></div><div class="ob-rep-body" id="devoNubeBody2"></div></div>';document.body.appendChild(ov);
   ov.querySelector('.ob-rep-x').onclick=function(){DEVO_NUBE_EDIT=false;ov.style.display='none';};
-  ov.querySelector('.devo-nedit').onclick=function(){if(!obIsAdmin()){alert('Solo el administrador puede eliminar tablas.');return;}devoNubeAskPass('Editar en la nube','Ingresa la contrase\u00f1a para habilitar la edici\u00f3n. La contrase\u00f1a se ocultar\u00e1 con el s\u00edmbolo #.',function(){DEVO_NUBE_EDIT=true;devoNubeRender();});};}
+  ov.querySelector('.devo-nedit').onclick=function(){if(!obIsAdmin()){alert('Solo el administrador puede eliminar tablas.');return;}devoNubeAskPass('Editar en la nube','Ingresa la contrase\u00f1a para habilitar la edici\u00f3n.',function(){DEVO_NUBE_EDIT=true;devoNubeRender();});};}
  DEVO_NUBE_EDIT=false;devoEnsureCloud(function(){devoNubeRender();});ov.style.display='block';
 }
 function devoNubeRender(){
@@ -3771,6 +3769,16 @@ var OB_REP_CSS=".rep-wrap{max-width:900px;margin:0 auto}"
 +".ob-inp{width:100%;box-sizing:border-box;font-size:20px;letter-spacing:6px;text-align:center;padding:10px;border:1.5px solid #cfd8e3;border-radius:8px;outline:none}.ob-inp:focus{border-color:#2f7d6b}"
 +".ob-err{color:#c0392b;font-size:12px;margin-top:7px;font-weight:600}.ob-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}"
 +".ob-btns button{font-size:13px;font-weight:600;padding:8px 16px;border-radius:7px;cursor:pointer;border:1px solid #cfd8e3;background:#fff;color:#4a5968}.ob-ok{background:#2f7d6b!important;border-color:#2f7d6b!important;color:#fff!important}"
++"/* ===== VENTANAS DE CONTRASENA UNIFICADAS (mismo diseno y colores) ===== */"
++".ob-modal,.devo-passov{background:rgba(15,25,40,.6)!important}"
++".ob-box,.devo-passbox{border-radius:16px!important;box-shadow:0 30px 80px rgba(10,20,35,.45)!important;font-family:'IBM Plex Sans',Arial,sans-serif!important}"
++".ob-h,.devo-passbox h3{color:#1f3a59!important;font-family:Sora,'IBM Plex Sans',Arial,sans-serif!important;font-weight:700!important}"
++".ob-inp,.devo-passinp,.devo-pwin,.upw-inp{box-sizing:border-box!important;width:100%!important;font-size:17px!important;letter-spacing:5px!important;text-align:center!important;padding:11px 12px!important;border:1.5px solid #c3ccd6!important;border-radius:10px!important;outline:none!important;color:#1f3a59!important;background:#fff!important}"
++".ob-inp:focus,.devo-passinp:focus,.devo-pwin:focus,.upw-inp:focus{border-color:#2563eb!important;box-shadow:0 0 0 3px rgba(37,99,235,.14)!important}"
++".ob-inp::placeholder,.devo-passinp::placeholder,.devo-pwin::placeholder,.upw-inp::placeholder{color:#aeb7c2!important;letter-spacing:5px!important}"
++".ob-btns button,.devo-passbtns button{border-radius:10px!important;padding:9px 16px!important;font-weight:600!important}"
++".ob-c,.devo-passbtns .devo-passcancel,.upw-cancel{background:#fff!important;border:1px solid #cfd6de!important;color:#44515d!important}"
++".ob-ok,.devo-passbtns .devo-passok,.upw-ok{background:#b4442f!important;border:1px solid #b4442f!important;color:#fff!important;font-weight:700!important}"
 +".devo-grpick{width:420px;max-width:92vw}.grpick-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto;margin:4px 0 6px}.grpick-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#f7fafc;border:1px solid #e3e8ef;border-radius:9px;padding:11px 14px;cursor:pointer;font-family:inherit;transition:background .12s,border-color .12s}.grpick-row:hover{background:#eef4fb;border-color:#b9c9dc}.grpick-t{flex:1;font-weight:700;color:#1f3a59;font-size:13.5px}.grpick-s{font-size:11.5px;color:#6b7684;white-space:nowrap}"
 +".nube-conn{font-size:12.5px;padding:8px 12px;border-radius:7px;margin-bottom:14px;font-weight:600}.nube-conn.ok{background:#e6f5ef;color:#1d6b56}.nube-conn.off{background:#fbecec;color:#b4442f}"
 +".nube-cols{display:flex;gap:16px;flex-wrap:wrap}.nube-col{flex:1;min-width:300px;background:#fff;border:1px solid #e3e8ef;border-radius:10px;overflow:hidden}"
@@ -4162,7 +4170,7 @@ function modDeleteExcel(scope){
    '<div style="font-size:13px;color:#5a6672;line-height:1.6;margin-bottom:8px">Vas a borrar datos de <b>'+lbl+'</b> únicamente (no afecta a la otra unidad). Marca el o los meses que quieres borrar, o usa <b>Marcar todo</b> para borrar todo. Se borrará de esta plataforma y de la nube (Firebase).</div>'+
    '<label style="display:flex;gap:10px;align-items:center;padding:8px 11px;border:1px dashed #cfd6de;border-radius:9px;margin:6px 0;cursor:pointer;background:#f7f9fb"><input type="checkbox" id="delExAll" style="width:17px;height:17px"><span style="flex:1;font-size:13px;font-weight:700;color:#28364a">Marcar todo (borrar todos los meses de '+lbl+')</span></label>'+
    rowsHtml+
-   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="delExPass" type="text" maxlength="12" inputmode="numeric" placeholder="####" autocomplete="off" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
+   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="delExPass" class="upw-inp" type="password" maxlength="12" inputmode="numeric" placeholder="••••" autocomplete="off" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
    '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button id="delExCancel" style="padding:9px 16px;border:1px solid #cfd6de;background:#fff;border-radius:9px;cursor:pointer;font-weight:600;color:#28364a">Cancelar</button><button id="delExOk" style="padding:9px 16px;border:0;background:#b4442f;color:#fff;border-radius:9px;cursor:pointer;font-weight:600">Borrar seleccionados</button></div>'+
   '</div></div>';
  document.body.appendChild(ov);
@@ -4170,13 +4178,11 @@ function modDeleteExcel(scope){
  ov.addEventListener('click',function(e){if(e.target===ov)close();});
  document.getElementById('delExX').addEventListener('click',close);
  document.getElementById('delExCancel').addEventListener('click',close);
- var delExReal='';
  var passInp=document.getElementById('delExPass');
- if(passInp){passInp.addEventListener('input',function(){var v=passInp.value;if(v.length<delExReal.length){delExReal=delExReal.slice(0,v.length);}else{for(var i=delExReal.length;i<v.length;i++){delExReal+=v.charAt(i);}}passInp.value=new Array(delExReal.length+1).join('#');});}
  var allChk=document.getElementById('delExAll');
  if(allChk){allChk.addEventListener('change',function(){[].slice.call(ov.querySelectorAll('.delExChk')).forEach(function(c){c.checked=allChk.checked;});});}
  document.getElementById('delExOk').addEventListener('click',function(){
-  if(String(delExReal).trim()!=='1234'){alert('Contraseña incorrecta.');return;}
+  if(String((passInp&&passInp.value)||'').trim()!=='1234'){alert('Contraseña incorrecta.');return;}
   var chks=[].slice.call(ov.querySelectorAll('.delExChk:checked'));
   if(!chks.length){alert('No marcaste ningún Excel para borrar.');return;}
   var selMk={};chks.forEach(function(c){selMk[c.getAttribute('data-mk')]=1;});
@@ -4221,7 +4227,7 @@ function modRemovePedido(){
   '<div style="padding:16px 20px">'+
    '<div style="font-size:13px;color:#5a6672;line-height:1.6;margin-bottom:8px">Este pedido aparece <b>'+matches.length+'</b> vez(ces). Marca la(s) que quieres <b>quitar</b> (su valor dejará de sumar). El pedido se seguirá contando como salida en los gráficos.</div>'+
    rowsHtml+
-   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="qpPass" type="password" placeholder="Escribe 1234" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
+   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="qpPass" class="upw-inp" type="password" placeholder="••••" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
    '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button id="qpCancel" style="padding:9px 16px;border:1px solid #cfd6de;background:#fff;border-radius:9px;cursor:pointer;font-weight:600;color:#28364a">Cancelar</button><button id="qpOk" style="padding:9px 16px;border:0;background:#b4442f;color:#fff;border-radius:9px;cursor:pointer;font-weight:600">Quitar seleccionados</button></div>'+
   '</div></div>';
  document.body.appendChild(ov);
@@ -4623,7 +4629,7 @@ function vClear(k){
   '<div style="padding:16px 20px">'+
    '<div style="font-size:13px;color:#5a6672;line-height:1.6;margin-bottom:6px">Elige qué borrar. Se borrará de esta plataforma y de la nube (Firebase).</div>'+
    rowsHtml+
-   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="vDelPass" type="password" placeholder="Escribe 1234" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
+   '<div style="margin-top:14px"><label style="font-size:12px;font-weight:600;color:#5a6672;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><br><input id="vDelPass" class="upw-inp" type="password" placeholder="••••" style="margin-top:5px;width:100%;padding:9px 11px;border:1px solid #cfd6de;border-radius:9px;font-size:14px"></div>'+
    '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button id="vDelCancel" style="padding:9px 16px;border:1px solid #cfd6de;background:#fff;border-radius:9px;cursor:pointer;font-weight:600;color:#28364a">Cancelar</button><button id="vDelOk" style="padding:9px 16px;border:0;background:#b4442f;color:#fff;border-radius:9px;cursor:pointer;font-weight:600">Borrar</button></div>'+
   '</div></div>';
  document.body.appendChild(ov);
