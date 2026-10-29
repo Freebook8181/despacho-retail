@@ -153,8 +153,8 @@ select:focus{border-color:var(--navy)}
 .devo-tbl td.devo-inpcell{padding:0}
 .devo-inp{width:100%;min-width:120px;border:0;background:transparent;font:inherit;color:inherit;padding:5px 7px;outline:none;box-sizing:border-box;text-align:center}
 .devo-inp:focus{background:#eef5ff;outline:2px solid #2563eb}
-.devo-tbl tr.devo-row-dup td{background:#FFC7CE}
-.devo-tbl tr.devo-row-dup .devo-inp{color:#9C0006}
+.devo-tbl tr.devo-row-dup td{background:#FFC7CE;color:#9C0006}
+.devo-tbl tr.devo-row-dup td .devo-inp,.devo-tbl tr.devo-row-dup .devo-inp{color:#9C0006}
 .devo-foot{display:flex;flex-wrap:wrap;gap:30px;padding:12px 16px;border-top:1px solid #e3e8ef;font-size:13px;color:#1f2a37}
 .devo-ce{display:inline-block;min-width:160px;border-bottom:1px solid #9aa6b2;padding:1px 4px}
 .devo-ce:focus{outline:none;background:#eef5ff}
@@ -1803,7 +1803,7 @@ function devoImportExcel(ev){
  rd.onload=function(e){
   try{
    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-   devoEnsure();let added=0;const byItem={};const ampmByItem={};
+   devoEnsure();let added=0;let addedNew=0;let skippedDup=0;const byItem={};const ampmByItem={};
    const foundSheets=[];const matchedSheets=[];
    wb.SheetNames.forEach(sn=>{
     const ws=wb.Sheets[sn];if(!ws)return;
@@ -1831,7 +1831,11 @@ function devoImportExcel(ev){
    });
    Object.keys(byItem).forEach(id=>{
     const keep=(DEVO_DATA[id].rows||[]).filter(r=>r.some(v=>v!=null&&String(v).trim()!==''));
-    DEVO_DATA[id].rows=keep.concat(byItem[id]);
+    /* Firma de la fila (todas las columnas) para NO duplicar lo que ya esta cargado. */
+    const devoSig=r=>(r||[]).map(v=>String(v==null?'':v).trim()).join('\u0001');
+    const seen={};keep.forEach(r=>{seen[devoSig(r)]=1;});
+    byItem[id].forEach(r=>{const k=devoSig(r);if(seen[k]){skippedDup++;return;}seen[k]=1;keep.push(r);addedNew++;});
+    DEVO_DATA[id].rows=keep;
    });
    Object.keys(ampmByItem).forEach(function(id){if(DEVO_DATA[id])DEVO_DATA[id].ampm=ampmByItem[id];});
    devoEnsure();devoRender();devoFbSave();
@@ -1840,7 +1844,7 @@ function devoImportExcel(ev){
     ev.target.value='';return;
    }
    var turnos=Object.keys(ampmByItem).map(function(id){var it=DEVO_ITEMS.find(function(x){return x.id===id;});return (it?it.t:id)+': '+ampmByItem[id];});
-   alert('Importaci\u00f3n lista: se agregaron '+added+' registro(s)'+(turnos.length?('\n\nTurno detectado en la planilla:\n\u00b7 '+turnos.join('\n\u00b7 ')):'')+'.');
+   alert('Importaci\u00f3n lista: se agregaron '+addedNew+' registro(s) nuevo(s).'+(skippedDup>0?('\n\nSe omitieron '+skippedDup+' registro(s) que ya estaban cargados (no se duplican).'):'')+(turnos.length?('\n\nTurno detectado en la planilla:\n\u00b7 '+turnos.join('\n\u00b7 ')):''));
   }catch(err){console.error('devoImport',err);alert('No se pudo leer el Excel: '+err.message);}
   ev.target.value='';
  };
