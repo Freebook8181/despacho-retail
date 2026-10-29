@@ -839,7 +839,7 @@ function fmtUSDg(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0
 function fmtDual(v){return fmtUSDg(v);}
 function fmtDualArr(v){return [fmtUSDg(v)];}
 /* Unidades: 1.234.567 (miles con punto), SIN redondear (conserva decimales si los hubiera) */
-function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('es-CL',{maximumFractionDigits:20});}
+function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('en-US',{maximumFractionDigits:20});}
 function numClean(v){return parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;}
 /* USD: interpreta el texto para los cálculos SIN alterar lo que se muestra.
    Acepta formato "136,456.00" (coma miles / punto decimal) y "192.400,00" o "102.000" (punto miles / coma decimal). */
@@ -1729,14 +1729,14 @@ function detalle(id){
   if(!hay){
     // Planilla vacía de verdad: ocultar el área del gráfico y explicar.
     if(cc)cc.style.display='none';
-    if(da)da.innerHTML='<h4>🔎 Análisis del gráfico</h4><div class="verdict info"><span class="dot"></span><span class="vtx">Todavía no hay PO cargadas en la planilla, por eso este gráfico no tiene datos. Ingrese o pegue órdenes de compra en la pestaña <b>Planilla</b> y vuelva a abrir el análisis: la ventana mostrará el gráfico en grande y su explicación.</span></div>';
+    if(da)da.innerHTML='<h4>Análisis</h4><div class="verdict info"><span class="dot"></span><span class="vtx">Todavía no hay PO cargadas en la planilla, por eso este gráfico no tiene datos. Ingrese o pegue órdenes de compra en la pestaña <b>Planilla</b> y vuelva a abrir el análisis: la ventana mostrará el gráfico en grande y su explicación.</span></div>';
     $('detTable').innerHTML='';
     if(detChart){detChart.destroy();detChart=null;}
     $('detModal').classList.add('on');
     return;
   }
   if(cc)cc.style.display='';
-  if(da)da.innerHTML='<h4>🔎 Análisis del gráfico</h4>'+((vtx&&vtx!=='—')?'<div class="verdict '+vlv+'">'+vtx+'</div>':'')+(exEl?exEl.innerHTML:'');
+  if(da)da.innerHTML='<h4>Análisis</h4>'+((vtx&&vtx!=='—')?'<div class="verdict '+vlv+'">'+vtx+'</div>':'')+(exEl?exEl.innerHTML:'');
   if(d.series){
     const rows=d.labels.map((l,i)=>`<tr><td>${esc(l)}</td>${d.series.map(s=>`<td style="text-align:right">${(s.fmt?s.fmt:(v=>v))(s.vals[i])}</td>`).join('')}</tr>`).join('');
     $('detTable').innerHTML=`<table class="dett"><thead><tr><th>${esc(d.catLabel||'Categoría')}</th>${d.series.map(s=>`<th style="text-align:right">${esc(s.name)}</th>`).join('')}</tr></thead><tbody>${rows||'<tr><td colspan="3">Sin datos</td></tr>'}</tbody></table>`;
@@ -1764,6 +1764,15 @@ function detalle(id){
     cfg.options.maintainAspectRatio=false;
     cfg.options.responsive=true;
     cfg.options.animation=false;
+    // Evitar que un padding lateral grande (p.ej. 180px del gráfico de valor por proveedor)
+    // colapse el área de dibujo en pantallas angostas (celular) y deje el detalle EN BLANCO.
+    try{
+      const _lp=cfg.options.layout&&cfg.options.layout.padding;
+      if(_lp!=null){
+        if(typeof _lp==='number'){ if(_lp>80)cfg.options.layout.padding=80; }
+        else if(typeof _lp==='object'){ if(_lp.right>80)_lp.right=80; if(_lp.left>80)_lp.left=80; }
+      }
+    }catch(_lpe){}
     try{ detChart=new Chart(cv,cfg); }catch(e){ try{console.error('detalle chart',e);}catch(_){ }
       // Respaldo final: si el clon fallara, dibujar con la versión reconstruida.
       try{ const cfg2=buildDetCfg(dd); if(cfg2){cfg2.options=cfg2.options||{};cfg2.options.maintainAspectRatio=false;cfg2.options.responsive=true;cfg2.options.animation=false;detChart=new Chart(cv,cfg2);} }catch(_2){}
@@ -2387,19 +2396,19 @@ function renderExecSummary(){
 function fillExplains(){
   const S=(id,h)=>{const el=$(id);if(el)el.innerHTML=h;};
   const vp=sortEnt(byProv()),tu=totUSD();
-  S('exValProv',`<b>📊 Qué muestra:</b> el valor importado en dólares por cada proveedor, con el monto real de la planilla (USD). Es TODA la planilla, sin filtrar.<br><b>🔍 Cómo leerlo:</b> ${vp[0]?'el mayor valor lo concentra <b>'+vp[0][0]+'</b> con '+fmtDual(vp[0][1])+' de un total de '+fmtDual(tu):'aún no hay valores USD cargados'}.<br><b>💡 Para qué sirve:</b> ver en qué proveedores está concentrada la compra. Si uno concentra demasiado, conviene homologar un segundo proveedor para no depender de uno solo.`);
+  S('exValProv',`Este gráfico ordena a cada proveedor según el <b>valor importado en dólares</b> (USD), con el monto real de toda la planilla, sin filtrar. ${vp[0]?'El mayor peso lo tiene <b>'+esc(vp[0][0])+'</b> con '+fmtUSDg(vp[0][1])+', equivalente al <b>'+((tu&&vp[0])?Math.round(vp[0][1]/tu*100):0)+'%</b> de un total de '+fmtUSDg(tu)+' repartidos entre '+vp.length+' proveedor(es)':'Todavía no hay valores en USD cargados en la planilla'}. La barra más larga señala dónde está comprometido más dinero. ${((tu&&vp[0])?Math.round(vp[0][1]/tu*100):0)>=40?'Como un solo proveedor supera el 40% del gasto, hay una <b>concentración de riesgo</b>: si ese proveedor falla, se afecta gran parte del abastecimiento, por lo que conviene homologar un segundo proveedor y pactar un acuerdo de respaldo.':'La compra se reparte de forma razonable, sin dependencia crítica de un único proveedor.'}`);
   const up=sortEnt(unidByProv());
-  S('exUniProv',`<b>📊 Qué muestra:</b> cuántas unidades físicas se importaron por cada proveedor (volumen, no valor).<br><b>🔍 Cómo leerlo:</b> ${up[0]?'el mayor volumen lo aporta <b>'+up[0][0]+'</b> con '+fmtUnid(up[0][1])+' unidades; total '+fmtUnid(totUnid())+' u':'aún no hay unidades cargadas'}.<br><b>💡 Para qué sirve:</b> cruzado con el valor USD, revela dónde el precio por unidad es más alto y ayuda a planificar bodega y logística según el volumen.`);
+  S('exUniProv',`Mide el <b>volumen físico</b>: cuántas unidades se importaron por cada proveedor, independiente de su valor en dólares. ${up[0]?'El mayor volumen lo aporta <b>'+esc(up[0][0])+'</b> con '+fmtUnid(up[0][1])+' unidades, dentro de un total de '+fmtUnid(totUnid())+' unidades':'Aún no hay unidades cargadas'}. Cruzado con el gráfico de valor en USD, permite distinguir a los proveedores de <b>alto valor unitario</b> (pocas unidades, mucho dinero) de los de <b>commodity</b> (mucho volumen, bajo valor), lo que ayuda a planificar bodega, manejo de carga y controles de calidad.`);
   const zv=sortEnt(byZona());
-  S('exZonaV',`<b>📊 Qué muestra:</b> cómo se reparte el valor importado (USD) según la zona de origen, es decir de dónde viene la mercadería.<br><b>🔍 Cómo leerlo:</b> ${zv[0]?'<b>'+zv[0][0]+'</b> concentra '+fmtDual(zv[0][1]):'aún no hay zonas con valor'}.<br><b>💡 Para qué sirve:</b> medir la dependencia geográfica. Si una sola zona concentra la mayor parte del valor, conviene evaluar un doble origen o nearshoring.`);
+  S('exZonaV',`Muestra de qué <b>zona de origen</b> proviene el valor importado en USD, es decir desde dónde llega la mercadería. ${zv[0]?'<b>'+esc(zv[0][0])+'</b> concentra '+fmtUSDg(zv[0][1])+' ('+((tu&&zv[0])?Math.round(zv[0][1]/tu*100):0)+'% del valor total)':'Todavía no hay zonas con valor registrado'}. Sirve para medir la <b>dependencia geográfica</b> del abastecimiento. ${((tu&&zv[0])?Math.round(zv[0][1]/tu*100):0)>=50?'Al superar una zona el 50% del valor, el negocio queda expuesto a riesgos de flete, aranceles y tipo de cambio concentrados en un solo corredor; conviene evaluar un doble origen o nearshoring.':'La distribución entre zonas es equilibrada, sin una exposición excesiva a un único origen.'}`);
   const md=byModo();
-  S('exModo',`<b>📊 Qué muestra:</b> compara cuánto valor traemos por cada tipo de transporte (barras, en USD) y cuánto tarda cada modo (línea, en días).<br><b>🔍 Cómo leerlo:</b> ${md.map(x=>'<b>'+x.modo+'</b>: '+fmtDual(x.usd)+' / '+x.dias+' d').join(' · ')||'sin datos'}.<br><b>💡 Para qué sirve:</b> ver el equilibrio entre costo y rapidez. El aéreo es más caro pero mucho más rápido: conviene para productos urgentes o de alto valor.`);
+  S('exModo',`Compara los <b>tipos de transporte</b>: las barras indican cuánto valor en USD llega por cada modo y la línea cuántos días tarda en promedio. ${md.length?md.map(x=>'<b>'+esc(x.modo)+'</b> mueve '+fmtUSDg(x.usd)+' en '+x.dias+' días promedio').join('; ')+'.':'Sin datos de transporte todavía.'} Permite equilibrar <b>costo y rapidez</b>: el aéreo es más caro pero mucho más veloz, conviene para productos urgentes o de alto valor, mientras que el marítimo baja el costo a cambio de más tiempo.`);
   const cbot=cuelloBotella();
-  S('exTramo',`<b>📊 Qué muestra:</b> el tiempo total repartido en cada etapa del proceso (origen, tránsito internacional, nacionalización, recepción). Cada barra = días promedio de esa etapa.<br><b>🔍 Cómo leerlo:</b> ${cbot?'la etapa más lenta es <b>'+cbot.lb.replace(/\n/g,' ')+'</b> con '+cbot.d+' días; es ahí donde más tiempo se pierde':'aún no hay fechas suficientes para calcularlo'}.<br><b>💡 Para qué sirve:</b> encontrar el “cuello de botella”. El tránsito internacional (ej. barco desde Asia) depende del proveedor y la naviera y <b>no lo controla la empresa</b>; conviene enfocar las mejoras en las etapas internas (nacionalización y recepción en bodega).`);
+  S('exTramo',`Reparte el <b>tiempo total</b> del proceso en sus etapas (origen, tránsito internacional, nacionalización y recepción); cada barra es el promedio de días de esa etapa. ${cbot?'La etapa más lenta, el <b>cuello de botella</b>, es <b>'+esc(cbot.lb.replace(/\n/g,' '))+'</b> con '+cbot.d+' días, que es donde más tiempo se pierde.':'Aún no hay fechas suficientes para calcular las etapas.'} El tránsito internacional (por ejemplo un barco desde Asia) depende del proveedor y de la naviera y <b>no lo controla la empresa</b>; por eso las mejoras rinden más enfocándolas en las etapas internas: nacionalización y recepción en bodega.`);
   const ttp=sortEnt(ttotByProv());
-  S('exProvT',`<b>📊 Qué muestra:</b> cuántos días, en promedio, demora cada proveedor desde que se confirma la compra hasta que llega a bodega.<br><b>🔍 Cómo leerlo:</b> ${ttp[0]?'el que más demora es <b>'+ttp[0][0]+'</b> con '+ttp[0][1]+' días':'sin datos'}. La barra más larga = proveedor más lento.<br><b>💡 Para qué sirve:</b> comparar proveedores. Los más lentos son candidatos a renegociar plazos o a buscar un proveedor alternativo (recordando que parte del tiempo es tránsito marítimo no controlable).`);
+  S('exProvT',`Indica cuántos <b>días en promedio</b> demora cada proveedor desde que se confirma la compra hasta que la mercadería queda disponible en bodega; la barra más larga es el proveedor más lento. ${ttp[0]?'El que más demora es <b>'+esc(ttp[0][0])+'</b> con '+ttp[0][1]+' días promedio, sobre '+ttp.length+' proveedor(es) evaluados.':'Sin datos de tiempos por proveedor todavía.'} Es clave para planificar el flujo de caja y la capacidad de recepción; los más lentos son candidatos a <b>renegociar plazos</b> o a activar un origen alternativo, recordando que parte del tiempo es tránsito marítimo no controlable.`);
   const vt=valorEnTransito(),tt=vt.trans+vt.disp;
-  S('exTransit',`<b>📊 Qué muestra:</b> cuánto capital está <b>movilizado</b> (PO con todos los cuadros completos) frente a lo que sigue <b>en tránsito</b> (PO con cuadros aún incompletos).<br><b>🔍 Cómo leerlo:</b> ${tt?'<b>'+fmtDual(vt.disp)+'</b> movilizado ('+Math.round(vt.disp/tt*100)+'%) vs. '+fmtDual(vt.trans)+' en tránsito':'sin datos'}.<br><b>💡 Para qué sirve:</b> saber cuánto del valor ya está completo y cuánto falta por cerrar. Mientras más alto el porcentaje en tránsito, más registros quedan por completar.`);
+  S('exTransit',`Separa el capital <b>movilizado</b> (PO con todos sus cuadros completos) del que sigue <b>en tránsito</b> (PO con cuadros aún pendientes). ${tt?'Hoy hay '+fmtUSDg(vt.disp)+' ya movilizado ('+Math.round(vt.disp/tt*100)+'%) frente a '+fmtUSDg(vt.trans)+' en tránsito ('+(100-Math.round(vt.disp/tt*100))+'%).':'Sin datos de capital todavía.'} Permite saber cuánto del valor ya está cerrado y cuánto falta por completar: mientras más alto el porcentaje en tránsito, más registros quedan pendientes y más capital sigue inmovilizado en el proceso.`);
 }
 function fillExplainsLegacy(){
   const z=sortEnt(byZona()),tu=totUSD();
