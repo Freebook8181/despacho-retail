@@ -1861,15 +1861,13 @@ function devoGuardar(){devoEnsure();
  /* Aun sin sesion: intentar login anonimo AHORA y luego guardar */
  if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}_doSave();}).catch(function(e){console.error('signInAnonymously',e);var code=(e&&e.code)||'';var extra='';if(code==='auth/operation-not-allowed'||code==='auth/admin-restricted-operation')extra='\n\nCausa: el proveedor "An\u00f3nimo" NO est\u00e1 activado.';else if(code==='auth/configuration-not-found')extra='\n\nCausa: a\u00fan no has configurado Authentication en este proyecto.';else if(code==='auth/network-request-failed')extra='\n\nCausa: sin conexi\u00f3n a internet.';alert('No se pudo conectar a la nube.'+extra+'\n\nSoluci\u00f3n: entra a Firebase \u2192 Authentication \u2192 Sign-in method y activa el proveedor "An\u00f3nimo". Luego recarga con Ctrl+F5.'+(code?('\n\n[detalle: '+code+']'):''));});return;}
  alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');}
-/* --- LIMPIAR: vaciar TODAS las tablas de Devoluciones (plataforma + nube) --- */
+/* --- LIMPIAR: vaciar las tablas SOLO en pantalla (no toca la nube) para poder escribir de nuevo --- */
 function devoLimpiar(){
  if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
  devoEnsure();
- if(typeof fbDB==='undefined'||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}
- if(!confirm('\u00bfSeguro que quieres LIMPIAR TODAS las tablas de Devoluciones?\n\nSe borrar\u00e1 el contenido de todas las planillas, en la plataforma y en la nube (Firebase). Esta acci\u00f3n no se puede deshacer.'))return;
+ if(!confirm('\u00bfLimpiar las tablas de Devoluciones en pantalla para escribir de nuevo?\n\nEsto NO borra nada de la nube: solo vac\u00eda las planillas aqu\u00ed. Lo guardado en la nube sigue intacto (y volver\u00e1 si recargas).'))return;
  DEVO_ITEMS.forEach(function(it){DEVO_DATA[it.id]=devoEmptyItem();});
  devoEnsure();devoRender();
- devoFbSave().then(function(ok){alert(ok?'Listo. Se limpiaron todas las tablas de Devoluciones (plataforma y nube).':'Se limpiaron en la plataforma, pero no se pudo guardar en la nube. Revisa los permisos de Firebase.');});
 }
 /* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o y colores) --- */
 function devoSheetName(t){return (t||'Hoja').replace(/[\\/?*\[\]:]/g,' ').slice(0,31);}
