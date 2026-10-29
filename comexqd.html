@@ -839,7 +839,7 @@ function fmtUSDg(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0
 function fmtDual(v){return fmtUSDg(v);}
 function fmtDualArr(v){return [fmtUSDg(v)];}
 /* Unidades: 1.234.567 (miles con punto), SIN redondear (conserva decimales si los hubiera) */
-function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('en-US',{maximumFractionDigits:20});}
+function fmtUnid(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('de-DE',{maximumFractionDigits:20});}
 function numClean(v){return parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;}
 /* USD: interpreta el texto para los cálculos SIN alterar lo que se muestra.
    Acepta formato "136,456.00" (coma miles / punto decimal) y "192.400,00" o "102.000" (punto miles / coma decimal). */
@@ -2151,7 +2151,12 @@ function limpiarTodo(){
   logAct('limpiar','Limpió datos y gráficos');
 }
 const CFG={};
-function mk(id,cfg){CFG[id]=cfg;if(CH[id])CH[id].destroy();const el=$(id);if(!el)return;CH[id]=new Chart(el,cfg);}
+function mk(id,cfg){
+  // Guardar una copia PRISTINA de la configuración ANTES de instanciar el gráfico.
+  // (Chart.js muta el objeto cfg al crear el gráfico; si luego clonáramos ese objeto
+  //  ya mutado para el modal de detalle, el gráfico podía salir EN BLANCO.)
+  CFG[id]=cloneCfg(cfg);
+  if(CH[id])CH[id].destroy();const el=$(id);if(!el)return;CH[id]=new Chart(el,cfg);}
 /* genera la imagen de un gráfico en un lienzo fuera de pantalla, con tamaño real,
    para que el reporte muestre los gráficos aunque la pestaña Gráficos esté oculta */
 function reportImg(id){
