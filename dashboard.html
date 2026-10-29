@@ -1685,7 +1685,7 @@ function devoPlanillas(){
   +'<button class="devo-btn devo-nube" id="devoNube">☁ NUBE</button>'
   +'<button class="devo-btn devo-repbtn" id="devoReporte">📄 REPORTE</button>'
   +'<button class="devo-btn devo-pptbtn" id="devoPPT">📊 PPT</button>'
-  +'<input type="file" id="devoFile" accept=".xlsx,.xls" style="display:none"/>'
+  +'<input type="file" id="devoFile" accept=".xlsx,.xls" multiple style="display:none"/>'
   +'</div>';
  h+='<div class="devo-tabs" id="devoTabs">'+DEVO_ITEMS.map(it=>`<button class="devo-tab" data-tab="${it.id}" style="--tc:${it.c};--tt:${it.tx}">${it.t}</button>`).join('')+'</div>';
  h+='<div id="devoPane"></div>';
@@ -1799,63 +1799,79 @@ function devoDetectAmPm(aoa){
  return '';
 }
 /* --- IMPORTAR: lee el Excel (una hoja por planilla) y lo muestra en la planilla que corresponda --- */
+/* Ordena las filas de una tabla por FECHA ascendente (las sin fecha van al final). Deja solo filas con datos; devoEnsure rellena el resto. */
+function devoSortRowsByDate(rows){
+ var data=(rows||[]).filter(function(r){return r&&r.some(function(v){return v!=null&&String(v).trim()!=='';});});
+ data.sort(function(a,b){var ka=devoParseFecha(a&&a[0])||'9999-99-99';var kb=devoParseFecha(b&&b[0])||'9999-99-99';return ka<kb?-1:(ka>kb?1:0);});
+ return data;
+}
 function devoImportExcel(ev){
- const f=ev.target.files&&ev.target.files[0];if(!f){return;}
- const rd=new FileReader();
- rd.onload=function(e){
-  try{
-   const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
-   devoEnsure();let added=0;let addedNew=0;let skippedDup=0;const byItem={};const ampmByItem={};
-   const foundSheets=[];const matchedSheets=[];
-   wb.SheetNames.forEach(sn=>{
-    const ws=wb.Sheets[sn];if(!ws)return;
-    foundSheets.push(sn);
-    const item=devoMatchItem(sn);if(!item)return;
-    matchedSheets.push(sn+' \u2192 '+item.t);
-    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
-    if(!aoa||!aoa.length)return;
-    const hr=devoHeaderRowIdx(aoa);const header=aoa[hr]||[];const cmap=devoColIndex(header);
-    const shAmPm=devoDetectAmPm(aoa);if(shAmPm)ampmByItem[item.id]=shAmPm;
-    const sheetRows=[];let sheetDate='';
-    for(let r=hr+1;r<aoa.length;r++){
-     const row=aoa[r]||[];
-     if(row.every(v=>v==null||String(v).trim()===''))continue;
-     const cells=DEVO_COLS.map((_,c)=>{const src=cmap[c];let v=(src!=null)?row[src]:'';if(v==null)v='';return String(v).trim();});
-     if(!devoRowHasContent(cells)||devoIsFooterRow(cells))continue;
-     if(cells[0]){cells[0]=devoFmtFecha(cells[0]);if(!sheetDate&&cells[0])sheetDate=cells[0];}
-     if(cells[DEVO_VALCOL]){const fv=devoFmtVal(cells[DEVO_VALCOL]);if(fv)cells[DEVO_VALCOL]=fv;}
-     if(!cells[DEVO_COMCOL]&&cells[DEVO_DESTCOL]){const cm=DEVO_COMUNA[devoNorm(cells[DEVO_DESTCOL])];if(cm)cells[DEVO_COMCOL]=cm;}
-     sheetRows.push(cells);
-    }
-    /* La fecha de la planilla (ej. 30/09/2026) se copia a TODAS las filas con datos que la tengan vacia. */
-    if(sheetDate){sheetRows.forEach(c=>{if(!c[0]||!String(c[0]).trim())c[0]=sheetDate;});}
-    if(sheetRows.length){if(!byItem[item.id])byItem[item.id]=[];byItem[item.id]=byItem[item.id].concat(sheetRows);added+=sheetRows.length;}
-   });
-   Object.keys(byItem).forEach(id=>{
-    const keep=(DEVO_DATA[id].rows||[]).filter(r=>r.some(v=>v!=null&&String(v).trim()!==''));
-    /* Firma de la fila (todas las columnas) para NO duplicar lo que ya esta cargado. */
-    const devoSig=r=>(r||[]).map(v=>String(v==null?'':v).trim()).join('\u0001');
-    const seen={};keep.forEach(r=>{seen[devoSig(r)]=1;});
-    byItem[id].forEach(r=>{const k=devoSig(r);if(seen[k]){skippedDup++;return;}seen[k]=1;keep.push(r);addedNew++;});
-    DEVO_DATA[id].rows=keep;
-   });
-   Object.keys(ampmByItem).forEach(function(id){if(DEVO_DATA[id])DEVO_DATA[id].ampm=ampmByItem[id];});
-   devoEnsure();devoRender();devoFbSave();
-   if(added===0){
-    alert('No se agreg\u00f3 ninguna fila.\n\nHojas encontradas en el Excel:\n\u00b7 '+(foundSheets.join('\n\u00b7 ')||'(ninguna)')+'\n\nPlanillas reconocidas:\n\u00b7 '+(matchedSheets.join('\n\u00b7 ')||'(ninguna)')+'\n\nRevisa que el nombre de la hoja sea una de: CD, GARANTIA MAC, ECOMMERCE, BACKONLINE, SERVICIO TECNICO, VARIOS, y que la tabla tenga el encabezado Fecha / Documentos / Destinatarios.');
-    ev.target.value='';return;
-   }
-   var turnos=Object.keys(ampmByItem).map(function(id){var it=DEVO_ITEMS.find(function(x){return x.id===id;});return (it?it.t:id)+': '+ampmByItem[id];});
-   alert('Importaci\u00f3n lista: se agregaron '+addedNew+' registro(s) nuevo(s).'+(skippedDup>0?('\n\nSe omitieron '+skippedDup+' registro(s) que ya estaban cargados (no se duplican).'):'')+(turnos.length?('\n\nTurno detectado en la planilla:\n\u00b7 '+turnos.join('\n\u00b7 ')):''));
-  }catch(err){console.error('devoImport',err);alert('No se pudo leer el Excel: '+err.message);}
+ const files=ev.target.files?[].slice.call(ev.target.files):[];
+ if(!files.length){return;}
+ devoEnsure();
+ let added=0,addedNew=0,skippedDup=0;
+ const byItem={};const ampmByItem={};
+ const foundSheets=[];const matchedSheets=[];const fileErrs=[];
+ function readOne(f){return new Promise(function(resolve){
+  const rd=new FileReader();
+  rd.onload=function(e){
+   try{
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+    wb.SheetNames.forEach(sn=>{
+     const ws=wb.Sheets[sn];if(!ws)return;
+     foundSheets.push(f.name+' \u2192 '+sn);
+     const item=devoMatchItem(sn);if(!item)return;
+     matchedSheets.push(f.name+' \u00b7 '+sn+' \u2192 '+item.t);
+     const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:false});
+     if(!aoa||!aoa.length)return;
+     const hr=devoHeaderRowIdx(aoa);const header=aoa[hr]||[];const cmap=devoColIndex(header);
+     const shAmPm=devoDetectAmPm(aoa);if(shAmPm)ampmByItem[item.id]=shAmPm;
+     const sheetRows=[];let sheetDate='';
+     for(let r=hr+1;r<aoa.length;r++){
+      const row=aoa[r]||[];
+      if(row.every(v=>v==null||String(v).trim()===''))continue;
+      const cells=DEVO_COLS.map((_,c)=>{const src=cmap[c];let v=(src!=null)?row[src]:'';if(v==null)v='';return String(v).trim();});
+      if(!devoRowHasContent(cells)||devoIsFooterRow(cells))continue;
+      if(cells[0]){cells[0]=devoFmtFecha(cells[0]);if(!sheetDate&&cells[0])sheetDate=cells[0];}
+      if(cells[DEVO_VALCOL]){const fv=devoFmtVal(cells[DEVO_VALCOL]);if(fv)cells[DEVO_VALCOL]=fv;}
+      if(!cells[DEVO_COMCOL]&&cells[DEVO_DESTCOL]){const cm=DEVO_COMUNA[devoNorm(cells[DEVO_DESTCOL])];if(cm)cells[DEVO_COMCOL]=cm;}
+      sheetRows.push(cells);
+     }
+     if(sheetDate){sheetRows.forEach(c=>{if(!c[0]||!String(c[0]).trim())c[0]=sheetDate;});}
+     if(sheetRows.length){if(!byItem[item.id])byItem[item.id]=[];byItem[item.id]=byItem[item.id].concat(sheetRows);added+=sheetRows.length;}
+    });
+   }catch(err){console.error('devoImport',f.name,err);fileErrs.push(f.name+': '+err.message);}
+   resolve();
+  };
+  rd.onerror=function(){fileErrs.push(f.name+': no se pudo leer');resolve();};
+  rd.readAsArrayBuffer(f);
+ });}
+ Promise.all(files.map(readOne)).then(function(){
+  Object.keys(byItem).forEach(id=>{
+   const keep=(DEVO_DATA[id].rows||[]).filter(r=>r.some(v=>v!=null&&String(v).trim()!==''));
+   const devoSig=r=>(r||[]).map(v=>String(v==null?'':v).trim()).join('\u0001');
+   const seen={};keep.forEach(r=>{seen[devoSig(r)]=1;});
+   byItem[id].forEach(r=>{const k=devoSig(r);if(seen[k]){skippedDup++;return;}seen[k]=1;keep.push(r);addedNew++;});
+   DEVO_DATA[id].rows=devoSortRowsByDate(keep);
+  });
+  Object.keys(ampmByItem).forEach(function(id){if(DEVO_DATA[id])DEVO_DATA[id].ampm=ampmByItem[id];});
+  devoEnsure();devoRender();devoFbSave();
   ev.target.value='';
- };
- rd.readAsArrayBuffer(f);
+  if(added===0){
+   alert('No se agreg\u00f3 ninguna fila.'+(fileErrs.length?('\n\nArchivos con problema:\n\u00b7 '+fileErrs.join('\n\u00b7 ')):'')+'\n\nHojas encontradas:\n\u00b7 '+(foundSheets.join('\n\u00b7 ')||'(ninguna)')+'\n\nRevisa que el nombre de la hoja sea una de: CD, GARANTIA MAC, ECOMMERCE, BACKONLINE, SERVICIO TECNICO, VARIOS, y que la tabla tenga el encabezado Fecha / Documentos / Destinatarios.');
+   return;
+  }
+  var turnos=Object.keys(ampmByItem).map(function(id){var it=DEVO_ITEMS.find(function(x){return x.id===id;});return (it?it.t:id)+': '+ampmByItem[id];});
+  alert('Importaci\u00f3n lista ('+files.length+' archivo(s)): se agregaron '+addedNew+' registro(s) nuevo(s), ordenados por fecha en cada tabla.'+(skippedDup>0?('\n\nSe omitieron '+skippedDup+' registro(s) que ya estaban cargados (no se duplican).'):'')+(turnos.length?('\n\nTurno detectado en la planilla:\n\u00b7 '+turnos.join('\n\u00b7 ')):'')+(fileErrs.length?('\n\nArchivos con problema:\n\u00b7 '+fileErrs.join('\n\u00b7 ')):''));
+ });
 }
 /* --- GUARDAR inmediato en Firebase --- */
 function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;try{devoG2Refresh();}catch(e){}return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
 function devoGuardar(){devoEnsure();
  if(typeof fbDB==='undefined'||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}
+ /* Ordenar cada tabla por fecha antes de guardar en la nube (por fecha y tabla correspondiente). */
+ DEVO_ITEMS.forEach(function(it){if(DEVO_DATA[it.id])DEVO_DATA[it.id].rows=devoSortRowsByDate(DEVO_DATA[it.id].rows);});
+ devoEnsure();devoRender();
  function _doSave(){devoFbSave().then(ok=>{alert(ok?'Informaci\u00f3n guardada en la nube. Todos los usuarios la ver\u00e1n al recargar.':'No se pudo guardar. Revisa los permisos de Firebase (activa el proveedor An\u00f3nimo en Authentication).');});}
  if(fbReady){_doSave();return;}
  /* Aun sin sesion: intentar login anonimo AHORA y luego guardar */
@@ -1875,21 +1891,37 @@ function devoExport(ids){
  devoEnsure();
  const wb=XLSX.utils.book_new();
  const bd={top:{style:'thin',color:{rgb:'B0B8C1'}},bottom:{style:'thin',color:{rgb:'B0B8C1'}},left:{style:'thin',color:{rgb:'B0B8C1'}},right:{style:'thin',color:{rgb:'B0B8C1'}}};
+ const dupG=devoDocCountsGlobal();
  ids.forEach(id=>{
-  const it=DEVO_ITEMS.find(x=>x.id===id);if(!it)return;const d=DEVO_DATA[id];
+  const it=DEVO_ITEMS.find(x=>x.id===id);if(!it)return;const d=DEVO_DATA[id]||{rows:[]};
   const ncol=DEVO_VIEW_COLS.length+1;
+  /* Filas con datos, ordenadas por FECHA ascendente */
+  var data=(d.rows||[]).filter(r=>r&&r.some(v=>v!=null&&String(v).trim()!==''));
+  data.sort(function(a,b){var ka=devoParseFecha(a[0])||'9999-99-99';var kb=devoParseFecha(b[0])||'9999-99-99';return ka<kb?-1:(ka>kb?1:0);});
   const aoa=[[it.t],['N\u00b0'].concat(DEVO_VIEW_COLS.map(v=>v.t))];
-  const N=Math.max(DEVO_ROWS,d.rows.length);
-  for(let r=0;r<N;r++){const row=d.rows[r]||[];aoa.push([r+1].concat(DEVO_VIEW_COLS.map(v=>v.i===0?(row[0]?devoDispFecha(row[0]):''):(row[v.i]==null?'':row[v.i]))));}
+  const bandRows=[];const dataMeta=[];
+  var lastKey=null,n=0;
+  data.forEach(function(row){
+   var key=devoParseFecha(row[0])||'';
+   if(key!==lastKey){var lbl=row[0]?devoDispFecha(row[0]):'Sin fecha';aoa.push(['\ud83d\udcc5  '+lbl]);bandRows.push(aoa.length-1);lastKey=key;}
+   n++;
+   aoa.push([n].concat(DEVO_VIEW_COLS.map(v=>v.i===0?(row[0]?devoDispFecha(row[0]):''):(row[v.i]==null?'':row[v.i]))));
+   dataMeta.push({idx:aoa.length-1,dup:devoIsDupDoc(dupG,row)});
+  });
+  if(!data.length){aoa.push(['(Sin registros)']);}
   aoa.push([]);aoa.push(['Horario:',(d.am||'')+(d.ampm?(' '+d.ampm):''),'','','Recepciona Nombre:',d.rec||'','Firma:']);
   const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
-  ws['!cols']=[{wch:5},{wch:12},{wch:14},{wch:16},{wch:16},{wch:8},{wch:18},{wch:22}];
+  const merges=[{s:{r:0,c:0},e:{r:0,c:ncol-1}}];
+  bandRows.forEach(function(br){merges.push({s:{r:br,c:0},e:{r:br,c:ncol-1}});});
+  ws['!merges']=merges;
+  ws['!cols']=[{wch:5},{wch:14},{wch:14},{wch:15},{wch:16},{wch:18},{wch:9},{wch:26},{wch:28}];
   const hex=it.c.replace('#','').toUpperCase();const txt=(['gmac','ecom','back'].indexOf(it.id)>=0)?'FFFFFF':'000000';
   const A1=ws['A1'];if(A1)A1.s={font:{bold:true,sz:14,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'left',vertical:'center'}};
   for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:1,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,color:{rgb:txt}},fill:{patternType:'solid',fgColor:{rgb:hex}},alignment:{horizontal:'center',vertical:'center'},border:bd};}
-  for(let r=2;r<2+N;r++){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r,c});const cell=ws[ref];if(cell)cell.s={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:(c===0)?'center':'left'}};}}
-  if(!ws['!rows'])ws['!rows']=[];ws['!rows'][0]={hpt:22};ws['!rows'][1]={hpt:18};
+  bandRows.forEach(function(br){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:br,c});const cell=ws[ref];if(cell)cell.s={font:{bold:true,sz:11,color:{rgb:hex}},fill:{patternType:'solid',fgColor:{rgb:'EEF2F7'}},alignment:{horizontal:'left',vertical:'center'},border:bd};}});
+  dataMeta.forEach(function(m){for(let c=0;c<ncol;c++){const ref=XLSX.utils.encode_cell({r:m.idx,c});const cell=ws[ref];if(!cell)continue;var st={border:bd,alignment:{vertical:'top',wrapText:true,horizontal:(c===0)?'center':'left'}};if(m.dup){st.fill={patternType:'solid',fgColor:{rgb:'FFC7CE'}};st.font={color:{rgb:'9C0006'}};}cell.s=st;}});
+  if(!ws['!rows'])ws['!rows']=[];ws['!rows'][0]={hpt:24};ws['!rows'][1]={hpt:18};
+  bandRows.forEach(function(br){ws['!rows'][br]={hpt:18};});
   XLSX.utils.book_append_sheet(wb,ws,devoSheetName(it.t));
  });
  try{XLSX.writeFile(wb,'Devoluciones_QUINTEC.xlsx');}catch(e){console.error('devoExport',e);alert('No se pudo exportar: '+e.message);}
@@ -4448,6 +4480,80 @@ function vExtract(wb,fname,unitKey){
  }
  return null;
 }
+/* ====== NUEVO: lector de Excel TRANSACCIONAL (N\u00b0 / ID PEDIDO / FECHA / UNIDAD NEGOCIO / NOMBRE CLIENTE / VALOR) ======
+   Lee pedido por pedido, se queda SOLO con la UNIDAD NEGOCIO de la pesta\u00f1a
+   (MacOnline Distribuci\u00f3n o Vertical Tiendas), elimina duplicados: si el mismo
+   ID PEDIDO tiene el mismo VALOR se cuenta UNA sola vez y se conserva el de la
+   FECHA m\u00e1s alta. Luego suma por NOMBRE CLIENTE dentro del mes de la FECHA. */
+function vFlatUnitMatch(unitRaw,unitKey){
+ var u=stripAcc(String(unitRaw==null?'':unitRaw)).toUpperCase().replace(/\s+/g,' ').trim();
+ if(unitKey==='ver')return u.indexOf('VERTICAL')>=0;
+ return u.indexOf('MACONLINE DISTRIBUCION')>=0||u.indexOf('MAC ONLINE DISTRIBUCION')>=0;
+}
+function vFlatFecha(feRaw){
+ if(feRaw==null)return null;
+ if(feRaw instanceof Date)return isNaN(feRaw)?null:feRaw;
+ if(typeof feRaw==='number'){var ep=new Date(Math.round((feRaw-25569)*86400*1000));return isNaN(ep)?null:ep;}
+ var p=String(feRaw).trim();if(!p)return null;
+ var m=p.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+ if(m){var dd=+m[1],mm=+m[2]-1,yy=+m[3];if(yy<100)yy+=2000;var d=new Date(yy,mm,dd);return isNaN(d)?null:d;}
+ var d2=new Date(p);return isNaN(d2)?null:d2;
+}
+function vExtractFlat(wb,fname,unitKey){
+ for(var si=0;si<wb.SheetNames.length;si++){
+  var aoa=vSheetAoa(wb,wb.SheetNames[si]);if(!aoa||!aoa.length)continue;
+  var hr=-1,cId=-1,cFe=-1,cUn=-1,cCl=-1,cVa=-1;
+  for(var i=0;i<Math.min(aoa.length,20);i++){
+   var r=aoa[i]||[];var id=-1,fe=-1,un=-1,cl=-1,va=-1;
+   for(var j=0;j<r.length;j++){var h=stripAcc(String(r[j]==null?'':r[j])).toUpperCase().replace(/\s+/g,' ').trim();
+    if(h==='ID PEDIDO'||h==='PEDIDO'||h==='ID DE PEDIDO'||h==='N PEDIDO'||h==='N\u00b0 PEDIDO')id=j;
+    else if(h==='FECHA')fe=j;
+    else if(h==='UNIDAD NEGOCIO'||h==='UNIDAD DE NEGOCIO')un=j;
+    else if(h==='NOMBRE CLIENTE'||h==='CLIENTE'||h==='NOMBRE DEL CLIENTE')cl=j;
+    else if(h==='VALOR'||h==='MONTO')va=j;
+   }
+   if(un>=0&&va>=0&&cl>=0){hr=i;cId=id;cFe=fe;cUn=un;cCl=cl;cVa=va;break;}
+  }
+  if(hr<0)continue;
+  var recs=[];
+  for(var i2=hr+1;i2<aoa.length;i2++){
+   var rr=aoa[i2]||[];var uraw=rr[cUn];if(uraw==null)continue;
+   if(!vFlatUnitMatch(uraw,unitKey))continue;
+   var clv=rr[cCl];if(clv==null||String(clv).trim()==='')continue;
+   var idp=cId>=0?rr[cId]:null;
+   var dt=cFe>=0?vFlatFecha(rr[cFe]):null;
+   var val=vNum(rr[cVa]);
+   recs.push({id:(idp==null?'':String(idp).trim()),val:val,dt:dt,cl:String(clv).trim()});
+  }
+  if(!recs.length)continue;
+  var grp={};
+  recs.forEach(function(rec){var key=rec.id+'||'+rec.val;var ex=grp[key];if(!ex){grp[key]=rec;}else{var a=ex.dt?ex.dt.getTime():-1;var b=rec.dt?rec.dt.getTime():-1;if(b>a)grp[key]=rec;}});
+  var kept=Object.keys(grp).map(function(key){return grp[key];});
+  var byName={},mset={},monthYears={},years={};
+  kept.forEach(function(rec){var mi=rec.dt?rec.dt.getMonth():9;var yr=rec.dt?rec.dt.getFullYear():2026;mset[mi]=1;monthYears[mi]=yr;years[yr]=(years[yr]||0)+1;var key=stripAcc(rec.cl).toUpperCase();if(!byName[key])byName[key]={tienda:rec.cl,comuna:'',zona:'Sin dato',m:{},w:{}};byName[key].m[mi]=(byName[key].m[mi]||0)+rec.val;});
+  var rows=Object.keys(byName).map(function(key){var o=byName[key];var t=0;Object.keys(o.m).forEach(function(mi){o.m[mi]=Math.round(o.m[mi]);t+=o.m[mi];});return {tienda:o.tienda,comuna:o.comuna,zona:o.zona,m:o.m,w:{},total:Math.round(t)};});
+  var months=Object.keys(mset).map(Number).sort(function(a,b){return a-b;});
+  var year=2026,best=-1;Object.keys(years).forEach(function(y){if(years[y]>best){best=years[y];year=+y;}});
+  return {year:year,rows:rows,months:months,monthYears:monthYears,weeks:[],_flat:true,_kept:kept.length,_raw:recs.length,_dups:recs.length-kept.length};
+ }
+ return null;
+}
+/* Integra (SUMA) los meses de un Excel transaccional DENTRO del libro existente
+   de la pesta\u00f1a, sin duplicar: reemplaza los meses que vienen en el archivo. */
+function vMergeMonths(k,res){
+ var D=VSTORE[k];if(!D||!D.rows){D={year:res.year,rows:[],months:[],monthYears:{}};VSTORE[k]=D;}
+ if(!D.monthYears)D.monthYears={};
+ var newMonths=res.months.slice();
+ var byName={};D.rows.forEach(function(r){byName[stripAcc(r.tienda).toUpperCase()]=r;});
+ D.rows.forEach(function(r){newMonths.forEach(function(mi){delete r.m[mi];});});
+ res.rows.forEach(function(nr){var key=stripAcc(nr.tienda).toUpperCase();var r=byName[key];if(!r){r={tienda:nr.tienda,comuna:nr.comuna||'',zona:nr.zona||'Sin dato',m:{},w:{},total:0};byName[key]=r;D.rows.push(r);}newMonths.forEach(function(mi){if(nr.m[mi]!=null)r.m[mi]=(r.m[mi]||0)+nr.m[mi];});if((!r.zona||r.zona==='Sin dato')&&nr.zona&&nr.zona!=='Sin dato')r.zona=nr.zona;if(!r.comuna&&nr.comuna)r.comuna=nr.comuna;});
+ D.rows.forEach(function(r){var t=0;Object.keys(r.m).forEach(function(mi){t+=r.m[mi]||0;});r.total=Math.round(t);});
+ D.rows=D.rows.filter(function(r){return Object.keys(r.m).length>0;});
+ var mset={};D.rows.forEach(function(r){Object.keys(r.m).forEach(function(mi){mset[+mi]=1;});});
+ D.months=Object.keys(mset).map(Number).sort(function(a,b){return a-b;});
+ newMonths.forEach(function(mi){D.monthYears[mi]=res.monthYears[mi]||res.year;});
+ D.year=res.year||D.year||2026;
+}
 /* ---- Persistencia local ---- */
 function vSaveLocal(){try{localStorage.setItem(VLS_KEY,JSON.stringify(VSTORE));}catch(e){}}
 function vLoadLocal(){try{const raw=localStorage.getItem(VLS_KEY);if(raw){const o=JSON.parse(raw);if(o&&o.mac&&o.ver)VSTORE=o;}}catch(e){}}
@@ -4616,15 +4722,33 @@ function handleVentasUpload(e,fromK){
  rd.onload=ev=>{
   try{
    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+   /* 1) \u00bfEs el Excel TRANSACCIONAL (ID PEDIDO / FECHA / UNIDAD NEGOCIO / NOMBRE CLIENTE / VALOR)? */
+   const k=(fromK==='ver')?'ver':'mac';
+   const flat=vExtractFlat(wb,f.name,k);
+   if(flat){
+    if(!flat.rows.length){alert('Le\u00ed el Excel, pero no encontr\u00e9 filas de '+(k==='ver'?'Vertical Tiendas':'MacOnline Distribuci\u00f3n')+' en la columna UNIDAD NEGOCIO.\n\nRecuerda: el bot\u00f3n de esta pesta\u00f1a solo carga la unidad de negocio de esta pesta\u00f1a.');return;}
+    vMergeMonths(k,flat);VF[k]={zona:'all',mes:'all',sem:'all'};
+    vSaveLocal();
+    ['mac','ver'].forEach(kk=>{fillVentasControls(kk);const z=document.getElementById('v'+kk+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+kk+'_body'))renderVentas(kk);});
+    var mlbl=flat.months.map(mi=>MESES_FULL[mi]).join(', ')||'—';
+    var resumen=(k==='ver'?'Vertical Tiendas':'MacOnline Distribuci\u00f3n')+':\n'+
+     '• '+flat.rows.length+' tiendas\n'+
+     '• '+flat._kept+' pedidos cargados (se quitaron '+flat._dups+' repetidos por ID PEDIDO y VALOR, dej\u00e1ndose el de la fecha m\u00e1s alta)\n'+
+     '• Mes: '+mlbl;
+    if(fbReady){vFbPush();alert('Excel de ventas cargado:\n\n'+resumen+'\n\n\u2601 Guardado en la nube (Firebase).');}
+    else{alert('Excel de ventas cargado:\n\n'+resumen+'\n\n\u2713 Guardado en este navegador.');}
+    return;
+   }
+   /* 2) Formato cl\u00e1sico (matriz Tienda x Mes con secciones SANTIAGO/REGIONES) */
    const rMac=vExtract(wb,f.name,'mac');const rVer=vExtract(wb,f.name,'ver');
-   if(!rMac&&!rVer){alert('No pude leer ninguna hoja de “Ventas por tienda y mes” en este archivo. Revisa que exista una hoja con la fila “Tienda”, los meses en columnas y las secciones SANTIAGO / REGIONES.');return;}
+   if(!rMac&&!rVer){alert('No pude leer este Excel.\n\nSe aceptan dos formatos:\n1) El Excel de pedidos con columnas ID PEDIDO, FECHA, UNIDAD NEGOCIO, NOMBRE CLIENTE y VALOR.\n2) El Excel por tienda y mes (fila \u201cTienda\u201d, meses en columnas y secciones SANTIAGO / REGIONES).');return;}
    let msg=[];
    if(rMac){VSTORE.mac=rMac;VF.mac={zona:'all',mes:'all',sem:'all'};msg.push('MacOnline: '+rMac.rows.length+' tiendas, '+rMac.months.length+' meses');}
    if(rVer){VSTORE.ver=rVer;VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical: '+rVer.rows.length+' tiendas, '+rVer.months.length+' meses');}
    vSaveLocal();
    ['mac','ver'].forEach(k=>{fillVentasControls(k);const z=document.getElementById('v'+k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+k+'_body'))renderVentas(k);});
-   if(fbReady){vFbPush();alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n☁ Guardado en la nube (Firebase).');}
-   else{alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n✓ Guardado en este navegador.');}
+   if(fbReady){vFbPush();alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n\u2601 Guardado en la nube (Firebase).');}
+   else{alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n\u2713 Guardado en este navegador.');}
   }catch(err){alert('Error al leer el Excel de ventas: '+err.message);}
  };rd.readAsArrayBuffer(f);e.target.value='';
 }
