@@ -1866,12 +1866,10 @@ function devoLimpiar(){
  if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
  devoEnsure();
  if(typeof fbDB==='undefined'||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}
- devoAskPass(function(){
-  if(!confirm('\u00bfSeguro que quieres LIMPIAR TODAS las tablas de Devoluciones?\n\nSe borrar\u00e1 el contenido de todas las planillas, en la plataforma y en la nube (Firebase). Esta acci\u00f3n no se puede deshacer.'))return;
-  DEVO_ITEMS.forEach(function(it){DEVO_DATA[it.id]=devoEmptyItem();});
-  devoEnsure();devoRender();
-  devoFbSave().then(function(ok){alert(ok?'Listo. Se limpiaron todas las tablas de Devoluciones (plataforma y nube).':'Se limpiaron en la plataforma, pero no se pudo guardar en la nube. Revisa los permisos de Firebase.');});
- });
+ if(!confirm('\u00bfSeguro que quieres LIMPIAR TODAS las tablas de Devoluciones?\n\nSe borrar\u00e1 el contenido de todas las planillas, en la plataforma y en la nube (Firebase). Esta acci\u00f3n no se puede deshacer.'))return;
+ DEVO_ITEMS.forEach(function(it){DEVO_DATA[it.id]=devoEmptyItem();});
+ devoEnsure();devoRender();
+ devoFbSave().then(function(ok){alert(ok?'Listo. Se limpiaron todas las tablas de Devoluciones (plataforma y nube).':'Se limpiaron en la plataforma, pero no se pudo guardar en la nube. Revisa los permisos de Firebase.');});
 }
 /* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o y colores) --- */
 function devoSheetName(t){return (t||'Hoja').replace(/[\\/?*\[\]:]/g,' ').slice(0,31);}
