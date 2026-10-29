@@ -167,7 +167,7 @@ select:focus{border-color:var(--navy)}
 .devo-btn:hover{filter:brightness(1.07)}
 .devo-btn{display:inline-flex;align-items:center;gap:7px}
 .devo-btn svg{flex:0 0 auto}
-.devo-imp{background:#1d4ed8}.devo-exp{background:#0d9488}.devo-save{background:#1e8449}.devo-del{background:#c0392b}.devo-cal{background:#7b1e3a}
+.devo-imp{background:#1d4ed8}.devo-exp{background:#0d9488}.devo-save{background:#1e8449}.devo-del{background:#c0392b}.devo-cal{background:#7b1e3a}.devo-limpiar{background:#c47f17}
 .devo-graficos-btn{border:2px solid #0e7490;background:#0e7490;color:#fff;border-radius:9px 9px 0 0;padding:9px 16px;font-size:12.5px;font-weight:800;letter-spacing:.3px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;margin-left:auto;box-shadow:0 4px 12px rgba(14,116,144,.25)}
 .devo-graficos-btn:hover{filter:brightness(1.08)}
 .devo-g2-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
@@ -1680,6 +1680,7 @@ function devoPlanillas(){
   +'<button class="devo-btn devo-imp" id="devoImport"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg>IMPORTAR EXCEL</button>'
   +'<button class="devo-btn devo-exp" id="devoExport"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>EXPORTAR EXCEL</button>'
   +'<button class="devo-btn devo-save" id="devoGuardar"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>GUARDAR</button>'
+  +'<button class="devo-btn devo-limpiar" id="devoLimpiar">🧹 LIMPIAR</button>'
   +'<button class="devo-btn devo-del" id="devoBorrar"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>BORRAR</button>'
   +'<button class="devo-btn devo-nube" id="devoNube">☁ NUBE</button>'
   +'<button class="devo-btn devo-repbtn" id="devoReporte">📄 REPORTE</button>'
@@ -1765,6 +1766,7 @@ function devoWire(){
  if(bI&&fI){bI.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}fI.click();});fI.addEventListener('change',devoImportExcel);}
  const bE=document.getElementById('devoExport');if(bE)bE.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoOpenPick('exp');});
  const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
+ const bL=document.getElementById('devoLimpiar');if(bL)bL.addEventListener('click',devoLimpiar);
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoOpenPick('del');});
  const bC=document.getElementById('devoGraficar');if(bC)bC.addEventListener('click',devoOpenGraficar);
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
@@ -1859,6 +1861,18 @@ function devoGuardar(){devoEnsure();
  /* Aun sin sesion: intentar login anonimo AHORA y luego guardar */
  if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}_doSave();}).catch(function(e){console.error('signInAnonymously',e);var code=(e&&e.code)||'';var extra='';if(code==='auth/operation-not-allowed'||code==='auth/admin-restricted-operation')extra='\n\nCausa: el proveedor "An\u00f3nimo" NO est\u00e1 activado.';else if(code==='auth/configuration-not-found')extra='\n\nCausa: a\u00fan no has configurado Authentication en este proyecto.';else if(code==='auth/network-request-failed')extra='\n\nCausa: sin conexi\u00f3n a internet.';alert('No se pudo conectar a la nube.'+extra+'\n\nSoluci\u00f3n: entra a Firebase \u2192 Authentication \u2192 Sign-in method y activa el proveedor "An\u00f3nimo". Luego recarga con Ctrl+F5.'+(code?('\n\n[detalle: '+code+']'):''));});return;}
  alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');}
+/* --- LIMPIAR: vaciar TODAS las tablas de Devoluciones (plataforma + nube) --- */
+function devoLimpiar(){
+ if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
+ devoEnsure();
+ if(typeof fbDB==='undefined'||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}
+ devoAskPass(function(){
+  if(!confirm('\u00bfSeguro que quieres LIMPIAR TODAS las tablas de Devoluciones?\n\nSe borrar\u00e1 el contenido de todas las planillas, en la plataforma y en la nube (Firebase). Esta acci\u00f3n no se puede deshacer.'))return;
+  DEVO_ITEMS.forEach(function(it){DEVO_DATA[it.id]=devoEmptyItem();});
+  devoEnsure();devoRender();
+  devoFbSave().then(function(ok){alert(ok?'Listo. Se limpiaron todas las tablas de Devoluciones (plataforma y nube).':'Se limpiaron en la plataforma, pero no se pudo guardar en la nube. Revisa los permisos de Firebase.');});
+ });
+}
 /* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o y colores) --- */
 function devoSheetName(t){return (t||'Hoja').replace(/[\\/?*\[\]:]/g,' ').slice(0,31);}
 function devoExport(ids){
