@@ -4722,33 +4722,24 @@ function handleVentasUpload(e,fromK){
  rd.onload=ev=>{
   try{
    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
-   /* 1) \u00bfEs el Excel TRANSACCIONAL (ID PEDIDO / FECHA / UNIDAD NEGOCIO / NOMBRE CLIENTE / VALOR)? */
-   const k=(fromK==='ver')?'ver':'mac';
-   const flat=vExtractFlat(wb,f.name,k);
-   if(flat){
-    if(!flat.rows.length){alert('Le\u00ed el Excel, pero no encontr\u00e9 filas de '+(k==='ver'?'Vertical Tiendas':'MacOnline Distribuci\u00f3n')+' en la columna UNIDAD NEGOCIO.\n\nRecuerda: el bot\u00f3n de esta pesta\u00f1a solo carga la unidad de negocio de esta pesta\u00f1a.');return;}
-    vMergeMonths(k,flat);VF[k]={zona:'all',mes:'all',sem:'all'};
-    vSaveLocal();
-    ['mac','ver'].forEach(kk=>{fillVentasControls(kk);const z=document.getElementById('v'+kk+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+kk+'_body'))renderVentas(kk);});
-    var mlbl=flat.months.map(mi=>MESES_FULL[mi]).join(', ')||'—';
-    var resumen=(k==='ver'?'Vertical Tiendas':'MacOnline Distribuci\u00f3n')+':\n'+
-     '• '+flat.rows.length+' tiendas\n'+
-     '• '+flat._kept+' pedidos cargados (se quitaron '+flat._dups+' repetidos por ID PEDIDO y VALOR, dej\u00e1ndose el de la fecha m\u00e1s alta)\n'+
-     '• Mes: '+mlbl;
-    if(fbReady){vFbPush();alert('Excel de ventas cargado:\n\n'+resumen+'\n\n\u2601 Guardado en la nube (Firebase).');}
-    else{alert('Excel de ventas cargado:\n\n'+resumen+'\n\n\u2713 Guardado en este navegador.');}
-    return;
-   }
-   /* 2) Formato cl\u00e1sico (matriz Tienda x Mes con secciones SANTIAGO/REGIONES) */
-   const rMac=vExtract(wb,f.name,'mac');const rVer=vExtract(wb,f.name,'ver');
-   if(!rMac&&!rVer){alert('No pude leer este Excel.\n\nSe aceptan dos formatos:\n1) El Excel de pedidos con columnas ID PEDIDO, FECHA, UNIDAD NEGOCIO, NOMBRE CLIENTE y VALOR.\n2) El Excel por tienda y mes (fila \u201cTienda\u201d, meses en columnas y secciones SANTIAGO / REGIONES).');return;}
    let msg=[];
-   if(rMac){VSTORE.mac=rMac;VF.mac={zona:'all',mes:'all',sem:'all'};msg.push('MacOnline: '+rMac.rows.length+' tiendas, '+rMac.months.length+' meses');}
-   if(rVer){VSTORE.ver=rVer;VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical: '+rVer.rows.length+' tiendas, '+rVer.months.length+' meses');}
+   /* Excel de pedidos (ID PEDIDO / FECHA / UNIDAD NEGOCIO / NOMBRE CLIENTE / VALOR):
+      se carga lo que venga, sin reglas por pesta\u00f1a. */
+   const fMac=vExtractFlat(wb,f.name,'mac');
+   const fVer=vExtractFlat(wb,f.name,'ver');
+   if(fMac&&fMac.rows.length){vMergeMonths('mac',fMac);VF.mac={zona:'all',mes:'all',sem:'all'};msg.push('MacOnline Distribuci\u00f3n: '+fMac.rows.length+' tiendas, '+fMac._kept+' pedidos');}
+   if(fVer&&fVer.rows.length){vMergeMonths('ver',fVer);VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical Tiendas: '+fVer.rows.length+' tiendas, '+fVer._kept+' pedidos');}
+   if(!msg.length){
+    /* Excel por tienda y mes (formato cl\u00e1sico) */
+    const rMac=vExtract(wb,f.name,'mac');const rVer=vExtract(wb,f.name,'ver');
+    if(rMac){VSTORE.mac=rMac;VF.mac={zona:'all',mes:'all',sem:'all'};msg.push('MacOnline: '+rMac.rows.length+' tiendas, '+rMac.months.length+' meses');}
+    if(rVer){VSTORE.ver=rVer;VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical: '+rVer.rows.length+' tiendas, '+rVer.months.length+' meses');}
+   }
+   if(!msg.length){alert('No se encontraron datos de ventas en el archivo.');return;}
    vSaveLocal();
    ['mac','ver'].forEach(k=>{fillVentasControls(k);const z=document.getElementById('v'+k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+k+'_body'))renderVentas(k);});
-   if(fbReady){vFbPush();alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n\u2601 Guardado en la nube (Firebase).');}
-   else{alert('Excel de ventas cargado ('+(rMac?rMac.year:(rVer?rVer.year:''))+'):\n'+msg.join('\n')+'\n\n\u2713 Guardado en este navegador.');}
+   if(fbReady){vFbPush();alert('Excel de ventas cargado:\n'+msg.join('\n')+'\n\n\u2601 Guardado en la nube (Firebase).');}
+   else{alert('Excel de ventas cargado:\n'+msg.join('\n')+'\n\n\u2713 Guardado en este navegador.');}
   }catch(err){alert('Error al leer el Excel de ventas: '+err.message);}
  };rd.readAsArrayBuffer(f);e.target.value='';
 }
