@@ -4499,23 +4499,31 @@ function vFlatFecha(feRaw){
  if(m){var dd=+m[1],mm=+m[2]-1,yy=+m[3];if(yy<100)yy+=2000;var d=new Date(yy,mm,dd);return isNaN(d)?null:d;}
  var d2=new Date(p);return isNaN(d2)?null:d2;
 }
+/* Detecta el mes (0-11) a partir del nombre de la hoja (p.ej. "Enero 26"). */
+function vSheetMes(nm){var u=stripAcc(String(nm==null?'':nm)).toUpperCase();for(var i=0;i<VMESES.length;i++){if(u.indexOf(VMESES[i])>=0)return i;}return -1;}
+/* Detecta el a\u00f1o a partir del nombre de la hoja: "2026" o "26". */
+function vSheetYear(nm){var u=String(nm==null?'':nm);var m=u.match(/(20\d\d)/);if(m)return +m[1];var m2=u.match(/\b(\d{2})\b/);if(m2)return 2000+(+m2[1]);return null;}
 function vExtractFlat(wb,fname,unitKey){
+ var allRecs=[];var found=false;
+ /* Recorre TODAS las hojas (una por mes) y ACUMULA los registros. */
  for(var si=0;si<wb.SheetNames.length;si++){
-  var aoa=vSheetAoa(wb,wb.SheetNames[si]);if(!aoa||!aoa.length)continue;
-  var hr=-1,cId=-1,cFe=-1,cUn=-1,cCl=-1,cVa=-1;
+  var shName=wb.SheetNames[si];
+  var aoa=vSheetAoa(wb,shName);if(!aoa||!aoa.length)continue;
+  var hr=-1,cId=-1,cFe=-1,cUn=-1,cCl=-1,cVa=-1,cZo=-1;
   for(var i=0;i<Math.min(aoa.length,20);i++){
-   var r=aoa[i]||[];var id=-1,fe=-1,un=-1,cl=-1,va=-1;
+   var r=aoa[i]||[];var id=-1,fe=-1,un=-1,cl=-1,va=-1,zo=-1;
    for(var j=0;j<r.length;j++){var h=stripAcc(String(r[j]==null?'':r[j])).toUpperCase().replace(/\s+/g,' ').trim();
     if(h==='ID PEDIDO'||h==='PEDIDO'||h==='ID DE PEDIDO'||h==='N PEDIDO'||h==='N\u00b0 PEDIDO')id=j;
     else if(h==='FECHA')fe=j;
     else if(h==='UNIDAD NEGOCIO'||h==='UNIDAD DE NEGOCIO')un=j;
     else if(h==='NOMBRE CLIENTE'||h==='CLIENTE'||h==='NOMBRE DEL CLIENTE')cl=j;
     else if(h==='VALOR'||h==='MONTO')va=j;
+    else if(h==='ZONA')zo=j;
    }
-   if(un>=0&&va>=0&&cl>=0){hr=i;cId=id;cFe=fe;cUn=un;cCl=cl;cVa=va;break;}
+   if(un>=0&&va>=0&&cl>=0){hr=i;cId=id;cFe=fe;cUn=un;cCl=cl;cVa=va;cZo=zo;break;}
   }
   if(hr<0)continue;
-  var recs=[];
+  var shMes=vSheetMes(shName);var shYr=vSheetYear(shName);
   for(var i2=hr+1;i2<aoa.length;i2++){
    var rr=aoa[i2]||[];var uraw=rr[cUn];if(uraw==null)continue;
    if(!vFlatUnitMatch(uraw,unitKey))continue;
@@ -4523,20 +4531,32 @@ function vExtractFlat(wb,fname,unitKey){
    var idp=cId>=0?rr[cId]:null;
    var dt=cFe>=0?vFlatFecha(rr[cFe]):null;
    var val=vNum(rr[cVa]);
-   recs.push({id:(idp==null?'':String(idp).trim()),val:val,dt:dt,cl:String(clv).trim()});
+   var zona='Sin dato';
+   if(cZo>=0){var zv=stripAcc(String(rr[cZo]==null?'':rr[cZo])).toUpperCase();if(zv.indexOf('SANTIAGO')>=0)zona='Santiago';else if(zv.indexOf('REGION')>=0)zona='Regiones';}
+   allRecs.push({id:(idp==null?'':String(idp).trim()),val:val,dt:dt,cl:String(clv).trim(),zona:zona,shMes:shMes,shYr:shYr});
+   found=true;
   }
-  if(!recs.length)continue;
-  var grp={};
-  recs.forEach(function(rec){var key=rec.id+'||'+rec.val;var ex=grp[key];if(!ex){grp[key]=rec;}else{var a=ex.dt?ex.dt.getTime():-1;var b=rec.dt?rec.dt.getTime():-1;if(b>a)grp[key]=rec;}});
-  var kept=Object.keys(grp).map(function(key){return grp[key];});
-  var byName={},mset={},monthYears={},years={};
-  kept.forEach(function(rec){var mi=rec.dt?rec.dt.getMonth():9;var yr=rec.dt?rec.dt.getFullYear():2026;mset[mi]=1;monthYears[mi]=yr;years[yr]=(years[yr]||0)+1;var key=stripAcc(rec.cl).toUpperCase();if(!byName[key])byName[key]={tienda:rec.cl,comuna:'',zona:'Sin dato',m:{},w:{}};byName[key].m[mi]=(byName[key].m[mi]||0)+rec.val;});
-  var rows=Object.keys(byName).map(function(key){var o=byName[key];var t=0;Object.keys(o.m).forEach(function(mi){o.m[mi]=Math.round(o.m[mi]);t+=o.m[mi];});return {tienda:o.tienda,comuna:o.comuna,zona:o.zona,m:o.m,w:{},total:Math.round(t)};});
-  var months=Object.keys(mset).map(Number).sort(function(a,b){return a-b;});
-  var year=2026,best=-1;Object.keys(years).forEach(function(y){if(years[y]>best){best=years[y];year=+y;}});
-  return {year:year,rows:rows,months:months,monthYears:monthYears,weeks:[],_flat:true,_kept:kept.length,_raw:recs.length,_dups:recs.length-kept.length};
  }
- return null;
+ if(!found||!allRecs.length)return null;
+ /* Dedup GLOBAL por ID PEDIDO + VALOR, conservando la FECHA m\u00e1s alta. */
+ var grp={};
+ allRecs.forEach(function(rec){var key=rec.id+'||'+rec.val;var ex=grp[key];if(!ex){grp[key]=rec;}else{var a=ex.dt?ex.dt.getTime():-1;var b=rec.dt?rec.dt.getTime():-1;if(b>a)grp[key]=rec;}});
+ var kept=Object.keys(grp).map(function(key){return grp[key];});
+ var byName={},mset={},monthYears={},years={};
+ kept.forEach(function(rec){
+  /* Mes: por nombre de hoja si existe (as\u00ed el 29-dic de Semana 1 cuenta en Enero), si no por la FECHA. */
+  var mi=rec.shMes>=0?rec.shMes:(rec.dt?rec.dt.getMonth():9);
+  var yr=rec.shYr||(rec.dt?rec.dt.getFullYear():2026);
+  mset[mi]=1;monthYears[mi]=yr;years[yr]=(years[yr]||0)+1;
+  var key=stripAcc(rec.cl).toUpperCase();
+  if(!byName[key])byName[key]={tienda:rec.cl,comuna:'',zona:rec.zona||'Sin dato',m:{},w:{}};
+  if((byName[key].zona==='Sin dato')&&rec.zona&&rec.zona!=='Sin dato')byName[key].zona=rec.zona;
+  byName[key].m[mi]=(byName[key].m[mi]||0)+rec.val;
+ });
+ var rows=Object.keys(byName).map(function(key){var o=byName[key];var t=0;Object.keys(o.m).forEach(function(mi){o.m[mi]=Math.round(o.m[mi]);t+=o.m[mi];});return {tienda:o.tienda,comuna:o.comuna,zona:o.zona,m:o.m,w:{},total:Math.round(t)};});
+ var months=Object.keys(mset).map(Number).sort(function(a,b){return a-b;});
+ var year=2026,best=-1;Object.keys(years).forEach(function(y){if(years[y]>best){best=years[y];year=+y;}});
+ return {year:year,rows:rows,months:months,monthYears:monthYears,weeks:[],_flat:true,_kept:kept.length,_raw:allRecs.length,_dups:allRecs.length-kept.length};
 }
 /* Integra (SUMA) los meses de un Excel transaccional DENTRO del libro existente
    de la pesta\u00f1a, sin duplicar: reemplaza los meses que vienen en el archivo. */
