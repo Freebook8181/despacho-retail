@@ -1765,8 +1765,8 @@ function devoWire(){
  const bI=document.getElementById('devoImport'),fI=document.getElementById('devoFile');
  if(bI&&fI){bI.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}fI.click();});fI.addEventListener('change',devoImportExcel);}
  const bE=document.getElementById('devoExport');if(bE)bE.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoOpenPick('exp');});
- const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',devoGuardar);
- const bL=document.getElementById('devoLimpiar');if(bL)bL.addEventListener('click',devoLimpiar);
+ const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',function(){if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoGuardar();});
+ const bL=document.getElementById('devoLimpiar');if(bL)bL.addEventListener('click',function(){if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoLimpiar();});
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoOpenPick('del');});
  const bC=document.getElementById('devoGraficar');if(bC)bC.addEventListener('click',devoOpenGraficar);
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
@@ -1867,7 +1867,7 @@ function devoImportExcel(ev){
 }
 /* --- GUARDAR inmediato en Firebase --- */
 function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;try{devoG2Refresh();}catch(e){}return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
-function devoGuardar(){devoEnsure();
+function devoGuardar(){if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoEnsure();
  if(typeof fbDB==='undefined'||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}
  /* Ordenar cada tabla por fecha antes de guardar en la nube (por fecha y tabla correspondiente). */
  DEVO_ITEMS.forEach(function(it){if(DEVO_DATA[it.id])DEVO_DATA[it.id].rows=devoSortRowsByDate(DEVO_DATA[it.id].rows);});
@@ -2786,12 +2786,15 @@ function opsCleanResumenSheet(aoa){
  var hdr=-1,idx={};
  for(var i=0;i<Math.min(aoa.length,40);i++){
   var up=(aoa[i]||[]).map(function(c){return c==null?'':stripAcc(String(c)).trim().toUpperCase();});
-  var hasP=up.some(function(c){return c.indexOf('PEDIDO')>=0;}),hasV=up.some(function(c){return c.indexOf('VALOR')>=0;}),hasF=up.some(function(c){return c.indexOf('FECHA')>=0;}),hasR=up.some(function(c){return c.indexOf('RAZON')>=0;});
+  var hasP=up.some(function(c){return c.indexOf('PEDIDO')>=0;}),hasV=up.some(function(c){return c.indexOf('VALOR')>=0;}),hasF=up.some(function(c){return c.indexOf('FECHA')>=0;}),hasR=up.some(function(c){return c.indexOf('RAZON')>=0||c.indexOf('CALCULA')>=0;});
   if(hasP&&hasV&&hasF&&hasR){hdr=i;idx={};up.forEach(function(c,j){if(c&&!(c in idx))idx[c]=j;});break;}
  }
  if(hdr<0)return null;
  function col(name){var k=Object.keys(idx).find(function(k){return k===name;});if(k==null)k=Object.keys(idx).find(function(k){return k.indexOf(name)>=0;});return k!=null?idx[k]:-1;}
- var cP=col('PEDIDO'),cS=col('SEMANA'),cF=col('FECHA'),cU=col('UNIDAD NEGOCIO'),cC=col('CLIENTE'),cD=col('DIRECCION'),cCo=col('COMUNA'),cZ=col('ZONA'),cV=col('VALOR'),cM=col('MOVIL'),cR=col('RANGO'),cRa=col('RAZON'),cRC=col('REPITE');
+ var cP=col('PEDIDO'),cS=col('SEMANA'),cF=col('FECHA'),cU=col('UNIDAD NEGOCIO'),cC=col('CLIENTE'),cD=col('DIRECCION'),cCo=col('COMUNA'),cZ=col('ZONA'),cV=col('VALOR'),cM=col('MOVIL'),cR=col('RANGO'),cRa=col('RAZON'),cRC=col('REPITE'),cOb=col('OBSERVAC');
+ if(cRa<0)cRa=col('CALCULA'); // formato DR_*: columna "SE CALCULA" (SE SUMA/NO SUMA)
+ if(cM<0)cM=col('TRANSPORTE'); // formato DR_*: "TRANSPORTE" en vez de "MOVIL"
+ if(cRC<0)cRC=col('REPETICION'); // formato DR_*: "REPETICION" en vez de "REPITE"
  var map={},byMk={};
  for(var r=hdr+1;r<aoa.length;r++){
   var row=aoa[r];if(!row)continue;
@@ -2805,6 +2808,7 @@ function opsCleanResumenSheet(aoa){
   if(!isFinite(v))v=0;
   var sem=opsWeekOfYear(dt); // Semana GLOBAL calculada SIEMPRE desde la FECHA (tabla del usuario), ignora texto erroneo
   var zu=stripAcc(String(cZ>=0&&row[cZ]!=null?row[cZ]:'')).toUpperCase();var zona=zu.indexOf('SANT')>=0?'Santiago':(zu.indexOf('REG')>=0?'Regiones':'Sin dato');
+  if(zona==='Sin dato'){var zc=devoZonaComuna(cCo>=0?row[cCo]:null);if(zc)zona=zc;} // sin columna ZONA: deducir por COMUNA (RM → Santiago)
   var tp=(cM>=0&&row[cM]!=null&&String(row[cM]).trim()!=='')?String(row[cM]).trim():'Sin dato';
   var rg=(cR>=0&&row[cR]!=null&&String(row[cR]).trim()!=='')?String(row[cR]).trim().toUpperCase():'EN BLANCO';
   var un=(cU>=0&&row[cU]!=null&&String(row[cU]).trim()!=='')?String(row[cU]).trim():'Sin dato';
@@ -2813,11 +2817,12 @@ function opsCleanResumenSheet(aoa){
   var dir=(cD>=0&&row[cD]!=null)?String(row[cD]).trim():'';
   var ped=cP>=0?row[cP]:null;
   var rep=(cRC>=0&&row[cRC]!=null)?String(row[cRC]).trim():'';
+  var ob=(cOb>=0&&row[cOb]!=null)?String(row[cOb]).replace(/[\u00a0]/g,' ').trim():'';
   var yy=dt.getFullYear(),mi=dt.getMonth();
   var mk=yy+'-'+String(mi+1).padStart(2,'0'),label=MESES_FULL[mi]+' '+yy;
   var rec={
    id:(+(ped||0))||0,pedido:ped,f:yy+'-'+String(mi+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),
-   sem:sem,dow:(dt.getDay()+6)%7,un:un,cl:cl,co:co,dir:dir,zona:zona,v:v,ob:'',tp:tp,rg:rg,rep:rep,mes:label,mk:mk};
+   sem:sem,dow:(dt.getDay()+6)%7,un:un,cl:cl,co:co,dir:dir,zona:zona,v:v,ob:ob,tp:tp,rg:rg,rep:rep,mes:label,mk:mk};
   var ent=(byMk[mk]=byMk[mk]||{label:label,mk:mk,rows:[],dups:[]});if(!ent.dups)ent.dups=[];
   if(isSuma)ent.rows.push(rec);else ent.dups.push(rec); // NO SUMA = duplicado detectado en el dedup (Auditor\u00eda)
  }
@@ -3463,7 +3468,7 @@ function obImport(){
  if(!obIsAdmin()){alert('Solo el administrador puede importar información.');return;}
  var inp=document.getElementById('opsFileInput');
  if(!inp){inp=document.createElement('input');inp.type='file';inp.id='opsFileInput';inp.accept='.xlsx,.xls';inp.multiple=true;inp.style.display='none';document.body.appendChild(inp);
-  inp.addEventListener('change',function(e){alert('☁ Se importará el Excel de OPERACIONES (una hoja por mes, p. ej. Resumen_Meses_Duplicados).\n\n • Solo se suman los pedidos marcados "SE SUMA" (los duplicados "NO SUMA" se omiten).\n • El VALOR se mantiene EXACTO, sin redondear.\n • Los datos se separan en Santiago y Regiones.\n • Si vuelves a importar un mes, ese mes se REEMPLAZA (no se duplica).\n\nAl terminar se GUARDARÁ en la nube (Firebase) solo para Operaciones; no afecta a MacOnline ni Vertical.');handleOpsUpload(e);});}
+  inp.addEventListener('change',function(e){alert('☁ Se importará el Excel de OPERACIONES.\n\n • Acepta un solo libro con una hoja por mes (p. ej. FEBRERO, MARZO...) o varios libros, uno por mes, todos con el mismo formato.\n • Solo se suman los pedidos marcados "SE SUMA" (los "NO SUMA" se omiten).\n • El VALOR se mantiene EXACTO, sin redondear.\n • La zona se separa en Santiago (comunas RM) y Regiones.\n • Si vuelves a importar un mes, ese mes se REEMPLAZA (no se duplica).\n\nAl terminar se GUARDARÁ en la nube (Firebase) solo para Operaciones; no afecta a MacOnline ni Vertical.');handleOpsUpload(e);});}
  inp.click();
 }
 function obExport(){
@@ -4542,7 +4547,7 @@ function vExtractFlat(wb,fname,unitKey){
  var grp={};
  allRecs.forEach(function(rec){var key=rec.id+'||'+rec.val;var ex=grp[key];if(!ex){grp[key]=rec;}else{var a=ex.dt?ex.dt.getTime():-1;var b=rec.dt?rec.dt.getTime():-1;if(b>a)grp[key]=rec;}});
  var kept=Object.keys(grp).map(function(key){return grp[key];});
- var byName={},mset={},monthYears={},years={};
+ var byName={},mset={},monthYears={},years={},wset={};
  kept.forEach(function(rec){
   /* Mes: por nombre de hoja si existe (as\u00ed el 29-dic de Semana 1 cuenta en Enero), si no por la FECHA. */
   var mi=rec.shMes>=0?rec.shMes:(rec.dt?rec.dt.getMonth():9);
@@ -4552,25 +4557,34 @@ function vExtractFlat(wb,fname,unitKey){
   if(!byName[key])byName[key]={tienda:rec.cl,comuna:'',zona:rec.zona||'Sin dato',m:{},w:{}};
   if((byName[key].zona==='Sin dato')&&rec.zona&&rec.zona!=='Sin dato')byName[key].zona=rec.zona;
   byName[key].m[mi]=(byName[key].m[mi]||0)+rec.val;
+  /* Semana: n\u00ba global (ISO) calculado desde la FECHA, para ver por semanas. */
+  var wk=rec.dt?isoWeekNum(rec.dt):0;
+  if(wk>0){byName[key].w[wk]=(byName[key].w[wk]||0)+rec.val;wset[wk]=1;}
  });
- var rows=Object.keys(byName).map(function(key){var o=byName[key];var t=0;Object.keys(o.m).forEach(function(mi){o.m[mi]=Math.round(o.m[mi]);t+=o.m[mi];});return {tienda:o.tienda,comuna:o.comuna,zona:o.zona,m:o.m,w:{},total:Math.round(t)};});
+ var rows=Object.keys(byName).map(function(key){var o=byName[key];var t=0;Object.keys(o.m).forEach(function(mi){o.m[mi]=Math.round(o.m[mi]);t+=o.m[mi];});Object.keys(o.w).forEach(function(wk){o.w[wk]=Math.round(o.w[wk]);});return {tienda:o.tienda,comuna:o.comuna,zona:o.zona,m:o.m,w:o.w,total:Math.round(t)};});
  var months=Object.keys(mset).map(Number).sort(function(a,b){return a-b;});
+ var weeks=Object.keys(wset).map(Number).sort(function(a,b){return a-b;});
  var year=2026,best=-1;Object.keys(years).forEach(function(y){if(years[y]>best){best=years[y];year=+y;}});
- return {year:year,rows:rows,months:months,monthYears:monthYears,weeks:[],_flat:true,_kept:kept.length,_raw:allRecs.length,_dups:allRecs.length-kept.length};
+ return {year:year,rows:rows,months:months,monthYears:monthYears,weeks:weeks,_flat:true,_kept:kept.length,_raw:allRecs.length,_dups:allRecs.length-kept.length};
 }
 /* Integra (SUMA) los meses de un Excel transaccional DENTRO del libro existente
    de la pesta\u00f1a, sin duplicar: reemplaza los meses que vienen en el archivo. */
 function vMergeMonths(k,res){
- var D=VSTORE[k];if(!D||!D.rows){D={year:res.year,rows:[],months:[],monthYears:{}};VSTORE[k]=D;}
+ var D=VSTORE[k];if(!D||!D.rows){D={year:res.year,rows:[],months:[],monthYears:{},weeks:[]};VSTORE[k]=D;}
  if(!D.monthYears)D.monthYears={};
  var newMonths=res.months.slice();
- var byName={};D.rows.forEach(function(r){byName[stripAcc(r.tienda).toUpperCase()]=r;});
- D.rows.forEach(function(r){newMonths.forEach(function(mi){delete r.m[mi];});});
- res.rows.forEach(function(nr){var key=stripAcc(nr.tienda).toUpperCase();var r=byName[key];if(!r){r={tienda:nr.tienda,comuna:nr.comuna||'',zona:nr.zona||'Sin dato',m:{},w:{},total:0};byName[key]=r;D.rows.push(r);}newMonths.forEach(function(mi){if(nr.m[mi]!=null)r.m[mi]=(r.m[mi]||0)+nr.m[mi];});if((!r.zona||r.zona==='Sin dato')&&nr.zona&&nr.zona!=='Sin dato')r.zona=nr.zona;if(!r.comuna&&nr.comuna)r.comuna=nr.comuna;});
+ /* Semanas (n\u00ba global) que pertenecen a los meses que trae el archivo \u2192 se reemplazan. */
+ var wrep={};newMonths.forEach(function(mi){var yr=res.monthYears[mi]||res.year||2026;try{monthWeeks(yr,mi).forEach(function(x){wrep[x.w]=1;});}catch(_){}});
+ (res.weeks||[]).forEach(function(w){wrep[w]=1;});
+ var byName={};D.rows.forEach(function(r){if(!r.w)r.w={};byName[stripAcc(r.tienda).toUpperCase()]=r;});
+ D.rows.forEach(function(r){newMonths.forEach(function(mi){delete r.m[mi];});Object.keys(wrep).forEach(function(w){delete r.w[w];});});
+ res.rows.forEach(function(nr){var key=stripAcc(nr.tienda).toUpperCase();var r=byName[key];if(!r){r={tienda:nr.tienda,comuna:nr.comuna||'',zona:nr.zona||'Sin dato',m:{},w:{},total:0};byName[key]=r;D.rows.push(r);}if(!r.w)r.w={};newMonths.forEach(function(mi){if(nr.m[mi]!=null)r.m[mi]=(r.m[mi]||0)+nr.m[mi];});if(nr.w)Object.keys(nr.w).forEach(function(w){r.w[w]=(r.w[w]||0)+nr.w[w];});if((!r.zona||r.zona==='Sin dato')&&nr.zona&&nr.zona!=='Sin dato')r.zona=nr.zona;if(!r.comuna&&nr.comuna)r.comuna=nr.comuna;});
  D.rows.forEach(function(r){var t=0;Object.keys(r.m).forEach(function(mi){t+=r.m[mi]||0;});r.total=Math.round(t);});
  D.rows=D.rows.filter(function(r){return Object.keys(r.m).length>0;});
  var mset={};D.rows.forEach(function(r){Object.keys(r.m).forEach(function(mi){mset[+mi]=1;});});
  D.months=Object.keys(mset).map(Number).sort(function(a,b){return a-b;});
+ var wset={};D.rows.forEach(function(r){if(r.w)Object.keys(r.w).forEach(function(w){wset[+w]=1;});});
+ D.weeks=Object.keys(wset).map(Number).sort(function(a,b){return a-b;});
  newMonths.forEach(function(mi){D.monthYears[mi]=res.monthYears[mi]||res.year;});
  D.year=res.year||D.year||2026;
 }
