@@ -5047,19 +5047,42 @@ try{initVentas();}catch(e){console.error('initVentas',e);}
   for(const row of map){for(let i=0;i<row.length-1;i++){if(t.indexOf(row[i])>=0)return row[row.length-1];}}
   return 'Este gráfico resume la información del Excel cargado para apoyar el análisis de la operación.';
  }
+ /* ---- Detalle COMPLETO de los gráficos de OPERACIONES (todas las comunas / unidades / móviles, letras y números grandes, con valores) ---- */
+ function opsAgg(rows,key,metric){var m={};(rows||[]).forEach(function(r){var k=(r[key]==null||r[key]==='')?'Sin dato':String(r[key]);if(!m[k])m[k]={n:0,v:0};m[k].n++;m[k].v+=(r.v||0);});var arr=Object.keys(m).map(function(k){return {k:k,val:metric==='v'?m[k].v:m[k].n};});arr.sort(function(a,b){return b.val-a.val;});return arr;}
+ function opsBarH(arr,o){o=o||{};var money=!!o.money;var fmtL=money?function(v){return (typeof fmShort==='function')?fmShort(v):v;}:function(v){return (typeof fi==='function')?fi(v):v;};var fmtT=money?function(v){return (typeof fm==='function')?fm(v):v;}:function(v){return (typeof fi==='function')?fi(v):v;};var A=arr.slice().reverse();var height=Math.max(400,A.length*30+130);var opt={tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontSize:15},formatter:function(p){return '<b>'+p[0].name+'</b><br/>'+(o.lbl||'Valor')+': <b>'+fmtT(p[0].value)+'</b>';}},grid:{left:10,right:150,top:18,bottom:14,containLabel:true},xAxis:{type:'value',axisLabel:{fontSize:14,color:'#44525f',formatter:fmtL}},yAxis:{type:'category',data:A.map(function(x){return x.k;}),axisLabel:{fontSize:15,color:'#243240',fontWeight:600,width:260,overflow:'truncate'}},series:[{type:'bar',barWidth:'64%',data:A.map(function(x){return {value:x.val,itemStyle:{color:(o.colorFn?o.colorFn(x.k):(o.color||'#3a5b80')),borderRadius:[0,4,4,0]}};}),label:{show:true,position:'right',color:o.lblColor||'#1f3a59',fontFamily:'IBM Plex Mono',fontSize:15,fontWeight:600,formatter:function(p){return fmtL(p.value);}}}]};return {opt:opt,height:height};}
+ function opsParetoFull(){var rows=(typeof LAST!=='undefined'&&LAST&&LAST.f)?LAST.f:[];var ca=opsAgg(rows,'co','n');var tot=rows.length||1;var acc=0,cats=[],bar=[],line=[];ca.forEach(function(x){acc+=x.val;cats.push(x.k);bar.push(x.val);line.push(+(100*acc/tot).toFixed(1));});var height=Math.max(440,window.innerHeight*0.66);var width=Math.max(1040,cats.length*30);var opt={tooltip:{trigger:'axis',axisPointer:{type:'shadow'},textStyle:{fontSize:15},formatter:function(p){var s='<b>'+p[0].axisValue+'</b>';p.forEach(function(x){s+='<br/>'+x.marker+x.seriesName+': <b>'+(x.seriesName.indexOf('%')>=0?x.value+'%':(typeof fi==='function'?fi(x.value):x.value))+'</b>';});return s;}},legend:{top:0,textStyle:{fontSize:14},itemWidth:16,itemHeight:10},grid:{left:14,right:60,top:44,bottom:140,containLabel:true},xAxis:{type:'category',data:cats,axisLabel:{interval:0,rotate:55,fontSize:13,color:'#243240',fontWeight:600}},yAxis:[{type:'value',name:'Pedidos',nameTextStyle:{fontSize:14,color:'#8a95a1'},axisLabel:{fontSize:13,color:'#44525f'}},{type:'value',max:100,axisLabel:{formatter:'{value}%',fontSize:13,color:'#44525f'},splitLine:{show:false}}],series:[{name:'Pedidos',type:'bar',data:bar,barWidth:'55%',itemStyle:{color:'#6a9bc0',borderRadius:[3,3,0,0]},label:{show:true,position:'top',color:'#3a5b80',fontFamily:'IBM Plex Mono',fontSize:13,fontWeight:600,formatter:function(p){return (typeof fi==='function')?fi(p.value):p.value;}}},{name:'% acumulado',type:'line',yAxisIndex:1,data:line,smooth:true,symbol:'circle',symbolSize:7,lineStyle:{color:'#c06a5a',width:3},itemStyle:{color:'#c06a5a'},label:{show:true,position:'top',color:'#c06a5a',fontFamily:'IBM Plex Mono',fontSize:12,formatter:function(p){return p.value+'%';}},markLine:{silent:true,symbol:'none',data:[{yAxis:80,lineStyle:{color:'#c06a5a',type:'dashed'},label:{formatter:'80%',color:'#c06a5a',fontSize:13}}]}}]};return {opt:opt,height:height,width:width};}
+ window.__opsFullOption=function(cid){try{var rows=(typeof LAST!=='undefined'&&LAST&&LAST.f)?LAST.f:[];var dups=(typeof getFilteredDups==='function')?getFilteredDups():[];
+   if(cid==='c_comvol')return opsBarH(opsAgg(rows,'co','n'),{lbl:'Pedidos',color:'#3a5b80',lblColor:'#1f3a59'});
+   if(cid==='c_comval')return opsBarH(opsAgg(rows,'co','v'),{money:true,lbl:'Valorización',color:'#4f8a79',lblColor:'#246153'});
+   if(cid==='c_valun')return opsBarH(opsAgg(rows,'un','v'),{money:true,lbl:'Valorización',color:'#4f8a79',lblColor:'#246153'});
+   if(cid==='c_valtp')return opsBarH(opsAgg(rows.filter(function(r){return r.tp!=='Sin dato';}),'tp','v'),{money:true,lbl:'Valorización',color:'#2b4a6f',lblColor:'#1f3a59'});
+   if(cid==='c_flota')return opsBarH(opsAgg(rows.filter(function(r){return r.tp!=='Sin dato';}),'tp','n'),{lbl:'Pedidos',lblColor:'#1f3a59',colorFn:function(k){return (typeof esProp==='function'&&esProp(k))?'#3a5b80':'#9aa9b8';}});
+   if(cid==='c_obstipo')return opsBarH(opsAgg(dups,'un','n'),{lbl:'Duplicados (NO SUMA)',color:'#c06a5a',lblColor:'#9a4a3a'});
+   if(cid==='c_obstp')return opsBarH(opsAgg(dups.filter(function(r){return r.tp!=='Sin dato';}),'tp','n'),{lbl:'Duplicados (NO SUMA)',color:'#c89a4e',lblColor:'#8a6a2a'});
+   if(cid==='c_pareto')return opsParetoFull();
+  }catch(e){}return null;};
+ /* ---- Realza cualquier gráfico copiado: letras y números grandes, valores visibles ---- */
+ function opsEnhance(opt){try{var arr=function(x){return Array.isArray(x)?x:(x!=null?[x]:[]);};arr(opt.xAxis).concat(arr(opt.yAxis)).forEach(function(ax){if(!ax)return;ax.axisLabel=Object.assign({},ax.axisLabel,{fontSize:14});if(ax.nameTextStyle)ax.nameTextStyle=Object.assign({},ax.nameTextStyle,{fontSize:14});});arr(opt.legend).forEach(function(lg){if(lg)lg.textStyle=Object.assign({},lg.textStyle,{fontSize:14});});arr(opt.tooltip).forEach(function(t){if(t)t.textStyle=Object.assign({},t.textStyle,{fontSize:15});});arr(opt.visualMap).forEach(function(v){if(v)v.textStyle=Object.assign({},v.textStyle,{fontSize:13});});arr(opt.series).forEach(function(s){if(!s)return;var k=s.type;if(s.label){s.label=Object.assign({},s.label,{fontSize:Math.max(13,(s.label.fontSize||10)+3)});if(k==='bar'||k==='line'||k==='pie')s.label.show=true;}else if(k==='bar'||k==='line'||k==='pie'){s.label={show:true,fontSize:14,fontFamily:'IBM Plex Mono'};}});}catch(e){}return opt;}
  var anChart=null;
  function closeAn(){var ov=document.getElementById('anOv');if(ov)ov.remove();if(anChart){try{anChart.dispose();}catch(e){}anChart=null;}window.removeEventListener('resize',anResize);}
  function anResize(){if(anChart){try{anChart.resize();}catch(e){}}}
  function openAn(chartId,titulo,sub,insightHtml){
   closeAn();
+  var eng=(typeof CANALYSIS!=='undefined'&&CANALYSIS[chartId])?CANALYSIS[chartId]:'';
+  var desc=(typeof CDESC!=='undefined'&&CDESC[chartId])?CDESC[chartId]:'';
+  var lect=(insightHtml&&insightHtml.trim())?insightHtml:'';
+  var noteHtml='';
+  if(sub)noteHtml+='<div style="margin-bottom:8px;color:#5a6672;font-size:13.5px">'+sub+'</div>';
+  if(lect)noteHtml+='<div style="margin-bottom:8px;font-size:14px;line-height:1.5"><b>Lectura de esta vista:</b> '+lect+'</div>';
+  if(eng)noteHtml+='<div style="margin-bottom:8px;font-size:14px;line-height:1.5"><b>Análisis del ingeniero en logística:</b> '+eng+'</div>';
+  if(desc)noteHtml+='<div style="margin-bottom:8px;font-size:13.5px;line-height:1.5;color:#44525f"><b>Qué muestra y cómo se lee:</b> '+desc+'</div>';
+  noteHtml+='<div style="font-size:13.5px;line-height:1.5;color:#44525f"><b>Para qué sirve:</b> '+usoDe(titulo)+'</div>';
+  if(!lect&&!eng&&!desc&&!sub)noteHtml='<div><b>Análisis:</b> Carga un mes con datos para ver el análisis.</div>';
   var ov=document.createElement('div');ov.id='anOv';ov.className='an-ov';
   ov.innerHTML='<div class="an-box">'+
    '<div class="an-head"><h3>'+(titulo||'Análisis')+'</h3><button class="an-x" id="anX">✕</button></div>'+
    '<div class="an-body"><div class="an-chart" id="anChartBox"></div>'+
-   '<div class="an-note">'+(sub?('<div style="margin-bottom:6px">'+sub+'</div>'):'')+
-   '<div><b>Análisis:</b> '+(insightHtml&&insightHtml.trim()?insightHtml:'Carga un mes con datos para ver el análisis.')+'</div>'+
-   '<div style="margin-top:6px"><b>Para qué sirve:</b> '+usoDe(titulo)+'</div>'+
-   '</div></div></div>';
+   '<div class="an-note">'+noteHtml+'</div></div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click',function(e){if(e.target===ov)closeAn();});
   var x=document.getElementById('anX');if(x)x.addEventListener('click',closeAn);
@@ -5069,14 +5092,17 @@ try{initVentas();}catch(e){console.error('initVentas',e);}
    if(/_c_tie$/.test(chartId)&&typeof window.__tieFullOption==='function'){var mm=chartId.match(/^v(.+?)_c_tie$/);if(mm){try{full=window.__tieFullOption(mm[1]);}catch(e){}}}
    if(/_c_pareto$/.test(chartId)&&typeof window.__paretoFullOption==='function'){var mp=chartId.match(/^v(.+?)_c_pareto$/);if(mp){try{full=window.__paretoFullOption(mp[1]);}catch(e){}}}
    if(/_c_cmpevo$/.test(chartId)&&window.__cmpEvoFull&&window.__cmpEvoFull[chartId]){full=window.__cmpEvoFull[chartId];}
+   if(!full&&typeof window.__opsFullOption==='function'){try{full=window.__opsFullOption(chartId);}catch(e){}}
    if(full&&full.opt&&typeof echarts!=='undefined'){
     box.style.height=(full.height||Math.max(380,full.count*26+90))+'px';
+    if(full.width)box.style.width=full.width+'px';
     anChart=echarts.init(box,null,{renderer:'canvas'});
     anChart.setOption(full.opt,true);
     setTimeout(anResize,60);
     window.addEventListener('resize',anResize);
    }else if(typeof CH!=='undefined'&&CH[chartId]&&typeof echarts!=='undefined'){
-    var opt=CH[chartId].getOption();
+    var opt=opsEnhance(CH[chartId].getOption());
+    box.style.height=Math.min(window.innerHeight*0.66,580)+'px';
     anChart=echarts.init(box,null,{renderer:'canvas'});
     anChart.setOption(opt,true);
     setTimeout(anResize,60);
