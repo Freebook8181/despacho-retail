@@ -1765,8 +1765,8 @@ function devoWire(){
  const bI=document.getElementById('devoImport'),fI=document.getElementById('devoFile');
  if(bI&&fI){bI.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}fI.click();});fI.addEventListener('change',devoImportExcel);}
  const bE=document.getElementById('devoExport');if(bE)bE.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoOpenPick('exp');});
- const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',function(){if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoGuardar();});
- const bL=document.getElementById('devoLimpiar');if(bL)bL.addEventListener('click',function(){if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoLimpiar();});
+ const bG=document.getElementById('devoGuardar');if(bG)bG.addEventListener('click',function(){devoGuardar();});
+ const bL=document.getElementById('devoLimpiar');if(bL)bL.addEventListener('click',function(){devoLimpiar();});
  const bB=document.getElementById('devoBorrar');if(bB)bB.addEventListener('click',()=>{if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoOpenPick('del');});
  const bC=document.getElementById('devoGraficar');if(bC)bC.addEventListener('click',devoOpenGraficar);
  const bN=document.getElementById('devoNube');if(bN)bN.addEventListener('click',devoOpenNube);
@@ -1867,7 +1867,7 @@ function devoImportExcel(ev){
 }
 /* --- GUARDAR inmediato en Firebase --- */
 function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;try{devoG2Refresh();}catch(e){}return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
-function devoGuardar(){if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}devoEnsure();
+function devoGuardar(){devoEnsure();
  if(typeof fbDB==='undefined'||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}
  /* Ordenar cada tabla por fecha antes de guardar en la nube (por fecha y tabla correspondiente). */
  DEVO_ITEMS.forEach(function(it){if(DEVO_DATA[it.id])DEVO_DATA[it.id].rows=devoSortRowsByDate(DEVO_DATA[it.id].rows);});
@@ -1879,7 +1879,6 @@ function devoGuardar(){if(!obIsAdmin()){alert('Solo el administrador puede guard
  alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');}
 /* --- LIMPIAR: vaciar las tablas SOLO en pantalla (no toca la nube) para poder escribir de nuevo --- */
 function devoLimpiar(){
- if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
  devoEnsure();
  DEVO_ITEMS.forEach(function(it){DEVO_DATA[it.id]=devoEmptyItem();});
  devoEnsure();devoRender();
