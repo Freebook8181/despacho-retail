@@ -4654,9 +4654,43 @@ function renderVentas(k){
  const regio=all.filter(r=>r.zona==='Regiones').reduce((a,r)=>a+vVal(k,r),0);
  const denom=(santi+regio)||1;
  var _fit=function(id,s){var e=document.getElementById(id);if(e){e.style.fontWeight='800';e.style.fontSize=(s.length>13?'19px':(s.length>10?'23px':'28px'));}};
- setKV(p+'k_tot',fm(total),fmShort(total));_fit(p+'k_tot',fm(total));
- setKV(p+'k_sant',fm(santi),(100*santi/denom).toFixed(0)+'% del total');_fit(p+'k_sant',fm(santi));
- setKV(p+'k_reg',fm(regio),(100*regio/denom).toFixed(0)+'% del total');_fit(p+'k_reg',fm(regio));
+ var S=D._sum;
+ if(S&&S.byMonth&&VF[k].mes!=='all'&&S.byMonth[VF[k].mes])S=S.byMonth[VF[k].mes];
+ var _azul='#1f6fd6',_verde='#1f7a4d',_rojo='#d11a2a';
+ var _setCol=function(id,c){var e=document.getElementById(id);if(e)e.style.color=c||'';};
+ if(semSel){
+  /* Semana elegida (S1..S5): VALORIZACION TOTAL muestra el total de esa semana.
+     Usamos los valores del Excel (bloque TOTAL SEMANAS / SEMANAS por zona), indexados
+     por el n\u00famero de semana global; si el Excel no trae esa semana, se calcula de las filas. */
+  var _w=+VF[k].sem;
+  var _wk=(S&&S.weeks)?S.weeks:null;
+  var _wS,_wR,_wT;
+  if(_wk&&((_wk.san&&_wk.san[_w]!=null)||(_wk.tot&&_wk.tot[_w]!=null))){
+   _wS=(_wk.san&&_wk.san[_w]!=null)?_wk.san[_w]:0;
+   _wR=(_wk.reg&&_wk.reg[_w]!=null)?_wk.reg[_w]:0;
+   _wT=(_wk.tot&&_wk.tot[_w]!=null)?_wk.tot[_w]:(_wS+_wR);
+  }else{
+   _wS=all.filter(r=>r.zona==='Santiago').reduce((a,r)=>a+((r.w&&r.w[_w])||0),0);
+   _wR=all.filter(r=>r.zona==='Regiones').reduce((a,r)=>a+((r.w&&r.w[_w])||0),0);
+   _wT=_wS+_wR;
+  }
+  setKV(p+'k_tot',fm(_wT),'Semana S'+_w+' del mes');_fit(p+'k_tot',fm(_wT));_setCol(p+'k_tot','');
+  setKV(p+'k_sant',fm(_wS),'<div style="color:#5a6672;font-weight:600;line-height:1.5">Santiago \u00b7 Semana S'+_w+'</div>');_fit(p+'k_sant',fm(_wS));_setCol(p+'k_sant',_azul);
+  setKV(p+'k_reg',fm(_wR),'<div style="color:#5a6672;font-weight:600;line-height:1.5">Regiones \u00b7 Semana S'+_w+'</div>');_fit(p+'k_reg',fm(_wR));_setCol(p+'k_reg',_azul);
+ }else if(S){
+  var sTot=(S.san&&S.san.tot!=null)?S.san.tot:santi;
+  var rTot=(S.reg&&S.reg.tot!=null)?S.reg.tot:regio;
+  var gTot=(S.total!=null)?S.total:(sTot+rTot);
+  /* SUB-TOTAL en verde, Repetidos en rojo (tal como pide el Excel); el TOTAL grande por zona va en azul. */
+  var _sub=function(z,lbl){var o=S[z]||{};if(o.sub==null&&o.rep==null)return (100*((z==='san')?sTot:rTot)/((sTot+rTot)||1)).toFixed(0)+'% del total';return '<div style="color:'+_verde+';font-weight:700;line-height:1.5">SUB-TOTAL '+lbl+': '+fm(o.sub||0)+'</div><div style="color:'+_rojo+';font-weight:700;line-height:1.5">Repetidos '+lbl+': '+fm(o.rep||0)+'</div>';};
+  setKV(p+'k_tot',fm(gTot),fmShort(gTot));_fit(p+'k_tot',fm(gTot));_setCol(p+'k_tot','');
+  setKV(p+'k_sant',fm(sTot),_sub('san','Santiago'));_fit(p+'k_sant',fm(sTot));_setCol(p+'k_sant',_azul);
+  setKV(p+'k_reg',fm(rTot),_sub('reg','Regiones'));_fit(p+'k_reg',fm(rTot));_setCol(p+'k_reg',_azul);
+ }else{
+  setKV(p+'k_tot',fm(total),fmShort(total));_fit(p+'k_tot',fm(total));_setCol(p+'k_tot','');
+  setKV(p+'k_sant',fm(santi),(100*santi/denom).toFixed(0)+'% del total');_fit(p+'k_sant',fm(santi));_setCol(p+'k_sant','');
+  setKV(p+'k_reg',fm(regio),(100*regio/denom).toFixed(0)+'% del total');_fit(p+'k_reg',fm(regio));_setCol(p+'k_reg','');
+ }
  setKV(p+'k_tie',fi(fRows.filter(r=>vVal(k,r)>0).length),`de ${fi(fRows.length)} tiendas`);
  (function(){var e=document.getElementById(p+'k_tie');if(e){e.style.fontWeight='800';e.style.fontSize='32px';}})();
  const zRows=all.filter(r=>VF[k].zona==='all'||r.zona===VF[k].zona);
@@ -4749,6 +4783,83 @@ function vSaveCloud(k){
  if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}_do();}).catch(function(e){var code=(e&&e.code)||'';alert('⚠ No se pudo conectar a la nube.\n\nSolución: entra a Firebase → Authentication → Sign-in method y activa el proveedor “Anónimo”. Luego recarga con Ctrl+F5.'+(code?('\n\n[detalle: '+code+']'):''));});return;}
  alert('⚠ No hay conexión a la nube disponible en este momento.');
 }
+/* Lee del Excel el bloque resumen (TOTAL/SUB-TOTAL/Repetidos por zona) y
+   devuelve los montos tal cual vienen (celda a la derecha de cada etiqueta).
+   Sirve para cualquier Excel que use esos mismos nombres de etiqueta. */
+function vSumNum(v){
+ if(v==null)return NaN;
+ if(typeof v==='number')return v;
+ if(v instanceof Date)return NaN;
+ var s=String(v).trim();if(!s)return NaN;
+ var neg=/^\s*[-(]/.test(s);
+ s=s.replace(/[^0-9,.-]/g,'');
+ if(s.indexOf(',')>=0){s=s.replace(/\./g,'').replace(',', '.');}else{s=s.replace(/\./g,'');}
+ var n=parseFloat(s);if(isNaN(n))return NaN;return (neg&&n>0)?-n:n;
+}
+function vReadSummary(wb,unitKey){
+ if(!wb||!wb.SheetNames)return null;
+ var UNIT=unitKey==='ver'?'VERTICAL':'MACONLINE';
+ var OTHER=unitKey==='ver'?'MACONLINE':'VERTICAL';
+ function norm(s){return stripAcc(String(s==null?'':s)).toUpperCase().replace(/SUB[\s\-]*TOTAL/g,'SUBTOTAL').replace(/\s+/g,' ').trim();}
+ function rightVal(row,j){for(var x=j+1;x<row.length;x++){var v=row[x];if(v==null)continue;if(typeof v==='string'&&!/[0-9]/.test(v))continue;var n=vSumNum(v);if(!isNaN(n))return n;}return null;}
+ function readSheet(aoa){
+  var out={san:{tot:null,sub:null,rep:null},reg:{tot:null,sub:null,rep:null}};
+  for(var i=0;i<aoa.length;i++){var row=aoa[i]||[];
+   for(var j=0;j<row.length;j++){var t=norm(row[j]);if(!t)continue;
+    if(t.indexOf(OTHER)>=0)continue;
+    var okUnit=(t.indexOf(UNIT)>=0)||(t.indexOf('MACONLINE')<0&&t.indexOf('VERTICAL')<0);
+    if(!okUnit)continue;
+    var zone=t.indexOf('SANTIAGO')>=0?'san':((t.indexOf('REGIONES')>=0||t.indexOf('REGION')>=0)?'reg':null);
+    if(!zone)continue;
+    var kind=t.indexOf('REPETIDO')>=0?'rep':(t.indexOf('SUBTOTAL')>=0?'sub':(t.indexOf('TOTAL')>=0?'tot':null));
+    if(!kind)continue;
+    if(out[zone][kind]!=null)continue;
+    var val=rightVal(row,j);if(val!=null)out[zone][kind]=val;
+   }
+  }
+  var has=out.san.tot!=null||out.reg.tot!=null||out.san.sub!=null||out.reg.sub!=null;
+  if(!has)return null;
+  ['san','reg'].forEach(function(z){var o=out[z];if(o.tot==null&&o.sub!=null)o.tot=o.sub-(o.rep||0);if(o.rep==null&&o.sub!=null&&o.tot!=null)o.rep=o.sub-o.tot;});
+  out.total=(out.san.tot||0)+(out.reg.tot||0);
+  return out;
+ }
+ /* Lee los bloques por semana (SEMANAS REGIONES / SEMANAS SANTIAGO / TOTAL SEMANAS).
+    La etiqueta "SEMANA N" trae el n\u00famero de semana GLOBAL, as\u00ed que indexamos por N. */
+ function readWeeks(aoa){
+  var res={reg:{},san:{},tot:{}};
+  function grab(r0,c0,bucket){
+   var lr=aoa[r0+1]||[],vr=aoa[r0+2]||[];
+   for(var x=c0;x<lr.length;x++){
+    var lab=stripAcc(String(lr[x]==null?'':lr[x])).toUpperCase();
+    var m=lab.match(/SEMANA\s*(\d+)/);if(!m)continue;
+    var w=+m[1];var n=vSumNum(vr[x]);if(!isNaN(n))bucket[w]=n;
+   }
+  }
+  for(var i=0;i<aoa.length;i++){var row=aoa[i]||[];for(var j=0;j<row.length;j++){var t=stripAcc(String(row[j]==null?'':row[j])).toUpperCase().replace(/\s+/g,' ').trim();if(!t)continue;
+   if(t.indexOf('SEMANAS REGIONES')>=0&&!Object.keys(res.reg).length)grab(i,j,res.reg);
+   else if(t.indexOf('SEMANAS SANTIAGO')>=0&&!Object.keys(res.san).length)grab(i,j,res.san);
+   else if(t.indexOf('TOTAL SEMANAS')>=0&&!Object.keys(res.tot).length)grab(i,j,res.tot);
+  }}
+  return res;
+ }
+ /* Lee el bloque resumen de CADA hoja-mes por separado (as\u00ed el indicador
+    refleja el mes elegido) y arma tambi\u00e9n el agregado del a\u00f1o. */
+ var byMonth={};var list=[];
+ wb.SheetNames.forEach(function(nm){
+  var mi=vSheetMes(nm);if(mi<0)return;
+  var aoa=vSheetAoa(wb,nm);if(!aoa)return;
+  var s=readSheet(aoa);if(s){s.weeks=readWeeks(aoa);byMonth[mi]=s;list.push(s);}
+ });
+ if(!Object.keys(byMonth).length){
+  var acc=null;wb.SheetNames.forEach(function(nm){if(acc)return;var aoa=vSheetAoa(wb,nm);if(!aoa)return;var s=readSheet(aoa);if(s)acc=s;});
+  if(!acc)return null;acc.byMonth={};return acc;
+ }
+ var agg={san:{tot:0,sub:0,rep:0},reg:{tot:0,sub:0,rep:0}};
+ list.forEach(function(s){['san','reg'].forEach(function(z){['tot','sub','rep'].forEach(function(kk){agg[z][kk]+=(s[z]&&s[z][kk]!=null)?s[z][kk]:0;});});});
+ agg.total=(agg.san.tot||0)+(agg.reg.tot||0);
+ agg.byMonth=byMonth;
+ return agg;
+}
 function handleVentasUpload(e,fromK){
  const f=(e.target.files||[])[0];if(!f)return;
  const rd=new FileReader();
@@ -4769,6 +4880,8 @@ function handleVentasUpload(e,fromK){
     if(rVer){VSTORE.ver=rVer;VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical: '+rVer.rows.length+' tiendas, '+rVer.months.length+' meses');}
    }
    if(!msg.length){alert('No se encontraron datos de ventas en el archivo.');return;}
+   try{var sMac=vReadSummary(wb,'mac');if(sMac&&VSTORE.mac&&VSTORE.mac.rows&&VSTORE.mac.rows.length)VSTORE.mac._sum=sMac;}catch(_){}
+   try{var sVer=vReadSummary(wb,'ver');if(sVer&&VSTORE.ver&&VSTORE.ver.rows&&VSTORE.ver.rows.length)VSTORE.ver._sum=sVer;}catch(_){}
    vSaveLocal();
    ['mac','ver'].forEach(k=>{fillVentasControls(k);const z=document.getElementById('v'+k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+k+'_body'))renderVentas(k);});
    if(fbReady){vFbPush();alert('Excel de ventas cargado:\n'+msg.join('\n')+'\n\n\u2601 Guardado en la nube (Firebase).');}
