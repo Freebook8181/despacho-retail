@@ -4867,19 +4867,25 @@ function handleVentasUpload(e,fromK){
   try{
    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
    let msg=[];
-   /* Excel de pedidos (ID PEDIDO / FECHA / UNIDAD NEGOCIO / NOMBRE CLIENTE / VALOR).
-      Vertical Tiendas NO tiene reglas de subida: solo se procesa MacOnline Distribuci\u00f3n. */
+   /* Excel de pedidos (ID PEDIDO / FECHA / UNIDAD NEGOCIO / CLIENTE / VALOR / ZONA).
+      MacOnline Distribuci\u00f3n y Vertical Tiendas se leen cada uno de su propio archivo. */
    const fMac=vExtractFlat(wb,f.name,'mac');
+   const fVer=vExtractFlat(wb,f.name,'ver');
    if(fMac&&fMac.rows.length){vMergeMonths('mac',fMac);VF.mac={zona:'all',mes:'all',sem:'all'};msg.push('MacOnline Distribuci\u00f3n: '+fMac.rows.length+' tiendas, '+fMac._kept+' pedidos');}
+   if(fVer&&fVer.rows.length){vMergeMonths('ver',fVer);VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical Tiendas: '+fVer.rows.length+' tiendas, '+fVer._kept+' pedidos');}
    if(!msg.length){
     /* Excel por tienda y mes (formato cl\u00e1sico) */
-    const rMac=vExtract(wb,f.name,'mac');
+    const rMac=vExtract(wb,f.name,'mac');const rVer=vExtract(wb,f.name,'ver');
     if(rMac){VSTORE.mac=rMac;VF.mac={zona:'all',mes:'all',sem:'all'};msg.push('MacOnline: '+rMac.rows.length+' tiendas, '+rMac.months.length+' meses');}
+    if(rVer){VSTORE.ver=rVer;VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical: '+rVer.rows.length+' tiendas, '+rVer.months.length+' meses');}
    }
    if(!msg.length){alert('No se encontraron datos de ventas en el archivo.');return;}
    try{var sMac=vReadSummary(wb,'mac');if(sMac&&VSTORE.mac&&VSTORE.mac.rows&&VSTORE.mac.rows.length)VSTORE.mac._sum=sMac;}catch(_){}
+   /* Vertical Tiendas: los totales (TOTAL / Santiago / Regiones / por semana) se calculan
+      directamente de las filas por la columna ZONA, as\u00ed que no se usa un bloque resumen. */
+   if(fVer&&fVer.rows.length){try{delete VSTORE.ver._sum;}catch(_){}}
    vSaveLocal();
-   ['mac'].forEach(k=>{fillVentasControls(k);const z=document.getElementById('v'+k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+k+'_body'))renderVentas(k);});
+   ['mac','ver'].forEach(k=>{fillVentasControls(k);const z=document.getElementById('v'+k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+k+'_body'))renderVentas(k);});
    if(fbReady){vFbPush();alert('Excel de ventas cargado:\n'+msg.join('\n')+'\n\n\u2601 Guardado en la nube (Firebase).');}
    else{alert('Excel de ventas cargado:\n'+msg.join('\n')+'\n\n\u2713 Guardado en este navegador.');}
   }catch(err){alert('Error al leer el Excel de ventas: '+err.message);}
@@ -5113,7 +5119,7 @@ function initVentasFor(k){
  const zEl=document.getElementById(p+'fZona');if(zEl)zEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;VF[k].zona=b.dataset.z;[...zEl.children].forEach(x=>x.classList.toggle('on',x===b));renderVentas(k);});
  const ms=document.getElementById(p+'fMes');if(ms)ms.addEventListener('change',e=>{VF[k].mes=(e.target.value==='all')?'all':+e.target.value;VF[k].sem='all';renderVentas(k);});
  const semEl=document.getElementById(p+'sem');if(semEl)semEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;VF[k].sem=(b.dataset.w==='all')?'all':+b.dataset.w;renderVentas(k);});
- const up=document.getElementById(p+'upBtn'),fin=document.getElementById(p+'fileInp');if(up&&fin){up.addEventListener('click',()=>fin.click());fin.addEventListener('change',ev=>{if(k==='ver'){ev.target.value='';return;}handleVentasUpload(ev,k);});}
+ const up=document.getElementById(p+'upBtn'),fin=document.getElementById(p+'fileInp');if(up&&fin){up.addEventListener('click',()=>fin.click());fin.addEventListener('change',ev=>handleVentasUpload(ev,k));}
  const sv=document.getElementById(p+'saveBtn');if(sv)sv.addEventListener('click',()=>vSaveCloud(k));
  const del=document.getElementById(p+'delBtn');if(del)del.addEventListener('click',()=>vClear(k));
  try{wireComp(k);}catch(_){}
