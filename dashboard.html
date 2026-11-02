@@ -4654,6 +4654,7 @@ function renderVentas(k){
  const regio=all.filter(r=>r.zona==='Regiones').reduce((a,r)=>a+vVal(k,r),0);
  const denom=(santi+regio)||1;
  var _fit=function(id,s){var e=document.getElementById(id);if(e){e.style.fontWeight='800';e.style.fontSize=(s.length>13?'19px':(s.length>10?'23px':'28px'));}};
+ const semSel=(VF[k].mes!=='all'&&VF[k].sem&&VF[k].sem!=='all');
  var S=D._sum;
  if(S&&S.byMonth&&VF[k].mes!=='all'&&S.byMonth[VF[k].mes])S=S.byMonth[VF[k].mes];
  var _azul='#1f6fd6',_verde='#1f7a4d',_rojo='#d11a2a';
@@ -4697,7 +4698,6 @@ function renderVentas(k){
  const mLabels=D.months.map(mi=>MESES_FULL[mi]);
  const ZCOL={Santiago:'#8e44ad',Regiones:'#c88a6a'};
  const zc=(VF[k].zona==='all')?col:(ZCOL[VF[k].zona]||col);
- const semSel=(VF[k].mes!=='all'&&VF[k].sem&&VF[k].sem!=='all');
  {const mcEl=document.getElementById(p+'c_mes');if(mcEl){const card=mcEl.closest('.card');if(card){const _h=card.querySelector('h3');const _cs=card.querySelector('.cs');if(semSel){if(_h)_h.innerHTML=IC.line+' Valorización por Semana';if(_cs)_cs.textContent='Monto vendido por semana del mes (semana elegida resaltada)';}else{if(_h)_h.innerHTML=IC.line+' Valorización por Mes';if(_cs)_cs.textContent='Monto vendido por mes (según la zona elegida)';}}}}
  if(semSel){
   const _wks=monthWeeks(vMesYear(D,VF[k].mes),VF[k].mes).map(x=>x.w);
