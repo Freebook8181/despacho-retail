@@ -537,7 +537,6 @@ function buildMarkup(){
  h+=`</section>`;
  // ===== FINANZAS =====
  h+=`<section class="section" id="s-fin"><div class="sec-head"><h2>Finanzas & P&L — Valorización de Carga</h2><p>Impacto monetário y tendencia del flujo</p></div>`;
- h+=`<div class="kgrid fin">${kpi('k_val',IC.money,'Valorización Total Operado',1)}${kpi('k_tkt',IC.ticket,'Ticket Promedio / Pedido',1)}${kpi('k_vdia',IC.line,'Valorización Promedio / Día',1)}</div>`;
  h+=`<div class="grid g-1"><div class="card" id="opsResCard"><h3>${IC.money} Resumen de Valorización — igual que la hoja «Resumen» del Excel</h3><div class="cs" id="opsResSub">SUB-TOTAL (verde), Repetidos (rojo) y TOTAL (azul), por zona y por semana</div><div class="kgrid fin" style="margin-top:6px">${kpi('kr_tot',IC.money,'Valorización Total')}${kpi('kr_san',IC.map,'Valorización Santiago')}${kpi('kr_reg',IC.map,'Valorización Regiones')}</div><div id="opsResSem" style="overflow:auto;margin-top:12px"></div></div></div>`;
  h+=`<div class="grid g-2e">${card('c_valun',IC.chart,'Valorización por Unidad de Negocio','Fuentes principales de ingreso logístico','tall')}${card('c_valtp',IC.chart,'Valorización Movilizado por Vehículo','Carga económica concentrada por móvil','tall')}</div>`;
  h+=`<div class="grid g-1">${card('c_evo',IC.line,'Evolución Diaria del Capital','Valorización movilizado y pedidos por día')}</div>`;
@@ -657,8 +656,8 @@ function buildFilters(){
  const curM=(F.mes&&F.mes.length>=7)?F.mes.slice(5,7):'09';
  const loaded=new Set(DATA.rows.map(r=>r.mk));
  const mSel=document.getElementById('fMes');
- mSel.innerHTML=MESES_FULL.map((lbl,i)=>{const mm=String(i+1).padStart(2,'0');const has=loaded.has(`${curY}-${mm}`);return `<option value="${mm}">${lbl}${has?' \u2713':''}</option>`;}).join('');
- mSel.value=curM;
+ mSel.innerHTML='<option value="all">Todo el a\u00f1o</option>'+MESES_FULL.map((lbl,i)=>{const mm=String(i+1).padStart(2,'0');const has=loaded.has(`${curY}-${mm}`);return `<option value="${mm}">${lbl}${has?' \u2713':''}</option>`;}).join('');
+ mSel.value=(F.mes==='all')?'all':curM;
  const aSel=document.getElementById('fAno');
  let yo='';for(let y=2026;y<=2030;y++)yo+=`<option value="${y}">${y}</option>`;
  aSel.innerHTML=yo;aSel.value=curY;
@@ -694,7 +693,7 @@ function fillDias(){
  sel.value=F.dia;
 }
 function wireFilters(){
- const onMesAno=()=>{const mm=document.getElementById('fMes').value;const yy=document.getElementById('fAno').value;F.mes=`${yy}-${mm}`;F.sem='all';F.dia='all';F.tp='all';F.un='all';F.cl='all';F.co='all';buildFilters();render();};
+ const onMesAno=()=>{const mm=document.getElementById('fMes').value;const yy=document.getElementById('fAno').value;F.mes=(mm==='all')?'all':`${yy}-${mm}`;F.sem='all';F.dia='all';F.tp='all';F.un='all';F.cl='all';F.co='all';buildFilters();render();};
  document.getElementById('fMes').addEventListener('change',onMesAno);
  document.getElementById('fAno').addEventListener('change',onMesAno);
  document.getElementById('fSem').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;F.sem=b.dataset.s;[...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));F.dia='all';fillDias();render();});
