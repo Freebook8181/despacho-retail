@@ -4880,7 +4880,7 @@ function handleVentasUpload(e,fromK){
     if(rVer){VSTORE.ver=rVer;VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical: '+rVer.rows.length+' tiendas, '+rVer.months.length+' meses');}
    }
    if(!msg.length){alert('No se encontraron datos de ventas en el archivo.');return;}
-   try{var sMac=vReadSummary(wb,'mac');if(sMac&&VSTORE.mac&&VSTORE.mac.rows&&VSTORE.mac.rows.length)VSTORE.mac._sum=sMac;}catch(_){}
+   try{var sMac=vReadSummary(wb,'mac');if(fMac&&fMac.rows.length){try{delete VSTORE.mac._sum;}catch(_){}}if(sMac&&VSTORE.mac&&VSTORE.mac.rows&&VSTORE.mac.rows.length)VSTORE.mac._sum=sMac;}catch(_){}
    /* Vertical Tiendas: los totales (TOTAL / Santiago / Regiones / por semana) se calculan
       directamente de las filas por la columna ZONA, as\u00ed que no se usa un bloque resumen. */
    if(fVer&&fVer.rows.length){try{delete VSTORE.ver._sum;}catch(_){}}
