@@ -4860,6 +4860,72 @@ function vReadSummary(wb,unitKey){
  agg.byMonth=byMonth;
  return agg;
 }
+/* ====== Lector DEDICADO de Vertical Tiendas ======
+   Lee cada hoja-mes CRUDA (sin dedup global, sin redondear) y reproduce EXACTO
+   lo que calcula el Excel por columna ZONA:
+   - Valorización (grande, SE SUMA)  = suma por zona excluyendo las filas NO SUMA.
+   - SUB-TOTAL (verde) = suma de TODAS las filas por zona.
+   - Repetidos (rojo)  = suma de las filas NO SUMA por zona.
+   Aquí SE CALCULA viene vacío → Repetidos=0 y SUB-TOTAL=Valorización.
+   El VALOR se conserva con sus decimales. La semana es el nº GLOBAL (Semana N). */
+function vReadVerticalRaw(wb){
+ if(!wb||!wb.SheetNames)return null;
+ var byName={},mset={},wset={},monthYears={},years={},sumBy={};var nRec=0,nVer=0;
+ for(var si=0;si<wb.SheetNames.length;si++){
+  var shName=wb.SheetNames[si];var mi=vSheetMes(shName);if(mi<0)continue;
+  var aoa=vSheetAoa(wb,shName);if(!aoa||!aoa.length)continue;
+  var hr=-1,cId=-1,cFe=-1,cUn=-1,cCl=-1,cVa=-1,cZo=-1,cSc=-1;
+  for(var i=0;i<Math.min(aoa.length,20);i++){
+   var r=aoa[i]||[];var id=-1,fe=-1,un=-1,cl=-1,va=-1,zo=-1,sc=-1;
+   for(var j=0;j<r.length;j++){var h=stripAcc(String(r[j]==null?'':r[j])).toUpperCase().replace(/\s+/g,' ').trim();
+    if(h==='ID PEDIDO'||h==='PEDIDO'||h==='ID DE PEDIDO')id=j;
+    else if(h==='FECHA')fe=j;
+    else if(h==='UNIDAD NEGOCIO'||h==='UNIDAD DE NEGOCIO')un=j;
+    else if(h==='CLIENTE'||h==='NOMBRE CLIENTE'||h==='NOMBRE DEL CLIENTE')cl=j;
+    else if(h==='VALOR'||h==='MONTO')va=j;
+    else if(h==='ZONA')zo=j;
+    else if(h==='SE CALCULA'||h==='SE SUMA'||h==='CALCULA')sc=j;
+   }
+   if(un>=0&&va>=0&&cl>=0&&zo>=0){hr=i;cId=id;cFe=fe;cUn=un;cCl=cl;cVa=va;cZo=zo;cSc=sc;break;}
+  }
+  if(hr<0)continue;
+  var shYr=vSheetYear(shName)||2026;
+  var sb={san:{tot:0,sub:0,rep:0},reg:{tot:0,sub:0,rep:0},weeks:{reg:{},san:{},tot:{}}};var any=false;
+  for(var i2=hr+1;i2<aoa.length;i2++){
+   var rr=aoa[i2]||[];var uraw=rr[cUn];if(uraw==null)continue;
+   if(!vFlatUnitMatch(uraw,'ver'))continue;
+   /* VALOR: solo numerico (igual que SUMIFS del Excel, que ignora el texto). Sin redondear. */
+   var vraw=rr[cVa];var val=(typeof vraw==='number')?vraw:0;
+   var zv=stripAcc(String(rr[cZo]==null?'':rr[cZo])).toUpperCase();
+   var z=zv.indexOf('SANTIAGO')>=0?'san':((zv.indexOf('REGION')>=0)?'reg':null);
+   if(!z)continue;
+   nVer++;
+   var scv=cSc>=0?stripAcc(String(rr[cSc]==null?'':rr[cSc])).toUpperCase():'';
+   var isNo=scv.indexOf('NO SUMA')>=0;
+   var wk=0;
+   for(var jj=0;jj<rr.length;jj++){var sm=stripAcc(String(rr[jj]==null?'':rr[jj])).toUpperCase().match(/^SEMANA\s*(\d+)$/);if(sm){wk=+sm[1];break;}}
+   if(!wk){var dt=cFe>=0?vFlatFecha(rr[cFe]):null;if(dt)wk=isoWeekNum(dt);}
+   sb[z].sub+=val;
+   if(isNo)sb[z].rep+=val;else sb[z].tot+=val;
+   if(!isNo&&wk>0){sb.weeks[z][wk]=(sb.weeks[z][wk]||0)+val;sb.weeks.tot[wk]=(sb.weeks.tot[wk]||0)+val;wset[wk]=1;}
+   var clRaw=rr[cCl];var clName=(clRaw==null||String(clRaw).trim()==='')?'(Sin cliente)':String(clRaw).trim();
+   var key=stripAcc(clName).toUpperCase();
+   if(!byName[key])byName[key]={tienda:clName,comuna:'',zona:(z==='san'?'Santiago':'Regiones'),m:{},w:{}};
+   if(!isNo){byName[key].m[mi]=(byName[key].m[mi]||0)+val;if(wk>0)byName[key].w[wk]=(byName[key].w[wk]||0)+val;}
+   any=true;nRec++;
+  }
+  if(any){mset[mi]=1;monthYears[mi]=shYr;years[shYr]=(years[shYr]||0)+1;sb.total=(sb.san.tot||0)+(sb.reg.tot||0);sumBy[mi]=sb;}
+ }
+ if(!nVer)return null;
+ var rows=Object.keys(byName).map(function(key){var o=byName[key];var t=0;Object.keys(o.m).forEach(function(m){t+=o.m[m]||0;});return {tienda:o.tienda,comuna:o.comuna,zona:o.zona,m:o.m,w:o.w,total:t};});
+ var months=Object.keys(mset).map(Number).sort(function(a,b){return a-b;});
+ var weeks=Object.keys(wset).map(Number).sort(function(a,b){return a-b;});
+ var year=2026,best=-1;Object.keys(years).forEach(function(y){if(years[y]>best){best=years[y];year=+y;}});
+ var agg={san:{tot:0,sub:0,rep:0},reg:{tot:0,sub:0,rep:0},weeks:{reg:{},san:{},tot:{}}};
+ months.forEach(function(mi){var s=sumBy[mi];if(!s)return;['san','reg'].forEach(function(zz){['tot','sub','rep'].forEach(function(kk){agg[zz][kk]+=s[zz][kk]||0;});});['reg','san','tot'].forEach(function(bk){Object.keys(s.weeks[bk]).forEach(function(w){agg.weeks[bk][w]=(agg.weeks[bk][w]||0)+s.weeks[bk][w];});});});
+ agg.total=(agg.san.tot||0)+(agg.reg.tot||0);agg.byMonth=sumBy;
+ return {year:year,rows:rows,months:months,monthYears:monthYears,weeks:weeks,_flat:true,_kept:nRec,_raw:nRec,_dups:0,_sum:agg};
+}
 function handleVentasUpload(e,fromK){
  const f=(e.target.files||[])[0];if(!f)return;
  const rd=new FileReader();
@@ -4870,9 +4936,10 @@ function handleVentasUpload(e,fromK){
    /* Excel de pedidos (ID PEDIDO / FECHA / UNIDAD NEGOCIO / CLIENTE / VALOR / ZONA).
       MacOnline Distribuci\u00f3n y Vertical Tiendas se leen cada uno de su propio archivo. */
    const fMac=vExtractFlat(wb,f.name,'mac');
-   const fVer=vExtractFlat(wb,f.name,'ver');
+   /* Vertical usa su lector dedicado (crudo, sin dedup, sin redondear) para cuadrar EXACTO con el Excel. */
+   const fVer=vReadVerticalRaw(wb);
    if(fMac&&fMac.rows.length){vMergeMonths('mac',fMac);VF.mac={zona:'all',mes:'all',sem:'all'};msg.push('MacOnline Distribuci\u00f3n: '+fMac.rows.length+' tiendas, '+fMac._kept+' pedidos');}
-   if(fVer&&fVer.rows.length){vMergeMonths('ver',fVer);VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical Tiendas: '+fVer.rows.length+' tiendas, '+fVer._kept+' pedidos');}
+   if(fVer&&fVer.rows.length){VSTORE.ver={year:fVer.year,rows:fVer.rows,months:fVer.months,monthYears:fVer.monthYears,weeks:fVer.weeks};VF.ver={zona:'all',mes:'all',sem:'all'};msg.push('Vertical Tiendas: '+fVer.rows.length+' tiendas, '+fVer._kept+' pedidos');}
    if(!msg.length){
     /* Excel por tienda y mes (formato cl\u00e1sico) */
     const rMac=vExtract(wb,f.name,'mac');const rVer=vExtract(wb,f.name,'ver');
@@ -4883,7 +4950,8 @@ function handleVentasUpload(e,fromK){
    try{var sMac=vReadSummary(wb,'mac');if(fMac&&fMac.rows.length){try{delete VSTORE.mac._sum;}catch(_){}}if(sMac&&VSTORE.mac&&VSTORE.mac.rows&&VSTORE.mac.rows.length)VSTORE.mac._sum=sMac;}catch(_){}
    /* Vertical Tiendas: los totales (TOTAL / Santiago / Regiones / por semana) se calculan
       directamente de las filas por la columna ZONA, as\u00ed que no se usa un bloque resumen. */
-   if(fVer&&fVer.rows.length){try{delete VSTORE.ver._sum;}catch(_){}}
+   /* Vertical Tiendas: totales por columna ZONA + SUB-TOTAL (verde) y Repetidos (rojo) del lector dedicado. */
+   if(fVer&&fVer.rows.length&&fVer._sum&&VSTORE.ver&&VSTORE.ver.rows&&VSTORE.ver.rows.length){VSTORE.ver._sum=fVer._sum;}
    vSaveLocal();
    ['mac','ver'].forEach(k=>{fillVentasControls(k);const z=document.getElementById('v'+k+'_fZona');if(z)[...z.children].forEach(x=>x.classList.toggle('on',x.dataset.z==='all'));if(document.getElementById('v'+k+'_body'))renderVentas(k);});
    if(fbReady){vFbPush();alert('Excel de ventas cargado:\n'+msg.join('\n')+'\n\n\u2601 Guardado en la nube (Firebase).');}
