@@ -109,7 +109,7 @@ h2.sec::before{content:'';width:4px;height:15px;background:var(--teal);border-ra
 /* Grupo ETA / confiabilidad — verde */
 .kpi.ge1{background:#e7f5ec}.kpi.ge1::after{background:#15803d}.kpi.ge1 .vl{color:#15803d}
 .kpi.ge2{background:#eff9f2}.kpi.ge2::after{background:#22a357}.kpi.ge2 .vl{color:#1a7e40}
-/* Grupo VALOR / dinero — morado */
+/* Grupo VALORIZACIÓN / dinero — morado */
 .kpi.gv1{background:#efe9fa}.kpi.gv1::after{background:#5b21b6}.kpi.gv1 .vl{color:#5b21b6}
 .kpi.gv2{background:#f2edfb}.kpi.gv2::after{background:#6d28d9}.kpi.gv2 .vl{color:#6d28d9}
 .kpi.gv3{background:#f5f1fc}.kpi.gv3::after{background:#7c3aed}.kpi.gv3 .vl{color:#7c3aed}
@@ -572,11 +572,11 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
   <div class="alerts" id="alerts" style="display:none"></div>
   <div id="chartNotice" style="display:none"></div>
   <div id="nubeChartBanner" style="display:none"></div>
-  <p class="narr">Gráficos construidos con <b>TODA</b> la planilla (todas las PO, sin excepciones). Los valores se muestran con el monto <b>real</b> de la planilla en <b>USD</b>, con separador de miles por coma (ej. 19,790).</p>
+  <p class="narr">Gráficos construidos con <b>TODA</b> la planilla (todas las PO, sin excepciones). Las valorizaciones se muestran con el monto <b>real</b> de la planilla en <b>USD</b>, con separador de miles por coma (ej. 19,790).</p>
   <div id="execSummary" class="exec-wrap"></div>
   <div class="grid g2">
     <div class="panel">
-      <div class="ph"><h3 id="tValProv">1. ¿Cuánto valor (USD) por proveedor?</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cValProv')">🔎 Ver análisis</button></div>
+      <div class="ph"><h3 id="tValProv">1. ¿Cuánta valorización (USD) por proveedor?</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cValProv')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vValProv"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mValProv"></div>
       <div class="cc big"><canvas id="cValProv"></canvas></div>
@@ -590,14 +590,14 @@ table.hm td.lbl{text-align:left;background:#f1f5fb;color:var(--navy);font-weight
       <div class="explain-box" id="exUniProv"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tZonaV">3. ¿De qué zona viene el valor? — USD por zona</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cZonaV')">🔎 Ver análisis</button></div>
+      <div class="ph"><h3 id="tZonaV">3. ¿De qué zona viene la valorización? — USD por zona</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cZonaV')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vZonaV"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mZonaV"></div>
       <div class="cc big"><canvas id="cZonaV"></canvas></div>
       <div class="explain-box" id="exZonaV"></div>
     </div>
     <div class="panel">
-      <div class="ph"><h3 id="tModo">4. ¿Cómo traemos la carga? — Tipo de transporte (con valores)</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cModo')">🔎 Ver análisis</button></div>
+      <div class="ph"><h3 id="tModo">4. ¿Cómo traemos la carga? — Tipo de transporte (con valorizaciones)</h3><div class="sp"></div><button class="explain-btn" onclick="detalle('cModo')">🔎 Ver análisis</button></div>
       <div class="verdict info" id="vModo"><span class="dot"></span><span class="vtx">—</span></div>
       <div class="metrow" id="mModo"></div>
       <div class="cc big"><canvas id="cModo"></canvas></div>
@@ -790,14 +790,14 @@ let CURRENT=null, selEmail=null;
 const COLS=[
   {k:"po",   t:"PO (Orden de Compra)", sh:"PO\n(Orden de Compra)", xls:"PO (Orden de Compra)", big:true},
   {k:"prov", t:"PROVEEDOR", sh:"PROVEEDOR", xls:"Proveedor", minw:28},
-  {k:"tipo", t:"Tipo (Maritimo / Aereo)", sh:"Tipo\n(Maritimo / Aereo)", xls:"Tipo (Maritimo / Aereo)", opt:["Marítimo","Aéreo","Terrestre"], maxw:16},
-  {k:"unid", t:"Unidades (Q de articulos en PO)", sh:"Unidades\n(Q de articulos en PO)", xls:"Unidades (Q de articulos en PO)", num:true, big:true},
+  {k:"tipo", t:"Tipo (Marítimo / Aéreo)", sh:"Tipo\n(Marítimo / Aéreo)", xls:"Tipo (Marítimo / Aéreo)", opt:["Marítimo","Aéreo","Terrestre"], maxw:16},
+  {k:"unid", t:"Unidades (Q de artículos en PO)", sh:"Unidades\n(Q de artículos en PO)", xls:"Unidades (Q de artículos en PO)", num:true, big:true},
   {k:"usd",  t:"USD", sh:"USD", xls:"USD", money:true, big:true, minw:20},
   {k:"zona", t:"ZONA", sh:"ZONA", xls:"ZONA", opt:["ASIA","EEUU","EUROPA","LATAM"]},
-  {k:"fconf",t:"FECHA CONFIRMACION (COMERCIAL)", sh:"FECHA CONFIRMACION\n(COMERCIAL)", xls:"FECHA CONFIRMACION (COMERCIAL)", date:true},
+  {k:"fconf",t:"FECHA CONFIRMACIÓN (COMERCIAL)", sh:"FECHA CONFIRMACIÓN\n(COMERCIAL)", xls:"FECHA CONFIRMACIÓN (COMERCIAL)", date:true},
   {k:"dorig",t:"DISPONIBILIDAD ORIGEN (FECHA)", sh:"DISPONIBILIDAD ORIGEN\n(FECHA)", xls:"DISPONIBILIDAD ORIGEN (FECHA)", date:true},
   {k:"rorig",t:"RETIRO EN ORIGEN", sh:"RETIRO EN ORIGEN", xls:"RETIRO EN ORIGEN", date:true},
-  {k:"diast",t:"DIAS T (origen)", sh:"DIAS T\n(origen)", xls:"DIAS T (ORIGEN)", date:true},
+  {k:"diast",t:"DÍAS T (origen)", sh:"DÍAS T\n(origen)", xls:"DÍAS T (ORIGEN)", date:true},
   {k:"eta",  t:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", sh:"ETA\n(FECHA ESTIMADA DE LLEGADA CHL)", xls:"ETA (FECHA ESTIMADA DE LLEGADA CHL)", date:true},
   {k:"fdisp",t:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", sh:"FECHA DISPONIBILIDAD\nPUERTO -AEROPUERTO", xls:"FECHA DISPONIBILIDAD PUERTO -AEROPUERTO", date:true},
   {k:"rpa",  t:"RETIRO P/A", sh:"RETIRO P/A", xls:"RETIRO P/A", date:true},
@@ -827,9 +827,9 @@ const SEED=[
 ];
 /* ===== Helpers formato ===== */
 const $=id=>document.getElementById(id);
-/* USD: 1,234,567.89 USD  (miles con coma, 2 decimales con punto, sigla USD después del valor) */
+/* USD: 1,234,567.89 USD  (miles con coma, 2 decimales con punto, sigla USD después de la valorización) */
 function fmtMoney(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''))||0;return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' USD';}
-/* USD exacto para la planilla: muestra el valor tal cual, SIN redondear (conserva los decimales ingresados) */
+/* USD exacto para la planilla: muestra la valorización tal cual, SIN redondear (conserva los decimales ingresados) */
 function fmtMoneyExact(v){v=parseFloat((''+v).replace(/[^0-9.-]/g,''));if(isNaN(v))v=0;return v.toLocaleString('en-US',{maximumFractionDigits:20})+' USD';}
 /* USD compacto para ejes/etiquetas: 1,234k USD */
 function fmtUSDk(v){v=+v||0;return (v/1000).toLocaleString('en-US',{maximumFractionDigits:0})+'k USD';}
@@ -961,7 +961,7 @@ function colWidth(c){
   let hdr=(''+label).split('\n').reduce((m,s)=>Math.max(m,s.trim().length),0);
   let max=Math.min(hdr,26);
   ROWS.forEach(r=>{const l=dispVal(c,r[c.k]).length;if(l>max)max=l;});
-  if(c.opt){c.opt.forEach(o=>{if((''+o).length>max)max=(''+o).length;}); max+=4;} // espacio extra para la flecha del desplegable, así se ve el valor (ej. ZONA)
+  if(c.opt){c.opt.forEach(o=>{if((''+o).length>max)max=(''+o).length;}); max+=4;} // espacio extra para la flecha del desplegable, así se ve la valorización (ej. ZONA)
   const lo=c.minw||10, hi=c.maxw||34;
   return Math.min(Math.max(max+3,lo),hi);
 }
@@ -970,7 +970,7 @@ function renderHead(){
   $('planHead').innerHTML='<tr><th style="width:4ch">#</th>'+ths+'<th style="width:4ch"></th></tr>';
 }
 function rowObj(arr){const o={};COLS.forEach((c,i)=>o[c.k]=arr?arr[i]:'' );return o;}
-/* TIEMPO TOTAL = días transcurridos desde FECHA CONFIRMACION (COMERCIAL) hasta DISPONIBILIDAD INVENTARIO (FINAL) */
+/* TIEMPO TOTAL = días transcurridos desde FECHA CONFIRMACIÓN (COMERCIAL) hasta DISPONIBILIDAD INVENTARIO (FINAL) */
 function diffDias(a,b){
   const p=s=>{const x=(''+s).match(/^(\d{4})-(\d{2})-(\d{2})/);return x?new Date(+x[1],+x[2]-1,+x[3]):null;};
   const d1=p(a),d2=p(b);
@@ -989,7 +989,7 @@ function renderPlanilla(){
       const v=r[c.k]==null?'':r[c.k];
       if(c.calc){
         const val=computeTtot(r);
-        return `<td><input id="ttot${ri}" type="text" value="${esc(val===''?'':val+' días')}" readonly style="text-align:right;background:#eef3f9;color:#0f2744;font-weight:700;cursor:default" title="Cálculo automático: días entre FECHA CONFIRMACION (COMERCIAL) y DISPONIBILIDAD INVENTARIO (FINAL)"></td>`;
+        return `<td><input id="ttot${ri}" type="text" value="${esc(val===''?'':val+' días')}" readonly style="text-align:right;background:#eef3f9;color:#0f2744;font-weight:700;cursor:default" title="Cálculo automático: días entre FECHA CONFIRMACIÓN (COMERCIAL) y DISPONIBILIDAD INVENTARIO (FINAL)"></td>`;
       }
       if(c.opt){
         return `<td><select onchange="upd(${ri},'${c.k}',this.value)">`+
@@ -1025,11 +1025,11 @@ function freezeFirstRow(){
 window.addEventListener('resize',()=>{try{freezeFirstRow();}catch(e){}});
 /* ===== Validación de secuencia de fechas (cada hito no puede ser anterior al hito previo) ===== */
 /* ===== Secuencia COMPLETA de fechas de la planilla (orden cronológico esperado) =====
-   BASE = FECHA CONFIRMACION (COMERCIAL). Ninguna fecha puede ser menor que la fecha
+   BASE = FECHA CONFIRMACIÓN (COMERCIAL). Ninguna fecha puede ser menor que la fecha
    anterior de la secuencia; si una fecha es menor que la fecha previa, esa celda se
    marca en ROJO. (RETIRO EN ORIGEN no puede ser menor que DISPONIBILIDAD ORIGEN, etc.) */
 const DATE_SEQ=['fconf','dorig','rorig','diast','eta','fdisp','rpa','lcd','cost','dinv'];
-const DATE_LBL={fconf:'FECHA CONFIRMACION (COMERCIAL)',dorig:'DISPONIBILIDAD ORIGEN (FECHA)',rorig:'RETIRO EN ORIGEN',diast:'DIAS T (origen)',eta:'ETA (FECHA ESTIMADA DE LLEGADA CHL)',fdisp:'FECHA DISPONIBILIDAD PUERTO -AEROPUERTO',rpa:'RETIRO P/A',lcd:'LLEGADA A CD',cost:'COSTEO',dinv:'DISPONIBILIDAD INVENTARIO (FINAL)'};
+const DATE_LBL={fconf:'FECHA CONFIRMACIÓN (COMERCIAL)',dorig:'DISPONIBILIDAD ORIGEN (FECHA)',rorig:'RETIRO EN ORIGEN',diast:'DÍAS T (origen)',eta:'ETA (FECHA ESTIMADA DE LLEGADA CHL)',fdisp:'FECHA DISPONIBILIDAD PUERTO -AEROPUERTO',rpa:'RETIRO P/A',lcd:'LLEGADA A CD',cost:'COSTEO',dinv:'DISPONIBILIDAD INVENTARIO (FINAL)'};
 function isDateStr(v){return /^\d{4}-\d{2}-\d{2}$/.test((''+(v||'')).trim());}
 function markCell(ri,k,bad,msg){const el=$('c_'+ri+'_'+k);if(!el)return;el.style.outline=bad?'2px solid #c62828':'';el.style.background=bad?'#ffebee':'';el.title=bad?(msg||('⚠ «Fecha menor que la fecha anterior; revisar '+(DATE_LBL[k]||k)+'»')):'';}
 function revalRow(ri){
@@ -1124,10 +1124,10 @@ function setCellFromPaste(ri,c,raw){
    Así cada dato cae en el encabezado correcto aunque el orden del Excel sea distinto. */
 const PASTE_ALIAS={
   'eta':'eta',                 // Excel ETA → ETA (FECHA ESTIMADA DE LLEGADA CHL)
-  'fecha':'fconf',             // Excel Fecha → FECHA CONFIRMACION (COMERCIAL)
+  'fecha':'fconf',             // Excel Fecha → FECHA CONFIRMACIÓN (COMERCIAL)
   'proveedor':'prov',          // Excel Proveedor → PROVEEDOR
-  'tipo':'tipo',               // Excel Tipo → Tipo (Maritimo / Aereo)
-  'unidades':'unid',           // Excel Unidades → Unidades (Q de articulos en PO)
+  'tipo':'tipo',               // Excel Tipo → Tipo (Marítimo / Aéreo)
+  'unidades':'unid',           // Excel Unidades → Unidades (Q de artículos en PO)
   'po':'po','usd':'usd','zona':'zona'
 };
 function resolveHeaderKey(h){
@@ -1176,7 +1176,7 @@ function doGridPaste(ri0,k0,txt){
   logAct('pegar','Pegó '+grid.length+' fila(s) desde Excel'+(headerKeys?' (por encabezado)':''));
 }
 /* Menú contextual (clic derecho con el mouse): el pegado inteligente se activa
-   SOLO al elegir esta opción; un Ctrl+V normal sigue pegando un único valor en la celda. */
+   SOLO al elegir esta opción; un Ctrl+V normal sigue pegando una única valorización en la celda. */
 let _pasteTarget=null;
 function hidePasteMenu(){const m=$('pasteMenu');if(m)m.style.display='none';}
 async function doPasteFromMenu(){
@@ -1309,7 +1309,7 @@ function logAct(action,detail){
    encabezado FF0F2744 con texto blanco, filas alternadas blanco/FFF6F9FD,
    montos #,##0.00 y cantidades #,##0 alineados a la derecha, panel congelado. */
 function exportExcel(){
-  if(anyRed()){alert('⛔ No se puede exportar: hay fechas en ROJO en la planilla.\n\nCorrija las celdas marcadas en rojo (FECHA CONFIRMACION mayor que DISPONIBILIDAD ORIGEN, o fechas fuera de secuencia) antes de exportar.');return;}
+  if(anyRed()){alert('⛔ No se puede exportar: hay fechas en ROJO en la planilla.\n\nCorrija las celdas marcadas en rojo (FECHA CONFIRMACIÓN mayor que DISPONIBILIDAD ORIGEN, o fechas fuera de secuencia) antes de exportar.');return;}
   const f=new Date();
   const pad=n=>String(n).padStart(2,'0');
   const fname='COMEX_QD_'+f.toISOString().slice(0,10)+'_'+pad(f.getHours())+pad(f.getMinutes())+'.xlsx';
@@ -1324,7 +1324,7 @@ function exportExcel(){
    Reglas respetadas:
    - Se EXCLUYEN las filas con celda(s) en ROJO (gRows()), igual que los gráficos.
    - Montos USD y unidades como NÚMERO crudo, SIN redondear (sin $ ni separador),
-     para que Power BI los lea como valor numérico.
+     para que Power BI los lea como valorización numérica.
    - Columnas calculadas útiles: Estado, Ticket Unitario USD, Días tránsito total,
      Capital (Movilizado / En tránsito) y Año-Mes para el eje temporal. */
 function exportPowerBI(){
@@ -1403,7 +1403,7 @@ async function saveBlob(blob,fname,mime,ext,desc){
 }
 
 /* ===== Importar Excel (mismos encabezados que la planilla) ===== */
-function norm(s){return (''+s).toLowerCase().replace(/\s+/g,' ').replace(/[^a-z0-9 /()]/g,'').trim();}
+function norm(s){return (''+s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').replace(/[^a-z0-9 /()]/g,'').trim();}
 function xdate(v){
   if(v==null||v==='')return '';
   if(v instanceof Date)return v.toISOString().slice(0,10);
@@ -1417,7 +1417,7 @@ function importExcel(inp){
   const rd=new FileReader();
   rd.onload=ev=>{
     try{
-      // cellFormula:false → se importan únicamente los VALORES calculados, nunca las fórmulas del Excel
+      // cellFormula:false → se importan únicamente las VALORIZACIONES calculadas, nunca las fórmulas del Excel
       const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true,cellFormula:false});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
@@ -1441,7 +1441,7 @@ function importExcel(inp){
         const o=rowObj();
         COLS.forEach((c,ci)=>{
           const src=idxFor[ci]>=0?r[idxFor[ci]]:(r[ci]!==undefined?r[ci]:'');
-          if(c.k==='usd')o[c.k]=(src===''||src==null)?'':Math.round(usdNum(src)).toLocaleString('en-US'); // USD: valor del Excel con miles (coma) y SIN decimales
+          if(c.k==='usd')o[c.k]=(src===''||src==null)?'':Math.round(usdNum(src)).toLocaleString('en-US'); // USD: valorización del Excel con miles (coma) y SIN decimales
           else if(c.money||c.num)o[c.k]=src===''?'':numClean(src);
           else if(c.date)o[c.k]=xdate(src);
           else if(c.opt){const s=src==null?'':(''+src).trim();if(!s){o[c.k]='';}else{const n=norm(s);let hit=c.opt.find(o2=>norm(o2)===n)||c.opt.find(o2=>norm(o2).startsWith(n)||n.startsWith(norm(o2)));if(!hit&&c.k==='tipo'){const t=_normTipo(s);if(c.opt.indexOf(t)>=0)hit=t;}o[c.k]=hit||s;}} // listas (Tipo transporte, ZONA): homologar el texto importado a la opción correcta
@@ -1556,7 +1556,7 @@ function mesLabel(ym){const M=['ene','feb','mar','abr','may','jun','jul','ago','
 function trendByMonth(){const su={},sd={},ct={};gRows().forEach(r=>{const d=(''+(r.dinv||'')).match(/^(\d{4}-\d{2})/);if(!d)return;const k=d[1];su[k]=(su[k]||0)+usdNum(r.usd);const t=numClean(computeTtot(r));if(t>0){sd[k]=(sd[k]||0)+t;ct[k]=(ct[k]||0)+1;}});const keys=Object.keys(su).sort();return keys.map(k=>({mes:k,lb:mesLabel(k),usd:su[k]||0,dias:ct[k]?Math.round(sd[k]/ct[k]):0,n:ct[k]||0}));}
 
 /* ===== KPIs =====
-   (Indicadores de DÓLAR OBSERVADO y VALOR EN CLP eliminados: la app trabaja solo en USD) */
+   (Indicadores de DÓLAR OBSERVADO y VALORIZACIÓN EN CLP eliminados: la app trabaja solo en USD) */
 function renderKpis(){
   const est=byEstado();
   const atr=est['Atrasado']||0, disp=est['Disponible']||0, tran=(est['En tránsito']||0)+(est['En CD']||0);
@@ -1571,8 +1571,8 @@ function renderKpis(){
     ${kpi('gt2','Cuello de botella',cb?cb.d+' d':'—',cb?cb.lb.replace(/\n/g,' '):'sin datos de tramos','cuello')}
     ${kpi('ge1','Confiabilidad de ETA',otp!=null?otp+'%':'—','proveedor/ruta llega en fecha','confia')}
     ${kpi('ge2','Desviación ETA',dva!=null?((dva>0?'+':'')+dva+' d'):'—','atraso medio vs ETA','desv')}
-    ${kpi('gv1','USD total',fmtMoney(tu),'valor importado','usd')}
-    ${kpi('gv3','Valor en tránsito',fmtMoney(vt.trans),'capital inmovilizado','transito')}
+    ${kpi('gv1','USD total',fmtMoney(tu),'valorización importada','usd')}
+    ${kpi('gv3','Valorización en tránsito',fmtMoney(vt.trans),'capital inmovilizado','transito')}
     ${kpi('go1','PO activas / pend.',nAct+' / '+nPend,'completas / con datos faltantes','po')}
   `;
 }
@@ -1592,7 +1592,7 @@ function kpiWhy(key){
     const ci=avgTiempo(),cb=cuelloBotella(),tr=tramoAvg().filter(x=>x.n>0);
     T='⏱ TIEMPO TOTAL promedio '+(ci?'— '+ci+' días':'— sin datos');
     H='<p><b>Qué mide:</b> los días promedio desde que se confirma la compra hasta que la mercadería queda disponible en inventario, sobre las PO con fechas completas.</p>'+
-      '<p><b>Por qué da este valor:</b> '+(cb?'es la suma de todos los tramos del proceso; hoy el que más pesa es <b>'+trL(cb)+'</b> con <b>'+cb.d+' d</b>, y es el principal responsable de que el ciclo total sea de <b>'+ci+' d</b>.':'aún no hay suficientes fechas por tramo para explicar la composición.')+'</p>'+
+      '<p><b>Por qué da esta valorización:</b> '+(cb?'es la suma de todos los tramos del proceso; hoy el que más pesa es <b>'+trL(cb)+'</b> con <b>'+cb.d+' d</b>, y es el principal responsable de que el ciclo total sea de <b>'+ci+' d</b>.':'aún no hay suficientes fechas por tramo para explicar la composición.')+'</p>'+
       (tr.length?'<p><b>De dónde sale (por tramo):</b></p><ul>'+tr.map(x=>'<li>'+trL(x)+': <b>'+x.d+' d</b></li>').join('')+'</ul>':'')+
       '<p><b>Qué hacer:</b> para bajar el ciclo conviene atacar los tramos internos más lentos (nacionalización y recepción en CD); el tránsito internacional depende del proveedor y la naviera y no lo controla la empresa.</p>';
   } else if(key==='cuello'){
@@ -1622,21 +1622,21 @@ function kpiWhy(key){
   } else if(key==='usd'){
     const vp=sortEnt(byProv()),zz=sortEnt(byZona());
     T='💵 USD total importado — '+fmtMoney(tu);
-    H='<p><b>Qué mide:</b> la suma del valor en dólares de todas las PO de la planilla.</p>'+
-      '<p><b>De dónde sale:</b> '+(vp[0]?'lo concentra sobre todo <b>'+esc(vp[0][0])+'</b> con '+fmtMoney(vp[0][1])+' ('+(tu?Math.round(vp[0][1]/tu*100):0)+'% del total)':'aún no hay valores cargados')+(zz[0]?('; por origen, <b>'+esc(zz[0][0])+'</b> aporta '+fmtMoney(zz[0][1])):'')+'.</p>'+
+    H='<p><b>Qué mide:</b> la suma de la valorización en dólares de todas las PO de la planilla.</p>'+
+      '<p><b>De dónde sale:</b> '+(vp[0]?'lo concentra sobre todo <b>'+esc(vp[0][0])+'</b> con '+fmtMoney(vp[0][1])+' ('+(tu?Math.round(vp[0][1]/tu*100):0)+'% del total)':'aún no hay valorizaciones cargadas')+(zz[0]?('; por origen, <b>'+esc(zz[0][0])+'</b> aporta '+fmtMoney(zz[0][1])):'')+'.</p>'+
       '<p><b>Qué hacer:</b> vigilar la concentración por proveedor y por zona para no depender de un solo origen.</p>';
   } else if(key==='transito'){
     const vt2=valorEnTransito(),tt=vt2.trans+vt2.disp,pct=tt?Math.round(vt2.trans/tt*100):0,nPend=poPendientes();
-    T='🚢 Valor en tránsito — '+fmtMoney(vt2.trans);
+    T='🚢 Valorización en tránsito — '+fmtMoney(vt2.trans);
     H='<p><b>Qué mide:</b> el capital inmovilizado en PO que aún tienen cuadros incompletos (no han terminado su ciclo).</p>'+
-      '<p><b>Por qué da este valor:</b> corresponde a <b>'+nPend+'</b> PO con datos faltantes, el <b>'+pct+'%</b> del valor total; el resto ('+fmtMoney(vt2.disp)+') ya está movilizado con sus cuadros completos.</p>'+
+      '<p><b>Por qué da esta valorización:</b> corresponde a <b>'+nPend+'</b> PO con datos faltantes, el <b>'+pct+'%</b> de la valorización total; el resto ('+fmtMoney(vt2.disp)+') ya está movilizado con sus cuadros completos.</p>'+
       '<p><b>Qué hacer:</b> completar los registros pendientes para cerrar esas PO y liberar el seguimiento del capital.</p>';
   } else if(key==='po'){
     const nAct=poActivas(),nPend=poPendientes();
     T='📋 PO activas / pendientes — '+nAct+' / '+nPend;
     H='<p><b>Qué mide:</b> <b>activas</b> = PO con todos los cuadros completos; <b>pendientes</b> = PO con algún dato faltante.</p>'+
-      '<p><b>Por qué da este valor:</b> de la planilla, '+nAct+' órdenes están completas y '+nPend+' aún necesitan completar fechas o datos.</p>'+
-      '<p><b>Qué hacer:</b> priorizar completar las pendientes para que todos los indicadores de tiempo y valor reflejen el 100% de la operación.</p>';
+      '<p><b>Por qué da esta valorización:</b> de la planilla, '+nAct+' órdenes están completas y '+nPend+' aún necesitan completar fechas o datos.</p>'+
+      '<p><b>Qué hacer:</b> priorizar completar las pendientes para que todos los indicadores de tiempo y valorización reflejen el 100% de la operación.</p>';
   } else { T='Indicador'; H='<p>Sin información adicional.</p>'; }
   $('kpiTitle').textContent=T;
   $('kpiBody').innerHTML='<h4>🔎 ¿Por qué este indicador?</h4>'+H;
@@ -1654,7 +1654,7 @@ function renderAlerts(){
     else if(e==='Pendiente') out.push(al('','y',r.po,`PO sin fecha de disponibilidad — ${r.prov||'proveedor'}, ${fmtMoney(usdNum(r.usd))}.`,'PENDIENTE'));
   });
   const prov=byProv();const tu=totUSD();
-  Object.entries(prov).forEach(([p,v])=>{if(tu>0&&v/tu>0.4) out.push(al('','y','CONC',`Concentración de riesgo: ${p} representa el ${Math.round(v/tu*100)}% del valor USD total.`,'RIESGO'));});
+  Object.entries(prov).forEach(([p,v])=>{if(tu>0&&v/tu>0.4) out.push(al('','y','CONC',`Concentración de riesgo: ${p} representa el ${Math.round(v/tu*100)}% de la valorización USD total.`,'RIESGO'));});
   if(!out.length) out.push(al('ok','g','OK','Sin alertas: todas las órdenes avanzan dentro de lo esperado.','OK'));
   $('alerts').innerHTML=out.join('');
 }
@@ -1670,9 +1670,9 @@ let detChart=null;
    config del gráfico vivo (que Chart.js muta internamente y dejaba el detalle en blanco). */
 /* Clona en profundidad una config de Chart.js CONSERVANDO las funciones
    (callbacks de ejes y tooltips) por referencia. Así el gráfico del detalle queda
-   IGUAL al de la página: mismos colores, mismo diseño y mismos valores. */
+   IGUAL al de la página: mismos colores, mismo diseño y mismas valorizaciones. */
 function cloneCfg(o){
-  if(o===null||typeof o!=='object')return o; // funciones y primitivos: por referencia/valor
+  if(o===null||typeof o!=='object')return o; // funciones y primitivos: por referencia/valorización
   if(o instanceof Date)return new Date(o);
   if(Array.isArray(o))return o.map(cloneCfg);
   const r={};for(const k in o){if(Object.prototype.hasOwnProperty.call(o,k))r[k]=cloneCfg(o[k]);}
@@ -1700,7 +1700,7 @@ function buildDetCfg(dd){
   const isCirc=(dd.type==='doughnut'||dd.type==='polarArea'||dd.type==='pie');
   const f=dd.fmt||(v=>v);
   return {type:dd.type||'bar',
-    data:{labels:(dd.labels||[]).slice(),datasets:[{label:dd.valLabel||'Valor',data:(dd.vals||[]).slice(),
+    data:{labels:(dd.labels||[]).slice(),datasets:[{label:dd.valLabel||'Valorización',data:(dd.vals||[]).slice(),
       backgroundColor:isCirc?PAL:NAVY,borderRadius:isCirc?0:4,borderWidth:isCirc?2:0,borderColor:'#fff'}]},
     options:{maintainAspectRatio:false,responsive:true,animation:false,
       plugins:{legend:{display:isCirc,position:'right'},datalabels:{display:false},
@@ -1744,7 +1744,7 @@ function detalle(id){
     const f=d.fmt||(v=>v);
     const tot=d.vals.reduce((a,b)=>a+(+b||0),0);
     const rows=d.labels.map((l,i)=>`<tr><td>${esc(l)}</td><td style="text-align:right">${f(d.vals[i])}</td><td style="text-align:right">${tot?Math.round((+d.vals[i]||0)/tot*100):0}%</td></tr>`).join('');
-    $('detTable').innerHTML=`<table class="dett"><thead><tr><th>${esc(d.catLabel||'Categoría')}</th><th style="text-align:right">${esc(d.valLabel||'Valor')}</th><th style="text-align:right">%</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Sin datos</td></tr>'}</tbody><tfoot><tr><td>Total</td><td style="text-align:right">${f(tot)}</td><td style="text-align:right">100%</td></tr></tfoot></table>`;
+    $('detTable').innerHTML=`<table class="dett"><thead><tr><th>${esc(d.catLabel||'Categoría')}</th><th style="text-align:right">${esc(d.valLabel||'Valorización')}</th><th style="text-align:right">%</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Sin datos</td></tr>'}</tbody><tfoot><tr><td>Total</td><td style="text-align:right">${f(tot)}</td><td style="text-align:right">100%</td></tr></tfoot></table>`;
   }
   $('detModal').classList.add('on');
   if(detChart){detChart.destroy();detChart=null;}
@@ -1755,7 +1755,7 @@ function detalle(id){
     const cv=$('detCanvas'); if(!cv) return;
     if(detChart){detChart.destroy();detChart=null;}
     // 1) Preferir el MISMO gráfico que está en la página (mismos colores, diseño y
-    //    valores): se clona su configuración viva CFG[id].
+    //    valorizaciones): se clona su configuración viva CFG[id].
     // 2) Si no existe, se reconstruye desde los datos del detalle (buildDetCfg).
     let cfg=cloneCfg(CFG[id])||buildDetCfg(dd);
     if(!cfg) return;
@@ -1764,7 +1764,7 @@ function detalle(id){
     cfg.options.maintainAspectRatio=false;
     cfg.options.responsive=true;
     cfg.options.animation=false;
-    // Evitar que un padding lateral grande (p.ej. 180px del gráfico de valor por proveedor)
+    // Evitar que un padding lateral grande (p.ej. 180px del gráfico de valorización por proveedor)
     // colapse el área de dibujo en pantallas angostas (celular) y deje el detalle EN BLANCO.
     try{
       const _lp=cfg.options.layout&&cfg.options.layout.padding;
@@ -1798,7 +1798,7 @@ function detFromLive(id){
       series:dss.map(s=>({name:s.label||'',vals:(s.data||[]).slice(),fmt:v=>v}))};
   }
   return {title:title,labels:labels,vals:((dss[0]&&dss[0].data)||[]).slice(),
-    fmt:v=>v,type:type,catLabel:'Categoría',valLabel:(dss[0]&&dss[0].label)||'Valor'};
+    fmt:v=>v,type:type,catLabel:'Categoría',valLabel:(dss[0]&&dss[0].label)||'Valorización'};
 }
 function closeDet(){$('detModal').classList.remove('on');if(detChart){detChart.destroy();detChart=null;}}
 window.addEventListener('resize',()=>{if(detChart&&$('detModal').classList.contains('on'))detChart.resize();});
@@ -2205,7 +2205,7 @@ function fillReportImgs(host){
   })();
 }
 Chart.defaults.font.family="'Segoe UI',system-ui,Arial";Chart.defaults.color='#475569';Chart.defaults.font.size=12;
-// Mostrar valores sobre los gráficos (plugin datalabels, desactivado por defecto y activado por gráfico)
+// Mostrar valorizaciones sobre los gráficos (plugin datalabels, desactivado por defecto y activado por gráfico)
 try{if(window.ChartDataLabels)Chart.register(window.ChartDataLabels);}catch(e){}
 Chart.defaults.set('plugins.datalabels',{display:false,clamp:true,clip:false,font:{weight:'700',size:13}});
 function sortEnt(m){return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
@@ -2282,10 +2282,10 @@ function drawTimeCharts(){
   if(cbot)chip('mTramo','Cuello de botella',cbot.lb.replace(/\n/g,' ')+' ('+cbot.d+' d)');
   chip('mTramo','TIEMPO TOTAL prom.',avgTiempo()+' d');
 
-  // 2) USD (valor) por proveedor — montos REALES de la planilla
+  // 2) USD (valorización) por proveedor — montos REALES de la planilla
   const vprov=sortEnt(byProv());
   mk('cValProv',{type:'bar',data:{labels:vprov.map(x=>x[0]),datasets:[{label:'USD',data:vprov.map(x=>x[1]),backgroundColor:'#1b4b7a',borderRadius:5}]},options:{indexAxis:'y',layout:{padding:{right:180}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtDual(c.parsed.x)}},datalabels:{display:true,anchor:'end',align:'end',clamp:true,clip:false,color:'#0f2744',font:{weight:'800',size:11.5},formatter:v=>fmtDualArr(v)}},maintainAspectRatio:false,scales:{x:{beginAtZero:true,ticks:{callback:v=>fmtUSDg(v)}}}}});
-  if(vprov[0])chip('mValProv','Mayor valor',vprov[0][0]+' ('+fmtUSDg(vprov[0][1])+')');
+  if(vprov[0])chip('mValProv','Mayor valorización',vprov[0][0]+' ('+fmtUSDg(vprov[0][1])+')');
   chip('mValProv','USD total',fmtUSDg(totUSD()));
 
   // 3) TIEMPO TOTAL promedio por proveedor
@@ -2319,16 +2319,16 @@ function drawTimeCharts(){
   // ===== Títulos de conclusión + semáforos (vista gerencial) =====
   const tu2=totUSD(), totPO=ROWS.length;
   // 1) USD por proveedor
-  if(vprov[0]){const part=tu2?Math.round(vprov[0][1]/tu2*100):0;setT('ValProv',vprov[0][0]+' concentra el mayor valor ('+fmtUSDg(vprov[0][1])+')');verdict('ValProv',part>=40?'warn':'info','<b>'+vprov[0][0]+'</b> suma <b>'+fmtDual(vprov[0][1])+'</b> ('+part+'% del total importado '+fmtDual(tu2)+'). '+(part>=40?'Alta concentración de compra: conviene homologar un segundo proveedor.':'Distribución de compra razonable.'));}
-  else{setT('ValProv','USD por proveedor — sin datos');verdict('ValProv','info','Aún no hay valores USD cargados en la planilla.');}
+  if(vprov[0]){const part=tu2?Math.round(vprov[0][1]/tu2*100):0;setT('ValProv',vprov[0][0]+' concentra la mayor valorización ('+fmtUSDg(vprov[0][1])+')');verdict('ValProv',part>=40?'warn':'info','<b>'+vprov[0][0]+'</b> suma <b>'+fmtDual(vprov[0][1])+'</b> ('+part+'% del total importado '+fmtDual(tu2)+'). '+(part>=40?'Alta concentración de compra: conviene homologar un segundo proveedor.':'Distribución de compra razonable.'));}
+  else{setT('ValProv','USD por proveedor — sin datos');verdict('ValProv','info','Aún no hay valorizaciones USD cargadas en la planilla.');}
   // 2) Unidades por proveedor
-  if(uprov[0]){setT('UniProv',uprov[0][0]+' aporta el mayor volumen ('+fmtUnid(uprov[0][1])+' u)');verdict('UniProv','info','Volumen total importado: <b>'+fmtUnid(totUnid())+' unidades</b>. El mayor volumen lo aporta <b>'+uprov[0][0]+'</b> con <b>'+fmtUnid(uprov[0][1])+' u</b>. Cruzar con el valor USD revela dónde el precio por unidad es mayor.');}
+  if(uprov[0]){setT('UniProv',uprov[0][0]+' aporta el mayor volumen ('+fmtUnid(uprov[0][1])+' u)');verdict('UniProv','info','Volumen total importado: <b>'+fmtUnid(totUnid())+' unidades</b>. El mayor volumen lo aporta <b>'+uprov[0][0]+'</b> con <b>'+fmtUnid(uprov[0][1])+' u</b>. Cruzar con la valorización USD revela dónde el precio por unidad es mayor.');}
   else{setT('UniProv','Unidades por proveedor — sin datos');verdict('UniProv','info','Aún no hay unidades cargadas en la planilla.');}
   // 3) USD por zona
-  {const zz=sortEnt(zval);if(zz[0]){const part=tu2?Math.round(zz[0][1]/tu2*100):0;setT('ZonaV',zz[0][0]+' concentra el '+part+'% del valor importado');verdict('ZonaV',part>=50?'warn':'info','<b>'+zz[0][0]+'</b> lidera con <b>'+fmtDual(zz[0][1])+'</b> ('+part+'%). '+(part>=50?'Dependencia geográfica alta: evaluar doble origen / nearshoring.':'Abastecimiento geográfico diversificado.'));}
-  else{setT('ZonaV','USD por zona — sin datos');verdict('ZonaV','info','Aún no hay zonas con valor cargado.');}}
+  {const zz=sortEnt(zval);if(zz[0]){const part=tu2?Math.round(zz[0][1]/tu2*100):0;setT('ZonaV',zz[0][0]+' concentra el '+part+'% de la valorización importada');verdict('ZonaV',part>=50?'warn':'info','<b>'+zz[0][0]+'</b> lidera con <b>'+fmtDual(zz[0][1])+'</b> ('+part+'%). '+(part>=50?'Dependencia geográfica alta: evaluar doble origen / nearshoring.':'Abastecimiento geográfico diversificado.'));}
+  else{setT('ZonaV','USD por zona — sin datos');verdict('ZonaV','info','Aún no hay zonas con valorización cargada.');}}
   // 4) Tipo de transporte
-  if(modos.length){const tot6=modos.reduce((a,b)=>a+b.usd,0);const mar=modos.find(x=>/mar/i.test(x.modo));const pMar=tot6&&mar?Math.round(mar.usd/tot6*100):null;setT('Modo',pMar!=null?('El '+pMar+'% del valor viene por vía marítima'):'Mix de modos de transporte');verdict('Modo','info',modos.map(x=>'<b>'+x.modo+'</b>: '+fmtDual(x.usd)+' / '+x.dias+' d').join(' · ')+'. Trade-off costo vs. velocidad: reservar aéreo para carga crítica o de alto valor.');}
+  if(modos.length){const tot6=modos.reduce((a,b)=>a+b.usd,0);const mar=modos.find(x=>/mar/i.test(x.modo));const pMar=tot6&&mar?Math.round(mar.usd/tot6*100):null;setT('Modo',pMar!=null?('El '+pMar+'% de la valorización viene por vía marítima'):'Mix de modos de transporte');verdict('Modo','info',modos.map(x=>'<b>'+x.modo+'</b>: '+fmtDual(x.usd)+' / '+x.dias+' d').join(' · ')+'. Trade-off costo vs. velocidad: reservar aéreo para carga crítica o de alta valorización.');}
   else{setT('Modo','Tipo de transporte — sin datos');verdict('Modo','info','Sin datos de modo de transporte.');}
   // 5) Tiempo total por PO
   // 6) Cuello de botella
@@ -2341,22 +2341,22 @@ function drawTimeCharts(){
   const ttv=vtr.trans+vtr.disp;const pMov=ttv?Math.round(vtr.disp/ttv*100):0;{const lv=pMov>=60?'ok':(pMov>=30?'warn':'bad');setT('Transit',fmtDual(vtr.disp)+' movilizado ('+pMov+'% con cuadros completos)');verdict('Transit',lv,'<b>'+fmtDual(vtr.disp)+'</b> ('+pMov+'%) está <b>movilizado</b> (PO con todos los cuadros completos) frente a <b>'+fmtDual(vtr.trans)+'</b> en tránsito (PO con cuadros incompletos). '+(pMov>=60?'La mayor parte ya está completa.':(pMov>=30?'Falta completar varios registros.':'Muchos registros están incompletos: completar los cuadros.')));}
 
   // ===== Títulos ejecutivos dentro de cada gráfico =====
-  chartTitle('cValProv','Valor importado (USD) por proveedor','Montos reales de la planilla, en USD');
+  chartTitle('cValProv','Valorización importada (USD) por proveedor','Montos reales de la planilla, en USD');
   chartTitle('cUniProv','Unidades importadas por proveedor','Volumen físico por proveedor');
-  chartTitle('cZonaV','Valor importado por zona de origen','Distribución del USD según de dónde viene');
-  chartTitle('cModo','Tipo de transporte','Valor importado (USD) y días de ciclo por modo');
+  chartTitle('cZonaV','Valorización importada por zona de origen','Distribución del USD según de dónde viene');
+  chartTitle('cModo','Tipo de transporte','Valorización importada (USD) y días de ciclo por modo');
   chartTitle('cTramo','¿Dónde se pierde el tiempo del ciclo?','Días promedio por tramo del proceso');
   chartTitle('cProvT','Tiempo total promedio por proveedor','Días desde la compra hasta bodega');
   chartTitle('cTransit','Capital movilizado vs. en tránsito','Completas (movilizado) vs. incompletas (en tránsito)');
 
   // Registro para la vista DETALLE
-  DET['cValProv']={title:'Valor importado (USD) por proveedor',labels:vprov.map(x=>x[0]),vals:vprov.map(x=>x[1]),fmt:fmtDual,catLabel:'Proveedor',valLabel:'USD'};
+  DET['cValProv']={title:'Valorización importada (USD) por proveedor',labels:vprov.map(x=>x[0]),vals:vprov.map(x=>x[1]),fmt:fmtDual,catLabel:'Proveedor',valLabel:'USD'};
   DET['cUniProv']={title:'Unidades por proveedor',labels:uprov.map(x=>x[0]),vals:uprov.map(x=>x[1]),fmt:fmtUnid,catLabel:'Proveedor',valLabel:'Unidades'};
-  DET['cZonaV']={title:'Valor importado (USD) por zona',labels:Object.keys(zval),vals:Object.values(zval),fmt:fmtDual,catLabel:'Zona',valLabel:'USD'};
-  DET['cModo']={title:'Tipo de transporte',labels:modos.map(x=>x.modo),catLabel:'Modo',series:[{name:'Valor',vals:modos.map(x=>x.usd),fmt:fmtDual},{name:'Días prom.',vals:modos.map(x=>x.dias),fmt:v=>v+' d'}]};
+  DET['cZonaV']={title:'Valorización importada (USD) por zona',labels:Object.keys(zval),vals:Object.values(zval),fmt:fmtDual,catLabel:'Zona',valLabel:'USD'};
+  DET['cModo']={title:'Tipo de transporte',labels:modos.map(x=>x.modo),catLabel:'Modo',series:[{name:'Valorización',vals:modos.map(x=>x.usd),fmt:fmtDual},{name:'Días prom.',vals:modos.map(x=>x.dias),fmt:v=>v+' d'}]};
   DET['cTramo']={title:'Cascada del TIEMPO TOTAL por tramo (días promedio)',labels:trv.map(x=>x.lb.replace(/\n/g,' ')),vals:trv.map(x=>x.d),fmt:v=>v+' d',catLabel:'Tramo',valLabel:'Días promedio'};
   DET['cProvT']={title:'TIEMPO TOTAL promedio por proveedor (días)',labels:ttprov.map(x=>x[0]),vals:ttprov.map(x=>x[1]),fmt:v=>v+' d',catLabel:'Proveedor',valLabel:'Días promedio'};
-  DET['cTransit']={title:'Capital movilizado vs. en tránsito',labels:['Movilizado','En tránsito'],vals:[vtr.disp,vtr.trans],fmt:fmtDual,catLabel:'Estado',valLabel:'Valor'};
+  DET['cTransit']={title:'Capital movilizado vs. en tránsito',labels:['Movilizado','En tránsito'],vals:[vtr.disp,vtr.trans],fmt:fmtDual,catLabel:'Estado',valLabel:'Valorización'};
   renderExecSummary();
 }
 /* ===== Resumen ejecutivo para gerencia (síntesis automática de los 8 gráficos) ===== */
@@ -2370,14 +2370,14 @@ function renderExecSummary(){
   const partProv=(vp[0]&&tu)?Math.round(vp[0][1]/tu*100):0;
   const partZona=(zz[0]&&tu)?Math.round(zz[0][1]/tu*100):0;
   const kpis=[
-    {k:'Valor importado',v:fmtUSDg(tu),d:(totPO+' PO en total')},
+    {k:'Valorización importada',v:fmtUSDg(tu),d:(totPO+' PO en total')},
     {k:'Capital movilizado',v:pMov+'%',d:fmtUSDg(vtr.disp)+' completo'},
     {k:'Ciclo promedio',v:(ciclo?ciclo+' días':'—'),d:'de compra a bodega'},
     {k:'Unidades totales',v:fmtUnid(totUnid()),d:totPO+' órdenes de compra'}
   ];
   const F=[];
-  if(vp[0])F.push('<b>'+esc(vp[0][0])+'</b> concentra el <b>'+partProv+'%</b> del valor importado ('+fmtUSDg(vp[0][1])+').');
-  if(zz[0])F.push('El <b>'+partZona+'%</b> del valor proviene de <b>'+esc(zz[0][0])+'</b>.');
+  if(vp[0])F.push('<b>'+esc(vp[0][0])+'</b> concentra el <b>'+partProv+'%</b> de la valorización importada ('+fmtUSDg(vp[0][1])+').');
+  if(zz[0])F.push('El <b>'+partZona+'%</b> de la valorización proviene de <b>'+esc(zz[0][0])+'</b>.');
   if(cbot)F.push('El cuello de botella del ciclo es <b>'+esc(cbot.lb.replace(/\n/g,' '))+'</b> ('+cbot.d+' días).');
   if(ttp[0])F.push('El proveedor más lento es <b>'+esc(ttp[0][0])+'</b> con <b>'+ttp[0][1]+' días</b> promedio.');
   F.push('<b>'+pMov+'%</b> del capital está movilizado y <b>'+(100-pMov)+'%</b> aún en tránsito ('+fmtUSDg(vtr.trans)+').');
@@ -2401,34 +2401,34 @@ function renderExecSummary(){
 function fillExplains(){
   const S=(id,h)=>{const el=$(id);if(el)el.innerHTML=h;};
   const vp=sortEnt(byProv()),tu=totUSD();
-  S('exValProv',`Este gráfico ordena a cada proveedor según el <b>valor importado en dólares</b> (USD), con el monto real de toda la planilla, sin filtrar. ${vp[0]?'El mayor peso lo tiene <b>'+esc(vp[0][0])+'</b> con '+fmtUSDg(vp[0][1])+', equivalente al <b>'+((tu&&vp[0])?Math.round(vp[0][1]/tu*100):0)+'%</b> de un total de '+fmtUSDg(tu)+' repartidos entre '+vp.length+' proveedor(es)':'Todavía no hay valores en USD cargados en la planilla'}. La barra más larga señala dónde está comprometido más dinero. ${((tu&&vp[0])?Math.round(vp[0][1]/tu*100):0)>=40?'Como un solo proveedor supera el 40% del gasto, hay una <b>concentración de riesgo</b>: si ese proveedor falla, se afecta gran parte del abastecimiento, por lo que conviene homologar un segundo proveedor y pactar un acuerdo de respaldo.':'La compra se reparte de forma razonable, sin dependencia crítica de un único proveedor.'}`);
+  S('exValProv',`Este gráfico ordena a cada proveedor según el <b>valorización importada en dólares</b> (USD), con el monto real de toda la planilla, sin filtrar. ${vp[0]?'El mayor peso lo tiene <b>'+esc(vp[0][0])+'</b> con '+fmtUSDg(vp[0][1])+', equivalente al <b>'+((tu&&vp[0])?Math.round(vp[0][1]/tu*100):0)+'%</b> de un total de '+fmtUSDg(tu)+' repartidos entre '+vp.length+' proveedor(es)':'Todavía no hay valorizaciones en USD cargadas en la planilla'}. La barra más larga señala dónde está comprometido más dinero. ${((tu&&vp[0])?Math.round(vp[0][1]/tu*100):0)>=40?'Como un solo proveedor supera el 40% del gasto, hay una <b>concentración de riesgo</b>: si ese proveedor falla, se afecta gran parte del abastecimiento, por lo que conviene homologar un segundo proveedor y pactar un acuerdo de respaldo.':'La compra se reparte de forma razonable, sin dependencia crítica de un único proveedor.'}`);
   const up=sortEnt(unidByProv());
-  S('exUniProv',`Mide el <b>volumen físico</b>: cuántas unidades se importaron por cada proveedor, independiente de su valor en dólares. ${up[0]?'El mayor volumen lo aporta <b>'+esc(up[0][0])+'</b> con '+fmtUnid(up[0][1])+' unidades, dentro de un total de '+fmtUnid(totUnid())+' unidades':'Aún no hay unidades cargadas'}. Cruzado con el gráfico de valor en USD, permite distinguir a los proveedores de <b>alto valor unitario</b> (pocas unidades, mucho dinero) de los de <b>commodity</b> (mucho volumen, bajo valor), lo que ayuda a planificar bodega, manejo de carga y controles de calidad.`);
+  S('exUniProv',`Mide el <b>volumen físico</b>: cuántas unidades se importaron por cada proveedor, independiente de su valorización en dólares. ${up[0]?'El mayor volumen lo aporta <b>'+esc(up[0][0])+'</b> con '+fmtUnid(up[0][1])+' unidades, dentro de un total de '+fmtUnid(totUnid())+' unidades':'Aún no hay unidades cargadas'}. Cruzado con el gráfico de valorización en USD, permite distinguir a los proveedores de <b>alta valorización unitaria</b> (pocas unidades, mucho dinero) de los de <b>commodity</b> (mucho volumen, baja valorización), lo que ayuda a planificar bodega, manejo de carga y controles de calidad.`);
   const zv=sortEnt(byZona());
-  S('exZonaV',`Muestra de qué <b>zona de origen</b> proviene el valor importado en USD, es decir desde dónde llega la mercadería. ${zv[0]?'<b>'+esc(zv[0][0])+'</b> concentra '+fmtUSDg(zv[0][1])+' ('+((tu&&zv[0])?Math.round(zv[0][1]/tu*100):0)+'% del valor total)':'Todavía no hay zonas con valor registrado'}. Sirve para medir la <b>dependencia geográfica</b> del abastecimiento. ${((tu&&zv[0])?Math.round(zv[0][1]/tu*100):0)>=50?'Al superar una zona el 50% del valor, el negocio queda expuesto a riesgos de flete, aranceles y tipo de cambio concentrados en un solo corredor; conviene evaluar un doble origen o nearshoring.':'La distribución entre zonas es equilibrada, sin una exposición excesiva a un único origen.'}`);
+  S('exZonaV',`Muestra de qué <b>zona de origen</b> proviene la valorización importada en USD, es decir desde dónde llega la mercadería. ${zv[0]?'<b>'+esc(zv[0][0])+'</b> concentra '+fmtUSDg(zv[0][1])+' ('+((tu&&zv[0])?Math.round(zv[0][1]/tu*100):0)+'% de la valorización total)':'Todavía no hay zonas con valorización registrada'}. Sirve para medir la <b>dependencia geográfica</b> del abastecimiento. ${((tu&&zv[0])?Math.round(zv[0][1]/tu*100):0)>=50?'Al superar una zona el 50% de la valorización, el negocio queda expuesto a riesgos de flete, aranceles y tipo de cambio concentrados en un solo corredor; conviene evaluar un doble origen o nearshoring.':'La distribución entre zonas es equilibrada, sin una exposición excesiva a un único origen.'}`);
   const md=byModo();
-  S('exModo',`Compara los <b>tipos de transporte</b>: las barras indican cuánto valor en USD llega por cada modo y la línea cuántos días tarda en promedio. ${md.length?md.map(x=>'<b>'+esc(x.modo)+'</b> mueve '+fmtUSDg(x.usd)+' en '+x.dias+' días promedio').join('; ')+'.':'Sin datos de transporte todavía.'} Permite equilibrar <b>costo y rapidez</b>: el aéreo es más caro pero mucho más veloz, conviene para productos urgentes o de alto valor, mientras que el marítimo baja el costo a cambio de más tiempo.`);
+  S('exModo',`Compara los <b>tipos de transporte</b>: las barras indican cuánta valorización en USD llega por cada modo y la línea cuántos días tarda en promedio. ${md.length?md.map(x=>'<b>'+esc(x.modo)+'</b> mueve '+fmtUSDg(x.usd)+' en '+x.dias+' días promedio').join('; ')+'.':'Sin datos de transporte todavía.'} Permite equilibrar <b>costo y rapidez</b>: el aéreo es más caro pero mucho más veloz, conviene para productos urgentes o de alta valorización, mientras que el marítimo baja el costo a cambio de más tiempo.`);
   const cbot=cuelloBotella();
   S('exTramo',`Reparte el <b>tiempo total</b> del proceso en sus etapas (origen, tránsito internacional, nacionalización y recepción); cada barra es el promedio de días de esa etapa. ${cbot?'La etapa más lenta, el <b>cuello de botella</b>, es <b>'+esc(cbot.lb.replace(/\n/g,' '))+'</b> con '+cbot.d+' días, que es donde más tiempo se pierde.':'Aún no hay fechas suficientes para calcular las etapas.'} El tránsito internacional (por ejemplo un barco desde Asia) depende del proveedor y de la naviera y <b>no lo controla la empresa</b>; por eso las mejoras rinden más enfocándolas en las etapas internas: nacionalización y recepción en bodega.`);
   const ttp=sortEnt(ttotByProv());
   S('exProvT',`Indica cuántos <b>días en promedio</b> demora cada proveedor desde que se confirma la compra hasta que la mercadería queda disponible en bodega; la barra más larga es el proveedor más lento. ${ttp[0]?'El que más demora es <b>'+esc(ttp[0][0])+'</b> con '+ttp[0][1]+' días promedio, sobre '+ttp.length+' proveedor(es) evaluados.':'Sin datos de tiempos por proveedor todavía.'} Es clave para planificar el flujo de caja y la capacidad de recepción; los más lentos son candidatos a <b>renegociar plazos</b> o a activar un origen alternativo, recordando que parte del tiempo es tránsito marítimo no controlable.`);
   const vt=valorEnTransito(),tt=vt.trans+vt.disp;
-  S('exTransit',`Separa el capital <b>movilizado</b> (PO con todos sus cuadros completos) del que sigue <b>en tránsito</b> (PO con cuadros aún pendientes). ${tt?'Hoy hay '+fmtUSDg(vt.disp)+' ya movilizado ('+Math.round(vt.disp/tt*100)+'%) frente a '+fmtUSDg(vt.trans)+' en tránsito ('+(100-Math.round(vt.disp/tt*100))+'%).':'Sin datos de capital todavía.'} Permite saber cuánto del valor ya está cerrado y cuánto falta por completar: mientras más alto el porcentaje en tránsito, más registros quedan pendientes y más capital sigue inmovilizado en el proceso.`);
+  S('exTransit',`Separa el capital <b>movilizado</b> (PO con todos sus cuadros completos) del que sigue <b>en tránsito</b> (PO con cuadros aún pendientes). ${tt?'Hoy hay '+fmtUSDg(vt.disp)+' ya movilizado ('+Math.round(vt.disp/tt*100)+'%) frente a '+fmtUSDg(vt.trans)+' en tránsito ('+(100-Math.round(vt.disp/tt*100))+'%).':'Sin datos de capital todavía.'} Permite saber cuánto de la valorización ya está cerrado y cuánto falta por completar: mientras más alto el porcentaje en tránsito, más registros quedan pendientes y más capital sigue inmovilizado en el proceso.`);
 }
 function fillExplainsLegacy(){
   const z=sortEnt(byZona()),tu=totUSD();
   const topZ=z[0]?`${z[0][0]} lidera con ${fmtMoney(z[0][1])} (${Math.round(z[0][1]/tu*100)}% del total)`:'—';
-  $('exZona').innerHTML=`<b>Qué mide:</b> distribución del valor USD importado según la zona de origen. <b>Lectura:</b> ${topZ}. <b>Indicador logístico:</b> mide la dependencia geográfica del abastecimiento; una zona sobre el 50% expone al negocio a riesgo cambiario, arancelario y de flete concentrado en un corredor.`;
+  $('exZona').innerHTML=`<b>Qué mide:</b> distribución de la valorización USD importado según la zona de origen. <b>Lectura:</b> ${topZ}. <b>Indicador logístico:</b> mide la dependencia geográfica del abastecimiento; una zona sobre el 50% expone al negocio a riesgo cambiario, arancelario y de flete concentrado en un corredor.`;
   const p=sortEnt(byProv());
   $('exProv').innerHTML=`<b>Qué mide:</b> concentración de compra por proveedor (Pareto de gasto). <b>Lectura:</b> ${p[0]?p[0][0]+' concentra '+Math.round(p[0][1]/tu*100)+'% del gasto':'—'}. <b>KPI:</b> índice de concentración de proveedores; sobre 40% en un solo proveedor eleva el riesgo de continuidad de suministro y reduce poder de negociación.`;
   const e=byEstado();
   $('exEstado').innerHTML=`<b>Qué mide:</b> en qué etapa logística está cada embarque. <b>Lectura:</b> ${Object.entries(e).map(x=>x[0]+': '+x[1]).join(' · ')}. <b>KPI:</b> “fill rate” de pipeline; el objetivo es minimizar “Atrasado” y “Pendiente” y mantener flujo hacia “Disponible”.`;
   $('exTiempo').innerHTML=`<b>Qué mide:</b> lead time total (días) desde confirmación comercial hasta disponibilidad de inventario por PO. <b>Lectura:</b> promedio de ${avgTiempo()} días. <b>KPI:</b> “order-to-availability”; POs sobre el promedio revelan cuellos de botella en aduana, naviera o retiro P/A que impactan la rotación y el costo financiero del stock en tránsito.`;
   const u=sortEnt(unidByZona());
-  $('exUnid').innerHTML=`<b>Qué mide:</b> volumen físico (unidades) por zona. <b>Lectura:</b> ${u[0]?u[0][0]+' aporta '+fmtUnid(u[0][1])+' unidades':'—'}. <b>Indicador:</b> al cruzar con el gráfico de USD revela dónde el valor unitario es mayor y ayuda a dimensionar capacidad de bodega y manejo de carga.`;
+  $('exUnid').innerHTML=`<b>Qué mide:</b> volumen físico (unidades) por zona. <b>Lectura:</b> ${u[0]?u[0][0]+' aporta '+fmtUnid(u[0][1])+' unidades':'—'}. <b>Indicador:</b> al cruzar con el gráfico de USD revela dónde la valorización unitaria es mayor y ayuda a dimensionar capacidad de bodega y manejo de carga.`;
   const tpx=sortEnt(tiempoByProv());
   $('exProvT').innerHTML=`<b>Qué mide:</b> lead time promedio (días) por proveedor, desde la confirmación comercial hasta la disponibilidad de inventario. <b>Lectura:</b> ${tpx[0]?'mayor demora: <b>'+tpx[0][0]+'</b> con '+tpx[0][1]+' días':'—'}. <b>KPI:</b> desempeño de entrega por proveedor; los que superan ampliamente el promedio son candidatos a renegociar plazos o activar un origen alternativo.`;
-  $('exMix').innerHTML=`<b>Qué mide:</b> relación entre valor (USD) y volumen (unidades) por proveedor. <b>Lectura:</b> proveedores con mucho USD y pocas unidades manejan artículos de alto valor; a la inversa, alto volumen y bajo USD son commodities. <b>Indicador:</b> orienta la priorización de seguros, controles de calidad y condiciones de pago.`;
+  $('exMix').innerHTML=`<b>Qué mide:</b> relación entre valorización (USD) y volumen (unidades) por proveedor. <b>Lectura:</b> proveedores con mucho USD y pocas unidades manejan artículos de alta valorización; a la inversa, alto volumen y bajo USD son commodities. <b>Indicador:</b> orienta la priorización de seguros, controles de calidad y condiciones de pago.`;
   const pae=sortEnt(byProv()),paet=pae.reduce((a,b)=>a+(+b[1]||0),0);let pacc=0,pn80=0;for(const x of pae){pacc+=x[1];pn80++;if(paet&&pacc/paet>=0.8)break;}
   $('exPareto').innerHTML=`<b>Qué mide:</b> principio de Pareto (80/20) aplicado al gasto en importaciones: ordena a los proveedores de mayor a menor USD y acumula su participación (línea naranja). <b>Lectura:</b> ${pae[0]?'donde más se gasta es <b>'+pae[0][0]+'</b> ('+fmtMoney(pae[0][1])+'); ':''}${pae.length?'<b>'+pn80+'</b> proveedor(es) concentran ~80% del gasto total':'—'}. <b>KPI:</b> foco de compra; permite priorizar negociación, control y planes de contingencia en los pocos proveedores que explican la mayor parte del desembolso.`;
 }
@@ -2458,14 +2458,14 @@ function buildExecInfografia(){
   const tile=(ic,lb,vl,sb)=>'<div class="tile"><div class="ic">'+ic+'</div><div class="lb">'+lb+'</div><div class="vl">'+vl+'</div>'+(sb?'<div class="sb">'+sb+'</div>':'')+'</div>';
   const hcard=(cls,ic,ht,hv,hs)=>'<div class="hcard '+cls+'"><div class="ht">'+ic+' '+ht+'</div><div class="hv">'+hv+'</div>'+(hs?'<div class="hs">'+hs+'</div>':'')+'</div>';
   let tiles=tile('📦','PO activas',nPO,pend+' pend. · '+disp+' disp.')
-    +tile('💵','Valor importado',fmtMoney(tu),clp)
+    +tile('💵','Valorización importada',fmtMoney(tu),clp)
     +tile('📊','Unidades',fmtUnid(tUn),'')
     +tile('🧾','Ticket promedio',fmtMoney(tk),'por unidad')
     +tile('⏱️','Lead time prom.',avg+' d','order-to-availability')
     +tile(atr>0?'🚩':'✅','Atrasos',atr,atr>0?'requieren escalamiento':'sin atrasos');
   let his='';
   if(p[0])his+=hcard(pctG>40?'warn':'','🏭','Proveedor líder',esc(p[0][0]),fmtMoney(p[0][1])+' · '+pctG+'% del gasto'+(pctG>40?' (concentración alta)':''));
-  if(z[0])his+=hcard(pctZ>50?'warn':'','🌎','Zona líder',esc(z[0][0]),fmtMoney(z[0][1])+' · '+pctZ+'% del valor'+(pctZ>50?' (dependencia alta)':''));
+  if(z[0])his+=hcard(pctZ>50?'warn':'','🌎','Zona líder',esc(z[0][0]),fmtMoney(z[0][1])+' · '+pctZ+'% de la valorización'+(pctZ>50?' (dependencia alta)':''));
   if(ttp[0])his+=hcard('','🐢','Mayor demora',esc(ttp[0][0]),ttp[0][1]+' días promedio');
   if(modTop)his+=hcard('','🚢','Modo principal',esc(modTop.modo),fmtMoney(modTop.usd)+(modTot?' · '+Math.round(modTop.usd/modTot*100)+'%':'')+(modTop.dias?' · '+modTop.dias+' d':''));
   const bar=totC?('<div class="bar"><div class="bt"><span>🟢 Movilizado (PO completas): <b>'+fmtMoney(vtr.disp)+'</b> ('+pMov+'%)</span><span>🟡 En tránsito: <b>'+fmtMoney(vtr.trans)+'</b> ('+(100-pMov)+'%)</span></div><div class="track"><div class="fill" style="width:'+pMov+'%"></div><div class="fill2" style="width:'+(100-pMov)+'%"></div></div></div>'):'';
@@ -2499,15 +2499,15 @@ function buildReportHTML(){
       <div class="rband"><span class="rb-ic">📊</span><div><div class="rb-k">Sección 01</div><div class="rb-t">Resumen ejecutivo para gerencia</div></div></div>
       ${buildExecInfografia()}
       <div class="rband"><span class="rb-ic">🔎</span><div><div class="rb-k">Sección 02</div><div class="rb-t">Análisis detallado por indicador</div></div></div>
-      ${card(1,'Valor importado por zona de origen','cZona', (z[0]?'<p>La zona <b>'+z[0][0]+'</b> concentra <b>'+fmtMoney(z[0][1])+'</b> ('+pct(z[0][1],tu)+'% del valor importado)'+(z[1]?', seguida de <b>'+z[1][0]+'</b> con '+fmtMoney(z[1][1])+' ('+pct(z[1][1],tu)+'%)':'')+'.</p>':'<p>Aún no hay valor importado por zona cargado en la planilla.</p>')+'<p>Una concentración elevada en una sola zona expone al negocio a riesgo cambiario, arancelario, de congestión portuaria y de variación de fletes en un único corredor.'+(z[0]&&tu&&z[0][1]/tu>0.5?' La dependencia actual de <b>'+z[0][0]+'</b> es alta: conviene evaluar un doble origen o estrategias de nearshoring.':' La distribución geográfica se mantiene razonablemente diversificada.')+'</p>')}
-      ${card(2,'Unidades importadas por zona','cUnid', '<p>Se importaron <b>'+fmtUnid(totUnid())+' unidades</b> en total.'+(u[0]?' El mayor volumen proviene de <b>'+u[0][0]+'</b> con <b>'+fmtUnid(u[0][1])+' u</b> ('+pct(u[0][1],totUnid())+'%).':'')+'</p><p>Comparar este gráfico de volumen con el de valor (USD) revela dónde el precio por unidad es más alto: una zona con mucho USD pero pocas unidades indica mercadería de alto valor unitario, mientras que mucho volumen con bajo USD corresponde a productos tipo commodity.</p>')}
-      ${card(3,'Top proveedores por valor (USD)','cProv', '<p>El portafolio cuenta con <b>'+p.length+' proveedor(es)</b>.'+(p[0]?' El principal es <b>'+p[0][0]+'</b> con <b>'+fmtMoney(p[0][1])+'</b>, equivalente al <b>'+concTop+'%</b> del gasto total.':'')+'</p><p>'+(concTop>40?'Esto supera el umbral recomendado del 40% y constituye una <b>concentración de riesgo</b>: una interrupción de este proveedor afectaría gran parte del flujo. Se sugiere homologar un segundo proveedor y pactar acuerdos de respaldo con lead time garantizado.':'La compra se mantiene dentro de un rango de diversificación razonable, sin dependencia crítica de un solo proveedor.')+'</p>')}
+      ${card(1,'Valorización importada por zona de origen','cZona', (z[0]?'<p>La zona <b>'+z[0][0]+'</b> concentra <b>'+fmtMoney(z[0][1])+'</b> ('+pct(z[0][1],tu)+'% de la valorización importada)'+(z[1]?', seguida de <b>'+z[1][0]+'</b> con '+fmtMoney(z[1][1])+' ('+pct(z[1][1],tu)+'%)':'')+'.</p>':'<p>Aún no hay valorización importada por zona cargado en la planilla.</p>')+'<p>Una concentración elevada en una sola zona expone al negocio a riesgo cambiario, arancelario, de congestión portuaria y de variación de fletes en un único corredor.'+(z[0]&&tu&&z[0][1]/tu>0.5?' La dependencia actual de <b>'+z[0][0]+'</b> es alta: conviene evaluar un doble origen o estrategias de nearshoring.':' La distribución geográfica se mantiene razonablemente diversificada.')+'</p>')}
+      ${card(2,'Unidades importadas por zona','cUnid', '<p>Se importaron <b>'+fmtUnid(totUnid())+' unidades</b> en total.'+(u[0]?' El mayor volumen proviene de <b>'+u[0][0]+'</b> con <b>'+fmtUnid(u[0][1])+' u</b> ('+pct(u[0][1],totUnid())+'%).':'')+'</p><p>Comparar este gráfico de volumen con el de valorización (USD) revela dónde el precio por unidad es más alto: una zona con mucho USD pero pocas unidades indica mercadería de alta valorización unitaria, mientras que mucho volumen con bajo USD corresponde a productos tipo commodity.</p>')}
+      ${card(3,'Top proveedores por valorización (USD)','cProv', '<p>El portafolio cuenta con <b>'+p.length+' proveedor(es)</b>.'+(p[0]?' El principal es <b>'+p[0][0]+'</b> con <b>'+fmtMoney(p[0][1])+'</b>, equivalente al <b>'+concTop+'%</b> del gasto total.':'')+'</p><p>'+(concTop>40?'Esto supera el umbral recomendado del 40% y constituye una <b>concentración de riesgo</b>: una interrupción de este proveedor afectaría gran parte del flujo. Se sugiere homologar un segundo proveedor y pactar acuerdos de respaldo con lead time garantizado.':'La compra se mantiene dentro de un rango de diversificación razonable, sin dependencia crítica de un solo proveedor.')+'</p>')}
       ${card(4,'Concentración del gasto — Pareto 80/20','cPareto', '<p>El gráfico ordena a los proveedores por gasto y traza el porcentaje acumulado. El <b>80% del gasto</b> se concentra en <b>'+_n80+'</b> de los '+p.length+' proveedor(es).</p><p>Esta regla de Pareto (80/20) indica dónde enfocar la gestión: negociar precio, condiciones de pago y planes de contingencia con ese grupo reducido entrega el mayor impacto sobre el costo total de importación.</p>')}
-      ${card(5,'Valor vs. volumen por proveedor','cMix', '<p>Compara, para los principales proveedores, el valor en USD (barras) contra las unidades compradas (línea).</p><p>Permite distinguir proveedores de <b>alto valor unitario</b> (pocas unidades, mucho USD) de los de <b>commodity</b> (alto volumen, bajo USD). Los primeros justifican mayor control de calidad, seguros y, eventualmente, transporte más rápido; los segundos, foco en costo logístico y negociación por volumen.</p>')}
+      ${card(5,'Valorización vs. volumen por proveedor','cMix', '<p>Compara, para los principales proveedores, la valorización en USD (barras) contra las unidades compradas (línea).</p><p>Permite distinguir proveedores de <b>alta valorización unitaria</b> (pocas unidades, mucho USD) de los de <b>commodity</b> (alto volumen, bajo USD). Los primeros justifican mayor control de calidad, seguros y, eventualmente, transporte más rápido; los segundos, foco en costo logístico y negociación por volumen.</p>')}
       ${card(6,'Estado de los embarques (pipeline)','cEstado', '<p>Distribución de etapas del pipeline: '+Object.entries(e).map(x=>'<b>'+x[0]+'</b> ('+x[1]+')').join(', ')+'.</p><p>'+(atr>0?'Hay <b>'+atr+' PO atrasada(s)</b> que deben escalarse de inmediato con la naviera y el agente de aduana.':'No hay atrasos registrados en este corte, lo que refleja un buen cumplimiento de ETAs.')+' Mantener el pipeline balanceado entre disponibles y pendientes evita quiebres de stock y sobrecostos financieros por mercadería detenida.</p>')}
       ${card(7,'Tiempo total de tránsito por PO (días)','cTiempo', '<p>El lead time promedio del portafolio es de <b>'+avgTiempo()+' días</b>, medido sobre <b>'+tRows.length+' PO</b> con fechas completas.</p><p>Las PO muy por encima de ese promedio revelan cuellos de botella (aduana, naviera o retiro P/A) que frenan la rotación de inventario y encarecen el stock en tránsito. Conviene revisar caso a caso las órdenes más lentas para corregir la causa raíz.</p>')}
       ${card(8,'Tiempo total promedio por proveedor','cProvT', '<p>Ordena a los proveedores por el tiempo que tardan en poner la mercadería disponible.'+(ttp[0]?' El más lento es <b>'+ttp[0][0]+'</b> con <b>'+ttp[0][1]+' días</b> promedio.':'')+'</p><p>Este dato es clave para planificar flujo de caja y capacidad de recepción en el centro de distribución. Los proveedores que más atrasan son candidatos a renegociar plazos o a activar un origen alternativo.</p>')}
-      ${card(9,'Tipo de transporte — costo vs. velocidad','cModo', (()=>{if(!modos.length)return '<p>Aún no hay datos de tipo de transporte cargados en la planilla.</p>';const tot=modos.reduce((a,b)=>a+(+b.usd||0),0);return '<p>La carga se moviliza por <b>'+modos.length+' modo(s)</b>: '+modos.map(x=>'<b>'+esc(x.modo)+'</b> con '+fmtMoney(x.usd)+(tot?' ('+pct(x.usd,tot)+'%)':'')+(x.dias?' y '+x.dias+' días de ciclo':'')).join('; ')+'.</p><p>El marítimo suele ser el más económico pero lento; el aéreo acelera la llegada a mayor costo (carga urgente o de alto valor); el terrestre aplica a orígenes regionales. Equilibrar los modos según urgencia y valor optimiza el costo logístico sin sacrificar el nivel de servicio.</p>';})())}
+      ${card(9,'Tipo de transporte — costo vs. velocidad','cModo', (()=>{if(!modos.length)return '<p>Aún no hay datos de tipo de transporte cargados en la planilla.</p>';const tot=modos.reduce((a,b)=>a+(+b.usd||0),0);return '<p>La carga se moviliza por <b>'+modos.length+' modo(s)</b>: '+modos.map(x=>'<b>'+esc(x.modo)+'</b> con '+fmtMoney(x.usd)+(tot?' ('+pct(x.usd,tot)+'%)':'')+(x.dias?' y '+x.dias+' días de ciclo':'')).join('; ')+'.</p><p>El marítimo suele ser el más económico pero lento; el aéreo acelera la llegada a mayor costo (carga urgente o de alta valorización); el terrestre aplica a orígenes regionales. Equilibrar los modos según urgencia y valorización optimiza el costo logístico sin sacrificar el nivel de servicio.</p>';})())}
       <div class="rband"><span class="rb-ic">🎯</span><div><div class="rb-k">Sección 03</div><div class="rb-t">Conclusiones y recomendaciones</div></div></div>
       <div class="execbox"><div class="t">Síntesis para la toma de decisiones</div><p>En síntesis, el foco de gestión debe estar en: (1) ${concTop>40?'diversificar al proveedor '+p[0][0]+' ('+concTop+'% del gasto)':'mantener la diversificación actual de proveedores'}; (2) ${z[0]&&tu&&z[0][1]/tu>0.5?'reducir la dependencia de la zona '+z[0][0]:'equilibrar las zonas de origen'}; (3) ${atr>0?'resolver los '+atr+' embarques atrasados':'sostener el cumplimiento de ETAs'}; y (4) completar las fechas de las ${pend} PO pendientes para mejorar la trazabilidad y la exactitud de los KPIs. El detalle y las acciones priorizadas están en la pestaña <b>Sugerencias IA</b>.</p></div>
     </div>`;
@@ -2600,11 +2600,11 @@ function renderSug(){
   const atr=e['Atrasado']||0,pend=e['Pendiente']||0,disp=e['Disponible']||0;
   const avg=avgTiempo(),ticket=totUnid()?tu/totUnid():0,concTop=p[0]&&tu?Math.round(p[0][1]/tu*100):0;
   let S=[];
-  if(p[0]&&concTop>40) S.push(['hi','Diversificar al proveedor crítico',`<b>${p[0][0]}</b> concentra el <b>${concTop}%</b> del valor importado (${fmtMoney(p[0][1])}). El índice de concentración de proveedores supera el umbral prudente del 40%, por lo que una interrupción (quiebre, disputa comercial, problema de capacidad) detendría una parte sustancial del abastecimiento.`,'Homologar un segundo proveedor para las líneas clave, repartir volúmenes (p. ej. 70/30) y pactar acuerdos marco con lead time y capacidad garantizados. KPI a vigilar: % de gasto del proveedor top y número de proveedores que cubren el 80% del gasto.']);
+  if(p[0]&&concTop>40) S.push(['hi','Diversificar al proveedor crítico',`<b>${p[0][0]}</b> concentra el <b>${concTop}%</b> de la valorización importada (${fmtMoney(p[0][1])}). El índice de concentración de proveedores supera el umbral prudente del 40%, por lo que una interrupción (quiebre, disputa comercial, problema de capacidad) detendría una parte sustancial del abastecimiento.`,'Homologar un segundo proveedor para las líneas clave, repartir volúmenes (p. ej. 70/30) y pactar acuerdos marco con lead time y capacidad garantizados. KPI a vigilar: % de gasto del proveedor top y número de proveedores que cubren el 80% del gasto.']);
   if(atr>0) S.push(['hi','Resolver embarques atrasados',`Hay <b>${atr} PO</b> que superaron su ETA sin registrar llegada a CD. Cada día de atraso incrementa el costo financiero del stock en tránsito y el riesgo de quiebre de stock en destino.`,'Escalar con naviera/forwarder, confirmar ETA real, activar plan de contingencia (transbordo o modo aéreo si el ticket lo justifica) y comunicar a comercial. KPI: On-Time Delivery (OTD) y días de desviación vs. ETA original.']);
   if(avg>70) S.push(['md','Reducir el lead time total',`El tiempo promedio confirmación→inventario es de <b>${avg} días</b>, elevado para carga marítima. Un lead time largo obliga a mayores inventarios de seguridad y encarece el capital de trabajo.`,'Mapear el ciclo por etapa (origen, tránsito, puerto, aduana, retiro P/A) y atacar la etapa más lenta; adelantar la gestión documental y el pre-costeo antes del arribo. KPI: lead time por etapa y variabilidad (desviación estándar).']);
-  if(z[0]&&tu>0&&z[0][1]/tu>0.5) S.push(['md','Balancear la dependencia geográfica',`La zona <b>${z[0][0]}</b> aporta el <b>${Math.round(z[0][1]/tu*100)}%</b> del valor. Una concentración alta expone a riesgo cambiario, arancelario y de congestión portuaria en un único corredor.`,'Evaluar nearshoring (LATAM/EEUU) para las líneas de reposición frecuente y mantener Asia para productos de alto valor/baja urgencia. KPI: % de valor por zona y lead time comparado entre orígenes.']);
-  if(ticket>0) S.push(['md','Segmentar la gestión por valor unitario (ABC)',`El ticket promedio del portafolio es de <b>${fmtMoney(ticket)} por unidad</b>${tk[0]?'; la zona '+tk[0][0]+' presenta el mayor valor unitario ('+fmtMoney(tk[0][1])+'/u)':''}. No todas las PO merecen el mismo nivel de control.`,'Aplicar clasificación ABC: foco intensivo (seguros, inspección, seguimiento diario) en los artículos “A” de alto valor y gestión por excepción en los “C”. KPI: valor en riesgo por PO y cobertura de seguro.']);
+  if(z[0]&&tu>0&&z[0][1]/tu>0.5) S.push(['md','Balancear la dependencia geográfica',`La zona <b>${z[0][0]}</b> aporta el <b>${Math.round(z[0][1]/tu*100)}%</b> de la valorización. Una concentración alta expone a riesgo cambiario, arancelario y de congestión portuaria en un único corredor.`,'Evaluar nearshoring (LATAM/EEUU) para las líneas de reposición frecuente y mantener Asia para productos de alta valorización/baja urgencia. KPI: % de valorización por zona y lead time comparado entre orígenes.']);
+  if(ticket>0) S.push(['md','Segmentar la gestión por valorización unitaria (ABC)',`El ticket promedio del portafolio es de <b>${fmtMoney(ticket)} por unidad</b>${tk[0]?'; la zona '+tk[0][0]+' presenta la mayor valorización unitaria ('+fmtMoney(tk[0][1])+'/u)':''}. No todas las PO merecen el mismo nivel de control.`,'Aplicar clasificación ABC: foco intensivo (seguros, inspección, seguimiento diario) en los artículos “A” de alta valorización y gestión por excepción en los “C”. KPI: valorización en riesgo por PO y cobertura de seguro.']);
   if(pend>0) S.push(['lo','Completar datos de PO pendientes',`<b>${pend} orden(es)</b> no tienen fecha de disponibilidad/ETA definida, lo que degrada la exactitud de los KPIs y la trazabilidad.`,'Solicitar al proveedor y al forwarder las fechas faltantes y bloquear el guardado sin campos críticos. KPI: % de completitud de datos por PO.']);
   S.push(['lo','Instrumentar indicadores y alertas',`La gestión actual se apoya en la planilla. Un tablero de control con KPIs y alertas por hito profesionaliza el seguimiento.`,'Definir y monitorear un set mínimo: OTD, lead time por etapa, índice de concentración (proveedor/zona), ticket promedio, % PO atrasadas y días de inventario en tránsito. Configurar alertas automáticas por hito (disp. origen, ETA, llegada CD).']);
   const intro=`<div class="sug" style="border-left-color:#0f2744"><div class="h"><span class="pr lo" style="background:#e2e8f0;color:#0f2744">RESUMEN</span><span class="ti">Diagnóstico logístico del portafolio</span></div><p>Análisis experto sobre <b>${ROWS.length} PO</b> por <b>${fmtMoney(tu)}</b> y <b>${fmtUnid(totUnid())} unidades</b>. Lead time promedio <b>${avg} días</b>, ticket promedio <b>${fmtMoney(ticket)}/u</b>, concentración del proveedor líder <b>${concTop}%</b>, estado del pipeline: ${disp} disponibles · ${pend} pendientes · ${atr} atrasadas. A continuación, las recomendaciones priorizadas por impacto y urgencia.</p></div>`;
