@@ -881,11 +881,11 @@ function setI(id,html){const e=document.getElementById(id+'_i');if(e)e.innerHTML
 function updateEmptyState(){
  const em=document.getElementById('emptyMonth');if(!em)return;
  const main=document.getElementById('main');
- const has=DATA.rows.some(r=>r.mk===F.mes);
+ const has=(F.mes==='all'&&DATA.rows.length>0)||DATA.rows.some(r=>r.mk===F.mes);
+ if(has||CUR==='cmp'){em.style.display='none';if(main)main.style.display='';return;}
  const mm=(F.mes&&F.mes.length>=7)?+F.mes.slice(5,7):9;
  const yy=(F.mes&&F.mes.length>=4)?F.mes.slice(0,4):'2026';
  const lbl=`${MESES_FULL[mm-1]} ${yy}`;
- if(has||CUR==='cmp'){em.style.display='none';if(main)main.style.display='';return;}
  em.style.display='';if(main)main.style.display='none';
  em.innerHTML=`<div style="font-size:17px;font-weight:700;color:#1f3a59;margin-bottom:6px">A\u00fan no hay datos cargados para ${lbl}</div><div style="color:#5a6672;font-size:13.5px;line-height:1.65">Este mes todav\u00eda no tiene informaci\u00f3n. Si eres administrador, usa el bot\u00f3n <b>\u201cSubir mes (.xlsx)\u201d</b> (arriba a la derecha) para cargar el Excel de ${lbl}. Tambi\u00e9n puedes elegir en los filtros <b>Mes</b> y <b>A\u00f1o</b> un periodo que ya tenga datos (los meses cargados aparecen con un \u2713). La pesta\u00f1a <b>Tendencias &amp; Comparativo</b> sigue mostrando todos los meses disponibles.</div>`;
 }
@@ -3931,7 +3931,7 @@ function updateEmptyState(){
  const em=document.getElementById('emptyMonth');if(!em)return;
  const main=document.getElementById('main');
  if(CUR==='mac'||CUR==='ver'||CUR==='devo'||CUR==='cmp'){em.style.display='none';if(main)main.style.display='';return;}
- const has=DATA.rows.some(r=>r.mk===F.mes);
+ const has=(F.mes==='all'&&DATA.rows.length>0)||DATA.rows.some(r=>r.mk===F.mes);
  const mm=(F.mes&&F.mes.length>=7)?+F.mes.slice(5,7):9;
  const yy=(F.mes&&F.mes.length>=4)?F.mes.slice(0,4):'2026';
  const lbl=`${MESES_FULL[mm-1]} ${yy}`;
