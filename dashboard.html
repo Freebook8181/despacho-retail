@@ -815,8 +815,12 @@ const FB_CFG={apiKey:"AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOjOVzk",authDomain:"despa
 const FB_PATH='quintec/meses';
 let fbDB=null,fbReady=false,fbWriting=false,fbSubsDone=false;
 function buildStore(){const store={};DATA.rows.forEach(r=>{(store[r.mk]=store[r.mk]||{label:r.mes,rows:[],dups:[]}).rows.push(r);});(DATA.dups||[]).forEach(r=>{const o=(store[r.mk]=store[r.mk]||{label:r.mes,rows:[],dups:[]});if(!o.dups)o.dups=[];o.dups.push(r);});return store;}
-function flattenStore(store){let rows=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length)rows=rows.concat(o.rows);});return rows;}
-function flattenDups(store){let d=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.dups&&o.dups.length)d=d.concat(o.dups);});return d;}
+/* Regla de negocio: la Semana 40 pertenece a SEPTIEMBRE. Mueve las filas de Semana 40
+   que quedaron etiquetadas en Octubre (por el nombre de la hoja) al mes de Septiembre.
+   _src guarda el mes de origen (la hoja) para que al re-importar el mes se reemplace bien. */
+function wk40ToSep(arr){if(!arr)return arr;arr.forEach(function(r){if(r&&(+r.sem)===40){if(r._src==null)r._src=r.mk;if(r.mk&&r.mk.slice(5)==='10'){var y=r.mk.slice(0,4);r.mk=y+'-09';r.mes='Septiembre '+y;}}});return arr;}
+function flattenStore(store){let rows=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length)rows=rows.concat(o.rows);});return wk40ToSep(rows);}
+function flattenDups(store){let d=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.dups&&o.dups.length)d=d.concat(o.dups);});return wk40ToSep(d);}
 function fbSubsAll(){if(fbSubsDone)return;fbSubsDone=true;try{fbSubscribe();}catch(e){console.error('fbSubscribe',e);}try{if(typeof modFbSubscribe==='function')modFbSubscribe();}catch(e){console.error('modFbSubscribe',e);}try{if(typeof devoFbSubscribe==='function')devoFbSubscribe();}catch(e){console.error('devoFbSubscribe',e);}}
 function fbInit(){try{if(typeof firebase==='undefined'||!firebase.initializeApp)return false;if(!firebase.apps||!firebase.apps.length)firebase.initializeApp(FB_CFG);fbDB=firebase.database();
  /* Autenticacion anonima: necesaria para poder leer y GUARDAR en la nube (reglas auth != null). Sin esto, Devoluciones y los demas modulos no guardan. */
@@ -858,6 +862,7 @@ function loadSaved(){
   const store=JSON.parse(raw);
   if(!DATA.dups)DATA.dups=[];
   Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length){DATA.rows=DATA.rows.filter(r=>r.mk!==mk).concat(o.rows);}if(o&&o.dups&&o.dups.length){DATA.dups=DATA.dups.filter(r=>r.mk!==mk).concat(o.dups);}});
+  wk40ToSep(DATA.rows);wk40ToSep(DATA.dups);
  }catch(err){}
 }
 /* ====== DATA ENGINE ====== */
@@ -1585,7 +1590,7 @@ function cleanSheetMod(json,fname){
 const MLS_KEY='quintec_tiendas_v1';
 const FB_PATH_MOD='quintec/tiendas_meses';
 function modBuildStore(){const s={};MDATA.rows.forEach(r=>{(s[r.mk]=s[r.mk]||{label:r.mes,rows:[]}).rows.push(r);});return s;}
-function modFlatten(store){let rows=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length)rows=rows.concat(o.rows);});return rows;}
+function modFlatten(store){let rows=[];if(store)Object.keys(store).forEach(mk=>{const o=store[mk];if(o&&o.rows&&o.rows.length)rows=rows.concat(o.rows);});return wk40ToSep(rows);}
 function modSaveLocal(){try{localStorage.setItem(MLS_KEY,JSON.stringify(modBuildStore()));return true;}catch(e){return false;}}
 function modLoadLocal(){try{const raw=localStorage.getItem(MLS_KEY);if(!raw)return;const store=JSON.parse(raw);MDATA.rows=modFlatten(store);}catch(e){}}
 function modFbPush(){if(!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_MOD).set(modBuildStore());}catch(e){console.error('modFbPush',e);}}
@@ -2793,7 +2798,7 @@ function handleModUpload(e){
     const ws=wb.Sheets[wb.SheetNames[0]];
     const json=XLSX.utils.sheet_to_json(ws,{defval:null});
     const res=cleanSheetMod(json,file.name);
-    if(res){MDATA.rows=MDATA.rows.filter(r=>r.mk!==res.mk).concat(res.rows);const nm=res.rows.filter(r=>r.grp==='mac').length,nv=res.rows.filter(r=>r.grp==='ver').length;msgs.push(`${res.label}: ${nm} MacOnline + ${nv} Vertical`);}
+    if(res){MDATA.rows=MDATA.rows.filter(r=>(r._src||r.mk)!==res.mk).concat(res.rows);wk40ToSep(MDATA.rows);const nm=res.rows.filter(r=>r.grp==='mac').length,nv=res.rows.filter(r=>r.grp==='ver').length;msgs.push(`${res.label}: ${nm} MacOnline + ${nv} Vertical`);}
     else if(typeof vExtract==='function'){
      /* No es un Excel de despachos: ¿será el Excel de "Valorización por tienda y mes"? Lo cargamos ahí automáticamente. */
      const vMac=vExtract(wb,file.name,'mac'),vVer=vExtract(wb,file.name,'ver');
@@ -2905,12 +2910,13 @@ function opsFinishUpload(all,msgs,errs){
  if(!mks.length){alert('No se pudo importar ninguna hoja de meses.\n'+(errs.join('\n')||''));return;}
  mks.forEach(function(mk){
   var o=all[mk];
-  DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;}).concat(o.rows); // REEMPLAZA el mes, no duplica
+  DATA.rows=DATA.rows.filter(function(r){return (r._src||r.mk)!==mk;}).concat(o.rows); // REEMPLAZA el mes de origen, no duplica
   if(!DATA.dups)DATA.dups=[];
-  DATA.dups=DATA.dups.filter(function(r){return r.mk!==mk;}).concat(o.dups||[]); // duplicados (NO SUMA) para Auditor\u00eda
+  DATA.dups=DATA.dups.filter(function(r){return (r._src||r.mk)!==mk;}).concat(o.dups||[]); // duplicados (NO SUMA) para Auditor\u00eda
   var tot=o.rows.reduce(function(a,r){return a+(r.v||0);},0);
   msgs.push(o.label+': '+fi(o.rows.length)+' pedidos \u00b7 '+fm(tot)+((o.dups&&o.dups.length)?(' \u00b7 '+fi(o.dups.length)+' duplicados'):''));
  });
+ wk40ToSep(DATA.rows);wk40ToSep(DATA.dups);
  recomputeMeta();
  try{if(DATA.meta.meses.length){F.mes=DATA.meta.meses[DATA.meta.meses.length-1].key;}}catch(_){}
  try{saveMonths();}catch(_){}
