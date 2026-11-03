@@ -253,8 +253,13 @@ select:focus{border-color:var(--navy)}
 .devo-passbtns .devo-passcancel{background:#eef1f4;color:#44515d;border:none;padding:8px 16px;border-radius:7px;cursor:pointer;font-weight:600}
 .devo-passbtns .devo-passok{background:#c0392b;color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-weight:600}
 .devo-valhead{background:rgba(0,0,0,.10)}
-.devo-fechacell{cursor:pointer;background:#fcfbf6}
-.devo-fechacell:hover{background:#fff7e6;outline:1px dashed #c89a4e}
+.devo-fechacell{background:#fcfbf6;white-space:nowrap}
+.devo-fechacell:hover{background:#fff7e6}
+.devo-fechatxt{display:inline-block;min-width:72px;padding:2px 5px;border-radius:5px;cursor:text;text-align:center}
+.devo-fechatxt:focus{outline:2px solid #2563eb;background:#eef5ff}
+.devo-fechatxt:empty:before{content:'\2014';color:#c0c8d0}
+.devo-fechabtn{border:none;background:transparent;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;margin-left:3px;vertical-align:middle;opacity:.65}
+.devo-fechabtn:hover{opacity:1}
 .devo-horrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .devo-clock{font-family:'IBM Plex Mono',monospace;font-weight:800;color:#16a085;background:#e6f7f2;border:1px solid #16a085;border-radius:7px;padding:3px 9px;font-size:14px;letter-spacing:1px}
 .devo-ins{background:#16a085;padding:6px 12px}
@@ -1716,7 +1721,7 @@ function devoFmtFecha(v){
 /* Muestra una fecha ya guardada como "24 Abril 2026" (día + mes en palabra + año). Se usa en TODAS las planillas. */
 var DEVO_MESES_NOM=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 function devoDispFecha(v){var iso=devoParseFecha(v);if(iso){var p=iso.split('-');var mi=parseInt(p[1],10)-1;return parseInt(p[2],10)+' '+(DEVO_MESES_NOM[mi]||p[1])+' '+p[0];}return (v==null?'':String(v));}
-function devoAutoFecha(i,r){devoEnsure();if(!DEVO_DATA[i]||!DEVO_DATA[i].rows[r])return;var cur=DEVO_DATA[i].rows[r][0];if(cur!=null&&String(cur).trim()!=='')return;var f=devoNowFecha();DEVO_DATA[i].rows[r][0]=f;var cell=document.querySelector('.devo-fechacell[data-i="'+i+'"][data-r="'+r+'"]');if(cell)cell.textContent=f;}
+function devoAutoFecha(i,r){devoEnsure();if(!DEVO_DATA[i]||!DEVO_DATA[i].rows[r])return;var cur=DEVO_DATA[i].rows[r][0];if(cur!=null&&String(cur).trim()!=='')return;var f=devoNowFecha();DEVO_DATA[i].rows[r][0]=f;var cell=document.querySelector('.devo-fechatxt[data-i="'+i+'"][data-r="'+r+'"]');if(cell&&document.activeElement!==cell)cell.textContent=devoDispFecha(f);}
 function devoStartClock(){if(DEVO_CLKTMR)clearInterval(DEVO_CLKTMR);function tick(){var el=document.getElementById('devoClock');if(el)el.textContent=devoNowTime();}tick();DEVO_CLKTMR=setInterval(tick,1000);}
 /* --- maquetado: toolbar + pestañas + panel activo --- */
 function devoPlanillas(){
@@ -1769,7 +1774,7 @@ function devoRenderItem(it){
   for(let vi=0;vi<DEVO_VIEW_COLS.length;vi++){
    const c=DEVO_VIEW_COLS[vi].i;
    let val=devoEsc(d.rows[r][c]);
-   if(c===0){var _ho=[1,DEVO_VALCOL,DEVO_UNCOL,DEVO_DESTCOL,DEVO_BULCOL,7,8].some(function(k){return String(d.rows[r][k]==null?'':d.rows[r][k]).trim()!=='';});h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0" title="Haz clic para elegir la fecha">${_ho?devoEsc(devoDispFecha(d.rows[r][0])):''}</td>`;}
+   if(c===0){h+=`<td class="devo-cell devo-fechacell" data-i="${it.id}" data-r="${r}" data-c="0"><span class="devo-fechatxt" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="0" title="Escribe la fecha (ej: 24/04/2026) o usa el calendario">${devoEsc(devoDispFecha(d.rows[r][0]))}</span><button type="button" class="devo-fechabtn" data-i="${it.id}" data-r="${r}" title="Elegir con calendario">\ud83d\udcc5</button></td>`;}
    else if(c===DEVO_UNCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp" list="devoUNList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
    else if(c===DEVO_DESTCOL){h+=`<td class="devo-cell devo-inpcell"><input class="devo-inp devo-dest" list="devoTiendaList" autocomplete="off" data-i="${it.id}" data-r="${r}" data-c="${c}" value="${devoAttr(d.rows[r][c])}"></td>`;}
    else if(c===DEVO_VALCOL){h+=`<td class="devo-cell devo-valcell" contenteditable="true" data-i="${it.id}" data-r="${r}" data-c="${c}">${val}</td>`;}
@@ -1790,7 +1795,7 @@ function devoRender(){devoEnsure();const act=DEVO_ITEMS.find(x=>x.id===DEVO_ACTI
 function devoSetActive(id){DEVO_ACTIVE=id;const pane=document.getElementById('devoPane');if(pane)pane.innerHTML='';devoRender();}
 var devoWriting=false,devoTimer=null;
 function devoFbPush(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;clearTimeout(devoTimer);devoTimer=setTimeout(()=>{try{devoWriting=true;fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;}).catch(e=>{devoWriting=false;console.error('devoFbPush',e);});}catch(e){devoWriting=false;}},500);}
-function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce')||ae.classList.contains('devo-inp'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
+function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce')||ae.classList.contains('devo-inp')||ae.classList.contains('devo-fechatxt'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
 function devoWire(){
  const root=document.getElementById('s-devo');if(!root)return;
  root.addEventListener('input',e=>{
@@ -1798,13 +1803,15 @@ function devoWire(){
   if(t.classList.contains('devo-cell')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].rows[r][c]=t.textContent;devoAutoFecha(i,r);if(c===DEVO_VALCOL){const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';}devoFbPush();}}
   else if(t.classList.contains('devo-ce')){const i=t.dataset.i,f=t.dataset.f;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i][f]=t.textContent;devoFbPush();}}
   else if(t.classList.contains('devo-inp')){const i=t.dataset.i,r=+t.dataset.r,c=+t.dataset.c;devoEnsure();if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][c]=t.value;devoAutoFecha(i,r);if(t.classList.contains('devo-dest')){const cc=root.querySelector('.devo-comuna[data-i="'+i+'"][data-r="'+r+'"]');if(String(t.value).trim()===''){if(cc)cc.value='';DEVO_DATA[i].rows[r][DEVO_COMCOL]='';}else{const com=DEVO_COMUNA[devoNorm(t.value)];if(com){if(cc)cc.value=com;DEVO_DATA[i].rows[r][DEVO_COMCOL]=com;}}}devoFbPush();}}
+  else if(t.classList.contains('devo-fechatxt')){const i=t.dataset.i,r=+t.dataset.r;devoEnsure();if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][0]=t.textContent;devoFbPush();}}
  });
+ root.addEventListener('blur',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('devo-fechatxt')){const i=t.dataset.i,r=+t.dataset.r;const iso=devoParseFecha(t.textContent);if(iso){const p=iso.split('-');const txt=p[2]+'/'+p[1]+'/'+p[0];if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][0]=txt;}t.textContent=devoDispFecha(txt);devoFbPush();}else if(String(t.textContent).trim()===''){if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][0]='';}}}},true);
  root.addEventListener('blur',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('devo-valcell')){const i=t.dataset.i,r=+t.dataset.r;const f=devoFmtVal(t.textContent);if(f!==''){t.textContent=f;if(DEVO_DATA[i]&&DEVO_DATA[i].rows[r]){DEVO_DATA[i].rows[r][DEVO_VALCOL]=f;}const tot=document.getElementById('devoTot_'+i);if(tot)tot.textContent=devoFmtVal(devoItemTotal(i))||'$0';devoFbPush();}}},true);
  root.addEventListener('click',e=>{
   const tab=e.target.closest?e.target.closest('.devo-tab'):null;if(tab){devoSetActive(tab.getAttribute('data-tab'));return;}
   const ins=e.target.closest?e.target.closest('.devo-ins'):null;if(ins){const i=ins.dataset.i;devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].am=devoNowTime();const el=document.querySelector(`.devo-ce[data-i="${i}"][data-f="am"]`);if(el)el.textContent=DEVO_DATA[i].am;devoFbPush();}return;}
   const chk=e.target.closest?e.target.closest('.devo-ampmchk'):null;if(chk){const i=chk.dataset.i,v=chk.getAttribute('data-v');devoEnsure();if(DEVO_DATA[i]){DEVO_DATA[i].ampm=chk.checked?v:'';document.querySelectorAll(`.devo-ampmchk[data-i="${i}"]`).forEach(o=>{o.checked=(o.getAttribute('data-v')===DEVO_DATA[i].ampm);});devoFbPush();}return;}
-  const fc=e.target.closest?e.target.closest('.devo-fechacell'):null;if(fc){devoOpenEditCal(fc.dataset.i,+fc.dataset.r);return;}
+  const fb=e.target.closest?e.target.closest('.devo-fechabtn'):null;if(fb){devoOpenEditCal(fb.dataset.i,+fb.dataset.r);return;}
   const dsel=e.target.closest?e.target.closest('.devo-delsel'):null;if(dsel){devoDelSelected(dsel.dataset.i);return;}
   const sall=e.target.closest?e.target.closest('.devo-selall'):null;if(sall){devoSelAll(sall.dataset.i);return;}
  });
