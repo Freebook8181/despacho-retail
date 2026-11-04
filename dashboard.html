@@ -853,6 +853,28 @@ function fbSubscribe(){
 }
 function fbPush(){if(!fbReady||!fbDB)return;try{fbWriting=true;fbDB.ref(FB_PATH).set(buildStore()).then(()=>{fbWriting=false;}).catch(e=>{fbWriting=false;console.error('fbPush',e);});}catch(e){fbWriting=false;console.error('fbPush',e);}}
 function fbClear(){if(!fbReady||!fbDB)return Promise.resolve();try{return fbDB.ref(FB_PATH).remove();}catch(e){return Promise.resolve();}}
+/* Actualiza en la nube SOLO los meses indicados (sin tocar los demás), luego relee TODO el nodo
+   para que el usuario vea todos los meses guardados aunque haya subido uno solo. mkSet={mk:1,...} */
+function fbUpdateMonths(mkSet,cb){
+ if(!fbReady||!fbDB){if(cb)cb(false);return;}
+ var full;try{full=buildStore();}catch(e){full={};}
+ var patch={};Object.keys(mkSet||{}).forEach(function(mk){patch[mk]=(full[mk]!==undefined?full[mk]:null);});
+ try{
+  fbWriting=true;
+  fbDB.ref(FB_PATH).update(patch).then(function(){
+   fbDB.ref(FB_PATH).once('value').then(function(snap){
+    var store=snap.val()||{};
+    try{DATA.rows=flattenStore(store);DATA.dups=flattenDups(store);}catch(_){}
+    fbWriting=false;
+    try{recomputeMeta();}catch(_){}
+    try{saveMonths();}catch(_){}
+    try{buildFilters();}catch(_){}
+    try{render();}catch(_){}
+    if(cb)cb(true);
+   }).catch(function(e){fbWriting=false;console.error('fbUpdateMonths read',e);if(cb)cb(true);});
+  }).catch(function(e){fbWriting=false;console.error('fbUpdateMonths',e);if(cb)cb(false,e);});
+ }catch(e){fbWriting=false;console.error('fbUpdateMonths',e);if(cb)cb(false,e);}
+}
 function saveMonths(){
  try{localStorage.setItem(LS_KEY,JSON.stringify(buildStore()));return true;}catch(err){return false;}
 }
@@ -1798,9 +1820,9 @@ function devoRenderItem(it){
 function devoActivateTabStyle(){document.querySelectorAll('#devoTabs .devo-tab').forEach(b=>{b.classList.toggle('on',b.getAttribute('data-tab')===DEVO_ACTIVE);});}
 function devoRender(){devoEnsure();const act=DEVO_ITEMS.find(x=>x.id===DEVO_ACTIVE)||DEVO_ITEMS[0];DEVO_ACTIVE=act.id;devoActivateTabStyle();devoRenderItem(act);}
 function devoSetActive(id){DEVO_ACTIVE=id;const pane=document.getElementById('devoPane');if(pane)pane.innerHTML='';devoRender();}
-var devoWriting=false,devoTimer=null;
-function devoFbPush(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;clearTimeout(devoTimer);devoTimer=setTimeout(()=>{try{devoWriting=true;fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;}).catch(e=>{devoWriting=false;console.error('devoFbPush',e);});}catch(e){devoWriting=false;}},500);}
-function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce')||ae.classList.contains('devo-inp')||ae.classList.contains('devo-fechatxt'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
+var devoWriting=false,devoTimer=null,devoLocalDraft=false;
+function devoFbPush(){if(devoLocalDraft)return;if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;clearTimeout(devoTimer);devoTimer=setTimeout(()=>{try{devoWriting=true;fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;}).catch(e=>{devoWriting=false;console.error('devoFbPush',e);});}catch(e){devoWriting=false;}},500);}
+function devoFbSubscribe(){if(typeof fbReady==='undefined'||!fbReady||!fbDB)return;try{fbDB.ref(FB_PATH_DEVO).on('value',snap=>{if(devoWriting)return;if(devoLocalDraft)return;const v=snap.val();if(v)DEVO_DATA=v;devoEnsure();const ae=document.activeElement;const typing=ae&&ae.classList&&(ae.classList.contains('devo-cell')||ae.classList.contains('devo-ce')||ae.classList.contains('devo-inp')||ae.classList.contains('devo-fechatxt'));if(!typing)devoRender();},err=>console.error('devoOn',err));}catch(e){console.error('devoFbSubscribe',e);}}
 function devoWire(){
  const root=document.getElementById('s-devo');if(!root)return;
  root.addEventListener('input',e=>{
@@ -1924,7 +1946,7 @@ function devoImportExcel(ev){
  });
 }
 /* --- GUARDAR inmediato en Firebase --- */
-function devoFbSave(){if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;try{devoG2Refresh();}catch(e){}return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
+function devoFbSave(){devoLocalDraft=false;if(typeof fbReady==='undefined'||!fbReady||!fbDB){return Promise.resolve(false);}try{devoWriting=true;return fbDB.ref(FB_PATH_DEVO).set(DEVO_DATA).then(()=>{devoWriting=false;try{devoG2Refresh();}catch(e){}return true;}).catch(e=>{devoWriting=false;console.error('devoFbSave',e);return false;});}catch(e){devoWriting=false;return Promise.resolve(false);}}
 function devoGuardar(){devoEnsure();
  if(typeof fbDB==='undefined'||!fbDB){alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');return;}
  /* Ordenar cada tabla por fecha antes de guardar en la nube (por fecha y tabla correspondiente). */
@@ -1937,9 +1959,12 @@ function devoGuardar(){devoEnsure();
  alert('No hay conexi\u00f3n con la nube (Firebase). Revisa tu conexi\u00f3n e int\u00e9ntalo de nuevo.');}
 /* --- LIMPIAR: vaciar las tablas SOLO en pantalla (no toca la nube) para poder escribir de nuevo --- */
 function devoLimpiar(){
+ if(!confirm('LIMPIAR solo vac\u00eda las tablas en pantalla para que puedas escribir de nuevo.\n\nNO borra nada de lo que ya est\u00e1 guardado en la nube. Si recargas la p\u00e1gina, la informaci\u00f3n de la nube vuelve a aparecer.\n\n\u00bfDeseas limpiar las tablas en pantalla?'))return;
+ devoLocalDraft=true; /* modo borrador local: mientras esté activo NO se escribe nada en la nube */
  devoEnsure();
  DEVO_ITEMS.forEach(function(it){DEVO_DATA[it.id]=devoEmptyItem();});
  devoEnsure();devoRender();
+ alert('\u2713 Tablas limpiadas solo en pantalla.\n\nLo guardado en la nube NO se toc\u00f3. Escribe lo que necesites y cuando quieras conservarlo presiona GUARDAR. Si recargas sin guardar, vuelve a aparecer lo que estaba en la nube.');
 }
 /* --- EXPORTAR a Excel (un libro, varias hojas, con dise\u00f1o y colores) --- */
 function devoSheetName(t){return (t||'Hoja').replace(/[\\/?*\[\]:]/g,' ').slice(0,31);}
@@ -2923,8 +2948,14 @@ function opsFinishUpload(all,msgs,errs){
  try{buildFilters();}catch(_){}
  try{render();}catch(_){}
  var tail=(errs.length?('\n\n'+errs.join('\n')):'');
- if(typeof fbReady!=='undefined'&&fbReady){try{fbPush();}catch(_){}alert('\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail+'\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Solo Operaciones; no afecta a MacOnline ni Vertical.');}
- else alert('\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail+'\n\n\u2713 Guardado en este navegador.');
+ var doneMsg='\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail;
+ if(typeof fbReady!=='undefined'&&fbReady){
+  var affected={};mks.forEach(function(mk){var o=all[mk];(o.rows||[]).forEach(function(r){affected[r.mk]=1;});(o.dups||[]).forEach(function(r){affected[r.mk]=1;});affected[mk]=1;});
+  fbUpdateMonths(affected,function(ok){
+   alert(doneMsg+(ok?('\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Solo se actualiz\u00f3 el/los mes(es) que subiste; los dem\u00e1s meses se mantienen intactos para todos los usuarios.'):('\n\n\u26a0 No se pudo guardar en la nube; la informaci\u00f3n qued\u00f3 solo en este navegador.')));
+  });
+ }
+ else alert(doneMsg+'\n\n\u2713 Guardado en este navegador.');
 }
 function opsGuardar(){
  if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
@@ -3134,7 +3165,7 @@ function opsNubeRender(){
  body.innerHTML=head+'<div class="nube-cols"><div class="nube-col"><div class="nube-h" style="background:#1f3a59">Operaciones</div><div class="nube-tot">'+fi(DATA.rows.length)+' pedidos \u00b7 '+fm(tv)+' \u00b7 '+fi(mks.length)+' mes(es) \u00b7 <i>haz clic en un mes para ver el detalle</i></div>'+items+'</div></div>';
  body.querySelectorAll('.nube-row-click').forEach(function(row){row.onclick=function(e){if(e.target.closest('.nube-exp')||e.target.closest('.nube-del'))return;opsNubeMonth(row.getAttribute('data-open'));};});
  body.querySelectorAll('.nube-exp').forEach(function(b){b.onclick=function(e){e.stopPropagation();opsExportMonth(b.getAttribute('data-exp'));};});
- body.querySelectorAll('.nube-del').forEach(function(b){b.onclick=function(){var mk=b.getAttribute('data-mk');if(!obIsAdmin()){alert('Solo el administrador puede editar.');return;}var lbl=(byMk[mk]||{}).label||mk;if(!confirm('\u00bfEliminar de la nube el Excel del mes '+lbl+' (Operaciones)?\n\nEsta acci\u00f3n se aplica tambi\u00e9n en Firebase (quintec/meses) y no se puede deshacer.'))return;DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;});DATA.dups=(DATA.dups||[]).filter(function(r){return r.mk!==mk;});try{recomputeMeta();}catch(_){}try{saveMonths();}catch(_){}if(typeof fbReady!=='undefined'&&fbReady&&fbDB){try{if(DATA.rows.length)fbPush();else fbClear();}catch(_){}}try{buildFilters();}catch(_){}try{render();}catch(_){}opsNubeRender();};});
+ body.querySelectorAll('.nube-del').forEach(function(b){b.onclick=function(){var mk=b.getAttribute('data-mk');if(!obIsAdmin()){alert('Solo el administrador puede editar.');return;}var lbl=(byMk[mk]||{}).label||mk;if(!confirm('\u00bfEliminar de la nube el Excel del mes '+lbl+' (Operaciones)?\n\nEsta acci\u00f3n se aplica tambi\u00e9n en Firebase (quintec/meses) y no se puede deshacer.'))return;DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;});DATA.dups=(DATA.dups||[]).filter(function(r){return r.mk!==mk;});try{recomputeMeta();}catch(_){}try{saveMonths();}catch(_){}if(typeof fbReady!=='undefined'&&fbReady&&fbDB){try{var _aff={};_aff[mk]=1;fbUpdateMonths(_aff,function(){try{opsNubeRender();}catch(_){}});}catch(_){}}try{buildFilters();}catch(_){}try{render();}catch(_){}opsNubeRender();};});
 }
 
 var OPS_REPORT=null;
