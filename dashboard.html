@@ -800,7 +800,7 @@ function cleanSheet(json,fname){
    const semRaw=get('Unnamed: 0','SEMANA');let sem=0;if(semRaw!=null){const mm=String(semRaw).match(/\d+/);if(mm)sem=+mm[0];}
    if(!sem||sem<1){const _off=(new Date(dt.getFullYear(),dt.getMonth(),1).getDay()+6)%7;sem=Math.floor((dt.getDate()-1+_off)/7)+1;}
    let tp=get('TRANSPORTE');tp=tp!=null?String(tp).trim():'Sin dato';if(tp==='SERVICO 3PL')tp='SERVICIO 3PL';
-   out.push({id:+(get('N° PEDIDOS','N PEDIDOS','ID PEDIDO')||out.length+1),f:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`,sem:sem,dow:(dt.getDay()+6)%7,un:(get('UNIDAD NEGOCIO')||'Sin dato')+'',cl:(()=>{const c=get('NOMBRE CLIENTE','CLIENTE','NOMBRE DEL CLIENTE','RAZON SOCIAL');return c!=null&&String(c).trim()!==''?String(c).trim():'Sin dato';})(),co:canonComuna(get('COMUNA'),map),v:Math.round(val),ob:(()=>{const o=get('OBSERVACION');return o!=null?String(o).trim():'';})(),tp:tp,rg:(()=>{const r=get('RANGO');const s=r!=null?String(r).trim().toUpperCase():'';return s||'EN BLANCO';})(),_mo:monthFromName,_dt:dt});
+   out.push({id:+(get('N° PEDIDOS','N PEDIDOS','ID PEDIDO')||out.length+1),f:`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`,sem:sem,dow:(dt.getDay()+6)%7,un:(get('UNIDAD NEGOCIO')||'Sin dato')+'',cl:(()=>{const c=get('NOMBRE CLIENTE','CLIENTE','NOMBRE DEL CLIENTE','RAZON SOCIAL');return c!=null&&String(c).trim()!==''?String(c).trim():'Sin dato';})(),co:canonComuna(get('COMUNA'),map),v:Math.round(val),ob:(()=>{const o=get('OBSERVACION');return o!=null?String(o).trim():'';})(),tp:tp,rg:(()=>{const r=get('RANGO');const s=r!=null?String(r).trim().toUpperCase():'';return s||'EN BLANCO';})(),zona:(()=>{const z=get('ZONA');const s=z!=null?String(z).trim():'';return s;})(),_mo:monthFromName,_dt:dt,seCal:get('SE CALCULA','SE_CALCULA','SECALCULA'),rep:get('REPETICION','REPETICIÓN','REPITE CON')});
  });
  if(!out.length)return null;
  let mi=out[0]._dt.getMonth(),yy=out[0]._dt.getFullYear();
@@ -810,6 +810,106 @@ function cleanSheet(json,fname){
  return {label,mk,rows:out};
 }
 /* ====== PERSISTENCIA LOCAL (localStorage) ====== */
+/* ====== SUPABASE (nube · datos compartidos entre usuarios, tabla operaciones_transporte) ====== */
+const SUPABASE_URL='https://rdxhhsroyvruwnxiomjx.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkeGhoc3JveXZydXdueGlvbWp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM3MjYxODAsImV4cCI6MjEwOTMwMjE4MH0.InfOYbagE1xy9J-p24peJmm92lygmfv13KVUP2eox0k';
+const SUPABASE_TABLE='operaciones_transporte';
+const SB_PAGE=1000;
+var sbReady=false;
+/* Lee una pagina de la tabla via REST (PostgREST). */
+async function sbFetchRange(from,to){
+ const url=SUPABASE_URL+'/rest/v1/'+SUPABASE_TABLE+'?select=*&order=fecha.asc&offset='+from+'&limit='+SB_PAGE;
+ const res=await fetch(url,{headers:{apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+SUPABASE_ANON_KEY,Accept:'application/json'}});
+ if(!res.ok){var t='';try{t=await res.text();}catch(_){}throw new Error('Supabase '+res.status+' '+t);}
+ return res.json();
+}
+/* Trae TODAS las filas (paginado) desde Supabase. */
+async function sbFetchAll(){var all=[],from=0;for(;;){var chunk=await sbFetchRange(from,from+SB_PAGE-1);all=all.concat(chunk);if(chunk.length<SB_PAGE)break;from+=SB_PAGE;}return all;}
+/* Convierte una fila del CSV/Supabase al formato interno de la app. */
+function sbRowToRec(r){
+ if(!r)return null;
+ var fechaRaw=r.fecha!=null?r.fecha:(r.FECHA!=null?r.FECHA:null);
+ if(fechaRaw==null||String(fechaRaw).trim()==='')return null;
+ var dt;
+ if(/^\d{4}-\d{2}-\d{2}/.test(String(fechaRaw))){var p=String(fechaRaw).slice(0,10).split('-');dt=new Date(+p[0],+p[1]-1,+p[2]);}
+ else dt=excelDate(fechaRaw);
+ if(!dt||isNaN(dt))return null;
+ var valRaw=r.valor!=null?r.valor:(r.VALOR!=null?r.VALOR:0);
+ var val=(typeof valRaw==='number')?valRaw:(parseFloat(String(valRaw).replace(/[^0-9.-]/g,''))||0);
+ var sem=parseInt(r.semana_des,10);
+ if(!sem||sem<1){const _off=(new Date(dt.getFullYear(),dt.getMonth(),1).getDay()+6)%7;sem=Math.floor((dt.getDate()-1+_off)/7)+1;}
+ var tp=r.transporte!=null?String(r.transporte).trim():'Sin dato';if(tp==='SERVICO 3PL')tp='SERVICIO 3PL';
+ var rg=r.rango!=null?String(r.rango).trim().toUpperCase():'';
+ var uni=r.unidad_negoc;var cli=r.nombre_clier;
+ return {id:+(r.id_pedido!=null?r.id_pedido:(r.pedidos_salie!=null?r.pedidos_salie:0)),
+  f:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),
+  sem:sem,dow:(dt.getDay()+6)%7,
+  un:(uni!=null&&String(uni).trim()!=='')?String(uni).trim():'Sin dato',
+  cl:(cli!=null&&String(cli).trim()!=='')?String(cli).trim():'Sin dato',
+  co:(function(){var map={};return canonComuna(r.comuna,map);})(),
+  v:Math.round(val),
+  ob:(r.observacion!=null?String(r.observacion).trim():''),
+  tp:tp,rg:(rg||'EN BLANCO'),
+  zona:(r.zona!=null?String(r.zona).trim():''),
+  seCal:(r.se_calcula!=null?String(r.se_calcula).trim():''),
+  rep:(r.repeticion!=null?String(r.repeticion).trim():''),
+  mk:dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'),
+  mes:MESES_FULL[dt.getMonth()]+' '+dt.getFullYear()};
+}
+/* Traduce las filas crudas a registros. (wk40ToSep se aplica despues, no aqui,
+   para no pisar la zona real que ya trae la tabla.) */
+function sbMapRows(raw){var out=[];(raw||[]).forEach(function(r){var rec=sbRowToRec(r);if(rec)out.push(rec);});return out;}
+/* Reconstruye DATA.rows / DATA.dups desde Supabase, aplicando la regla de Semana 40
+   y el dedup por anio+semana+id_pedido (misma logica de colores que la importacion Excel). */
+function sbBuildData(raw){
+ var recs=sbMapRows(raw);wk40ToSep(recs);
+ var groups={},order=[];
+ recs.forEach(function(r){var key=r.mk+'\u0002'+r.sem+'\u0002'+r.id;if(!groups[key]){groups[key]=[];order.push(key);}groups[key].push(r);});
+ var rows=[],dups=[];
+ order.forEach(function(key){
+  var g=groups[key];
+  if(g.length===1){var r0=g[0];if(r0.seCal===undefined||r0.seCal===null||String(r0.seCal).trim()==='')r0.seCal='SE SUMA';if(!r0.rep)r0.rep='';rows.push(r0);return;}
+  var vals=g.map(function(x){return x.v;});var maxV=Math.max.apply(null,vals),minV=Math.min.apply(null,vals);
+  var sameVal=(maxV===minV);
+  if(sameVal){
+   g.forEach(function(x){x.seCal='NO SUMA';x._dup=true;});
+   dups=dups.concat(g);
+  }else{
+   g.forEach(function(x){if(!x.seCal)x.seCal='SE SUMA';if(!x.rep)x.rep='';});
+   rows=rows.concat(g);
+  }
+ });
+ return {rows:rows,dups:dups};
+}
+/* Carga desde Supabase y refresca toda la interfaz. */
+async function sbReload(){ return await sbLoad(); }
+async function sbLoad(){
+ var raw=await sbFetchAll();
+ var built=sbBuildData(raw);
+ DATA.rows=built.rows;DATA.dups=built.dups;
+ try{recomputeMeta();}catch(_){}
+ try{if(DATA.meta.meses&&DATA.meta.meses.length&&!DATA.meta.meses.find(function(m){return m.key===F.mes;}))F.mes=DATA.meta.meses[DATA.meta.meses.length-1].key;}catch(_){}
+ try{buildFilters();}catch(_){}
+ try{render();}catch(_){}
+ try{saveMonths();}catch(_){}
+ return raw.length;
+}
+function sbInit(){
+ if(typeof fetch!=='function')return;
+ (async function(){
+  try{
+   var n=await sbLoad();
+   sbReady=true;
+   var el=document.getElementById('fbStat');
+   if(el){el.textContent='\u2601 Nube conectada (Supabase)';el.style.color='#2e7d5b';}
+   console.log('Supabase: '+n+' filas leidas de '+SUPABASE_TABLE);
+  }catch(e){
+   console.error('sbInit',e);
+   var el2=document.getElementById('fbStat');
+   if(el2){el2.textContent='\u26a0 No se pudo leer Supabase (revisa RLS / clave)';el2.style.color='#b06a2a';}
+  }
+ })();
+}
 /* ====== FIREBASE (nube · datos compartidos entre usuarios) ====== */
 const FB_CFG={apiKey:"AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOjOVzk",authDomain:"despacho-retail.firebaseapp.com",databaseURL:"https://despacho-retail-default-rtdb.firebaseio.com",projectId:"despacho-retail",storageBucket:"despacho-retail.firebasestorage.app",messagingSenderId:"1011000908999",appId:"1:1011000908999:web:08c8630fab0c9537e0b2e2"};
 const FB_PATH='quintec/meses';
@@ -832,6 +932,8 @@ function fbSubscribe(){
  try{
   fbDB.ref(FB_PATH).on('value',snap=>{
    try{
+    // Si Operaciones ya se lee de Supabase, no dejamos que Firebase pise esos datos.
+    if(typeof sbReady!=='undefined'&&sbReady){const elx=document.getElementById('fbStat');return;}
     const store=snap.val();
     if(store&&Object.keys(store).length){
      DATA.rows=flattenStore(store);
@@ -851,7 +953,7 @@ function fbSubscribe(){
   },err=>{console.error('fbOn',err);const el=document.getElementById('fbStat');if(el){el.textContent='⚠ Sin conexión a la nube (modo local)';el.style.color='#b06a2a';}});
  }catch(e){console.error('fbSubscribe',e);}
 }
-function fbPush(){if(!fbReady||!fbDB)return;try{fbWriting=true;fbDB.ref(FB_PATH).set(buildStore()).then(()=>{fbWriting=false;}).catch(e=>{fbWriting=false;console.error('fbPush',e);});}catch(e){fbWriting=false;console.error('fbPush',e);}}
+function fbPush(){if(!fbReady||!fbDB)return;if(typeof sbReady!=='undefined'&&sbReady){console.warn('fbPush omitido: Operaciones se lee de Supabase');return;}try{fbWriting=true;fbDB.ref(FB_PATH).set(buildStore()).then(()=>{fbWriting=false;}).catch(e=>{fbWriting=false;console.error('fbPush',e);});}catch(e){fbWriting=false;console.error('fbPush',e);}}
 function fbClear(){if(!fbReady||!fbDB)return Promise.resolve();try{return fbDB.ref(FB_PATH).remove();}catch(e){return Promise.resolve();}}
 /* Actualiza en la nube SOLO los meses indicados (sin tocar los demás), luego relee TODO el nodo
    para que el usuario vea todos los meses guardados aunque haya subido uno solo. mkSet={mk:1,...} */
@@ -1208,9 +1310,16 @@ try{buildFooter();}catch(e){console.error('buildFooter',e);}
 try{render();}catch(e){console.error('render',e);}
 // 3) Reaplica el rol por si buildMarkup se re-ejecut\u00f3 (botones de admin, etc.).
 try{applyRole();}catch(e){console.error('applyRole2',e);}
-// 4) Conexión a la nube (Firebase). Nunca bloquea el ingreso: va en try/catch
-//    y, si falla o no hay internet, el tablero sigue con los datos locales.
-try{if(fbInit())fbSubscribe();}catch(e){console.error('firebase',e);}
+// 4) Conexión a la nube. Los datos de OPERACIONES se LEEN desde SUPABASE
+//    (tabla operaciones_transporte). Firebase se mantiene conectado solo para
+//    GUARDAR/leer las demás áreas (Devoluciones, MacOnline/Vertical) si las usas.
+//    Nunca bloquea el ingreso: si falla o no hay internet, el tablero sigue con lo local.
+//    OJO: Firebase NO debe empujar los meses de Operaciones (los pisa con datos viejos);
+//    por eso Operaciones solo LEE de Supabase.
+try{ fbSubscribeOpsOff=true; }catch(e){}
+try{if(fbInit()){try{fbSubscribe();}catch(e){console.error('fbSubscribe',e);}}}catch(e){console.error('firebase',e);}
+/* 4b) Supabase: carga los datos de Operaciones (reemplaza a la nube de Firebase). */
+try{if(typeof sbInit==='function')sbInit();}catch(e){console.error('sbInit',e);}
 try{setTimeout(()=>{try{Object.values(CH).forEach(c=>c.resize());}catch(_){}} ,150);}catch(e){}
 /* ===== app8.js ===== */
 /* ====== CAPTURE CHARTS ====== */
