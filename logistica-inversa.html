@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logística Inversa — Quintec</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#eef1f8; --panel:#ffffff; --ink:#1f2744; --muted:#6b7690;
+  --brand:#5b4be0; --brand2:#00b8d4; --brand-d:#3f32b8;
+  --line:#e4e8f2; --ok:#16a34a; --warn:#f59e0b; --bad:#dc2626;
+  --side:#161a2e; --side2:#1f2540;
+  --shadow:0 10px 30px rgba(31,39,68,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+button{font-family:inherit;cursor:pointer;border:none}
+input,select,textarea{font-family:inherit;font-size:14px}
+.hidden{display:none !important}
+
+/* ===== LOGIN ===== */
+#login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#161a2e 0%,#3f32b8 60%,#00b8d4 140%);padding:20px}
+.login-card{background:#fff;border-radius:22px;box-shadow:0 30px 70px rgba(0,0,0,.35);
+  width:100%;max-width:400px;padding:38px 34px;text-align:center}
+.login-logo{width:64px;height:64px;border-radius:18px;margin:0 auto 14px;
+  background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:center;
+  font-size:30px;color:#fff;box-shadow:0 10px 24px rgba(91,75,224,.4)}
+.login-card h1{font-size:20px;letter-spacing:.5px}
+.login-card .sub{color:var(--muted);font-size:12.5px;margin:4px 0 22px}
+.fld{text-align:left;margin-bottom:14px}
+.fld label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.fld input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#f7f8fc;transition:.15s}
+.fld input:focus{outline:none;border-color:var(--brand);background:#fff}
+.btn-primary{width:100%;padding:13px;border-radius:12px;color:#fff;font-weight:700;letter-spacing:.3px;
+  background:linear-gradient(135deg,var(--brand),var(--brand-d));box-shadow:0 8px 20px rgba(91,75,224,.35);transition:.15s}
+.btn-primary:hover{filter:brightness(1.07);transform:translateY(-1px)}
+.login-err{color:var(--bad);font-size:12.5px;margin-top:12px;min-height:16px}
+
+/* ===== LAYOUT ===== */
+#app{display:flex;min-height:100vh}
+.sidebar{width:248px;background:linear-gradient(180deg,var(--side),var(--side2));color:#cdd3e8;
+  display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:30}
+.sb-brand{padding:22px 22px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-brand .ic{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand2));
+  display:flex;align-items:center;justify-content:center;font-size:20px}
+.sb-brand b{font-size:15px;color:#fff;display:block;line-height:1.2}
+.sb-brand span{font-size:11px;color:#8b93b5}
+.nav{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:4px}
+.nav button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border-radius:11px;
+  background:transparent;color:#aeb6d6;font-size:14px;font-weight:600;text-align:left;transition:.15s}
+.nav button .ni{font-size:17px;width:22px;text-align:center}
+.nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav button.active{background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff;box-shadow:0 6px 16px rgba(91,75,224,.4)}
+.sb-foot{padding:16px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-user{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sb-user .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--brand2),var(--brand));
+  display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px}
+.sb-user .nm{font-size:13px;color:#fff;font-weight:600;line-height:1.1}
+.sb-user .rl{font-size:10.5px;color:#8b93b5}
+.badge-admin{display:inline-block;margin-top:2px;font-size:9.5px;font-weight:700;letter-spacing:.5px;
+  background:#f59e0b;color:#3a2600;padding:2px 7px;border-radius:20px}
+.btn-logout{width:100%;padding:9px;border-radius:10px;background:rgba(255,255,255,.08);color:#cdd3e8;font-weight:600;transition:.15s}
+.btn-logout:hover{background:var(--bad);color:#fff}
+
+.main{flex:1;margin-left:248px;padding:26px 30px 50px;min-width:0}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px}
+.page-head h2{font-size:22px}
+.page-head p{color:var(--muted);font-size:13px;margin-top:2px}
+
+.card{background:var(--panel);border-radius:16px;box-shadow:var(--shadow);padding:22px;margin-bottom:20px}
+
+/* ===== FORM ===== */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.f label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.f input,.f select,.f textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;background:#f7f8fc;transition:.15s}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--brand);background:#fff}
+.f textarea{resize:vertical;min-height:70px}
+.form-actions{display:flex;gap:12px;margin-top:20px}
+.btn{padding:12px 22px;border-radius:11px;font-weight:700;letter-spacing:.3px;transition:.15s}
+.btn.save{background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff;box-shadow:0 8px 18px rgba(91,75,224,.3)}
+.btn.save:hover{transform:translateY(-1px);filter:brightness(1.07)}
+.btn.ghost{background:#eef0f7;color:var(--muted)}
+.btn.ghost:hover{background:#e2e5f0}
+.btn.sm{padding:7px 13px;font-size:12.5px;border-radius:9px}
+.btn.danger{background:#fde8e8;color:var(--bad)}
+.btn.danger:hover{background:var(--bad);color:#fff}
+
+/* ===== TABLE ===== */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.toolbar input,.toolbar select{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff}
+.toolbar input{min-width:180px}
+.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
+thead th{background:#f3f5fb;color:var(--muted);text-align:left;padding:11px 12px;font-size:11px;
+  text-transform:uppercase;letter-spacing:.4px;font-weight:700;position:sticky;top:0}
+tbody td{padding:10px 12px;border-top:1px solid var(--line)}
+tbody tr:hover{background:#f8f9fe}
+.st{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
+.st.PENDIENTE{background:#fef3c7;color:#92650b}
+.st.PROCESO{background:#dbeafe;color:#1e40af}
+.st.RETIRADO{background:#dcfce7;color:#166534}
+.st.CERRADO{background:#e5e7eb;color:#374151}
+.val{font-variant-numeric:tabular-nums;font-weight:600}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+
+/* ===== KPIs ===== */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi{background:var(--panel);border-radius:16px;box-shadow:var(--shadow);padding:18px 20px;position:relative;overflow:hidden}
+.kpi .lbl{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi .num{font-size:26px;font-weight:800;margin-top:6px}
+.kpi .bar{position:absolute;left:0;top:0;bottom:0;width:5px}
+.repgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.repgrid h4{font-size:14px;margin-bottom:12px}
+.rrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.rrow b{font-variant-numeric:tabular-nums}
+
+/* ===== MODAL ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(22,26,46,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal{background:#fff;border-radius:18px;box-shadow:0 30px 70px rgba(0,0,0,.4);width:100%;max-width:720px;max-height:90vh;overflow:auto}
+.modal-h{padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.modal-h h3{font-size:17px}
+.modal-h .x{font-size:22px;color:var(--muted);background:none}
+.modal-b{padding:22px 24px}
+.modal-f{padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--side);color:#fff;padding:14px 20px;border-radius:12px;
+  box-shadow:0 12px 30px rgba(0,0,0,.3);z-index:90;font-weight:600;opacity:0;transform:translateY(12px);transition:.25s}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{background:#15803d}.toast.err{background:#b91c1c}
+
+@media(max-width:860px){
+  .sidebar{transform:translateX(-100%);transition:.25s}.sidebar.open{transform:none}
+  .main{margin-left:0;padding:18px}
+  .grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.repgrid{grid-template-columns:1fr}
+  .mobtoggle{display:flex !important}
+}
+.mobtoggle{display:none;position:fixed;top:14px;left:14px;z-index:40;width:42px;height:42px;border-radius:12px;
+  background:var(--side);color:#fff;align-items:center;justify-content:center;font-size:20px;box-shadow:var(--shadow)}
+</style>
+</head>
+<body>
+<!-- ===== LOGIN ===== -->
+<div id="login">
+  <div class="login-card">
+    <div class="login-logo">↺</div>
+    <h1>LOGÍSTICA INVERSA</h1>
+    <div class="sub">Solicitudes de retiro de tiendas · Quintec</div>
+    <form id="loginForm">
+      <div class="fld"><label>Correo</label><input type="email" id="liEmail" autocomplete="username" placeholder="correo@quintec.cl" required></div>
+      <div class="fld"><label>Contraseña</label><input type="password" id="liPass" autocomplete="current-password" placeholder="••••••" required></div>
+      <button type="submit" class="btn-primary" id="loginBtn">Ingresar</button>
+      <div class="login-err" id="loginErr"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app" class="hidden">
+  <button class="mobtoggle" id="mobToggle">☰</button>
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand"><div class="ic">↺</div><div><b>Logística Inversa</b><span>CXP · Retiros</span></div></div>
+    <nav class="nav" id="nav">
+      <button data-v="nuevo" class="active"><span class="ni">➕</span> Nuevo Registro</button>
+      <button data-v="historial"><span class="ni">📋</span> Historial</button>
+      <button data-v="seguimiento"><span class="ni">🔍</span> Seguimiento</button>
+      <button data-v="reportes"><span class="ni">📊</span> Reportes</button>
+      <button data-v="usuarios" id="navUsuarios" class="hidden"><span class="ni">👥</span> Usuarios</button>
+    </nav>
+    <div class="sb-foot">
+      <div class="sb-user">
+        <div class="av" id="uAv">?</div>
+        <div><div class="nm" id="uNom">—</div><div class="rl" id="uRol"></div></div>
+      </div>
+      <button class="btn-logout" id="btnLogout">Cerrar sesión</button>
+    </div>
+  </aside>
+  <main class="main" id="view"></main>
+</div>
+
+<div id="modalHost"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====== CONFIG SUPABASE ====== */
+const SUPABASE_URL = 'https://rdxhhsroyvruwnxiomjx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_7aY1Y1aVXWsl14akL-Hlag_OUsK4_-F';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ====== LISTAS DE APOYO ====== */
+const TIPOS = ['Reacondicionado','Documentos','Traspasos','Garantia Tercero','Devolucion','Varios'];
+const DESTINOS = ['CD','Proveedor','Tienda','Bodega','Servicio Tecnico'];
+const ESTADOS = ['PENDIENTE','PROCESO','RETIRADO','CERRADO'];
+
+let USER = null;        // {id,nombre,email,rol}
+let DATA = [];          // registros cargados
+let editId = null;
+
+/* ====== HELPERS ====== */
+const $ = s => document.querySelector(s);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg,type){const t=$('#toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(()=>t.className='toast',2600);}
+function fmtVal(n){if(n==null||n==='')return '';const num=Number(n);if(isNaN(num))return esc(n);return '$'+num.toLocaleString('es-CL');}
+function parseVal(s){if(s==null)return null;const d=String(s).replace(/[^0-9]/g,'');return d===''?null:Number(d);}
+function fmtFecha(f){if(!f)return '';const p=String(f).slice(0,10).split('-');return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:f;}
+function hoy(){return new Date().toISOString().slice(0,10);}
+function stClass(e){return e==='PROCESO'?'PROCESO':e;}
+
+/* ====== LOGIN ====== */
+$('#loginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const btn=$('#loginBtn'), err=$('#loginErr');
+  err.textContent=''; btn.disabled=true; btn.textContent='Ingresando...';
+  const email=$('#liEmail').value.trim(), pass=$('#liPass').value;
+  try{
+    const {data,error}=await sb.rpc('verificar_login',{p_email:email,p_password:pass});
+    if(error) throw error;
+    if(!data||data.length===0){err.textContent='Correo o contraseña incorrectos.';btn.disabled=false;btn.textContent='Ingresar';return;}
+    USER=data[0];
+    try{localStorage.setItem('li_user',JSON.stringify(USER));}catch(_){}
+    entrar();
+  }catch(ex){
+    err.textContent='Error de conexión: '+(ex.message||ex);
+    btn.disabled=false;btn.textContent='Ingresar';
+  }
+});
+
+function entrar(){
+  $('#login').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+  $('#uNom').textContent=USER.nombre;
+  $('#uAv').textContent=(USER.nombre||'?').trim().charAt(0).toUpperCase();
+  const esAdmin=USER.rol==='admin';
+  $('#uRol').innerHTML=esAdmin?'<span class="badge-admin">ADMINISTRADOR</span>':'Usuario';
+  $('#navUsuarios').classList.toggle('hidden',!esAdmin);
+  go('nuevo');
+}
+
+$('#btnLogout').addEventListener('click',()=>{
+  try{localStorage.removeItem('li_user');}catch(_){}
+  USER=null; location.reload();
+});
+
+/* sesión recordada */
+(function(){try{const s=localStorage.getItem('li_user');if(s){USER=JSON.parse(s);entrar();}}catch(_){}})();
+
+/* ====== NAV ====== */
+$('#mobToggle').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(b)go(b.dataset.v);});
+function setActive(v){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));}
+function go(v){
+  setActive(v); $('#sidebar').classList.remove('open');
+  if(v==='nuevo') viewNuevo();
+  else if(v==='historial') viewHistorial();
+  else if(v==='seguimiento') viewSeguimiento();
+  else if(v==='reportes') viewReportes();
+  else if(v==='usuarios') viewUsuarios();
+}
+
+function opts(arr,sel){return arr.map(o=>`<option ${o===sel?'selected':''}>${esc(o)}</option>`).join('');}
+
+async function cargarDatos(){
+  const {data,error}=await sb.from('logistica_inversa').select('*').order('fecha_generacion',{ascending:false}).order('id',{ascending:false});
+  if(error){toast('Error al cargar: '+error.message,'err');DATA=[];return;}
+  DATA=data||[];
+}
+
+/* ====== VISTA: NUEVO REGISTRO ====== */
+function viewNuevo(){
+  $('#view').innerHTML=`
+  <div class="page-head"><div><h2>Nuevo Registro</h2><p>Ingresa la solicitud de retiro recibida por correo</p></div></div>
+  <div class="card">
+    <form id="frmNuevo">
+      <div class="grid">
+        <div class="f"><label>Fecha de Generación</label><input type="date" id="nFecha" value="${hoy()}" required></div>
+        <div class="f"><label>Tienda</label><input id="nTienda" placeholder="Ej: Calama" required></div>
+        <div class="f"><label>Tipo</label><input id="nTipo" list="dlTipos" placeholder="Selecciona o escribe"><datalist id="dlTipos">${opts(TIPOS)}</datalist></div>
+        <div class="f"><label>Contenido</label><input id="nContenido" value="Varios"></div>
+        <div class="f"><label>GD (Guía de Despacho)</label><input id="nGD" placeholder="Ej: 1128571"></div>
+        <div class="f"><label>Valor</label><input id="nValor" inputmode="numeric" placeholder="$0"></div>
+        <div class="f"><label>Destino</label><input id="nDestino" list="dlDest" placeholder="Ej: CD"><datalist id="dlDest">${opts(DESTINOS)}</datalist></div>
+        <div class="f"><label>OT (se rellena después)</label><input id="nOT" placeholder="Número de OT"></div>
+        <div class="f"><label>Estado</label><select id="nEstado">${opts(ESTADOS,'PENDIENTE')}</select></div>
+        <div class="f" style="grid-column:1/-1"><label>Comentario</label><textarea id="nComentario" placeholder="Observaciones..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn save">Guardar registro</button>
+        <button type="button" class="btn ghost" id="nLimpiar">Limpiar</button>
+      </div>
+    </form>
+  </div>`;
+  autoValor($('#nValor'));
+  $('#nLimpiar').addEventListener('click',()=>viewNuevo());
+  $('#frmNuevo').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const reg={
+      fecha_generacion:$('#nFecha').value||null,
+      tienda:$('#nTienda').value.trim(),
+      tipo:$('#nTipo').value.trim(),
+      contenido:$('#nContenido').value.trim()||'Varios',
+      gd:$('#nGD').value.trim(),
+      valor:parseVal($('#nValor').value),
+      destino:$('#nDestino').value.trim(),
+      ot:$('#nOT').value.trim(),
+      estado:$('#nEstado').value,
+      comentario:$('#nComentario').value.trim(),
+      creado_por:USER.nombre
+    };
+    const btn=e.submitter;btn.disabled=true;btn.textContent='Guardando...';
+    const {error}=await sb.from('logistica_inversa').insert(reg);
+    btn.disabled=false;btn.textContent='Guardar registro';
+    if(error){toast('Error al guardar: '+error.message,'err');return;}
+    toast('Registro guardado ✔','ok');
+    viewNuevo();
+  });
+}
+function autoValor(inp){
+  if(!inp)return;
+  inp.addEventListener('input',()=>{
+    const n=parseVal(inp.value);
+    inp.value=n==null?'':'$'+n.toLocaleString('es-CL');
+  });
+}
+
+/* ====== VISTA: HISTORIAL ====== */
+async function viewHistorial(){
+  $('#view').innerHTML=`
+  <div class="page-head"><div><h2>Historial</h2><p>Todas las solicitudes registradas</p></div></div>
+  <div class="card">
+    <div class="toolbar">
+      <input id="hBuscar" placeholder="Buscar tienda / GD / OT...">
+      <select id="hTipo"><option value="">Todos los tipos</option>${opts(TIPOS)}</select>
+      <select id="hEstado"><option value="">Todos los estados</option>${opts(ESTADOS)}</select>
+      <select id="hDestino"><option value="">Todos los destinos</option>${opts(DESTINOS)}</select>
+      <button class="btn ghost sm" id="hReload">↻ Actualizar</button>
+    </div>
+    <div id="hTable" class="table-wrap"><div class="empty">Cargando...</div></div>
+  </div>`;
+  await cargarDatos();
+  ['hBuscar','hTipo','hEstado','hDestino'].forEach(id=>$('#'+id).addEventListener('input',pintarHist));
+  $('#hReload').addEventListener('click',async()=>{await cargarDatos();pintarHist();});
+  pintarHist();
+}
+function filtrar(){
+  const q=($('#hBuscar')?.value||'').toLowerCase();
+  const ft=$('#hTipo')?.value||'', fe=$('#hEstado')?.value||'', fd=$('#hDestino')?.value||'';
+  return DATA.filter(r=>{
+    if(ft&&r.tipo!==ft)return false;
+    if(fe&&r.estado!==fe)return false;
+    if(fd&&r.destino!==fd)return false;
+    if(q){const blob=[r.tienda,r.gd,r.ot,r.comentario].join(' ').toLowerCase();if(!blob.includes(q))return false;}
+    return true;
+  });
+}
+function pintarHist(){
+  const rows=filtrar();
+  if(!rows.length){$('#hTable').innerHTML='<div class="empty">Sin registros.</div>';return;}
+  const esAdmin=USER.rol==='admin';
+  $('#hTable').innerHTML=`<table><thead><tr>
+    <th>Fecha</th><th>Tienda</th><th>Tipo</th><th>Contenido</th><th>GD</th><th>Valor</th>
+    <th>Destino</th><th>OT</th><th>Estado</th><th>Comentario</th><th></th></tr></thead><tbody>${
+    rows.map(r=>`<tr>
+      <td>${fmtFecha(r.fecha_generacion)}</td><td>${esc(r.tienda)}</td><td>${esc(r.tipo)}</td>
+      <td>${esc(r.contenido)}</td><td>${esc(r.gd)}</td><td class="val">${fmtVal(r.valor)}</td>
+      <td>${esc(r.destino)}</td><td>${esc(r.ot)}</td>
+      <td><span class="st ${stClass(r.estado)}">${esc(r.estado)}</span></td>
+      <td>${esc(r.comentario)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn sm ghost" onclick="abrirEditar(${r.id})">Editar</button>
+        ${esAdmin?`<button class="btn sm danger" onclick="eliminarReg(${r.id})">Eliminar</button>`:''}
+      </td></tr>`).join('')}</tbody></table>`;
+}
+
+window.eliminarReg=async function(id){
+  if(!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.'))return;
+  const {error}=await sb.from('logistica_inversa').delete().eq('id',id);
+  if(error){toast('Error: '+error.message,'err');return;}
+  DATA=DATA.filter(r=>r.id!==id);pintarHist();toast('Registro eliminado','ok');
+};
+
+/* ====== MODAL EDITAR ====== */
+window.abrirEditar=function(id){
+  const r=DATA.find(x=>x.id===id);if(!r)return;editId=id;
+  $('#modalHost').innerHTML=`
+  <div class="modal-bg" id="mbg"><div class="modal">
+    <div class="modal-h"><h3>Editar registro · ${esc(r.tienda)}</h3><button class="x" id="mClose">×</button></div>
+    <div class="modal-b"><div class="grid">
+      <div class="f"><label>Fecha de Generación</label><input type="date" id="eFecha" value="${r.fecha_generacion?String(r.fecha_generacion).slice(0,10):''}"></div>
+      <div class="f"><label>Tienda</label><input id="eTienda" value="${esc(r.tienda)}"></div>
+      <div class="f"><label>Tipo</label><input id="eTipo" list="dlTipos" value="${esc(r.tipo)}"></div>
+      <div class="f"><label>Contenido</label><input id="eContenido" value="${esc(r.contenido)}"></div>
+      <div class="f"><label>GD</label><input id="eGD" value="${esc(r.gd)}"></div>
+      <div class="f"><label>Valor</label><input id="eValor" value="${r.valor!=null?'$'+Number(r.valor).toLocaleString('es-CL'):''}"></div>
+      <div class="f"><label>Destino</label><input id="eDestino" list="dlDest" value="${esc(r.destino)}"></div>
+      <div class="f"><label>OT</label><input id="eOT" value="${esc(r.ot)}"></div>
+      <div class="f"><label>Estado</label><select id="eEstado">${opts(ESTADOS,r.estado)}</select></div>
+      <div class="f" style="grid-column:1/-1"><label>Comentario</label><textarea id="eComentario">${esc(r.comentario)}</textarea></div>
+    </div></div>
+    <div class="modal-f"><button class="btn ghost" id="mCancel">Cancelar</button><button class="btn save" id="mSave">Guardar cambios</button></div>
+  </div></div>`;
+  autoValor($('#eValor'));
+  const cerrar=()=>$('#modalHost').innerHTML='';
+  $('#mClose').onclick=cerrar;$('#mCancel').onclick=cerrar;
+  $('#mbg').onclick=e=>{if(e.target.id==='mbg')cerrar();};
+  $('#mSave').onclick=async()=>{
+    const upd={
+      fecha_generacion:$('#eFecha').value||null,tienda:$('#eTienda').value.trim(),tipo:$('#eTipo').value.trim(),
+      contenido:$('#eContenido').value.trim(),gd:$('#eGD').value.trim(),valor:parseVal($('#eValor').value),
+      destino:$('#eDestino').value.trim(),ot:$('#eOT').value.trim(),estado:$('#eEstado').value,
+      comentario:$('#eComentario').value.trim(),actualizado_en:new Date().toISOString()
+    };
+    const b=$('#mSave');b.disabled=true;b.textContent='Guardando...';
+    const {error}=await sb.from('logistica_inversa').update(upd).eq('id',editId);
+    if(error){toast('Error: '+error.message,'err');b.disabled=false;b.textContent='Guardar cambios';return;}
+    const i=DATA.findIndex(x=>x.id===editId);if(i>=0)DATA[i]={...DATA[i],...upd};
+    cerrar();toast('Cambios guardados ✔','ok');
+    const a=document.querySelector('#nav button.active')?.dataset.v;
+    if(a==='historial')pintarHist();else if(a==='seguimiento')viewSeguimiento();
+  };
+};
+
+/* ====== VISTA: SEGUIMIENTO ====== */
+async function viewSeguimiento(){
+  $('#view').innerHTML=`
+  <div class="page-head"><div><h2>Seguimiento</h2><p>Solicitudes pendientes o sin número de OT asignado</p></div></div>
+  <div class="card"><div id="sTable" class="table-wrap"><div class="empty">Cargando...</div></div></div>`;
+  if(!DATA.length)await cargarDatos();
+  const pend=DATA.filter(r=>r.estado==='PENDIENTE'||r.estado==='PROCESO'||!r.ot);
+  if(!pend.length){$('#sTable').innerHTML='<div class="empty">🎉 No hay solicitudes pendientes.</div>';return;}
+  $('#sTable').innerHTML=`<table><thead><tr>
+    <th>Fecha</th><th>Tienda</th><th>Tipo</th><th>GD</th><th>Valor</th><th>Destino</th>
+    <th>OT</th><th>Estado</th><th>Acción rápida</th></tr></thead><tbody>${
+    pend.map(r=>`<tr>
+      <td>${fmtFecha(r.fecha_generacion)}</td><td>${esc(r.tienda)}</td><td>${esc(r.tipo)}</td>
+      <td>${esc(r.gd)}</td><td class="val">${fmtVal(r.valor)}</td><td>${esc(r.destino)}</td>
+      <td><input id="sot_${r.id}" value="${esc(r.ot)}" placeholder="N° OT" style="width:130px;padding:7px 9px;border:1.5px solid var(--line);border-radius:8px"></td>
+      <td><select id="ses_${r.id}" style="padding:7px 9px;border:1.5px solid var(--line);border-radius:8px">${opts(ESTADOS,r.estado)}</select></td>
+      <td><button class="btn sm save" onclick="guardarSeg(${r.id})">Guardar</button></td></tr>`).join('')}</tbody></table>`;
+}
+window.guardarSeg=async function(id){
+  const ot=$('#sot_'+id).value.trim(), estado=$('#ses_'+id).value;
+  const {error}=await sb.from('logistica_inversa').update({ot,estado,actualizado_en:new Date().toISOString()}).eq('id',id);
+  if(error){toast('Error: '+error.message,'err');return;}
+  const i=DATA.findIndex(x=>x.id===id);if(i>=0){DATA[i].ot=ot;DATA[i].estado=estado;}
+  toast('Actualizado ✔','ok');viewSeguimiento();
+};
+
+/* ====== VISTA: REPORTES ====== */
+async function viewReportes(){
+  $('#view').innerHTML='<div class="page-head"><div><h2>Reportes</h2><p>Resumen general de solicitudes</p></div></div><div id="rep"></div>';
+  await cargarDatos();
+  const total=DATA.length;
+  const porEstado={}, porTipo={}, porDestino={};
+  let valTotal=0;
+  ESTADOS.forEach(e=>porEstado[e]=0);
+  DATA.forEach(r=>{
+    porEstado[r.estado]=(porEstado[r.estado]||0)+1;
+    if(r.tipo)porTipo[r.tipo]=(porTipo[r.tipo]||0)+1;
+    if(r.destino)porDestino[r.destino]=(porDestino[r.destino]||0)+1;
+    if(r.valor)valTotal+=Number(r.valor);
+  });
+  const cols={'PENDIENTE':'#f59e0b','PROCESO':'#3b82f6','RETIRADO':'#16a34a','CERRADO':'#64748b'};
+  const kpi=(l,n,c)=>`<div class="kpi"><div class="bar" style="background:${c}"></div><div class="lbl">${l}</div><div class="num">${n}</div></div>`;
+  const listRows=o=>Object.keys(o).length?Object.entries(o).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="rrow"><span>${esc(k)}</span><b>${v}</b></div>`).join(''):'<div class="rrow"><span style="color:var(--muted)">Sin datos</span></div>';
+  $('#rep').innerHTML=`
+    <div class="kpis">
+      ${kpi('Total solicitudes',total,'var(--brand)')}
+      ${kpi('Pendientes',porEstado['PENDIENTE']||0,cols.PENDIENTE)}
+      ${kpi('Retiradas',porEstado['RETIRADO']||0,cols.RETIRADO)}
+      ${kpi('Valor total','$'+valTotal.toLocaleString('es-CL'),'var(--brand2)')}
+    </div>
+    <div class="card"><div class="repgrid">
+      <div><h4>Por tipo de retiro</h4>${listRows(porTipo)}</div>
+      <div><h4>Por destino</h4>${listRows(porDestino)}</div>
+    </div></div>`;
+}
+
+/* ====== VISTA: USUARIOS (solo admin) ====== */
+async function viewUsuarios(){
+  if(USER.rol!=='admin'){go('nuevo');return;}
+  $('#view').innerHTML=`
+  <div class="page-head"><div><h2>Usuarios</h2><p>Gestiona quién puede ingresar a la app</p></div></div>
+  <div class="card">
+    <h4 style="margin-bottom:14px">Crear nuevo usuario</h4>
+    <form id="frmUser"><div class="grid">
+      <div class="f"><label>Nombre</label><input id="uNombre" required></div>
+      <div class="f"><label>Correo</label><input type="email" id="uEmail" required></div>
+      <div class="f"><label>Contraseña</label><input id="uPass" required></div>
+      <div class="f"><label>Rol</label><select id="uRolSel"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></div>
+    </div><div class="form-actions"><button class="btn save" type="submit">Agregar usuario</button></div></form>
+  </div>
+  <div class="card"><div id="uTable" class="table-wrap"><div class="empty">Cargando...</div></div></div>`;
+  $('#frmUser').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const b=e.submitter;b.disabled=true;b.textContent='Agregando...';
+    const {error}=await sb.rpc('crear_usuario',{
+      p_nombre:$('#uNombre').value.trim(),p_email:$('#uEmail').value.trim(),
+      p_password:$('#uPass').value,p_rol:$('#uRolSel').value});
+    b.disabled=false;b.textContent='Agregar usuario';
+    if(error){toast('Error: '+error.message,'err');return;}
+    toast('Usuario creado ✔','ok');viewUsuarios();
+  });
+  const {data,error}=await sb.rpc('listar_usuarios');
+  if(error){$('#uTable').innerHTML='<div class="empty">Error: '+esc(error.message)+'</div>';return;}
+  $('#uTable').innerHTML=`<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Creado</th><th></th></tr></thead><tbody>${
+    (data||[]).map(u=>`<tr>
+      <td>${esc(u.nombre)}</td><td>${esc(u.email)}</td>
+      <td>${u.rol==='admin'?'<span class="badge-admin">ADMIN</span>':'Usuario'}</td>
+      <td>${fmtFecha(u.creado_en)}</td>
+      <td style="text-align:right">${u.email!=='edogut@quintec.cl'?`<button class="btn sm danger" onclick="eliminarUser(${u.id})">Eliminar</button>`:'<span style="color:var(--muted);font-size:12px">Protegido</span>'}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+window.eliminarUser=async function(id){
+  if(!confirm('¿Eliminar este usuario?'))return;
+  const {error}=await sb.rpc('eliminar_usuario',{p_id:id});
+  if(error){toast('Error: '+error.message,'err');return;}
+  toast('Usuario eliminado','ok');viewUsuarios();
+};
+
+
+
+
+
+</script>
+
+</body>
+</html>
