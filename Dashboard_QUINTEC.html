@@ -434,7 +434,7 @@ body.locked .hero,body.locked .filters,body.locked main,body.locked footer{filte
 <div class="wrap"><div id="emptyMonth" style="display:none;margin:26px 0;padding:30px 28px;background:#fff;border:1px solid #e3e7ec;border-left:5px solid #c89a4e;border-radius:12px;box-shadow:0 6px 22px rgba(23,42,67,.07)"></div></div>
 <main class="wrap" id="main"></main>
 <footer class="foot"><div class="wrap" id="footc"></div></footer>
-<script>const DATA={"meta":{"meses":[]},"rows":[],"dups":[]};</script>
+<script>const DATA={"meta":{"meses":[]},"rows":[],"dups":[]};/* Sin datos incrustados: Operaciones se lee de Supabase + lo guardado en este navegador. */</script>
 <script>
 /* ===== app.js ===== */
 /* ====== GLOBALS COMPARTIDOS ====== */
@@ -652,6 +652,14 @@ function semInfoHTML(year,m0,col,curW){
  return '<div style="margin-top:10px"><div style="font-size:11.5px;font-weight:700;color:#5a6672;letter-spacing:.03em;margin-bottom:6px">SEMANAS DEL MES (haz clic en una semana · lunes a viernes)</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">'+out+'</div><div style="font-size:11px;color:#8a95a1;margin-top:7px;line-height:1.5">Haz clic en una semana para que <b>todos los gráficos y totales</b> muestren solo esa semana. Pulsa <b>“Mes completo”</b> para volver a ver el mes entero.</div></div>';
 }
 const LS_KEY='quintec_meses_v2';
+/* Meses editados/grabados DESDE ESTA APP (tienen prioridad sobre lo que se lea de la nube). */
+const LS_OL='quintec_ops_local_ov_v1';
+/* '1' = este navegador nunca ha grabado en la nube; mientras sea 1 se respeta TODO lo local. */
+const LS_SOFT='quintec_ops_local_soft_v1';
+/* Meses ya guardados en la nube desde esta app (se usan al recargar). */
+const LS_NUBE='quintec_ops_nube_v1';
+/* Meses eliminados a proposito (no se vuelven a mostrar). */
+const LS_DEL='quintec_ops_del_v1';
 // Limpia cache antigua: meses de demo (Jul-Dic) quedaron guardados por una versi\u00f3n previa.
 try{localStorage.removeItem('quintec_meses_v1');}catch(e){}
 function buildFilters(){
@@ -888,12 +896,50 @@ async function sbLoad(){
  var raw=await sbFetchAll();
  var built=sbBuildData(raw);
  DATA.rows=built.rows;DATA.dups=built.dups;
+ var _ov=0;
+ try{_ov=sbOverlayLocal(!(raw&&raw.length));}catch(e){console.error('sbOverlayLocal',e);}
+ if(_ov)console.log('Supabase: '+_ov+' mes(es) mantenidos desde lo guardado en este navegador');
  try{recomputeMeta();}catch(_){}
  try{if(DATA.meta.meses&&DATA.meta.meses.length&&!DATA.meta.meses.find(function(m){return m.key===F.mes;}))F.mes=DATA.meta.meses[DATA.meta.meses.length-1].key;}catch(_){}
  try{buildFilters();}catch(_){}
  try{render();}catch(_){}
  try{saveMonths();}catch(_){}
  return raw.length;
+}
+/* Reaplica sobre DATA lo que se guardo/importo en ESTE navegador, para que al
+   recargar la pagina no desaparezca. Reglas:
+   - Meses SELLADOS (ya subidos a la nube con GUARDAR) se toman de lo guardado;
+     asi el refresco nunca muestra datos viejos aunque la nube demore o falle.
+   - Meses eliminados (serian borrados a proposito) NO se vuelven a mostrar.
+   - Meses sin sello (subidas antiguas, hechas cuando no habia nube) se muestran
+     solo si la nube no tiene ese mes, para no duplicar ni pisar lo de Supabase. */
+function sbOverlayLocal(allowLS){
+ var over={},ls={},sealed={},dele={};
+ try{over=JSON.parse(localStorage.getItem(LS_OL)||'{}')||{};}catch(e){over={};}
+ try{ls=JSON.parse(localStorage.getItem(LS_KEY)||'{}')||{};}catch(e){ls={};}
+ try{sealed=JSON.parse(localStorage.getItem(LS_NUBE)||'{}')||{};}catch(e){sealed={};}
+ try{dele=JSON.parse(localStorage.getItem(LS_DEL)||'{}')||{};}catch(e){dele={};}
+ var soft=allowLS&&localStorage.getItem(LS_SOFT)==='1';
+ try{if(Object.keys(over).length)localStorage.setItem(LS_NUBE,JSON.stringify(Object.assign({},sealed,over)));}catch(_){}
+ var mks=[];Object.keys(sealed).forEach(function(mk){if(!mks.includes(mk))mks.push(mk);});
+ Object.keys(over).forEach(function(mk){if(!mks.includes(mk))mks.push(mk);});
+ if(soft)Object.keys(ls).forEach(function(mk){if(!mks.includes(mk))mks.push(mk);});
+ if(!mks.length)return 0;
+ var applied=0;
+ mks.forEach(function(mk){
+  var src=over[mk]||ls[mk];
+  if(!src||!(src.rows&&src.rows.length))return;
+  if(dele[mk])return;
+  var cloudHas=DATA.rows.some(function(r){return r.mk===mk;});
+  if(!sealed[mk]&&!soft&&cloudHas)return;
+  var rows=(src.rows||[]).slice(),dups=(src.dups||[]).slice();
+  DATA.rows=DATA.rows.filter(function(r){return r.mk!==mk;}).concat(rows);
+  if(!DATA.dups)DATA.dups=[];
+  DATA.dups=DATA.dups.filter(function(r){return r.mk!==mk;}).concat(dups);
+  applied++;
+ });
+ if(applied){try{wk40ToSep(DATA.rows);wk40ToSep(DATA.dups);}catch(e){}}
+ return applied;
 }
 function sbInit(){
  if(typeof fetch!=='function')return;
@@ -910,6 +956,85 @@ function sbInit(){
    if(el2){el2.textContent='\u26a0 No se pudo leer Supabase (revisa RLS / clave)';el2.style.color='#b06a2a';}
   }
  })();
+}
+/* ====== GUARDAR EN SUPABASE (Operaciones) ======
+   Escribe las filas de los meses indicados en la tabla operaciones_transporte usando
+   las columnas REALES de la tabla (se leen con una fila de prueba; si la tabla est\u00e1
+   vac\u00eda se usan los nombres ya conocidos). Al terminar se relee todo desde Supabase.
+   Requiere que la RLS de la tabla permita INSERT/UPDATE/DELETE al rol anon. */
+var SB_COLS=null,SB_COLS_TRIED=false;
+function sbColMap(rec){
+ return {'fecha':rec.f,'semana_despachada':rec.sem,'id_pedido':rec.id,'unidad_negocio':rec.un,
+  'nombre_cliente':rec.cl,'comuna':rec.co,'valor':rec.v,'observacion':rec.ob||'',
+  'transporte':rec.tp,'rango':rec.rg,'zona':rec.zona||'','se_calcula':rec.seCal||'','repeticion':rec.rep||''};
+}
+async function sbDiscoverCols(){
+ if(SB_COLS)return SB_COLS;
+ var cols=null;
+ try{
+  var r=await fetch(SUPABASE_URL+'/rest/v1/'+SUPABASE_TABLE+'?select=*&limit=1',{headers:{apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+SUPABASE_ANON_KEY,Accept:'application/json'}});
+  var j=await r.json();if(Array.isArray(j)&&j.length&&j[0])cols=Object.keys(j[0]);
+ }catch(e){console.warn('sbDiscoverCols',e);}
+ if(!cols){
+  cols=['fecha','semana_despachada','id_pedido','unidad_negocio','nombre_cliente','comuna','valor','observacion','transporte','rango','zona','se_calcula','repeticion'];
+ }
+ SB_COLS=cols;SB_COLS_TRIED=true;
+ return cols;
+}
+function sbRowFor(rec,cols){
+ var full=sbColMap(rec),out={};
+ cols.forEach(function(c){if(Object.prototype.hasOwnProperty.call(full,c))out[c]=full[c];});
+ if(Object.keys(out).length<2){Object.keys(full).forEach(function(k){out[k]=full[k];});}
+ if(out.fecha&&String(out.fecha).length===10)out.fecha=String(out.fecha)+'T00:00:00';
+ return out;
+}
+async function sbWriteMonth(mk,recs,cols){
+ var base=SUPABASE_URL+'/rest/v1/'+SUPABASE_TABLE;
+ var H={apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json',Prefer:'return=minimal'};
+ var r0=await fetch(base+'?fecha=gte.'+encodeURIComponent(mk+'-01')+'&fecha=lte.'+encodeURIComponent(mk+'-31')+'&select=fecha',{method:'DELETE',headers:H});
+ if(!r0.ok){var t0='';try{t0=await r0.text();}catch(_){}var e0=new Error('delete '+r0.status+' '+t0);e0.code='sb-delete-'+r0.status;throw e0;}
+ if(!recs.length)return 0;
+ var payload=recs.map(function(r){return sbRowFor(r,cols);});
+ var r1=await fetch(base,{method:'POST',headers:H,body:JSON.stringify(payload)});
+ if(!r1.ok){var t1='';try{t1=await r1.text();}catch(_){}var e1=new Error('insert '+r1.status+' '+t1);e1.code='sb-insert-'+r1.status;throw e1;}
+ return payload.length;
+}
+/* Guarda en Supabase TODOS los meses que hay en memoria (reemplaza mes por mes).
+   Deja ademas "sellados" esos meses (LS_NUBE): al recargar se usa lo guardado,
+   asi el refresco nunca muestra datos viejos aunque la nube demore o falle. */
+async function sbSaveMonths(){
+ var cols=await sbDiscoverCols();
+ var mks=[];DATA.rows.forEach(function(r){if(r.mk&&mks.indexOf(r.mk)<0)mks.push(r.mk);});
+ var n=0;
+ for(var i=0;i<mks.length;i++){
+  var mk=mks[i];
+  var recs=DATA.rows.filter(function(r){return r.mk===mk;}).concat((DATA.dups||[]).filter(function(r){return r.mk===mk;}));
+  n+=await sbWriteMonth(mk,recs,cols);
+ }
+ try{sbSealMonths(mks);}catch(e){console.error('seal',e);}
+ return n;
+}
+/* Recuerda los meses guardados en la nube (para no perderlos al refrescar). */
+function sbSealMonths(mks){
+ var sealed={};try{sealed=JSON.parse(localStorage.getItem(LS_NUBE)||'{}')||{};}catch(e){sealed={};}
+ (mks||[]).forEach(function(mk){sealed[mk]=1;});
+ try{localStorage.setItem(LS_NUBE,JSON.stringify(sealed));}catch(e){}
+ try{localStorage.removeItem(LS_DEL);}catch(e){}
+}
+/* Elimina de Supabase los meses indicados y los marca como borrados. */
+async function sbDeleteMonths(mks){
+ var H={apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json',Prefer:'return=minimal'};
+ var base=SUPABASE_URL+'/rest/v1/'+SUPABASE_TABLE;
+ for(var i=0;i<(mks||[]).length;i++){
+  var mk=mks[i];
+  var r=await fetch(base+'?fecha=gte.'+encodeURIComponent(mk+'-01')+'&fecha=lte.'+encodeURIComponent(mk+'-31'),{method:'DELETE',headers:H});
+  if(!r.ok){var t='';try{t=await r.text();}catch(_){}var e=new Error('delete '+r.status+' '+t);e.code='sb-delete-'+r.status;throw e;}
+ }
+ var del={};try{del=JSON.parse(localStorage.getItem(LS_DEL)||'{}')||{};}catch(e){del={};}
+ var sealed={};try{sealed=JSON.parse(localStorage.getItem(LS_NUBE)||'{}')||{};}catch(e){sealed={};}
+ (mks||[]).forEach(function(mk){del[mk]=1;delete sealed[mk];});
+ try{localStorage.setItem(LS_DEL,JSON.stringify(del));}catch(e){}
+ try{localStorage.setItem(LS_NUBE,JSON.stringify(sealed));}catch(e){}
 }
 /* ====== FIREBASE (nube · datos compartidos entre usuarios) ====== */
 const FB_CFG={apiKey:"AIzaSyBa8QCypolo7ZpVkZYeaMcBtHvmsOjOVzk",authDomain:"despacho-retail.firebaseapp.com",databaseURL:"https://despacho-retail-default-rtdb.firebaseio.com",projectId:"despacho-retail",storageBucket:"despacho-retail.firebasestorage.app",messagingSenderId:"1011000908999",appId:"1:1011000908999:web:08c8630fab0c9537e0b2e2"};
@@ -935,6 +1060,8 @@ function fbSubscribe(){
    try{
     // Si Operaciones ya se lee de Supabase, no dejamos que Firebase pise esos datos.
     if(typeof sbReady!=='undefined'&&sbReady){const elx=document.getElementById('fbStat');return;}
+    // Mientras Operaciones se lee de Supabase, Firebase NO debe pisar ni vaciar lo local.
+    if(typeof SUPABASE_TABLE!=='undefined'&&SUPABASE_TABLE&&typeof sbInit==='function'){return;}
     const store=snap.val();
     if(store&&Object.keys(store).length){
      DATA.rows=flattenStore(store);
@@ -979,7 +1106,16 @@ function fbUpdateMonths(mkSet,cb){
  }catch(e){fbWriting=false;console.error('fbUpdateMonths',e);if(cb)cb(false,e);}
 }
 function saveMonths(){
- try{localStorage.setItem(LS_KEY,JSON.stringify(buildStore()));return true;}catch(err){return false;}
+ try{
+  var prev={};try{prev=JSON.parse(localStorage.getItem(LS_KEY)||'{}')||{};}catch(_){prev={};}
+  try{Object.values(prev).forEach(function(o){(o&&o.rows?o.rows:[]).forEach(function(r){if(r&&r.mk&&!DATA.rows.some(function(x){return x.mk===r.mk;}))DATA.rows.push(r);});(o&&o.dups?o.dups:[]).forEach(function(r){if(r&&r.mk&&!(DATA.dups||[]).some(function(x){return x.mk===r.mk;})){if(!DATA.dups)DATA.dups=[];DATA.dups.push(r);}});});}catch(_){}
+  var st=buildStore();
+  localStorage.setItem(LS_KEY,JSON.stringify(st));
+  var ov={};try{ov=JSON.parse(localStorage.getItem(LS_OL)||'{}')||{};}catch(_){ov={};}
+  Object.keys(st).forEach(function(mk){if(st[mk]&&st[mk].rows&&st[mk].rows.length)ov[mk]=st[mk];});
+  localStorage.setItem(LS_OL,JSON.stringify(ov));
+  return true;
+ }catch(err){return false;}
 }
 function loadSaved(){
  try{
@@ -1065,11 +1201,11 @@ function renderOpsResumen(){
  var sObj=scope.san||{},rObj=scope.reg||{};
  var gTot=(scope.total!=null)?scope.total:((sObj.tot||0)+(rObj.tot||0));
  /* Si hay una SEMANA seleccionada, los indicadores muestran SOLO esa semana (Santiago, Regiones y Total=Santiago+Regiones), sin redondear. */
- if(F.sem!=='all'){
-  var _wsel=+F.sem;
+ var _wselTop=(F.sem!=='all')?(+F.sem):null;
+ if(_wselTop!=null){
   var _acc={san:{sub:0,rep:0,tot:0},reg:{sub:0,rep:0,tot:0}};
-  (DATA.rows||[]).forEach(function(r){if(F.mes!=='all'&&r.mk!==F.mes)return;if((r.sem||0)!==_wsel)return;var z=(r.zona==='Santiago')?'san':(r.zona==='Regiones'?'reg':null);if(!z)return;_acc[z].tot+=r.v||0;_acc[z].sub+=r.v||0;});
-  (DATA.dups||[]).forEach(function(r){if(F.mes!=='all'&&r.mk!==F.mes)return;if((r.sem||0)!==_wsel)return;var z=(r.zona==='Santiago')?'san':(r.zona==='Regiones'?'reg':null);if(!z)return;_acc[z].rep+=r.v||0;_acc[z].sub+=r.v||0;});
+  (DATA.rows||[]).forEach(function(r){if(F.mes!=='all'&&r.mk!==F.mes)return;if((r.sem||0)!==_wselTop)return;var z=(r.zona==='Santiago')?'san':(r.zona==='Regiones'?'reg':null);if(!z)return;_acc[z].tot+=r.v||0;_acc[z].sub+=r.v||0;});
+  (DATA.dups||[]).forEach(function(r){if(F.mes!=='all'&&r.mk!==F.mes)return;if((r.sem||0)!==_wselTop)return;var z=(r.zona==='Santiago')?'san':(r.zona==='Regiones'?'reg':null);if(!z)return;_acc[z].rep+=r.v||0;_acc[z].sub+=r.v||0;});
   sObj=_acc.san;rObj=_acc.reg;gTot=(_acc.san.tot||0)+(_acc.reg.tot||0);
  }
  setKV('kr_tot',fm(gTot),fmShort(gTot)+' · TOTAL que SE SUMA');
@@ -3063,33 +3199,40 @@ function opsFinishUpload(all,msgs,errs){
  recomputeMeta();
  try{if(DATA.meta.meses.length){F.mes=DATA.meta.meses[DATA.meta.meses.length-1].key;}}catch(_){}
  try{saveMonths();}catch(_){}
+ try{localStorage.setItem(LS_SOFT,'1');}catch(_){}
+ try{if(typeof sbSealMonths==='function')sbSealMonths(mks.map(function(mk){var o=all[mk];var out={};((o.rows||[]).concat(o.dups||[])).forEach(function(r){out[r.mk]=1;});return Object.keys(out);}).reduce(function(a,b){return a.concat(b);},[]));}catch(_){}
  try{buildFilters();}catch(_){}
  try{render();}catch(_){}
  var tail=(errs.length?('\n\n'+errs.join('\n')):'');
- var doneMsg='\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail;
- if(typeof fbReady!=='undefined'&&fbReady){
-  var affected={};mks.forEach(function(mk){var o=all[mk];(o.rows||[]).forEach(function(r){affected[r.mk]=1;});(o.dups||[]).forEach(function(r){affected[r.mk]=1;});affected[mk]=1;});
-  fbUpdateMonths(affected,function(ok){
-   alert(doneMsg+(ok?('\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Solo se actualiz\u00f3 el/los mes(es) que subiste; los dem\u00e1s meses se mantienen intactos para todos los usuarios.'):('\n\n\u26a0 No se pudo guardar en la nube; la informaci\u00f3n qued\u00f3 solo en este navegador.')));
+ var doneMsg='\u2713 Importaci\u00f3n de Operaciones completada:\n'+msgs.join('\n')+tail+'\n\n\u2713 Guardado en este navegador y en la copia local del tablero (no se pierde al recargar).';
+ if(typeof sbSaveMonths==='function'){
+  sbSaveMonths().then(function(){
+   alert(doneMsg+'\n\n\u2601 Adem\u00e1s se subi\u00f3 a la nube (Supabase): otros usuarios tambi\u00e9n la ver\u00e1n al recargar.');
+  }).catch(function(e){
+   console.warn('sbSaveMonths (import)',e);
+   alert(doneMsg+'\n\n\u26a0 No se pudo subir a la nube en este momento: los datos quedaron guardados en este navegador y NO se pierden al recargar.');
   });
+  return;
  }
- else alert(doneMsg+'\n\n\u2713 Guardado en este navegador.');
+ alert(doneMsg);
 }
 function opsGuardar(){
- if(!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
+ if(typeof obIsAdmin==='function'&&!obIsAdmin()){alert('Solo el administrador puede guardar informaci\u00f3n.');return;}
  if(!DATA.rows.length){alert('No hay informaci\u00f3n importada para guardar. Importa primero un Excel de Operaciones.');return;}
- try{saveMonths();}catch(_){}
+ try{saveMonths();}catch(e){console.error('saveMonths',e);}
  var nM=(DATA.meta&&DATA.meta.meses)?DATA.meta.meses.length:0;
  var tot=DATA.rows.reduce(function(a,r){return a+(r.v||0);},0);
- function _okMsg(){alert('\u2713 Informaci\u00f3n de OPERACIONES guardada.\n\n \u2022 '+fi(DATA.rows.length)+' pedidos en '+nM+' mes(es)\n \u2022 Valorización total: '+fm(tot)+'\n\n\u2601 Guardado en la nube (Firebase \u00b7 quintec/meses). Todos los usuarios la ver\u00e1n al recargar.');}
- function _doPush(){
-  try{fbWriting=true;fbDB.ref(FB_PATH).set(buildStore()).then(function(){fbWriting=false;_okMsg();}).catch(function(e){fbWriting=false;console.error('opsGuardar push',e);var code=(e&&e.code)||'';var extra='';if(code==='PERMISSION_DENIED'||/permission/i.test(String(e&&e.message)))extra='\n\nCausa: las Reglas de Firebase (Realtime Database) no permiten escribir en "quintec/meses". Agrega esa ruta con .read/.write = auth != null y Publica.';alert('\u26a0 No se pudo guardar en la nube.'+extra+'\n\nLa informaci\u00f3n qued\u00f3 guardada solo en este navegador.'+(code?('\n\n[detalle: '+code+']'):''));});}
-  catch(e){fbWriting=false;console.error('opsGuardar push',e);alert('\u26a0 No se pudo guardar en la nube. La informaci\u00f3n qued\u00f3 guardada solo en este navegador.');}
+ var det='\n\n \u2022 '+fi(DATA.rows.length)+' pedidos en '+nM+' mes(es)\n \u2022 Valorizaci\u00f3n total: '+fm(tot);
+ function _okMsg(){alert('\u2713 Informaci\u00f3n de OPERACIONES guardada.'+det+'\n\nQueda guardada en la nube (Supabase) y en este navegador: al recargar la p\u00e1gina se sigue viendo igual.');}
+ function _failMsg(e){
+  console.error('opsGuardar',e);var code=(e&&e.code)||'';var extra='';
+  if(/^sb-delete-4\d\d$/.test(code)||/^sb-insert-4\d\d$/.test(code))extra='\n\nCausa: la tabla operaciones_transporte no permite escribir con la clave p\u00fablica (RLS). Hay que habilitar INSERT/UPDATE/DELETE para el rol anon.';
+  alert('\u26a0 No se pudo subir a la nube (Supabase).'+extra+'\n\nLa informaci\u00f3n SI qued\u00f3 guardada en este navegador y se mantiene al recargar.'+det+(code?('\n\n[detalle: '+code+']'):''));
  }
- if(typeof fbDB==='undefined'||!fbDB){alert('\u26a0 No hay conexi\u00f3n con la nube (Firebase). La informaci\u00f3n se guard\u00f3 solo en este navegador.');return;}
- if(typeof fbReady!=='undefined'&&fbReady){_doPush();return;}
- if(typeof firebase!=='undefined'&&firebase.auth){firebase.auth().signInAnonymously().then(function(){fbReady=true;try{fbSubsAll();}catch(e){}_doPush();}).catch(function(e){console.error('signInAnonymously',e);var code=(e&&e.code)||'';var extra='';if(code==='auth/operation-not-allowed'||code==='auth/admin-restricted-operation')extra='\n\nCausa: el proveedor "An\u00f3nimo" NO est\u00e1 activado en Firebase.';else if(code==='auth/configuration-not-found')extra='\n\nCausa: a\u00fan no has configurado Authentication en este proyecto.';else if(code==='auth/network-request-failed')extra='\n\nCausa: sin conexi\u00f3n a internet.';alert('\u26a0 No se pudo conectar a la nube.'+extra+'\n\nSoluci\u00f3n: entra a Firebase \u2192 Authentication \u2192 Sign-in method y activa el proveedor "An\u00f3nimo". Luego recarga con Ctrl+F5.\n\nLa informaci\u00f3n qued\u00f3 guardada solo en este navegador.'+(code?('\n\n[detalle: '+code+']'):''));});}
- else{alert('\u26a0 No hay conexi\u00f3n con la nube (Firebase). La informaci\u00f3n se guard\u00f3 solo en este navegador.');}
+ try{
+  if(typeof sbSaveMonths==='function'){sbSaveMonths().then(function(n){_okMsg();}).catch(function(e){_failMsg(e);});return;}
+ }catch(e){_failMsg(e);return;}
+ _okMsg();
 }
 function opsBuildWorkbook(){
  var wb=XLSX.utils.book_new();
@@ -3165,7 +3308,7 @@ function opsEliminar(){
  var ov=document.createElement('div');ov.className='ob-modal';
  ov.innerHTML='<div class="ob-box" style="width:470px;max-width:94vw">'
   +'<div class="ob-h">Eliminar informaci\u00f3n de la nube</div>'
-  +'<div class="ob-m">Selecciona los meses de OPERACIONES que deseas borrar de este programa y de la nube (Firebase \u00b7 quintec/meses). Esta acci\u00f3n no se puede deshacer.</div>'
+  +'<div class="ob-m">Selecciona los meses de OPERACIONES que deseas borrar de este programa y de la nube (Supabase \u00b7 operaciones_transporte). Esta acci\u00f3n no se puede deshacer.</div>'
   +'<label class="opsdel-row opsdel-all"><input type="checkbox" id="opsDelAll"><span class="opsdel-mes"><b>Seleccionar todos</b></span></label>'
   +'<div class="opsdel-list">'+listHtml+'</div>'
   +'<div class="opsdel-pwlbl">Contrase\u00f1a</div>'
@@ -3183,17 +3326,21 @@ function opsEliminar(){
   if(!sel.length){alert('Selecciona al menos un mes para eliminar.');return;}
   if(pw.value!=='1234'){ov.querySelector('#opsDelErr').style.display='';pw.value='';pw.focus();return;}
   var labels=sel.map(function(mk){return (byMk[mk]||{}).label||mk;});
-  if(!confirm('\u26a0 ELIMINACI\u00d3N DEFINITIVA\n\nSe borrar\u00e1n estos meses de OPERACIONES:\n \u2022 '+labels.join('\n \u2022 ')+'\n\nSe eliminar\u00e1 de este programa y de la nube (Firebase). No se puede deshacer.\n\n\u00bfDeseas continuar?'))return;
+  if(!confirm('\u26a0 ELIMINACI\u00d3N DEFINITIVA\n\nSe borrar\u00e1n estos meses de OPERACIONES:\n \u2022 '+labels.join('\n \u2022 ')+'\n\nSe eliminar\u00e1 de este programa y de la nube (Supabase \u00b7 tabla operaciones_transporte). No se puede deshacer.\n\n\u00bfDeseas continuar?'))return;
   if(!confirm('\u00bfEst\u00e1s seguro? Esta es la \u00faltima confirmaci\u00f3n antes de borrar definitivamente.'))return;
   DATA.rows=DATA.rows.filter(function(r){return sel.indexOf(r.mk)<0;});
   try{recomputeMeta();}catch(_){}
   try{if(typeof F!=='undefined'&&DATA.meta&&DATA.meta.meses&&!DATA.meta.meses.find(function(m){return m.key===F.mes;})){F.mes=DATA.meta.meses.length?DATA.meta.meses[DATA.meta.meses.length-1].key:'all';}}catch(_){}
   try{saveMonths();}catch(_){}
-  if(typeof fbReady!=='undefined'&&fbReady&&fbDB){try{if(DATA.rows.length)fbPush();else fbClear();}catch(_){}}
-  try{buildFilters();}catch(_){}
-  try{render();}catch(_){}
+  if(typeof sbDeleteMonths==='function'){
+   sbDeleteMonths(sel).then(function(){try{sbLoad();}catch(_){}})
+    .catch(function(e){console.error('sbDeleteMonths',e);try{if(typeof sbLoad==='function')sbLoad();}catch(_){}});
+  }else{
+   try{buildFilters();}catch(_){}
+   try{render();}catch(_){}
+  }
   close();
-  alert('\u2713 Meses eliminados de OPERACIONES y de la nube (Firebase):\n \u2022 '+labels.join('\n \u2022 '));
+  alert('\u2713 Meses eliminados de OPERACIONES:\n \u2022 '+labels.join('\n \u2022 '));
  };
  pw.addEventListener('keydown',function(e){if(e.key==='Enter')ov.querySelector('#opsDelOk').click();if(e.key==='Escape')close();});
 }
@@ -3218,8 +3365,8 @@ function obBuildGroupWb(grp){
  return wb;
 }
 function opsSaveAllCloud(){
+ try{if(DATA.rows.length&&typeof sbSaveMonths==='function'){sbSaveMonths().catch(function(e){console.warn('sbSaveMonths',e);});}}catch(_){}
  try{if(typeof fbReady!=='undefined'&&fbReady&&fbDB){
-   if(DATA.rows.length&&typeof fbPush==='function')fbPush();
    if(typeof MDATA!=='undefined'&&MDATA.rows.length&&typeof modFbPush==='function')modFbPush();
    if(typeof devoFbSave==='function')devoFbSave();
  }}catch(_){}
