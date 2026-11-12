@@ -542,7 +542,7 @@ function buildMarkup(){
  h+=`</section>`;
  // ===== FINANZAS =====
  h+=`<section class="section" id="s-fin"><div class="sec-head"><h2>Finanzas & P&L — Valorización de Carga</h2><p>Impacto monetário y tendencia del flujo</p></div>`;
- h+=`<div class="grid g-1"><div class="card" id="opsResCard"><h3>${IC.money} Resumen de Valorización — igual que la hoja «Resumen» del Excel</h3><div class="cs" id="opsResSub">SUB-TOTAL (verde), Repetidos (rojo) y TOTAL (azul), por zona y por semana</div><div class="kgrid fin" style="margin-top:6px">${kpi('kr_tot',IC.money,'Valorización Total')}${kpi('kr_san',IC.map,'Valorización Santiago')}${kpi('kr_reg',IC.map,'Valorización Regiones')}</div><div id="opsResSem" style="overflow:auto;margin-top:12px"></div></div></div>`;
+ h+=`<div class="grid g-1"><div class="card" id="opsResCard"><h3>${IC.money} Resumen de Valorización — igual que la hoja «Resumen» del Excel</h3><div class="cs" id="opsResSub">SUB-TOTAL (verde), Repetidos (rojo) y TOTAL (azul), por zona</div><div class="kgrid fin" style="margin-top:6px">${kpi('kr_tot',IC.money,'Valorización Total')}${kpi('kr_san',IC.map,'Valorización Santiago')}${kpi('kr_reg',IC.map,'Valorización Regiones')}</div></div></div>`;
  h+=`<div class="grid g-2e">${card('c_valun',IC.chart,'Valorización por Unidad de Negocio','Fuentes principales de ingreso logístico','tall')}${card('c_valtp',IC.chart,'Valorización Movilizado por Vehículo','Carga económica concentrada por móvil','tall')}</div>`;
  h+=`<div class="grid g-1">${card('c_evo',IC.line,'Evolución Diaria del Capital','Valorización movilizado y pedidos por día')}</div>`;
  h+=`<div class="grid g-2e">${card('c_comval',IC.map,'Top Comunas por Valorización','Destinos con mayor valor de carga','tall')}${card('c_bubble',IC.scatter,'Volumen vs Valorización por Vehículo','Tamaño = ticket promedio del móvil','tall')}</div>`;
@@ -1064,12 +1064,20 @@ function renderOpsResumen(){
  var _verde='#1f7a4d',_rojo='#d11a2a',_azul='#1f6fd6';
  var sObj=scope.san||{},rObj=scope.reg||{};
  var gTot=(scope.total!=null)?scope.total:((sObj.tot||0)+(rObj.tot||0));
+ /* Si hay una SEMANA seleccionada, los indicadores muestran SOLO esa semana (Santiago, Regiones y Total=Santiago+Regiones), sin redondear. */
+ if(F.sem!=='all'){
+  var _wsel=+F.sem;
+  var _acc={san:{sub:0,rep:0,tot:0},reg:{sub:0,rep:0,tot:0}};
+  (DATA.rows||[]).forEach(function(r){if(F.mes!=='all'&&r.mk!==F.mes)return;if((r.sem||0)!==_wsel)return;var z=(r.zona==='Santiago')?'san':(r.zona==='Regiones'?'reg':null);if(!z)return;_acc[z].tot+=r.v||0;_acc[z].sub+=r.v||0;});
+  (DATA.dups||[]).forEach(function(r){if(F.mes!=='all'&&r.mk!==F.mes)return;if((r.sem||0)!==_wsel)return;var z=(r.zona==='Santiago')?'san':(r.zona==='Regiones'?'reg':null);if(!z)return;_acc[z].rep+=r.v||0;_acc[z].sub+=r.v||0;});
+  sObj=_acc.san;rObj=_acc.reg;gTot=(_acc.san.tot||0)+(_acc.reg.tot||0);
+ }
  setKV('kr_tot',fm(gTot),fmShort(gTot)+' · TOTAL que SE SUMA');
  setKV('kr_san',fm(sObj.tot||0),'<div style="color:'+_verde+';font-weight:700;line-height:1.5">SUB-TOTAL Santiago: '+fm(sObj.sub||0)+'</div><div style="color:'+_rojo+';font-weight:700;line-height:1.5">Repetidos Santiago: '+fm(sObj.rep||0)+'</div>');
  setKV('kr_reg',fm(rObj.tot||0),'<div style="color:'+_verde+';font-weight:700;line-height:1.5">SUB-TOTAL Regiones: '+fm(rObj.sub||0)+'</div><div style="color:'+_rojo+';font-weight:700;line-height:1.5">Repetidos Regiones: '+fm(rObj.rep||0)+'</div>');
  var _e;_e=document.getElementById('kr_san');if(_e)_e.style.color=_azul;_e=document.getElementById('kr_reg');if(_e)_e.style.color=_azul;
  var sub=document.getElementById('opsResSub');
- if(sub){var mesTxt=(F.mes==='all')?('Acumulado del año'):(((DATA.meta&&DATA.meta.meses||[]).find(function(m){return m.key===F.mes;})||{}).label||F.mes);sub.textContent=mesTxt+' — SUB-TOTAL (verde), Repetidos (rojo) y TOTAL (azul), por zona y por semana';}
+ if(sub){var mesTxt=(F.mes==='all')?('Acumulado del año'):(((DATA.meta&&DATA.meta.meses||[]).find(function(m){return m.key===F.mes;})||{}).label||F.mes);var semTxt=(F.sem!=='all')?(' · Semana '+F.sem):'';sub.textContent=mesTxt+semTxt+' — SUB-TOTAL (verde), Repetidos (rojo) y TOTAL (azul), por zona';}
  var wk=scope.weeks||{san:{},reg:{},tot:{}};
  var wset={};Object.keys(wk.san||{}).forEach(function(w){wset[+w]=1;});Object.keys(wk.reg||{}).forEach(function(w){wset[+w]=1;});Object.keys(wk.tot||{}).forEach(function(w){wset[+w]=1;});
  var arr=Object.keys(wset).map(Number).filter(function(w){return w>0;}).sort(function(a,b){return a-b;});
